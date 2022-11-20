@@ -2,12 +2,12 @@ export default class base {
   constructor (e = {}) {
     this.e = e
     this.userId = e?.user_id
-    this.model = 'RConsole-plugin'
+    this.model = 'rconsole-plugin'
     this._path = process.cwd().replace(/\\/g, '/')
   }
 
   get prefix () {
-    return `Yz:RConsole-plugin:${this.model}:`
+    return `Yz:rconsole-plugin:${this.model}:`
   }
 
   /**
@@ -19,9 +19,9 @@ export default class base {
   get screenData () {
     return {
       saveId: this.userId,
-      tplFile: `./plugins/RConsole-plugin/resources/html/${this.model}/${this.model}.html`,
+      tplFile: `./plugins/rconsole-plugin/resources/html/${this.model}/${this.model}.html`,
       /** 绝对路径 */
-      pluResPath: `${this._path}/plugins/RConsole-plugin/resources/`
+      pluResPath: `${this._path}/plugins/rconsole-plugin/resources/`
     }
   }
 }

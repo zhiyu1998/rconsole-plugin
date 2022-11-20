@@ -6,7 +6,7 @@ import chokidar from 'chokidar'
 class RConfig {
   constructor () {
     // 配置文件
-    this.configPath = './plugins/RConsole-plugin/config/'
+    this.configPath = './plugins/rconsole-plugin/config/'
     this.config = {}
 
     // 监听文件

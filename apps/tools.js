@@ -27,4 +27,28 @@ export class tools extends plugin {
             .catch((err) => logger.error(err))
         return true
     }
+
+    // 抖音解析
+    async douyin(e) {
+        const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\\d._?%&+\-=\/#]*/g
+        puppeteer.launch().then(async browser => {
+            const page = await browser.newPage();
+            await page.goto(urlRex.exec(e.msg.trim())[0]);
+            const headers = page.headers()
+            console.log(headers)
+            await browser.close();
+        });
+        const douyinRex = /.*video\/(\d+)\/(.*?)/g
+        const resolver = douyinRex.exec(location)
+        const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${resolver}`
+        e.reply('解析中...')
+        const res = fetch(url, {
+            headers: {
+                'User-Agent': "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36"
+            },
+            timeout: 10000
+        }).then(resp => {
+            return resp.body
+        })
+    }
 }

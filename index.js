@@ -4,12 +4,12 @@ import RConfig from './model/index.js'
 const versionData = RConfig.getConfig('version')
 
 logger.info('--------------------------')
-logger.info(`RConsole插件${versionData[0].version}初始化~`)
+logger.info(`rconsole插件${versionData[0].version}初始化~`)
 logger.info('--------------------------')
 
 // 读取功能
 const files = fs
-  .readdirSync('./plugins/RConsole-plugin/apps')
+  .readdirSync('./plugins/rconsole-plugin/apps')
   .filter((file) => file.endsWith('.js'))
 
 let apps = {}

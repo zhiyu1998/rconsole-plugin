@@ -44,11 +44,11 @@
 - group: 其他指令[实验]
   list:
     - icon: 问号
-      title: "#RConsole插件版本"
+      title: "#rconsole插件版本"
       desc: "查看，最近维护的版本信息"
     - icon: 史莱姆
-      title: "#RConsole插件更新"
-      desc: "进行更新RConsole插件"
+      title: "#rconsole插件更新"
+      desc: "进行更新rconsole插件"
     - icon: 原石
-      title: "#RConsole插件强制更新"
-      desc: "进行强制更新RConsole插件"
+      title: "#rconsole插件强制更新"
+      desc: "进行强制更新rconsole插件"
