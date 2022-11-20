@@ -1,4 +1,10 @@
 # R-plugin
+<p align="center">
+  <a href="https://gitee.com/kyrzy0416/rconsole-plugin">
+    <img width="200" src="./img/logo.png">
+  </a>
+</p>
+
 个人团队用的Yunzai-bot插件，插件的各种业务来源于周围人
 <img src="https://cdn.jsdelivr.net/gh/xianxincoder/xianxincoder/assets/github-contribution-grid-snake.svg">
 
