@@ -23,6 +23,11 @@ index -- 主入口
 3. 在`Yunzai-Bot`安装mongodb依赖
 > pnpm i mongodb
 4. 下载插件
+> git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
+
+> 注：可以不用mongodb这些操作，只是用不了一些命令而已
+
+
 > 注：可以不用mongodb这些操作，只是用不了一些命令而已
 
 ## 📦业务
