@@ -1,0 +1,16 @@
+mystery:
+  # 最大页数
+  maxPage: 15
+  maxPigObj: 10
+  # 限制最大图片数量
+  imageCountLimit: 20
+aaa:
+  # 最大页数
+  maxPage: 15
+  maxPigObj: 10
+  # 限制最大图片数量
+  imageCountLimit: 20
+setu:
+  count: 10
+tuiimg:
+  count: 10

@@ -1,0 +1,54 @@
+- group: 医学功能
+  list:
+    - icon: 记录
+      title: "#医药查询 疾病/症状/医院/医生/药品"
+      desc: 便利的医药查询功能
+- group: 猫猫图
+  list:
+    - icon: 树脂
+      title: "#猫猫|cat 开始吸猫"
+      desc: 猫咪图捕捉
+- group: 神秘功能合集
+  list:
+    - icon: 养成计算
+      title: "#雀食/#确实"
+      desc: 原汤化原食
+    - icon: 史莱姆
+      title: "#来份涩图"
+      desc: 涩涩的
+    - icon: weapon
+      title: "#累了"
+      desc: 疲惫往往是过度劳累
+    - icon: 攻略
+      title: "#啊?"
+      desc: 啊？
+    - icon: sign
+      title: "#沃日吗"
+      desc: 什么鬼？
+- group: 热搜功能合集
+  list:
+    - icon: 打卡
+      title: "#热搜 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信"
+      desc: 开局五子棋游戏
+- group: 工具类合集
+  list:
+    - icon: 绑定账号
+      title: "#翻译 xxx"
+      desc: 百度翻译
+    - icon: 纠缠之缘
+      title: "#电脑软件推荐"
+      desc: 推荐PC软件
+    - icon: ledger
+      title: "#安卓软件推荐"
+      desc: 推荐安卓软件
+- group: 其他指令[实验]
+  list:
+    - icon: 问号
+      title: "#RConsole插件版本"
+      desc: "查看，最近维护的版本信息"
+    - icon: 史莱姆
+      title: "#RConsole插件更新"
+      desc: "进行更新RConsole插件"
+    - icon: 原石
+      title: "#RConsole插件强制更新"
+      desc: "进行强制更新RConsole插件"
