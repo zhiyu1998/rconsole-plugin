@@ -41,6 +41,9 @@
     - icon: ledger
       title: "#安卓软件推荐"
       desc: 推荐安卓软件
+    - icon: paimon
+      title: "xxxv.douyin.com"
+      desc: 抖音分享实时下载
 - group: 其他指令[实验]
   list:
     - icon: 问号
