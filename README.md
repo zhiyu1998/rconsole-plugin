@@ -29,7 +29,9 @@ index -- 主入口
 2. 下载mongodb
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
 3. 在`Yunzai-Bot`安装mongodb依赖
-> pnpm i mongodb
+> pnpm add mongodb -w
+
+> pnpm add axios -w
 4. 下载插件
 > git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 
