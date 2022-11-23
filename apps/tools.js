@@ -40,7 +40,7 @@ export class tools extends plugin {
 
     // 抖音解析
     async douyin(e) {
-        const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\\d._?%&+\-=\/#]*/g
+        const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g
         const douUrl = urlRex.exec(e.msg.trim())[0]
 
         await https.request(douUrl, {

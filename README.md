@@ -24,11 +24,11 @@ test -- 爬虫文件[python]
 index -- 主入口
 
 ## 📔使用说明
-1. `test -- main.py`爬取链接
+1. `test -- main.py`爬取链接（要有python环境）
 > python3 main.py
-2. 下载mongodb
+2. 下载mongodb（可能会耗费一些时间：影响功能【#沃日吗】）
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
-3. 在`Yunzai-Bot`安装mongodb依赖
+3. 在`Yunzai-Bot`安装mongodb、axios依赖
 > pnpm add mongodb -w
 
 > pnpm add axios -w
