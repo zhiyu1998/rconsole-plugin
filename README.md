@@ -49,6 +49,7 @@ index -- 主入口
 |[易曦翰](https://gitee.com/yixihan) | 后端开发         |
 |[zhiyu](https://gitee.com/kyrzy0416) | 后端开发         |
 |[Diviner](https://gitee.com/divinerJJ) | 前端开发         |
+|[小白白](https://gitee.com/little_White01) | 后端开发         |
 
 ## 🚀后记
 * 文件借鉴了很多插件，精简个人认为可以精简的内容。 
