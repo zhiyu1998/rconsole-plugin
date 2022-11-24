@@ -23,6 +23,10 @@ export class tools extends plugin {
                     reg: "(.*)(v.douyin.com)",
                     fnc: "douyin",
                 },
+                {
+                    reg: "(.*)(www.tiktok.com)",
+                    fnc: "tiktok",
+                },
             ],
         });
         this.path = "./data/rcmp4/";
@@ -50,12 +54,12 @@ export class tools extends plugin {
     async douyin(e) {
         const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const douUrl = urlRex.exec(e.msg.trim())[0];
+        e.reply("识别：抖音, 解析中...");
 
         await this.douyinRequest(douUrl).then((res) => {
             const douRex = /.*video\/(\d+)\/(.*?)/g;
             const douId = douRex.exec(res)[1];
             const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${douId}`;
-            e.reply("解析中...");
             return fetch(url)
                 .then((resp) => resp.json())
                 .then((json) => json.item_list[0])
@@ -65,6 +69,21 @@ export class tools extends plugin {
                 });
         });
         return true;
+    }
+
+    // tiktok解析
+    async tiktok(e) {
+        const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const url = urlRex.exec(e.msg.trim())[0]
+
+        const tiktokApi = `https://api.douyin.wtf/api?url=${url}&minimal=true`
+        e.reply("识别：tiktok, 解析中...");
+        fetch(tiktokApi)
+            .then(resp => resp.json())
+            .then(async json => {
+                await e.reply(await segment.video(await this.downloadVideo(json.wm_video_url.replace("https","http"))))
+            })
+        return true
     }
 
     // 请求参数
@@ -128,5 +147,19 @@ export class tools extends plugin {
                 return true;
             }
         }
+    }
+
+    // 递归创建目录 异步方法
+    mkdirs(dirname, callback) {
+        fs.exists(dirname, function (exists) {
+            if (exists) {
+                callback();
+            } else {
+                // console.log(path.dirname(dirname));
+                this.mkdirs(path.dirname(dirname), function () {
+                    fs.mkdir(dirname, callback);
+                });
+            }
+        });
     }
 }
