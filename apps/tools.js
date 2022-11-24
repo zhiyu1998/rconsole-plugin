@@ -29,7 +29,7 @@ export class tools extends plugin {
                 },
             ],
         });
-        this.path = "./data/rcmp4/";
+        this.defaultPath = `./data/rcmp4/`
     }
 
     // 翻译插件
@@ -64,8 +64,10 @@ export class tools extends plugin {
                 .then((resp) => resp.json())
                 .then((json) => json.item_list[0])
                 .then((item) => item.video.play_addr.url_list[0])
-                .then(async (url) => {
-                    await e.reply(await segment.video(await this.downloadVideo(url)));
+                .then((url) => {
+                    this.downloadVideo(url).then(video => {
+                        e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`));
+                    })
                 });
         });
         return true;
@@ -80,8 +82,10 @@ export class tools extends plugin {
         e.reply("识别：tiktok, 解析中...");
         fetch(tiktokApi)
             .then(resp => resp.json())
-            .then(async json => {
-                await e.reply(await segment.video(await this.downloadVideo(json.wm_video_url.replace("https","http"))))
+            .then(json => {
+                this.downloadVideo(json.wm_video_url.replace("https","http")).then(video => {
+                    e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`))
+                })
             })
         return true
     }
@@ -110,11 +114,10 @@ export class tools extends plugin {
 
     // 根URL据下载视频 / 音频
     async downloadVideo(url) {
-        let target = `${this.path}${this.e.group_id || this.e.user_id}`;
-        if (!fs.existsSync(target)) {
-            this.mkdirsSync(`${this.path}${this.e.group_id || this.e.user_id}`);
+        if (!fs.existsSync(this.defaultPath)) {
+            this.mkdirsSync(this.defaultPath);
         }
-        target += '/temp.mp4'
+        const target = this.defaultPath + `${this.e.group_id || this.e.user_id}/temp.mp4`
         // 待优化
         if (fs.existsSync(target)) {
             console.log(`视频已存在`);
@@ -130,11 +133,11 @@ export class tools extends plugin {
         console.log(`开始下载: ${url}`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
-        new Promise((resolve, reject) => {
+
+        return new Promise((resolve, reject) => {
             writer.on("finish", resolve);
             writer.on("error", reject);
         });
-        return target;
     }
 
     // 同步递归创建文件夹
