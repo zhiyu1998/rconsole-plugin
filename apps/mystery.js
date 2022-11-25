@@ -24,6 +24,8 @@ function initMongo () {
     })
 }
 const mongo = initMongo()
+// 60s后撤回
+const recallTime = 109
 
 export class mystery extends plugin {
     constructor () {
@@ -241,14 +243,15 @@ export class mystery extends plugin {
         await mongo.then(conn => {
             return conn.aggregate([{ $sample: { size: MAX_SIZE } }]).toArray()
         }).then((result) => {
-            console.log(result)
-            result.forEach((item) => {
+            result.forEach(async (item) => {
                 images.push({
                     message: segment.image(item.url), ...template
                 })
             })
         })
-        return !!(await this.reply(await Bot.makeForwardMsg(images), false, 60))
+        return !!(await this.reply(await Bot.makeForwardMsg(images), false, {
+            recallMsg: recallTime
+        }))
     }
 
     // 正则：获取图片

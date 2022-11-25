@@ -83,7 +83,7 @@ export class tools extends plugin {
         fetch(tiktokApi)
             .then(resp => resp.json())
             .then(json => {
-                this.downloadVideo(json.wm_video_url.replace("https","http")).then(video => {
+                this.downloadVideo(json.wm_video_url.replace("https", "http")).then(video => {
                     e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`))
                 })
             })

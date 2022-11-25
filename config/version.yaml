@@ -5,7 +5,7 @@
       更改单个组件<span class="cmd">#任助理</span>架构为插件架构,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
-      更新风控缓解、重构系统文件
+      更新风控缓解、重构系统文件、增加部分接口撤回操作
       添加<span class="cmd">抖音</span>实时监听分享链接,
     ],
 }
