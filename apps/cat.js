@@ -23,7 +23,7 @@ export class cat extends plugin {
     async cat (e) {
         const numb = this.catConfig.count
         let images = []
-        let reqRes = [...await fetch(`https://shibe.online/api/cats?count=${numb}`).then(data => data.json()), ...await fetch(`https://api.thecatapi.com/v1/images/search?limit=${numb}`).then(data => data.json()).then(json => json.map(item => item.url))]
+        let reqRes = [ ...await fetch(`https://shibe.online/api/cats?count=${ numb }`).then(data => data.json()), ...await fetch(`https://api.thecatapi.com/v1/images/search?limit=${ numb }`).then(data => data.json()).then(json => json.map(item => item.url)) ]
         e.reply('涩图也不看了,就看猫是吧, 探索中...')
         reqRes.forEach(item => {
             images.push({

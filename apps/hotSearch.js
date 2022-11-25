@@ -68,13 +68,13 @@ export class hotSearch extends plugin {
             .catch((err) => logger.error(err))
         res.forEach((element) => {
             const template = `
-      标题：${element.title}\n
-      简介：${_.isNull(element.desc) ? '' : element.desc}\n
-      热度：${element.hot}\n
-      访问详情：${element.url}\n
+      标题：${ element.title }\n
+      简介：${ _.isNull(element.desc) ? '' : element.desc }\n
+      热度：${ element.hot }\n
+      访问详情：${ element.url }\n
       `
             msg.push({
-                message: { type: 'text', text: `${template}` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
             })
         })
         return !!this.reply(await Bot.makeForwardMsg(msg))

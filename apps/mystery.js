@@ -23,6 +23,7 @@ function initMongo () {
         })
     })
 }
+
 const mongo = initMongo()
 // 60s后撤回
 const recallTime = 109
@@ -61,7 +62,7 @@ export class mystery extends plugin {
 
         this.e.reply = async function (msgs, quote, data) {
             if (!msgs) return false
-            if (!Array.isArray(msgs)) msgs = [msgs]
+            if (!Array.isArray(msgs)) msgs = [ msgs ]
             let result = await oldReply(msgs, quote, data)
 
             if (!result || !result.message_id) {
@@ -77,9 +78,9 @@ export class mystery extends plugin {
                 if (isxml) {
                     result = await oldReply(msgs, quote, data)
                 } else {
-                    let MsgList = [{
+                    let MsgList = [ {
                         message: msgs, nickname: Bot.nickname, user_id: Bot.uin
-                    }]
+                    } ]
 
                     let forwardMsg = await Bot.makeForwardMsg(MsgList)
 
@@ -114,7 +115,7 @@ export class mystery extends plugin {
         // 请求
         let images = []
         let imgData = []
-        let url = `https://www.cos6.net/wp-json/wp/v2/posts?page=${page}`
+        let url = `https://www.cos6.net/wp-json/wp/v2/posts?page=${ page }`
         await fetch(url)
             .then((resp) => {
                 return resp.json()
@@ -151,7 +152,7 @@ export class mystery extends plugin {
     }
 
     async cospro (e) {
-        let req = [...await fetch('https://imgapi.cn/cos2.php?return=jsonpro').then((resp) => resp.json()).then((json) => json.imgurls), ...await fetch('https://imgapi.cn/cos.php?return=jsonpro').then((resp) => resp.json()).then((json) => json.imgurls)]
+        let req = [ ...await fetch('https://imgapi.cn/cos2.php?return=jsonpro').then((resp) => resp.json()).then((json) => json.imgurls), ...await fetch('https://imgapi.cn/cos.php?return=jsonpro').then((resp) => resp.json()).then((json) => json.imgurls) ]
         e.reply('哪天克火掉一定是在这个群里面...')
         let images = []
         req.forEach(item => {
@@ -179,7 +180,7 @@ export class mystery extends plugin {
         // 请求
         let images = []
         let imgData = []
-        let url = `https://yingtall.com/wp-json/wp/v2/posts?page=${page}`
+        let url = `https://yingtall.com/wp-json/wp/v2/posts?page=${ page }`
         await fetch(url)
             .then((resp) => {
                 return resp.json()
@@ -219,7 +220,7 @@ export class mystery extends plugin {
     async setu (e) {
         const numb = this.mysteryConfig.setu.count
         // 图源
-        const urlList = ['https://iw233.cn/api.php?sort=random', 'https://iw233.cn/API/Random.php']
+        const urlList = [ 'https://iw233.cn/api.php?sort=random', 'https://iw233.cn/API/Random.php' ]
         e.reply('探索中...')
         let images = []
         for (let i = numb; i > 0; i--) {
@@ -241,7 +242,7 @@ export class mystery extends plugin {
             nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
         }
         await mongo.then(conn => {
-            return conn.aggregate([{ $sample: { size: MAX_SIZE } }]).toArray()
+            return conn.aggregate([ { $sample: { size: MAX_SIZE } } ]).toArray()
         }).then((result) => {
             result.forEach((item) => {
                 images.push({

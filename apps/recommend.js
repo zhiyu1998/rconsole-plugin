@@ -30,9 +30,9 @@ export class recommend extends plugin {
         res = await res.json()
         let msg = []
         res.data.list.forEach((element) => {
-            const template = `推荐软件：${element.title}\n地址：${element.url}\n`
+            const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`
             msg.push({
-                message: { type: 'text', text: `${template}` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
             })
         })
         /** 最后回复消息 */
@@ -45,9 +45,9 @@ export class recommend extends plugin {
         res = await res.json()
         let msg = []
         res.data.list.forEach((element) => {
-            const template = `推荐软件：${element.title}\n地址：${element.url}\n`
+            const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`
             msg.push({
-                message: { type: 'text', text: `${template}` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
             })
         })
         return !!this.reply(await Bot.makeForwardMsg(msg))

@@ -1,14 +1,14 @@
 // 主库
 import fetch from "node-fetch";
 import fs from "node:fs";
-import {segment} from "oicq";
+import { segment } from "oicq";
 // 其他库
 import md5 from "md5";
 import axios from "axios";
 import path from 'path'
 
 export class tools extends plugin {
-    constructor() {
+    constructor () {
         super({
             name: "工具和学习类",
             dsc: "工具相关指令",
@@ -33,25 +33,25 @@ export class tools extends plugin {
     }
 
     // 翻译插件
-    async trans(e) {
+    async trans (e) {
         let place = e.msg.replace(/#|翻译/g, "").trim();
         let url = /[\u4E00-\u9FFF]+/g.test(place)
-            ? `http://api.fanyi.baidu.com/api/trans/vip/translate?from=zh&to=en&appid=20210422000794040&salt=542716863&sign=${md5(
+            ? `http://api.fanyi.baidu.com/api/trans/vip/translate?from=zh&to=en&appid=20210422000794040&salt=542716863&sign=${ md5(
                 "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
-            )}&q=${place}`
-            : `http://api.fanyi.baidu.com/api/trans/vip/translate?from=en&to=zh&appid=20210422000794040&salt=542716863&sign=${md5(
+            ) }&q=${ place }`
+            : `http://api.fanyi.baidu.com/api/trans/vip/translate?from=en&to=zh&appid=20210422000794040&salt=542716863&sign=${ md5(
                 "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
-            )}&q=${place}`;
+            ) }&q=${ place }`;
         await fetch(url)
             .then((resp) => resp.json())
             .then((text) => text.trans_result)
-            .then((res) => this.reply(`${res[0].dst}`, true))
+            .then((res) => this.reply(`${ res[0].dst }`, true))
             .catch((err) => logger.error(err));
         return true;
     }
 
     // 抖音解析
-    async douyin(e) {
+    async douyin (e) {
         const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const douUrl = urlRex.exec(e.msg.trim())[0];
         e.reply("识别：抖音, 解析中...");
@@ -59,14 +59,14 @@ export class tools extends plugin {
         await this.douyinRequest(douUrl).then((res) => {
             const douRex = /.*video\/(\d+)\/(.*?)/g;
             const douId = douRex.exec(res)[1];
-            const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${douId}`;
+            const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             return fetch(url)
                 .then((resp) => resp.json())
                 .then((json) => json.item_list[0])
                 .then((item) => item.video.play_addr.url_list[0])
                 .then((url) => {
                     this.downloadVideo(url).then(video => {
-                        e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`));
+                        e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
                     })
                 });
         });
@@ -74,24 +74,24 @@ export class tools extends plugin {
     }
 
     // tiktok解析
-    async tiktok(e) {
+    async tiktok (e) {
         const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const url = urlRex.exec(e.msg.trim())[0]
 
-        const tiktokApi = `https://api.douyin.wtf/api?url=${url}&minimal=true`
+        const tiktokApi = `https://api.douyin.wtf/api?url=${ url }&minimal=true`
         e.reply("识别：tiktok, 解析中...");
         fetch(tiktokApi)
             .then(resp => resp.json())
             .then(json => {
                 this.downloadVideo(json.wm_video_url.replace("https", "http")).then(video => {
-                    e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`))
+                    e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`))
                 })
             })
         return true
     }
 
     // 请求参数
-    async douyinRequest(url) {
+    async douyinRequest (url) {
         const params = {
             headers: {
                 "User-Agent":
@@ -113,11 +113,11 @@ export class tools extends plugin {
     }
 
     // 根URL据下载视频 / 音频
-    async downloadVideo(url) {
+    async downloadVideo (url) {
         if (!fs.existsSync(this.defaultPath)) {
             this.mkdirsSync(this.defaultPath);
         }
-        const target = this.defaultPath + `${this.e.group_id || this.e.user_id}/temp.mp4`
+        const target = this.defaultPath + `${ this.e.group_id || this.e.user_id }/temp.mp4`
         // 待优化
         if (fs.existsSync(target)) {
             console.log(`视频已存在`);
@@ -130,7 +130,7 @@ export class tools extends plugin {
             },
             responseType: "stream",
         });
-        console.log(`开始下载: ${url}`);
+        console.log(`开始下载: ${ url }`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
 
@@ -141,7 +141,7 @@ export class tools extends plugin {
     }
 
     // 同步递归创建文件夹
-    mkdirsSync(dirname) {
+    mkdirsSync (dirname) {
         if (fs.existsSync(dirname)) {
             return true;
         } else {
@@ -153,7 +153,7 @@ export class tools extends plugin {
     }
 
     // 递归创建目录 异步方法
-    mkdirs(dirname, callback) {
+    mkdirs (dirname, callback) {
         fs.exists(dirname, function (exists) {
             if (exists) {
                 callback();
