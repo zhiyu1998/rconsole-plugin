@@ -243,7 +243,7 @@ export class mystery extends plugin {
         await mongo.then(conn => {
             return conn.aggregate([{ $sample: { size: MAX_SIZE } }]).toArray()
         }).then((result) => {
-            result.forEach(async (item) => {
+            result.forEach((item) => {
                 images.push({
                     message: segment.image(item.url), ...template
                 })
