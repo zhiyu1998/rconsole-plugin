@@ -30,7 +30,7 @@ export class tools extends plugin {
                     fnc: "tiktok",
                 },
                 {
-                    reg: "(.*)(bilibili.com)",
+                    reg: "(.*)(bilibili.com|b23.tv)",
                     fnc: "bili",
                 },
             ],
@@ -99,7 +99,16 @@ export class tools extends plugin {
     // bilibi解析
     async bili (e) {
         const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const url = urlRex.exec(e.msg.trim())[0]
+        const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        let url = e.msg.trim()
+        if (url.includes('b23.tv')) {
+            const bShortUrl = bShortRex.exec(e.msg.trim())[0]
+            await this.douyinRequest(bShortUrl).then((res) => {
+                url = res.replace("m", "www")
+            });
+        } else {
+            url = urlRex.exec(url)[0];
+        }
 
         const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp`
         // 待优化
