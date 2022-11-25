@@ -5,7 +5,9 @@ import { segment } from "oicq";
 // 其他库
 import md5 from "md5";
 import axios from "axios";
-import path from 'path'
+import _ from 'lodash'
+import { mkdirsSync } from '../utils/file.js'
+import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from '../utils/bilibili.js'
 
 export class tools extends plugin {
     constructor () {
@@ -26,6 +28,10 @@ export class tools extends plugin {
                 {
                     reg: "(.*)(www.tiktok.com)",
                     fnc: "tiktok",
+                },
+                {
+                    reg: "(.*)(bilibili.com)",
+                    fnc: "bili",
                 },
             ],
         });
@@ -90,6 +96,34 @@ export class tools extends plugin {
         return true
     }
 
+    // bilibi解析
+    async bili (e) {
+        const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const url = urlRex.exec(e.msg.trim())[0]
+
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp`
+        // 待优化
+        if (fs.existsSync(`${ path }.mp4`)) {
+            console.log("视频已存在");
+            fs.unlinkSync(`${ path }.mp4`);
+        }
+        e.reply('识别：哔哩哔哩，解析中...')
+        await getDownloadUrl(url)
+            .then(data => {
+                this.downBili(path, data.videoUrl, data.audioUrl)
+                    .then(data => {
+                        e.reply(segment.video(`${ path }.mp4`))
+                    })
+                    .catch(data => {
+                        e.reply('解析失败，请重试一下')
+                    });
+            })
+            .catch(err => {
+                e.reply('解析失败，请重试一下')
+            });
+        return true
+    }
+
     // 请求参数
     async douyinRequest (url) {
         const params = {
@@ -112,10 +146,10 @@ export class tools extends plugin {
         });
     }
 
-    // 根URL据下载视频 / 音频
+    // 工具：根URL据下载视频 / 音频
     async downloadVideo (url) {
         if (!fs.existsSync(this.defaultPath)) {
-            this.mkdirsSync(this.defaultPath);
+            mkdirsSync(this.defaultPath);
         }
         const target = this.defaultPath + `${ this.e.group_id || this.e.user_id }/temp.mp4`
         // 待优化
@@ -140,29 +174,36 @@ export class tools extends plugin {
         });
     }
 
-    // 同步递归创建文件夹
-    mkdirsSync (dirname) {
-        if (fs.existsSync(dirname)) {
-            return true;
-        } else {
-            if (this.mkdirsSync(path.dirname(dirname))) {
-                fs.mkdirSync(dirname);
-                return true;
-            }
-        }
-    }
-
-    // 递归创建目录 异步方法
-    mkdirs (dirname, callback) {
-        fs.exists(dirname, function (exists) {
-            if (exists) {
-                callback();
-            } else {
-                // console.log(path.dirname(dirname));
-                this.mkdirs(path.dirname(dirname), function () {
-                    fs.mkdir(dirname, callback);
-                });
-            }
-        });
+    // 工具：下载哔哩哔哩
+    async downBili (title, videoUrl, audioUrl) {
+        return Promise.all([
+            downloadBFile(
+                videoUrl,
+                title + '-video.m4s',
+                _.throttle(
+                    value =>
+                        console.log('download-progress', {
+                            type: 'video',
+                            data: value,
+                        }),
+                    1000,
+                ),
+            ),
+            downloadBFile(
+                audioUrl,
+                title + '-audio.m4s',
+                _.throttle(
+                    value =>
+                        console.log('download-progress', {
+                            type: 'audio',
+                            data: value,
+                        }),
+                    1000,
+                ),
+            ),
+        ])
+            .then(data => {
+                return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4');
+            })
     }
 }
