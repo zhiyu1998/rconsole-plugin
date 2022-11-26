@@ -1,6 +1,6 @@
 - group: 查询类功能
   list:
-    - icon: query
+    - icon: doctor
       title: "#医药查询 疾病/症状/医院/医生/药品"
       desc: 便利的医药查询功能
     - icon: cat

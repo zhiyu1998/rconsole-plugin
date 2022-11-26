@@ -1,9 +1,10 @@
 // 主库
 import { segment } from 'oicq'
 import fetch from 'node-fetch'
+// 配置文件
+import config from '../model/index.js'
 // 爬虫库
 import puppeteer from '../../../lib/puppeteer/puppeteer.js'
-import config from "../model";
 import _ from 'lodash'
 
 export class query extends plugin {
@@ -65,7 +66,7 @@ export class query extends plugin {
                 await e.reply(segment.image(buff))
             }
             msg.push({
-                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.user_id
             })
         }
         /** 最后回复消息 */
@@ -96,7 +97,7 @@ export class query extends plugin {
         res.data.list.forEach((element) => {
             const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`
             msg.push({
-                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.user_id
             })
         })
         /** 最后回复消息 */
@@ -111,7 +112,7 @@ export class query extends plugin {
         res.data.list.forEach((element) => {
             const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`
             msg.push({
-                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
+                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.user_id
             })
         })
         return !!this.reply(await Bot.makeForwardMsg(msg))
