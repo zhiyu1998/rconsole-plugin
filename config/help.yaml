@@ -1,57 +1,63 @@
 - group: 医学功能
   list:
-    - icon: 记录
+    - icon: doctor
       title: "#医药查询 疾病/症状/医院/医生/药品"
       desc: 便利的医药查询功能
 - group: 猫猫图
   list:
-    - icon: 树脂
+    - icon: cat
       title: "#猫猫|cat 开始吸猫"
       desc: 猫咪图捕捉
 - group: 神秘功能合集
   list:
-    - icon: 养成计算
+    - icon: pic1
       title: "#雀食/#确实"
       desc: 原汤化原食
-    - icon: 史莱姆
+    - icon: pic2
       title: "#来份涩图"
       desc: 涩涩的
-    - icon: weapon
+    - icon: pic3
       title: "#累了"
       desc: 疲惫往往是过度劳累
-    - icon: 攻略
+    - icon: pic4
       title: "#啊?"
       desc: 啊？
-    - icon: sign
+    - icon: pic5
       title: "#沃日吗"
       desc: 什么鬼？
 - group: 热搜功能合集
   list:
-    - icon: 打卡
+    - icon: hot
       title: "#热搜 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信"
       desc: 开局五子棋游戏
 - group: 工具类合集
   list:
-    - icon: 绑定账号
+    - icon: translate
       title: "#翻译 xxx"
       desc: 百度翻译
-    - icon: 纠缠之缘
+    - icon: 百科
+      title: "#百科/wiki xxx"
+      desc: 百度百科/搜狗百科
+    - icon: computer
       title: "#电脑软件推荐"
       desc: 推荐PC软件
-    - icon: ledger
+    - icon: android
       title: "#安卓软件推荐"
       desc: 推荐安卓软件
-    - icon: paimon
+    - icon: tiktok
       title: "xxxv.douyin.com"
       desc: 抖音分享实时下载
+    - icon: bilibili
+      title: "bilibili/b23"
+      desc: 哔哩哔哩分享实时下载
 - group: 其他指令[实验]
   list:
-    - icon: 问号
+    - icon: update
       title: "#rconsole插件版本"
       desc: "查看，最近维护的版本信息"
-    - icon: 史莱姆
+    - icon: update
       title: "#rconsole插件更新"
       desc: "进行更新rconsole插件"
-    - icon: 原石
+    - icon: update
       title: "#rconsole插件强制更新"
       desc: "进行强制更新rconsole插件"
