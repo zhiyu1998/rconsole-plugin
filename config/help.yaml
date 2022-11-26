@@ -1,13 +1,20 @@
-- group: 医学功能
+- group: 查询类功能
   list:
-    - icon: doctor
+    - icon: query
       title: "#医药查询 疾病/症状/医院/医生/药品"
       desc: 便利的医药查询功能
-- group: 猫猫图
-  list:
     - icon: cat
       title: "#猫猫|cat 开始吸猫"
       desc: 猫咪图捕捉
+    - icon: hot
+      title: "#热搜 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信"
+      desc: 开局五子棋游戏
+    - icon: computer
+      title: "#电脑软件推荐"
+      desc: 推荐PC软件
+    - icon: android
+      title: "#安卓软件推荐"
+      desc: 推荐安卓软件
 - group: 神秘功能合集
   list:
     - icon: pic1
@@ -25,11 +32,6 @@
     - icon: pic5
       title: "#沃日吗"
       desc: 什么鬼？
-- group: 热搜功能合集
-  list:
-    - icon: hot
-      title: "#热搜 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信"
-      desc: 开局五子棋游戏
 - group: 工具类合集
   list:
     - icon: translate
@@ -38,12 +40,6 @@
     - icon: 百科
       title: "#百科/wiki xxx"
       desc: 百度百科/搜狗百科
-    - icon: computer
-      title: "#电脑软件推荐"
-      desc: 推荐PC软件
-    - icon: android
-      title: "#安卓软件推荐"
-      desc: 推荐安卓软件
     - icon: tiktok
       title: "xxxv.douyin.com"
       desc: 抖音分享实时下载
