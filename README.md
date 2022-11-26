@@ -24,11 +24,11 @@ test -- 爬虫文件[python]
 index -- 主入口
 
 ## 📔使用说明
-1. `test -- main.py`爬取链接（要有python环境）
-> python3 main.py
-2. 下载mongodb（可能会耗费一些时间：影响功能【#沃日吗】）
+1. 下载mongodb（可能会耗费一些时间：影响功能【#沃日吗】）
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
-3. 在`Yunzai-Bot`安装mongodb、axios依赖
+2. `test -- main.py`爬取链接（要有python环境、配合mongodb使用）
+> python3 main.py
+4. 在`Yunzai-Bot`安装mongodb、axios(0.27.2)依赖
 > pnpm add mongodb -w
 
 > pnpm add axios -w
@@ -36,6 +36,8 @@ index -- 主入口
 > git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 
 > 注：可以不用mongodb这些操作，只是用不了一些命令而已
+5. 要使用视频解析功能要下载插件【推荐ubuntu系统】
+> sudo apt-get install ffmpeg
 
 ## 📦业务
 ![help](./img/help.jpg)
