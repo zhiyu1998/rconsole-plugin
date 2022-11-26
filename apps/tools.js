@@ -33,6 +33,10 @@ export class tools extends plugin {
                     reg: "(.*)(bilibili.com|b23.tv)",
                     fnc: "bili",
                 },
+                {
+                    reg: "^#(wiki|百科)(.*)$",
+                    fnc: "wiki",
+                },
             ],
         });
         this.defaultPath = `./data/rcmp4/`
@@ -130,6 +134,27 @@ export class tools extends plugin {
             .catch(err => {
                 e.reply('解析失败，请重试一下')
             });
+        return true
+    }
+
+    async wiki (e) {
+        const key = e.msg.replace(/#|百科|wiki/g, "").trim();
+        const url = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`
+        await axios.get(url, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            timeout: 10000,
+        })
+            .then(resp => {
+                const data = resp.data
+                const template = `
+                      解释：${ _.isUndefined(data.msg) ? '暂无' : data.msg }\n
+                      详情：${ _.isUndefined(data.more) ? '暂无' : data.more }\n
+                    `;
+                e.reply(template)
+            })
         return true
     }
 

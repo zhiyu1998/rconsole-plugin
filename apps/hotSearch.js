@@ -18,6 +18,7 @@ export class hotSearch extends plugin {
 
     async hotSearch (e) {
         let keyword = e.msg.replace(/#|热搜/g, '').trim()
+        console.log(keyword)
         // 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信
         let url = 'https://api.vvhan.com/api/hotlist?type='
         switch (keyword) {
@@ -61,22 +62,30 @@ export class hotSearch extends plugin {
                 url += 'history'
                 break
         }
+        let sendTemplate = {
+            nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
+        }
         let msg = []
-        let res = await fetch(url)
+        await fetch(url)
             .then((resp) => resp.json())
-            .then((resp) => resp.data)
-            .catch((err) => logger.error(err))
-        res.forEach((element) => {
-            const template = `
-      标题：${ element.title }\n
-      简介：${ _.isNull(element.desc) ? '' : element.desc }\n
-      热度：${ element.hot }\n
-      访问详情：${ element.url }\n
-      `
-            msg.push({
-                message: { type: 'text', text: `${ template }` }, nickname: Bot.nickname, user_id: Bot.uin
+            .then((resp) => {
+                for (let element of resp.data) {
+                    if (_.isUndefined(element)) {
+                        continue
+                    }
+                    const template = `
+                      标题：${ _.isNull(element.title)  ? '暂无' : element.title}\n
+                      简介：${ _.isNull(element.desc) ? '暂无' : element.desc }\n
+                      热度：${ _.isNull(element.hot)  ? '暂无' : element.hot}\n
+                      访问详情：${ _.isNull(element.url)  ? '暂无' : element.url}\n
+                    `;
+                    msg.push({
+                        message: { type: 'text', text: `${ template }` },
+                        ...sendTemplate
+                    })
+                }
             })
-        })
+            .catch((err) => logger.error(err))
         return !!this.reply(await Bot.makeForwardMsg(msg))
     }
 }
