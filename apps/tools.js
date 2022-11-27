@@ -8,6 +8,7 @@ import axios from "axios";
 import _ from 'lodash'
 import { mkdirsSync } from '../utils/file.js'
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from '../utils/bilibili.js'
+import { get, remove, add} from "../utils/redisu.js";
 
 export class tools extends plugin {
     constructor () {
@@ -39,7 +40,10 @@ export class tools extends plugin {
                 },
             ],
         });
+        // 视频保存路径
         this.defaultPath = `./data/rcmp4/`
+        // redis的key
+        this.redisKey = `Yz:tools:cache:${this.e.group_id}`
     }
 
     // 翻译插件
@@ -145,6 +149,7 @@ export class tools extends plugin {
         return true
     }
 
+    // 百科
     async wiki (e) {
         const key = e.msg.replace(/#|百科|wiki/g, "").trim();
         const url = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`
@@ -193,6 +198,7 @@ export class tools extends plugin {
         if (!fs.existsSync(this.defaultPath)) {
             mkdirsSync(this.defaultPath);
         }
+        const redisObj = get(this.redisKey)
         const target = this.defaultPath + `${ this.e.group_id || this.e.user_id }/temp.mp4`
         // 待优化
         if (fs.existsSync(target)) {

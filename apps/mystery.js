@@ -79,7 +79,7 @@ export class mystery extends plugin {
                     result = await oldReply(msgs, quote, data)
                 } else {
                     let MsgList = [ {
-                        message: msgs, nickname: Bot.nickname, user_id: Bot.uin
+                        message: msgs, nickname: Bot.nickname, user_id: Bot.user_id
                     } ]
 
                     let forwardMsg = await Bot.makeForwardMsg(MsgList)
@@ -113,25 +113,20 @@ export class mystery extends plugin {
         // 回复
         this.reply('确实是吧, 正在探索...')
         // 请求
-        let images = []
-        let imgData = []
         let url = `https://www.cos6.net/wp-json/wp/v2/posts?page=${ page }`
+        let images = []
         await fetch(url)
             .then((resp) => {
                 return resp.json()
             })
             .then((json) => {
-                if (!json.length) {
-                    this.e.reply('探索失败，你再我去一次吧')
-                    return false
+                const template = {
+                    nickname: this.e.sender.card || this.e.user_id,
+                    user_id: this.e.user_id
                 }
+
                 const content = json[randomIndex].content
-                images = this.getImages(content.rendered)
-                // 如果图片为空直接返回
-                if (images.length === 0) {
-                    this.e.reply('探索失败，你再我去一次吧')
-                    return false
-                }
+                images = this.getCos6Img(content.rendered)
                 // 洗牌
                 images = _.shuffle(images)
                 // 限制长度
@@ -139,16 +134,19 @@ export class mystery extends plugin {
                     images = images.slice(1, imageCountLimit + 1)
                 }
                 // 循环队列
-                images.forEach((item) => {
-                    imgData.push({
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id
-                    })
-                })
+                for (let i = 0; i < images.length; i++) {
+                    images[i] = {
+                        message: segment.image(images[i]),
+                        ...template
+                    }
+                }
             })
-            .catch((err) => logger.error(err))
-        return !!(await this.reply(await Bot.makeForwardMsg(imgData)))
+            .catch((err) => {
+                this.e.reply('探索失败，你再我去一次吧')
+                logger.error(err)
+                return false
+            })
+        return !!(await this.reply(await Bot.makeForwardMsg(images)))
     }
 
     async cospro (e) {
@@ -187,15 +185,14 @@ export class mystery extends plugin {
             })
             .then((json) => {
                 if (!json.length) {
-                    this.e.reply('探索失败，你再我去一次吧')
+                    e.reply('探索失败，你再我去一次吧')
                     return false
                 }
                 const content = json[randomIndex].content
                 images = this.getImages2(content.rendered)
-                console.log(images)
                 // 如果图片为空直接返回
                 if (images.length === 0) {
-                    this.e.reply('探索失败，你再我去一次吧')
+                    e.reply('探索失败，你再我去一次吧')
                     return false
                 }
                 // 洗牌
@@ -208,8 +205,8 @@ export class mystery extends plugin {
                 images.forEach((item) => {
                     imgData.push({
                         message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id
                     })
                 })
             })
@@ -256,12 +253,12 @@ export class mystery extends plugin {
     }
 
     // 正则：获取图片
-    getImages (string) {
-        const imgRex = /(http|https):\/\/([\w.]+\/?)\S*.(jpg|JPG|png|PNG|gif|GIF|jpeg|JPEG)/g
+    getCos6Img (string) {
+        const imgRex = /\/([\w].*?).(jpg|JPG|png|PNG|gif|GIF|jpeg|JPEG|svg)/g
         const images = []
         let img
         while ((img = imgRex.exec(string))) {
-            images.push(encodeURI(img[0]))
+            images.push(`https://www.cos6.net/${img[1]}.jpg`)
         }
         return images
     }
@@ -272,7 +269,7 @@ export class mystery extends plugin {
         const images = []
         let img
         while ((img = imgRex.exec(string))) {
-            images.push(encodeURI(img[1]))
+            images.push(img[1])
         }
         return images
     }
