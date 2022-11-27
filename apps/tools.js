@@ -26,7 +26,7 @@ export class tools extends plugin {
                     fnc: "douyin",
                 },
                 {
-                    reg: "(.*)(www.tiktok.com)",
+                    reg: "(.*)(www.tiktok.com)|(vt.tiktok.com)",
                     fnc: "tiktok",
                 },
                 {
@@ -86,9 +86,16 @@ export class tools extends plugin {
     // tiktok解析
     async tiktok (e) {
         const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const url = urlRex.exec(e.msg.trim())[0]
+        const urlShortRex = /(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        let url = e.msg.trim()
+        // 短号处理
+        if (url.includes('vt.tiktok')) {
+            url = urlShortRex.exec(url)[0]
+        } else {
+            url = urlRex.exec(url)[0]
+        }
 
-        const tiktokApi = `https://api.douyin.wtf/api?url=${ url }&minimal=true`
+        const tiktokApi = `https://api.douyin.wtf/api?url=${ url }&minimal=true`;
         e.reply("识别：tiktok, 解析中...");
         fetch(tiktokApi)
             .then(resp => resp.json())
@@ -105,8 +112,9 @@ export class tools extends plugin {
         const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg.trim()
+        // 短号处理
         if (url.includes('b23.tv')) {
-            const bShortUrl = bShortRex.exec(e.msg.trim())[0]
+            const bShortUrl = bShortRex.exec(url)[0]
             await this.douyinRequest(bShortUrl).then((res) => {
                 url = res.replace("m", "www")
             });
