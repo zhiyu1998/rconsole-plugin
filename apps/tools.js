@@ -43,7 +43,7 @@ export class tools extends plugin {
         // 视频保存路径
         this.defaultPath = `./data/rcmp4/`
         // redis的key
-        this.redisKey = `Yz:tools:cache:${this.e.group_id}`
+        this.redisKey = `Yz:tools:cache:${this.group_id}`
     }
 
     // 翻译插件
@@ -153,18 +153,39 @@ export class tools extends plugin {
     async wiki (e) {
         const key = e.msg.replace(/#|百科|wiki/g, "").trim();
         const url = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`
-        await axios.get(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            timeout: 10000,
-        })
-            .then(resp => {
-                const data = resp.data
+        const url2 = 'https://api.jikipedia.com/go/auto_complete'
+        Promise.all([
+            axios.post(url2, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    "Content-Type": "application/json",
+                },
+                timeout: 10000,
+                "phrase": key,
+            })
+                .then(resp => {
+                    const data = resp.data.data
+                    return data[0].entities[0];
+                }),
+            axios.get(url, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                timeout: 10000,
+            })
+                .then(resp => {
+                    return resp.data
+                })
+        ])
+            .then(res => {
+                const data = res[1]
+                const data2 = res[0]
                 const template = `
                       解释：${ _.isUndefined(data.msg) ? '暂无' : data.msg }\n
                       详情：${ _.isUndefined(data.more) ? '暂无' : data.more }\n
+                      小鸡解释：${ _.isUndefined(data2.content) ? '暂无' : data2.content }
                     `;
                 e.reply(template)
             })
@@ -198,7 +219,6 @@ export class tools extends plugin {
         if (!fs.existsSync(this.defaultPath)) {
             mkdirsSync(this.defaultPath);
         }
-        const redisObj = get(this.redisKey)
         const target = this.defaultPath + `${ this.e.group_id || this.e.user_id }/temp.mp4`
         // 待优化
         if (fs.existsSync(target)) {
