@@ -6,6 +6,8 @@ import { segment } from "oicq";
 import md5 from "md5";
 import axios from "axios";
 import _ from 'lodash'
+import tunnel from 'tunnel'
+import HttpProxyAgent from 'https-proxy-agent'
 import { mkdirsSync } from '../utils/file.js'
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from '../utils/bilibili.js'
 import { get, remove, add } from "../utils/redisu.js";
@@ -48,7 +50,7 @@ export class tools extends plugin {
 
     // 翻译插件
     async trans (e) {
-        let place = e.msg.replace(/#|翻译/g, "").trim();
+        const place = e.msg.replace(/#|翻译/g, "").trim();
         let url = /[\u4E00-\u9FFF]+/g.test(place)
             ? `http://api.fanyi.baidu.com/api/trans/vip/translate?from=zh&to=en&appid=20210422000794040&salt=542716863&sign=${ md5(
                 "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
@@ -89,25 +91,51 @@ export class tools extends plugin {
 
     // tiktok解析
     async tiktok (e) {
-        const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#@]*/g;
         const urlShortRex = /(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg.trim()
         // 短号处理
         if (url.includes('vt.tiktok')) {
-            url = urlShortRex.exec(url)[0]
+            const temp_url = urlShortRex.exec(url)[0]
+            await fetch(temp_url, {
+                redirect: "follow",
+                follow: 10,
+                agent: new HttpProxyAgent("http://10.0.8.10:7890")
+            }).then((resp) => {
+                url = resp.url
+            })
         } else {
             url = urlRex.exec(url)[0]
         }
+        const getIdVideo = (url) => {
+            const matching = url.includes("/video/")
+            if(!matching){
+                e.reply("没找到，正在获取随机视频！")
+                return null
+            }
+            const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
+            return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
+        }
+        const idVideo = await getIdVideo(url)
+        e.reply('识别：tiktok, 正在解析...')
+        const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
 
-        const tiktokApi = `https://api.douyin.wtf/api?url=${ url }&minimal=true`;
-        e.reply("识别：tiktok, 解析中...");
-        fetch(tiktokApi)
-            .then(resp => resp.json())
-            .then(json => {
-                this.downloadVideo(json.wm_video_url.replace("https", "http")).then(video => {
-                    e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`))
-                })
+        axios.get(API_URL, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "Content-Type": "application/json",
+            },
+            timeout: 10000,
+            proxy: false,
+            httpAgent: tunnel.httpOverHttp({proxy: {host: '10.0.8.10', port: '7890'}}),
+            httpsAgent: tunnel.httpOverHttp({proxy: {host: '10.0.8.10', port: '7890'}}),
+        }).then(resp => {
+            const data = resp.data
+            this.downloadVideo(data.aweme_list[0].video.play_addr.url_list[0]).then(video => {
+                e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
             })
+        })
         return true
     }
 
