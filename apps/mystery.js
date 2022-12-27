@@ -40,7 +40,7 @@ export class mystery extends plugin {
                     reg: '^#(雀食|确实)$', fnc: 'mystery'
                 },
                 {
-                    reg: '^#来份涩图$', fnc: 'setu'
+                    reg: '^#*来份涩图 (.*)$', fnc: 'setu'
                 },
                 {
                     reg: '^#(累了)$', fnc: 'cospro'
@@ -49,7 +49,7 @@ export class mystery extends plugin {
                     reg: '^#(啊?|啊？)$', fnc: 'aaa'
                 },
                 {
-                    reg: '^#沃日吗$', fnc: 'tuiimg'
+                    reg: '^#我去', fnc: 'tuiimg'
                 }
             ]
         })
@@ -215,20 +215,33 @@ export class mystery extends plugin {
     }
 
     async setu (e) {
+        const keyword = e.msg.split(' ')[1]
         const numb = this.mysteryConfig.setu.count
-        // 图源
-        const urlList = [ 'https://iw233.cn/api.php?sort=random', 'https://iw233.cn/API/Random.php' ]
-        e.reply('探索中...')
-        let images = []
-        for (let i = numb; i > 0; i--) {
-            urlList.forEach(url => {
-                images.push({
-                    message: segment.image(url), nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
-                })
+        await e.reply('正在给你找图片啦～', true, { recallMsg: 7 });
+
+        let url = `https://api.lolicon.app/setu/v2?r18=${ keyword }&num=${ numb }`;//←此处修改图片类型，0为非18，1为18，2为18非18混合
+        const response = await fetch(url);
+        const imgJson = await response.json();
+
+        const images = []
+        for (let image of imgJson.data) {
+            images.push({
+                message: segment.image(image.urls.original),
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id
             })
-            await common.sleep(200)
         }
-        return !!(await this.reply(await Bot.makeForwardMsg(images)))
+
+        const res = await this.reply(
+            await Bot.makeForwardMsg(images),
+            false,
+            { recallMsg: 60 })
+
+        if (!res) {
+            return e.reply('好、好涩(//// ^ ////)……不、不行啦……被、被吞啦o(≧口≦)o',true,{recallMsg:60});
+        }
+
+        return true
     }
 
     async tuiimg (e) {
@@ -258,7 +271,7 @@ export class mystery extends plugin {
         const images = []
         let img
         while ((img = imgRex.exec(string))) {
-            images.push(`https://www.cos6.net/${img[1]}.jpg`)
+            images.push(`https://www.cos6.net/${ img[1] }.jpg`)
         }
         return images
     }

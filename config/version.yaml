@@ -1,5 +1,5 @@
 - {
-  version: 1.0.1,
+  version: 1.0.2,
   data:
     [
       更改单个组件<span class="cmd">#任助理</span>架构为插件架构,

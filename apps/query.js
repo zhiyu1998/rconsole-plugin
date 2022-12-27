@@ -34,6 +34,10 @@ export class query extends plugin {
                 {
                     reg: '^#(热搜)(.*)$',
                     fnc: 'hotSearch'
+                },
+                {
+                    reg: '#买家秀',
+                    fnc: 'buyerShow'
                 }
             ]
         })
@@ -176,10 +180,10 @@ export class query extends plugin {
                         continue
                     }
                     const template = `
-                      标题：${ _.isNull(element.title)  ? '暂无' : element.title}\n
+                      标题：${ _.isNull(element.title) ? '暂无' : element.title }\n
                       简介：${ _.isNull(element.desc) ? '暂无' : element.desc }\n
-                      热度：${ _.isNull(element.hot)  ? '暂无' : element.hot}\n
-                      访问详情：${ _.isNull(element.url)  ? '暂无' : element.url}\n
+                      热度：${ _.isNull(element.hot) ? '暂无' : element.hot }\n
+                      访问详情：${ _.isNull(element.url) ? '暂无' : element.url }\n
                     `;
                     msg.push({
                         message: { type: 'text', text: `${ template }` },
@@ -191,6 +195,15 @@ export class query extends plugin {
         return !!this.reply(await Bot.makeForwardMsg(msg))
     }
 
+    async buyerShow (e) {
+        const urls = ['https://api.vvhan.com/api/tao', 'http://3650000.xyz/api/?type=img']
+        const randomIndex = Math.floor(Math.random() * urls.length);
+        const randomElement = urls.splice(randomIndex, 1)[0];
+        await fetch(randomElement).then(resp => {
+            e.reply(segment.image(resp.url))
+        })
+        return true
+    }
 
     // 删除标签
     removeTag (title) {

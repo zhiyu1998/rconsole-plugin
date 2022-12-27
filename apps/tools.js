@@ -40,12 +40,19 @@ export class tools extends plugin {
                     reg: "^#(wiki|百科)(.*)$",
                     fnc: "wiki",
                 },
+                {
+                    reg: "^#wc$",
+                    fnc: "wcGirl",
+                }
             ],
         });
-        // 视频保存路径
-        this.defaultPath = `./data/rcmp4/`
+        http://api.tuwei.space/girl
+            // 视频保存路径
+            this.defaultPath = `./data/rcmp4/`
         // redis的key
         this.redisKey = `Yz:tools:cache:${ this.group_id }`
+        // 代理接口
+        this.myProxy = 'http://10.0.8.10:7890'
     }
 
     // 翻译插件
@@ -75,10 +82,11 @@ export class tools extends plugin {
         await this.douyinRequest(douUrl).then((res) => {
             const douRex = /.*video\/(\d+)\/(.*?)/g;
             const douId = douRex.exec(res)[1];
-            const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
+            // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
+            const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`
             return fetch(url)
                 .then((resp) => resp.json())
-                .then((json) => json.item_list[0])
+                .then((json) => json.aweme_detail)
                 .then((item) => item.video.play_addr.url_list[0])
                 .then((url) => {
                     this.downloadVideo(url).then(video => {
@@ -100,27 +108,19 @@ export class tools extends plugin {
             await fetch(temp_url, {
                 redirect: "follow",
                 follow: 10,
-                agent: new HttpProxyAgent("http://10.0.8.10:7890")
+                timeout: 10000,
+                agent: new HttpProxyAgent(this.myProxy)
             }).then((resp) => {
                 url = resp.url
             })
         } else {
             url = urlRex.exec(url)[0]
         }
-        const getIdVideo = (url) => {
-            const matching = url.includes("/video/")
-            if(!matching){
-                e.reply("没找到，正在获取随机视频！")
-                return null
-            }
-            const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
-            return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
-        }
-        const idVideo = await getIdVideo(url)
+        const idVideo = await this.getIdVideo(url)
         e.reply('识别：tiktok, 正在解析...')
-        const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
+        const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${ idVideo }&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
 
-        axios.get(API_URL, {
+        await axios.get(API_URL, {
             headers: {
                 "User-Agent":
                     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
@@ -128,8 +128,8 @@ export class tools extends plugin {
             },
             timeout: 10000,
             proxy: false,
-            httpAgent: tunnel.httpOverHttp({proxy: {host: '10.0.8.10', port: '7890'}}),
-            httpsAgent: tunnel.httpOverHttp({proxy: {host: '10.0.8.10', port: '7890'}}),
+            httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+            httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
         }).then(resp => {
             const data = resp.data
             this.downloadVideo(data.aweme_list[0].video.play_addr.url_list[0]).then(video => {
@@ -214,11 +214,32 @@ export class tools extends plugin {
                 const data = res[1]
                 const data2 = res[0]
                 const template = `
-                      解释：${ _.isUndefined(data.msg) ? '暂无' : data.msg }\n
-                      详情：${ _.isUndefined(data.more) ? '暂无' : data.more }\n
-                      小鸡解释：${ _.isUndefined(data2.content) ? '暂无' : data2.content }
+                      解释：${ _.get(data, 'msg') }\n
+                      详情：${ _.get(data, 'more') }\n
+                      小鸡解释：${ _.get(data2, 'content') }
                     `;
                 e.reply(template)
+            })
+        return true
+    }
+
+    // 随机小姐姐视频
+    async wcGirl (e) {
+        await axios.post('http://api.tuwei.space/girl', {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            timeout: 10000,
+            "status": 1,
+            "type": 1
+        })
+            .then(resp => {
+                console.log(`http://api.tuwei.space/upload/${ encodeURI(resp.data.data.Path) }`)
+                this.downloadVideo(`http://api.tuwei.space/upload/${ encodeURI(resp.data.data.Path) }`)
+                    .then(video => {
+                        e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
+                    })
             })
         return true
     }
@@ -271,6 +292,17 @@ export class tools extends plugin {
             writer.on("finish", resolve);
             writer.on("error", reject);
         });
+    }
+
+    // 工具：找到tiktok的视频id
+    async getIdVideo (url) {
+        const matching = url.includes("/video/")
+        if (!matching) {
+            this.e.reply("没找到，正在获取随机视频！")
+            return null
+        }
+        const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
+        return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
     }
 
     // 工具：下载哔哩哔哩

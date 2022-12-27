@@ -3,14 +3,14 @@ mystery:
   maxPage: 15
   maxPigObj: 10
   # 限制最大图片数量
-  imageCountLimit: 20
+  imageCountLimit: 10
 aaa:
   # 最大页数
   maxPage: 15
   maxPigObj: 10
   # 限制最大图片数量
-  imageCountLimit: 20
+  imageCountLimit: 10
 setu:
-  count: 10
+  count: 2
 tuiimg:
-  count: 10
+  count: 5
