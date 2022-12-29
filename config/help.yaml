@@ -30,13 +30,13 @@
       title: "#啊?"
       desc: 啊？
     - icon: pic5
-      title: "#我去"
+      title: "#我靠"
       desc: 神秘的芒果
 - group: 工具类合集
   list:
     - icon: translate
-      title: "#翻译 xxx"
-      desc: 百度翻译
+      title: "#翻中/英/日 xxx"
+      desc: 百度翻译，例如：翻中 I want it!
     - icon: 百科
       title: "#百科/wiki xxx"
       desc: 百度百科/搜狗百科

@@ -49,7 +49,7 @@ export class mystery extends plugin {
                     reg: '^#(啊?|啊？)$', fnc: 'aaa'
                 },
                 {
-                    reg: '^#我去', fnc: 'tuiimg'
+                    reg: '^#我靠', fnc: 'tuiimg'
                 }
             ]
         })
