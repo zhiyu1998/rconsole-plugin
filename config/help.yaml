@@ -49,11 +49,5 @@
 - group: 其他指令[实验]
   list:
     - icon: update
-      title: "#rconsole插件版本"
-      desc: "查看，最近维护的版本信息"
-    - icon: update
-      title: "#rconsole插件更新"
-      desc: "进行更新rconsole插件"
-    - icon: update
-      title: "#rconsole插件强制更新"
-      desc: "进行强制更新rconsole插件"
+      title: "#R插件更新"
+      desc: "进行更新R插件"

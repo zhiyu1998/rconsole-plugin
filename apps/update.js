@@ -24,7 +24,7 @@ export class update extends plugin {
                 },
                 {
                     /** 命令正则匹配 */
-                    reg: '^#(碎月更新|碎月强制更新)$',
+                    reg: '^#(R更新|R强制更新)$',
                     /** 执行方法 */
                     fnc: 'rconsoleUpdate'
                 },
