@@ -129,6 +129,7 @@ export class tools extends plugin {
                 "User-Agent":
                     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                 "Content-Type": "application/json",
+                "Accept-Encoding": "gzip,deflate,compress"
             },
             timeout: 10000,
             proxy: false,
