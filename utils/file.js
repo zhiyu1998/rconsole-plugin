@@ -6,7 +6,7 @@ function mkdirsSync (dirname) {
     if (fs.existsSync(dirname)) {
         return true;
     } else {
-        if (this.mkdirsSync(path.dirname(dirname))) {
+        if (mkdirsSync(path.dirname(dirname))) {
             fs.mkdirSync(dirname);
             return true;
         }
@@ -20,7 +20,7 @@ function mkdirs (dirname, callback) {
             callback();
         } else {
             // console.log(path.dirname(dirname));
-            this.mkdirs(path.dirname(dirname), function () {
+            mkdirs(path.dirname(dirname), function () {
                 fs.mkdir(dirname, callback);
             });
         }

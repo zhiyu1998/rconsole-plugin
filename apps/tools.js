@@ -21,7 +21,7 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: "^#(翻译)(.*)$",
+                    reg: "^(翻|transl)(英|中|日|文) (.*)$",
                     fnc: "trans",
                 },
                 {
@@ -57,14 +57,41 @@ export class tools extends plugin {
 
     // 翻译插件
     async trans (e) {
-        const place = e.msg.replace(/#|翻译/g, "").trim();
-        let url = /[\u4E00-\u9FFF]+/g.test(place)
-            ? `http://api.fanyi.baidu.com/api/trans/vip/translate?from=zh&to=en&appid=20210422000794040&salt=542716863&sign=${ md5(
-                "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
-            ) }&q=${ place }`
-            : `http://api.fanyi.baidu.com/api/trans/vip/translate?from=en&to=zh&appid=20210422000794040&salt=542716863&sign=${ md5(
-                "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
-            ) }&q=${ place }`;
+        const languageReg = /翻(.)/g;
+        const msg = e.msg.trim();
+        const language = languageReg.exec(msg);
+        if (language.length < 2 || language[1] === "") {
+            e.reply("输入格式有误！例子：翻中 China's policy has been consistent, but Japan chooses a path of mistrust, decoupling and military expansion")
+            return;
+        }
+        const place = msg.replace(language[0], "").trim();
+        // let url = /[\u4E00-\u9FFF]+/g.test(place)
+        let url;
+        switch (language[1]) {
+            case '中':
+                url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=zh&appid=20210422000794040&salt=542716863&sign=${ md5(
+                    "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
+                ) }&q=${ place }`
+                break;
+            case '英':
+                url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=en&appid=20210422000794040&salt=542716863&sign=${ md5(
+                    "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
+                ) }&q=${ place }`
+            case '日':
+                url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=jp&appid=20210422000794040&salt=542716863&sign=${ md5(
+                    "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
+                ) }&q=${ place }`
+                 break;
+            case '文':
+                url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=wyw&appid=20210422000794040&salt=542716863&sign=${ md5(
+                    "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
+                ) }&q=${ place }`
+                break;
+            default:
+                `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=zh&appid=20210422000794040&salt=542716863&sign=${ md5(
+                    "20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM"
+                ) }&q=${ place }`
+        }
         await fetch(url)
             .then((resp) => resp.json())
             .then((text) => text.trans_result)
@@ -268,10 +295,11 @@ export class tools extends plugin {
 
     // 工具：根URL据下载视频 / 音频
     async downloadVideo (url) {
-        if (!fs.existsSync(this.defaultPath)) {
-            mkdirsSync(this.defaultPath);
+        const groupPath = `${this.defaultPath}${ this.e.group_id || this.e.user_id }`;
+        if (!fs.existsSync(groupPath)) {
+            mkdirsSync(groupPath);
         }
-        const target = this.defaultPath + `${ this.e.group_id || this.e.user_id }/temp.mp4`
+        const target = `${groupPath}/temp.mp4`;
         // 待优化
         if (fs.existsSync(target)) {
             console.log(`视频已存在`);
