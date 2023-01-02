@@ -7,6 +7,7 @@ import md5 from "md5";
 import axios from "axios";
 import _ from 'lodash'
 import tunnel from 'tunnel'
+import { TwitterApi } from 'twitter-api-v2'
 import HttpProxyAgent from 'https-proxy-agent'
 import { mkdirsSync } from '../utils/file.js'
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from '../utils/bilibili.js'
@@ -43,14 +44,14 @@ export class tools extends plugin {
                     fnc: "wiki",
                 },
                 {
-                    reg: "^#wc$",
-                    fnc: "wcGirl",
+                    reg: "(.*)(twitter.com)",
+                    fnc: "twitter",
                 }
             ],
         });
-        http://api.tuwei.space/girl
-            // 视频保存路径
-            this.defaultPath = `./data/rcmp4/`
+        // http://api.tuwei.space/girl
+        // 视频保存路径
+        this.defaultPath = `./data/rcmp4/`
         // redis的key
         this.redisKey = `Yz:tools:cache:${ this.group_id }`
         // 代理接口
@@ -228,25 +229,44 @@ export class tools extends plugin {
         return true
     }
 
-    // 随机小姐姐视频
-    async wcGirl (e) {
-        await axios.post('http://api.tuwei.space/girl', {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            timeout: 10000,
-            "status": 1,
-            "type": 1
-        })
-            .then(resp => {
-                console.log(`http://api.tuwei.space/upload/${ encodeURI(resp.data.data.Path) }`)
-                this.downloadVideo(`http://api.tuwei.space/upload/${ encodeURI(resp.data.data.Path) }`)
-                    .then(video => {
-                        e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
+    // twitter解析
+    // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
+    async twitter (e) {
+        // 配置参数及解析
+        const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/
+        const twitterUrl = reg.exec(e.msg);
+        const id = twitterUrl[1];
+        const httpAgent = new HttpProxyAgent('http://10.0.8.10:7890')
+        const twitterClient = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAArXkwEAAAAAhSrZLK61mRibO0BKwRXgVvEnIzU%3DRUtuE2PL9EGsi1fjHPDsM7SLhmR1UWuCJMt4PB8FFdm94uQ5qL', {httpAgent});
+
+        // Tell typescript it's a readonly app
+        const readOnlyClient = twitterClient.readOnly;
+
+        readOnlyClient.v2.singleTweet(id, {
+            'media.fields': 'duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants',
+            expansions: [
+                'entities.mentions.username',
+                'attachments.media_keys',
+            ],
+        }).then(resp => {
+            e.reply(`识别：腿忒学习版，${resp.data.text}`)
+            const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            if (resp.includes.media[0].type === 'photo') {
+                // 图片
+                resp.includes.media.map(item => {
+                    const filePath = `${downloadPath}/${item.url.split('/').pop()}`
+                    this.downloadImgs(item.url, downloadPath).then(res => {
+                        e.reply([segment.image(filePath)])
                     })
-            })
-        return true
+                })
+            } else {
+                // 视频
+                this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(video => {
+                    e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                });
+            }
+        });
+        return true;
     }
 
     // 请求参数
@@ -272,7 +292,7 @@ export class tools extends plugin {
     }
 
     // 工具：根URL据下载视频 / 音频
-    async downloadVideo (url) {
+    async downloadVideo (url, isProxy=false) {
         const groupPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
         if (!fs.existsSync(groupPath)) {
             mkdirsSync(groupPath);
@@ -283,13 +303,26 @@ export class tools extends plugin {
             console.log(`视频已存在`);
             fs.unlinkSync(target);
         }
-        const res = await axios.get(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            responseType: "stream",
-        });
+        let res;
+        if (!isProxy) {
+            res = await axios.get(url, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                responseType: "stream",
+            });
+        } else {
+            res = await axios.get(url, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                responseType: "stream",
+                httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+                httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+            });
+        }
         console.log(`开始下载: ${ url }`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
@@ -342,5 +375,28 @@ export class tools extends plugin {
             .then(data => {
                 return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4');
             })
+    }
+
+    // 工具：下载一张网络图片
+    async downloadImgs(img, dir) {
+
+        const filename = img.split('/').pop();
+        const filepath = `${dir}/${filename}`;
+        const writer = fs.createWriteStream(filepath);
+        axios.get(img, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            responseType: "stream",
+            httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+            httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+        }).then(res => {
+            res.data.pipe(writer);
+            return new Promise((resolve, reject) => {
+                writer.on('finish', () => resolve(filepath));
+                writer.on('error', reject);
+            });
+        });
     }
 }
