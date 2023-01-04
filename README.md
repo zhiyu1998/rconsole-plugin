@@ -28,10 +28,9 @@ index -- 主入口
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
 2. `test -- main.py`爬取链接（要有python环境、配合mongodb使用）
 > python3 main.py
-4. 在`Yunzai-Bot`安装mongodb、axios(0.27.2)依赖
-> pnpm add mongodb -w
+4. 在`Yunzai-Bot`安装mongodb、axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
+> pnpm add mongodb axios tunnel twitter-api-v2 -w
 
-> pnpm add axios -w
 4. 下载插件
 > git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 

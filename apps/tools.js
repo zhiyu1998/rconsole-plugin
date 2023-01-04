@@ -252,13 +252,16 @@ export class tools extends plugin {
             e.reply(`识别：腿忒学习版，${resp.data.text}`)
             const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
             if (resp.includes.media[0].type === 'photo') {
+                // 目前解决方案：express建立本地请求，然后segment.image，但是要引入express
+                e.reply("目前想到的解决方案较为复杂，待解决！");
+                return true;
                 // 图片
-                resp.includes.media.map(item => {
-                    const filePath = `${downloadPath}/${item.url.split('/').pop()}`
-                    this.downloadImgs(item.url, downloadPath).then(res => {
-                        e.reply([segment.image(filePath)])
-                    })
-                })
+                // resp.includes.media.map(item => {
+                    // const filePath = `${downloadPath}/${item.url.split('/').pop()}`
+                    // this.downloadImgs(item.url, downloadPath).then(res => {
+                    //     e.reply([segment.image(filePath)])
+                    // })
+                // })
             } else {
                 // 视频
                 this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(video => {

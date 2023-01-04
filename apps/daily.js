@@ -22,6 +22,7 @@ function autoTask (func, time) {
 
 // 定时任务合集
 autoTask(pushDailyWorld, '0 30 8 * * ?')
+autoTask(pushTouchFish, '0 31 8 * * ?')
 
 export class daily extends plugin {
     constructor (e) {
@@ -33,7 +34,11 @@ export class daily extends plugin {
             rule: [
                 {
                     reg: '^#每天60秒$',
-                    fnc: 'pushDailyWorld'
+                    fnc: 'dailyWorld'
+                },
+                {
+                    reg: '^#摸鱼人日历$',
+                    fnc: 'touchFish'
                 },
                 {
                     reg: '^#开关每日推送$',
@@ -45,8 +50,13 @@ export class daily extends plugin {
 
     async dailyWorld (e) {
         // 定时发送时间，采用 Cron 表达式，当前默认为每日 8:30 分推送
-        await pushDailyWorld(e)
-        return true
+        await pushDailyWorld(e);
+        return true;
+    }
+
+    async touchFish (e) {
+        await pushTouchFish(e);
+        return true;
     }
 
     async shutdown (e) {
@@ -61,14 +71,33 @@ export class daily extends plugin {
  */
 async function pushDailyWorld (e) {
     // 每天60秒读懂世界接口地址
-    const url = await fetch('http://bjb.yunwj.top/php/tp/lj.php')
+    const url = await fetch('https://api.vvhan.com/api/60s?type=json')
         .catch(err => logger.error(err))
     const imgUrl = await url.json()
-    const res = await imgUrl.tp
+    const res = await imgUrl.imgUrl
 
     // 判断接口是否请求成功
     if (!res) {
         e.reply('[60秒读懂世界] 接口请求失败')
+    }
+
+    // 回复消息
+    if (e instanceof Group) {
+        e.sendMsg(segment.image(res))
+    } else {
+        e.reply(segment.image(res))
+    }
+}
+
+async function pushTouchFish (e) {
+    const url = await fetch('https://api.vvhan.com/api/moyu?type=json')
+        .catch(err => logger.error(err))
+    const imgUrl = await url.json()
+    const res = await imgUrl.url
+
+    // 判断接口是否请求成功
+    if (!res) {
+        e.reply('[摸鱼人日历] 接口请求失败')
     }
 
     // 回复消息
