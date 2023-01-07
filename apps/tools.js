@@ -51,11 +51,14 @@ export class tools extends plugin {
         });
         // http://api.tuwei.space/girl
         // 视频保存路径
-        this.defaultPath = `./data/rcmp4/`
+        this.defaultPath = `./data/rcmp4/`;
         // redis的key
-        this.redisKey = `Yz:tools:cache:${ this.group_id }`
+        this.redisKey = `Yz:tools:cache:${ this.group_id }`;
         // 代理接口
-        this.myProxy = 'http://10.0.8.10:7890'
+        this.proxyAddr = '10.0.8.10';
+        this.proxyPort = '7890'
+        this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
+
     }
 
     // 翻译插件
@@ -82,22 +85,20 @@ export class tools extends plugin {
     async douyin (e) {
         const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const douUrl = urlRex.exec(e.msg.trim())[0];
-        e.reply("识别：抖音, 解析中...");
 
-        await this.douyinRequest(douUrl).then((res) => {
+        await this.douyinRequest(douUrl).then(async (res) => {
             const douRex = /.*video\/(\d+)\/(.*?)/g;
             const douId = douRex.exec(res)[1];
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`
-            return fetch(url)
-                .then((resp) => resp.json())
-                .then((json) => json.aweme_detail)
-                .then((item) => item.video.play_addr.url_list[0])
-                .then((url) => {
-                    this.downloadVideo(url).then(video => {
-                        e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
-                    })
-                });
+            const resp = await fetch(url);
+            const json = await resp.json();
+            const item = json.aweme_detail;
+            e.reply(`识别：抖音, ${item.desc}`);
+            const url_2 = item.video.play_addr.url_list[0];
+            this.downloadVideo(url_2).then(video => {
+                e.reply(segment.video(`${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`));
+            });
         });
         return true;
     }
@@ -122,7 +123,7 @@ export class tools extends plugin {
             url = urlRex.exec(url)[0]
         }
         const idVideo = await this.getIdVideo(url)
-        e.reply('识别：tiktok, 正在解析...')
+        // API链接
         const API_URL = `https://api19-core-useast5.us.tiktokv.com/aweme/v1/feed/?aweme_id=${ idVideo }&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
 
         await axios.get(API_URL, {
@@ -134,11 +135,12 @@ export class tools extends plugin {
             },
             timeout: 10000,
             proxy: false,
-            httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
-            httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+            httpAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
+            httpsAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
         }).then(resp => {
-            const data = resp.data
-            this.downloadVideo(data.aweme_list[0].video.play_addr.url_list[0]).then(video => {
+            const data = resp.data.aweme_list[0];
+            e.reply(`识别：tiktok, ${data.desc}`)
+            this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
                 e.reply(segment.video(`${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`));
             })
         })
@@ -166,7 +168,17 @@ export class tools extends plugin {
             console.log("视频已存在");
             fs.unlinkSync(`${ path }.mp4`);
         }
-        e.reply('识别：哔哩哔哩，解析中...')
+        // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
+        const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
+        console.log(url);
+        const videoId = /video\/(.*)(\/|\?)/g.exec(url)[1];
+        // 获取视频信息，然后发送
+        fetch(videoId.startsWith("BV") ? `${baseVideoInfo}?bvid=${videoId}` : `${baseVideoInfo}?aid=${videoId}`)
+            .then(resp => resp.json())
+            .then(resp => {
+                e.reply(`识别：哔哩哔哩, ${resp.data.title}`)
+            })
+
         await getDownloadUrl(url)
             .then(data => {
                 this.downBili(path, data.videoUrl, data.audioUrl)
@@ -236,7 +248,7 @@ export class tools extends plugin {
         const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
-        const httpAgent = new HttpProxyAgent('http://10.0.8.10:7890')
+        const httpAgent = new HttpProxyAgent(this.myProxy)
         const twitterClient = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAArXkwEAAAAAhSrZLK61mRibO0BKwRXgVvEnIzU%3DRUtuE2PL9EGsi1fjHPDsM7SLhmR1UWuCJMt4PB8FFdm94uQ5qL', {httpAgent});
 
         // Tell typescript it's a readonly app
@@ -251,17 +263,19 @@ export class tools extends plugin {
         }).then(resp => {
             e.reply(`识别：腿忒学习版，${resp.data.text}`)
             const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            // 创建文件夹（如果没有过这个群）
+            if (!fs.existsSync(downloadPath)) {
+                mkdirsSync(downloadPath);
+            }
+            // 开始读取数据
             if (resp.includes.media[0].type === 'photo') {
-                // 目前解决方案：express建立本地请求，然后segment.image，但是要引入express
-                e.reply("目前想到的解决方案较为复杂，待解决！");
-                return true;
                 // 图片
-                // resp.includes.media.map(item => {
-                    // const filePath = `${downloadPath}/${item.url.split('/').pop()}`
-                    // this.downloadImgs(item.url, downloadPath).then(res => {
-                    //     e.reply([segment.image(filePath)])
-                    // })
-                // })
+                resp.includes.media.map(item => {
+                    const filePath = `${downloadPath}/${item.url.split('/').pop()}`
+                    this.downloadImgs(item.url, downloadPath).then(tmp => {
+                        e.reply(segment.image(fs.readFileSync(filePath)))
+                    })
+                })
             } else {
                 // 视频
                 this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(video => {
@@ -322,8 +336,8 @@ export class tools extends plugin {
                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                 },
                 responseType: "stream",
-                httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
-                httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+                httpAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
+                httpsAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
             });
         }
         console.log(`开始下载: ${ url }`);
@@ -386,14 +400,14 @@ export class tools extends plugin {
         const filename = img.split('/').pop();
         const filepath = `${dir}/${filename}`;
         const writer = fs.createWriteStream(filepath);
-        axios.get(img, {
+        return axios.get(img, {
             headers: {
                 "User-Agent":
                     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
             },
             responseType: "stream",
-            httpAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
-            httpsAgent: tunnel.httpOverHttp({ proxy: { host: '10.0.8.10', port: '7890' } }),
+            httpAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
+            httpsAgent: tunnel.httpOverHttp({ proxy: { host: this.proxyAddr, port: this.proxyPort } }),
         }).then(res => {
             res.data.pipe(writer);
             return new Promise((resolve, reject) => {
