@@ -20,6 +20,10 @@ export class query extends plugin {
                     fnc: 'doctor'
                 },
                 {
+                    reg: '^#*评分 (.*)',
+                    fnc: 'videoScore'
+                },
+                {
                     reg: '^#(cat)$',
                     fnc: 'cat'
                 },
@@ -75,6 +79,41 @@ export class query extends plugin {
         }
         /** 最后回复消息 */
         return !!this.reply(await Bot.makeForwardMsg(msg))
+    }
+
+    async videoScore(e) {
+        let keyword = e.msg.split(' ')[1]
+        const api = `https://movie.douban.com/j/subject_suggest?q=${encodeURI(keyword)}`;
+
+        let movieId = 30433417;
+        fetch(api, {
+            Headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "Content-Type": "application/json",
+            }
+        }).then(resp => resp.json()).then(resp => {
+            if (resp.length === 0 || resp === "") {
+                e.reply("没找到！");
+                return true;
+            }
+            movieId = resp[0].id;
+            const doubanApi = `https://movie.querydata.org/api?id=${movieId}`;
+            fetch(doubanApi, {
+                Headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    "Content-Type": "application/json",
+                }
+            }).then(resp => resp.json()).then(resp => {
+                if (resp.length === 0 || resp === "") {
+                    e.reply("没找到！");
+                    return true;
+                }
+                e.reply(`识别：${resp.data[0].name}\n烂番茄评分：${resp.imdbRating}\n豆瓣评分：${resp.doubanRating}\n评分：${resp.imdbRating}`);
+            })
+        })
+        return true;
     }
 
     async cat (e) {
@@ -196,13 +235,27 @@ export class query extends plugin {
     }
 
     async buyerShow (e) {
-        const urls = ['https://api.vvhan.com/api/tao', 'http://3650000.xyz/api/?type=img']
-        const randomIndex = Math.floor(Math.random() * urls.length);
-        const randomElement = urls.splice(randomIndex, 1)[0];
-        await fetch(randomElement).then(resp => {
-            e.reply(segment.image(resp.url))
+        // http://3650000.xyz/api/?type=img
+        // https://api.vvhan.com/api/tao
+        // https://api.uomg.com/api/rand.img3?format=json
+        // const randomIndex = Math.floor(Math.random() * urls.length);
+        // const randomElement = urls.splice(randomIndex, 1)[0];
+        const p1 = new Promise((resolve, reject) => {
+            fetch("https://api.vvhan.com/api/tao").then(resp => {
+                return resolve(resp.url)
+            }).catch(err => reject(err))
         })
-        return true
+        const p2 = new Promise((resolve, reject) => {
+            fetch("https://api.uomg.com/api/rand.img3?format=json").then(resp => resp.json()).then(resp => {
+                return resolve(resp.imgurl)
+            }).catch(err => reject(err))
+        })
+        Promise.all([p1, p2]).then(res => {
+            res.forEach(item => {
+                e.reply(segment.image(item))
+            })
+        })
+        return true;
     }
 
     // 删除标签

@@ -11,7 +11,8 @@ import { TwitterApi } from 'twitter-api-v2'
 import HttpProxyAgent from 'https-proxy-agent'
 import { mkdirsSync } from '../utils/file.js'
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from '../utils/bilibili.js'
-import { get, remove, add } from "../utils/redisu.js";
+import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from '../utils/acfun.js'
+// import { get, remove, add } from "../utils/redisu.js";
 
 const transMap = { "中": "zh", "日": "jp", "文": "wyw", "英": "en" }
 
@@ -46,6 +47,14 @@ export class tools extends plugin {
                 {
                     reg: "(.*)(twitter.com)",
                     fnc: "twitter",
+                },
+                {
+                    reg: "https:\/\/(m.)?v.qq.com\/(.*)",
+                    fnc: "tx"
+                },
+                {
+                    reg: "(.*)(acfun.cn)",
+                    fnc: "acfun"
                 }
             ],
         });
@@ -199,24 +208,24 @@ export class tools extends plugin {
     async wiki (e) {
         const key = e.msg.replace(/#|百科|wiki/g, "").trim();
         const url = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`
-        const url2 = 'https://api.jikipedia.com/go/auto_complete'
+        // const url2 = 'https://api.jikipedia.com/go/auto_complete'
         Promise.all([
-            axios.post(url2, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    "Content-Type": "application/json",
-                },
-                timeout: 10000,
-                "phrase": key,
-            })
-                .then(resp => {
-                    const data = resp.data.data
-                    if (_.isEmpty(data)) {
-                        return data;
-                    }
-                    return data[0].entities[0];
-                }),
+            // axios.post(url2, {
+            //     headers: {
+            //         "User-Agent":
+            //             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            //         "Content-Type": "application/json",
+            //     },
+            //     timeout: 10000,
+            //     "phrase": key,
+            // })
+            //     .then(resp => {
+            //         const data = resp.data.data
+            //         if (_.isEmpty(data)) {
+            //             return data;
+            //         }
+            //         return data[0].entities[0];
+            //     }),
             axios.get(url, {
                 headers: {
                     "User-Agent":
@@ -229,13 +238,13 @@ export class tools extends plugin {
                 })
         ])
             .then(res => {
-                const data = res[1]
-                const data2 = res[0]
+                const data = res[0]
+                // const data2 = res[0]
                 const template = `
                       解释：${ _.get(data, 'msg') }\n
                       详情：${ _.get(data, 'more') }\n
-                      小鸡解释：${ _.get(data2, 'content') }
                     `;
+                // 小鸡解释：${ _.get(data2, 'content') }
                 e.reply(template)
             })
         return true
@@ -285,6 +294,27 @@ export class tools extends plugin {
         });
         return true;
     }
+
+    // 视频解析
+    async tx( e ) {
+        const url = e.msg
+        const data = await ( await fetch( `https://xian.txma.cn/API/jx_txjx.php?url=${url}` ) )
+            .json()
+        const k = data.url
+        const name = data.title
+        if( k && name ) {
+            e.reply( name + '\n' + k )
+            let forward = await this.makeForwardMsg( url )
+            e.reply( forward )
+            return true
+        } else {
+            e.reply( '解析腾讯视频失败~\n去浏览器使用拼接接口吧...' )
+            let forward = await this.makeForwardMsg( url )
+            e.reply( forward )
+            return true
+        }
+    }
+
 
     // 请求参数
     async douyinRequest (url) {
@@ -359,6 +389,32 @@ export class tools extends plugin {
         }
         const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
         return (idVideo.length > 19) ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
+    }
+
+    // acfun解析
+    async acfun(e) {
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp/`
+        if (!fs.existsSync(path)) {
+            mkdirsSync(path);
+        }
+
+        let inputMsg = e.msg;
+        // 适配手机分享：https://m.acfun.cn/v/?ac=32838812&sid=d2b0991bd6ad9c09
+        if (inputMsg.includes("m.acfun.cn")) {
+            inputMsg = `https://www.acfun.cn/v/ac${/ac=([^&?]*)/.exec(inputMsg)[1]}`
+        }
+
+        parseUrl(inputMsg).then(res => {
+            e.reply(`识别：猴山，${res.videoName}`)
+            parseM3u8(res.urlM3u8s[res.urlM3u8s.length-1]).then(res2 => {
+                downloadM3u8Videos(res2.m3u8FullUrls, path).then(_ => {
+                    mergeAcFileToMp4( res2.tsNames, path, `${path}out.mp4`).then(_ => {
+                        e.reply(segment.video(`${path}out.mp4`))
+                    })
+                })
+            })
+        })
+        return true;
     }
 
     // 工具：下载哔哩哔哩

@@ -15,6 +15,9 @@
     - icon: android
       title: "#安卓软件推荐"
       desc: 推荐安卓软件
+    - icon: buyer
+      title: "#买家秀"
+      desc: 淘宝买家秀
 - group: 神秘功能合集
   list:
     - icon: pic1
@@ -46,6 +49,9 @@
     - icon: bilibili
       title: "bilibili/b23"
       desc: 哔哩哔哩分享实时下载
+    - icon: 推特
+      title: "bilibili/b23"
+      desc: 推特学习版分享实时下载
 - group: 其他指令[实验]
   list:
     - icon: update
