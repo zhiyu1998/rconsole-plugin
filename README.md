@@ -38,9 +38,12 @@ index -- 主入口
 5. 【可选】要使用视频解析功能要下载插件【推荐ubuntu系统】
 > sudo apt-get install ffmpeg
 
-【必要】备注：如果启动不起来删除mongodb的代码即可：
+【可选】备注：考虑到不是所有电脑都有mongodb,如果要开启#我靠功能，需要把以下代码(apps/mystery.js)注释取消：
 ```javascript
 // in apps/mystery.js
+
+// Mongodb初始化
+import mongodb from 'mongodb'
 
 // Mongodb初始化
 function initMongo () {
@@ -56,6 +59,33 @@ function initMongo () {
             resolve(collection)
         })
     })
+}
+
+const mongo = initMongo()
+// ...
+{
+    reg: '^#我靠', fnc: 'tuiimg'
+}
+// ...
+async tuiimg (e) {
+    const MAX_SIZE = this.mysteryConfig.tuiimg.count
+    this.reply('这群早晚被你整没了...')
+    let images = []
+    const template = {
+        nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
+    }
+    await mongo.then(conn => {
+        return conn.aggregate([ { $sample: { size: MAX_SIZE } } ]).toArray()
+    }).then((result) => {
+        result.forEach((item) => {
+            images.push({
+                message: segment.image(item.url), ...template
+            })
+        })
+    })
+    return !!(await this.reply(await Bot.makeForwardMsg(images), false, {
+        recallMsg: recallTime
+    }))
 }
 ```
 
