@@ -25,6 +25,7 @@ index -- 主入口
 
 ##  🧏‍♂️使用实例
 ![help](./img/example.png)
+![help](./img/example2.png)
 
 ##  🤺BUG及时交流群
 ![help](./img/community.jpg)
