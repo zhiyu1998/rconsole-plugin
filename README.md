@@ -23,6 +23,9 @@ test -- 爬虫文件[python]
 
 index -- 主入口
 
+##  🧏‍♂️使用实例
+![help](./img/example.png)
+
 ## 📔使用说明
 1. 【可选】下载mongodb（可能会耗费一些时间：影响功能【`#我靠`】）
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
