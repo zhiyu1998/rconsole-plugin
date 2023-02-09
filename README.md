@@ -31,6 +31,8 @@ index -- 主入口
 ![help](./img/community.jpg)
 
 ## 📔使用说明
+【重要】【重要】【重要】 很多群友反馈Windows用不了部分功能，但是插件本身在Linux运行了半年之久（推荐使用Linux），所以酌情安装！！  
+
 1. 【可选】下载mongodb（可能会耗费一些时间：影响功能【`#我靠`】）
 > linux系统下自己装一个mongodb，上一个密码(不上有风险)
 2. 【可选】`test -- main.py`爬取链接（要有python环境、配合mongodb使用）
