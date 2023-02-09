@@ -87,7 +87,7 @@ export class tools extends plugin {
         const place = msg.replace(language[0], "").trim();
         // let url = /[\u4E00-\u9FFF]+/g.test(place)
         // TODO 查阅百度文档填写
-        let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=&salt=&sign=${ md5("" + place + "" + "") }&q=${ place }`;
+        let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=20210422000794040&salt=542716863&sign=${ md5("20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM") }&q=${ place }`;
         await fetch(url)
             .then((resp) => resp.json())
             .then((text) => text.trans_result)
@@ -177,11 +177,9 @@ export class tools extends plugin {
             url = urlRex.exec(url)[0];
         }
 
-        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp`
-        // 待优化
-        if (fs.existsSync(`${ path }.mp4`)) {
-            console.log("视频已存在");
-            fs.unlinkSync(`${ path }.mp4`);
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp/`
+        if (!fs.existsSync(path)) {
+            mkdirsSync(path);
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
@@ -264,7 +262,7 @@ export class tools extends plugin {
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
         const httpAgent = new HttpProxyAgent(this.myProxy)
-        const twitterClient = new TwitterApi('', {httpAgent});
+        const twitterClient = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAArXkwEAAAAAOyInrhDgUeiX%2BoztdK%2BQ9Ve9IjI%3DpA5xkrFQvikbmLAZtOwRcjIcXhXicvzYGjp8GHLHhG7JlNO4ls', {httpAgent});
 
         // Tell typescript it's a readonly app
         const readOnlyClient = twitterClient.readOnly;
