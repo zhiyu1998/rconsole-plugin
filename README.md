@@ -9,7 +9,7 @@
     个人团队用的<a href="https://gitee.com/Le-niao/Yunzai-Bot" target="_blank">Yunzai-Bot</a>插件，插件的各种业务来源于周围人
 <img src="https://cdn.jsdelivr.net/gh/xianxincoder/xianxincoder/assets/github-contribution-grid-snake.svg">
 </div>
-
+![](../../../../Downloads/iShot_2023-02-10_15.54.06.png)
 ## 🗃️文件架构
 apps -- 业务核心
 
@@ -27,6 +27,7 @@ index -- 主入口
 ![help](./img/example.png)
 ![help](./img/example2.png)
 ![help](./img/example3.png)
+![help](./img/example4.png)
 
 ##  🤺BUG及时交流群
 ![help](./img/community.jpg)

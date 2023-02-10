@@ -1,8 +1,8 @@
 - {
-  version: 1.0.2,
+  version: 1.0.3,
   data:
     [
-      更改单个组件<span class="cmd">#任助理</span>架构为插件架构,
+      增加<span class="cmd">#小红书</span>的图片解析,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
       更新风控缓解、重构系统文件、增加部分接口撤回操作

@@ -441,19 +441,32 @@ export class tools extends plugin {
             const reg = /<img(.*)src="\/\/ci\.xiaohongshu\.com(.*?)"/g
             let res = '';
 
-            let images = [];
-            while (res = reg.exec(resp.data)) {
-                console.log(`https://ci.xiaohongshu.com${res[2]}`)
-                images.push({
-                    message: segment.image(`https://ci.xiaohongshu.com${res[2]}`),
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id
-                })
+            const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            // 创建文件夹（如果没有过这个群）
+            if (!fs.existsSync(downloadPath)) {
+                mkdirsSync(downloadPath);
             }
-            if (images.length > 0) {
-                e.reply(Bot.makeForwardMsg(images))
-            } else {
-                e.reply("解析失败，重新解析下");
+            while (res = reg.exec(resp.data)) {
+                const addr = `https://ci.xiaohongshu.com${res[2]}`
+                axios.get(addr, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    responseType: "stream",
+                }).then(resp => {
+                    const filepath = `${downloadPath}/${/com\/(.*)\?/.exec(addr)[1]}.jpg`
+                    const writer = fs.createWriteStream(filepath);
+                    resp.data.pipe(writer)
+                    return new Promise((resolve, reject) => {
+                        writer.on('finish', () => resolve(filepath));
+                        writer.on('error', reject);
+                    });
+                })
+                    .then( filepath => {
+                        e.reply(segment.image(fs.readFileSync(filepath)))
+                        fs.unlinkSync(filepath)
+                    })
             }
         })
 

@@ -52,6 +52,12 @@
     - icon: 推特
       title: "twitter"
       desc: 推特学习版分享实时下载
+    - icon: acfun
+      title: "acfun"
+      desc: 猴山分享实时下载
+    - icon: redbook
+      title: "小红书"
+      desc: 小红书分享实时下载
 - group: 其他指令[实验]
   list:
     - icon: update
