@@ -194,15 +194,17 @@ export class tools extends plugin {
 
         await getDownloadUrl(url)
             .then(data => {
-                this.downBili(path, data.videoUrl, data.audioUrl)
+                this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
                     .then(data => {
-                        e.reply(segment.video(`${ path }.mp4`))
+                        e.reply(segment.video(`${ path }temp.mp4`))
                     })
-                    .catch(data => {
+                    .catch(err => {
+                        console.log(err)
                         e.reply('解析失败，请重试一下')
                     });
             })
             .catch(err => {
+                console.log(err)
                 e.reply('解析失败，请重试一下')
             });
         return true
@@ -487,7 +489,7 @@ export class tools extends plugin {
             ),
         ])
             .then(data => {
-                return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4');
+                mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4')
             })
     }
 
