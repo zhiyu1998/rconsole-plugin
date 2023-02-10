@@ -63,10 +63,19 @@ function getDownloadUrl (url) {
 
 function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, shouldDelete = true) {
     let cmd = 'ffmpeg';
-    const env = {
-        ...process.env,
-        PATH: '/usr/local/bin:' + child_process.execSync('echo $PATH').toString(),
-    };
+
+    // 判断当前环境
+    let env;
+    if (process.platform === "win32") {
+        env = process.env
+    } else if (process.platform === "linux") {
+        env = {
+            ...process.env,
+            PATH: '/usr/local/bin:' + child_process.execSync('echo $PATH').toString(),
+        };
+    } else {
+        console.log("暂时不支持当前操作系统！")
+    }
 
     return new Promise((resolve, reject) => {
         child_process.exec(

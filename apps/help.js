@@ -16,17 +16,13 @@ export class help extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: '^#*R(插件)?(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
+                    reg: '^#*(R|r)(插件)?(命令|帮助|菜单|help|说明|功能|指令|使用说明)$',
                     fnc: 'help'
                 }
             ]
         })
     }
 
-    /**
-     * rule - 闲心插件帮助
-     * @returns
-     */
     async help () {
         let data = await Help.get(this.e)
         if (!data) return
