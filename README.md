@@ -30,7 +30,7 @@ index -- 主入口
 ![help](./img/example4.png)
 
 ##  🤺BUG及时交流群
-【关于Windows适配】目前群友已经提供了一个比较可靠的解决方案，已经采纳并使用！
+【关于Windows适配】目前 [好冷群友](https://gitee.com/hetangx) 已经提供了一个比较可靠的解决方案，已经采纳并使用！
 
 ![help](./img/community.jpg)
 
