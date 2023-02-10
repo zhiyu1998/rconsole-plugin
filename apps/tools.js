@@ -177,7 +177,7 @@ export class tools extends plugin {
             url = urlRex.exec(url)[0];
         }
 
-        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp/`
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/`
         if (!fs.existsSync(path)) {
             mkdirsSync(path);
         }
@@ -460,7 +460,6 @@ export class tools extends plugin {
         return true;
     }
 
-    // 工具：下载哔哩哔哩
     async downBili (title, videoUrl, audioUrl) {
         return Promise.all([
             downloadBFile(
@@ -489,7 +488,7 @@ export class tools extends plugin {
             ),
         ])
             .then(data => {
-                mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4')
+                return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + '.mp4');
             })
     }
 
