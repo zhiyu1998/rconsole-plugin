@@ -37,23 +37,26 @@ index -- 主入口
 
 ## 📔使用说明
 
-1. 【可选】下载mongodb（可能会耗费一些时间：影响功能【`#我靠`】）
-> linux系统下自己装一个mongodb，上一个密码(不上有风险)
-2. 【可选】`test -- main.py`爬取链接（要有python环境、配合mongodb使用）
-> python3 main.py
-3. 【必要】在`Yunzai-Bot`安装mongodb、axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
+1.【必要】在`Yunzai-Bot`安装mongodb、axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
 > pnpm add mongodb axios tunnel twitter-api-v2 -w
 
-4. 【必要】下载插件
+2.【必要】下载插件
 > git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 
-> 注：可以不用mongodb这些操作，只是用不了一些命令而已
-5. 【可选】要使用`视频解析`功能要下载插件【推荐ubuntu系统】
-> sudo apt-get install ffmpeg
+3.【可选】要使用`视频解析`功能要下载插件【推荐ubuntu系统】
+```shell
+# ubuntu
+sudo apt-get install ffmpeg
+# centos 参考：https://blog.csdn.net/XIAOGUANG_/article/details/105343886
+# Windows 参考：https://www.jianshu.com/p/5015a477de3c
+````
 
 ## 🧑‍🌾进阶
 【可选】备注：考虑到不是所有电脑都有mongodb，如果要开启`#我靠`功能，需要进行以下操作
+> linux/windows系统下自己装一个mongodb，上一个密码(不上有风险)
 
+`test/main.py`爬取链接（要有python环境、配合mongodb使用）
+> python3 main.py
 ### 使用Python、Mongodb爬虫三次元图片
 首先去test文件跑python代码(要安装`requirements.txt`要求的依赖)
 > python3 ./test/main.py
