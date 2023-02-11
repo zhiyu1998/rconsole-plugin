@@ -182,15 +182,21 @@ export class tools extends plugin {
             mkdirsSync(path);
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
-        const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
-        console.log(url);
-        const videoId = /video\/(.*?)(\/|\?)/g.exec(url)[1];
-        // 获取视频信息，然后发送
-        fetch(videoId.startsWith("BV") ? `${baseVideoInfo}?bvid=${videoId}` : `${baseVideoInfo}?aid=${videoId}`)
-            .then(resp => resp.json())
-            .then(resp => {
-                e.reply(`识别：哔哩哔哩, ${resp.data.title}`)
+        // 请求视频信息
+        (function() {
+            const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
+            const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+            // 获取视频信息，然后发送
+            fetch(videoId.startsWith("BV") ? `${baseVideoInfo}?bvid=${videoId}` : `${baseVideoInfo}?aid=${videoId}`)
+                .then(resp => resp.json())
+                .then(resp => {
+                    e.reply(`识别：哔哩哔哩, ${resp.data.title}`)
+                .catch(err => {
+                    e.reply("解析失败，重试一下");
+                    console.log(err);
+                })
             })
+        }())
 
         await getDownloadUrl(url)
             .then(data => {
