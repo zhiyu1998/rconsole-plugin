@@ -110,7 +110,11 @@ async tuiimg (e) {
 
 【可选】相关配置(apps/tools.js)：
 > twiiter-api:https://developer.twitter.com/en  
+注册完之后将`Bearer Token`填入app/tools.js twitter方法的TwitterApi后面的单引号里
+
 > 百度翻译api:https://fanyi-api.baidu.com/doc/21  
+注册完填入方式参考上方注释url (app/tools.js)
+
 ## 📦业务
 ![help](./img/help.jpg)
 

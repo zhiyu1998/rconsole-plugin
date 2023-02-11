@@ -86,8 +86,8 @@ export class tools extends plugin {
         }
         const place = msg.replace(language[0], "").trim();
         // let url = /[\u4E00-\u9FFF]+/g.test(place)
-        // TODO 查阅百度文档填写
-        let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=20210422000794040&salt=542716863&sign=${ md5("20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM") }&q=${ place }`;
+        // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=20210422000794040&salt=542716863&sign=${ md5("20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM") }&q=${ place }`;
+        let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=&salt=&sign=${ md5("" + place + "" + "") }&q=${ place }`;
         await fetch(url)
             .then((resp) => resp.json())
             .then((text) => text.trans_result)
@@ -264,7 +264,7 @@ export class tools extends plugin {
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
         const httpAgent = new HttpProxyAgent(this.myProxy)
-        const twitterClient = new TwitterApi('AAAAAAAAAAAAAAAAAAAAAArXkwEAAAAAOyInrhDgUeiX%2BoztdK%2BQ9Ve9IjI%3DpA5xkrFQvikbmLAZtOwRcjIcXhXicvzYGjp8GHLHhG7JlNO4ls', {httpAgent});
+        const twitterClient = new TwitterApi('', {httpAgent});
 
         // Tell typescript it's a readonly app
         const readOnlyClient = twitterClient.readOnly;
