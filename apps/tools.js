@@ -86,7 +86,7 @@ export class tools extends plugin {
         }
         const place = msg.replace(language[0], "").trim();
         // let url = /[\u4E00-\u9FFF]+/g.test(place)
-        // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=20210422000794040&salt=542716863&sign=${ md5("20210422000794040" + place + "542716863" + "HooD_ndgwcGH6SAnxGrM") }&q=${ place }`;
+        // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=APP ID&salt=自定义&sign=${ md5("APP ID" + place + "自定义" + "密钥") }&q=${ place }`;
         let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=&salt=&sign=${ md5("" + place + "" + "") }&q=${ place }`;
         await fetch(url)
             .then((resp) => resp.json())
