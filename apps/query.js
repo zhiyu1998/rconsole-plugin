@@ -168,7 +168,7 @@ export class query extends plugin {
         let url = 'https://api.vvhan.com/api/hotlist?type='
         switch (keyword) {
             case '虎扑':
-                url += 'hupu'
+                url += 'huPu'
                 break
             case '知乎':
                 url += 'zhihuHot'
@@ -211,7 +211,13 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
         }
         let msg = []
-        await fetch(url)
+        await fetch(url, {
+            headers: {
+                "User-Agent":
+                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    "Content-Type": "application/json",
+            }
+        })
             .then((resp) => resp.json())
             .then((resp) => {
                 for (let element of resp.data) {
