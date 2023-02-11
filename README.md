@@ -28,6 +28,7 @@ index -- 主入口
 ![help](./img/example2.png)
 ![help](./img/example3.png)
 ![help](./img/example4.png)
+![help](./img/example5.png)
 
 ##  🤺BUG及时交流群
 【关于Windows适配】目前 [好冷群友](https://gitee.com/hetangx) 已经提供了一个比较可靠的解决方案，已经采纳并使用！
