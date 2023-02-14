@@ -15,11 +15,15 @@ apps -- 业务核心
 
 config -- 配置文件
 
+img -- readme图片
+
 model -- 核心文件[建议不动]
 
 resource -- 资源文件
 
 test -- 爬虫文件[python]
+
+utils -- 工具类
 
 index -- 主入口
 
@@ -116,11 +120,13 @@ async tuiimg (e) {
 ### 其他进阶操作
 【可选】相关配置(apps/tools.js)：
 > twiiter-api:https://developer.twitter.com/en  
-注册完之后将`Bearer Token`填入app/tools.js twitter方法的TwitterApi后面的单引号里
+注册完之后将`Bearer Token`填入app/tools.js twitter方法的TwitterApi后面的单引号里`const twitterClient = new TwitterApi('', {httpAgent});`
 
 > 百度翻译api:https://fanyi-api.baidu.com/doc/21  
 注册完填入方式参考上方注释url (app/tools.js)
 
+> 更改proxy地址在tools的71行：
+`this.proxyAddr = '10.0.8.10';`
 ## 📦业务
 ![help](./img/help.jpg)
 
