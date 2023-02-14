@@ -1,0 +1,3 @@
+defaultPath: './data/rcmp4/' # 保存视频的位置
+proxyAddr: '127.0.0.1' # 魔法地址
+proxyPort: '6152' # 魔法端口

@@ -12,6 +12,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
+import config from "../model/index.js";
 // import { get, remove, add } from "../utils/redisu.js";
 
 const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en" };
@@ -63,15 +64,18 @@ export class tools extends plugin {
             ],
         });
         // http://api.tuwei.space/girl
+        // 配置文件
+        this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
-        this.defaultPath = `./data/rcmp4/`;
+        this.defaultPath = this.toolsConfig.defaultPath;
         // redis的key
         this.redisKey = `Yz:tools:cache:${this.group_id}`;
         // 代理接口
         // TODO 填写服务器的内网ID和clash的端口
-        this.proxyAddr = "10.0.8.10";
-        this.proxyPort = "7890";
+        this.proxyAddr = this.toolsConfig.proxyAddr;
+        this.proxyPort = this.toolsConfig.proxyPort;
         this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
+        console.log(this.myProxy)
     }
 
     // 翻译插件
