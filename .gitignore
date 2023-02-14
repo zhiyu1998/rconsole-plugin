@@ -15,4 +15,8 @@ node_modules/
 ehthumbs.db
 Thumbs.db
 .idea
+.history
+package.json
 package-lock.json
+yarn.lock
+.prettierrc.json

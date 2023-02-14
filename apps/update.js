@@ -1,9 +1,9 @@
 // 主库
-import Version from '../model/version.js'
-import config from '../model/index.js'
-import puppeteer from '../../../lib/puppeteer/puppeteer.js'
+import Version from "../model/version.js";
+import config from "../model/index.js";
+import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 
-import { exec, execSync } from 'node:child_process'
+import { exec, execSync } from "node:child_process";
 
 const _path = process.cwd();
 
@@ -11,38 +11,36 @@ const _path = process.cwd();
  * 处理插件更新
  */
 export class update extends plugin {
-    constructor () {
+    constructor() {
         super({
-            name: '更新插件',
-            dsc: '更新插件代码',
-            event: 'message',
+            name: "更新插件",
+            dsc: "更新插件代码",
+            event: "message",
             priority: 4000,
             rule: [
                 {
-                    reg: '^#*R(插件)?版本$',
-                    fnc: 'version'
+                    reg: "^#*R(插件)?版本$",
+                    fnc: "version",
                 },
                 {
                     /** 命令正则匹配 */
-                    reg: '^#(R更新|R强制更新)$',
+                    reg: "^#(R更新|R强制更新)$",
                     /** 执行方法 */
-                    fnc: 'rconsoleUpdate'
+                    fnc: "rconsoleUpdate",
                 },
-            ]
-        })
+            ],
+        });
 
-        this.versionData = config.getConfig('version')
+        this.versionData = config.getConfig("version");
     }
 
     /**
      * rule - 插件版本信息
      */
-    async version () {
-        const data = await new Version(this.e).getData(
-            this.versionData.slice(0, 3)
-        )
-        let img = await puppeteer.screenshot('version', data)
-        this.e.reply(img)
+    async version() {
+        const data = await new Version(this.e).getData(this.versionData.slice(0, 3));
+        let img = await puppeteer.screenshot("version", data);
+        this.e.reply(img);
     }
 
     /**
@@ -65,38 +63,56 @@ export class update extends plugin {
         } else {
             await this.e.reply("正在执行更新操作，请稍等");
         }
-        const th = this
-        exec(command, { cwd: `${ _path }/plugins/rconsole-plugin/` }, async function (error, stdout, stderr) {
-            if (error) {
-                let isChanges = error.toString().includes("Your local changes to the following files would be overwritten by merge");
+        const th = this;
+        exec(
+            command,
+            { cwd: `${_path}/plugins/rconsole-plugin/` },
+            async function (error, stdout, stderr) {
+                if (error) {
+                    let isChanges = error
+                        .toString()
+                        .includes(
+                            "Your local changes to the following files would be overwritten by merge"
+                        );
 
-                let isNetwork = error.toString().includes("fatal: unable to access");
+                    let isNetwork = error.toString().includes("fatal: unable to access");
 
-                if (isChanges) {
-                    //git stash && git pull && git stash pop stash@{0}
-                    //需要设置email和username，暂不做处理
-                    await me.e.reply(
-                        "失败！\nError code: " +
-                        error.code +
-                        "\n" +
-                        error.stack +
-                        "\n\n本地代码与远程代码存在冲突,上面报错信息中包含冲突文件名称及路径，请尝试处理冲突\n如果不想保存本地修改请使用【#强制更新】\n(注意：强制更新命令会忽略所有本地对R插件本身文件的修改，本地修改均不会保存，请注意备份)"
-                    );
-                } else if (isNetwork) {
-                    await e.reply(
-                        "失败！\nError code: " + error.code + "\n" + error.stack + "\n\n可能是网络问题，请关闭加速器之类的网络工具，或请过一会尝试。"
-                    );
+                    if (isChanges) {
+                        //git stash && git pull && git stash pop stash@{0}
+                        //需要设置email和username，暂不做处理
+                        await me.e.reply(
+                            "失败！\nError code: " +
+                                error.code +
+                                "\n" +
+                                error.stack +
+                                "\n\n本地代码与远程代码存在冲突,上面报错信息中包含冲突文件名称及路径，请尝试处理冲突\n如果不想保存本地修改请使用【#强制更新】\n(注意：强制更新命令会忽略所有本地对R插件本身文件的修改，本地修改均不会保存，请注意备份)"
+                        );
+                    } else if (isNetwork) {
+                        await e.reply(
+                            "失败！\nError code: " +
+                                error.code +
+                                "\n" +
+                                error.stack +
+                                "\n\n可能是网络问题，请关闭加速器之类的网络工具，或请过一会尝试。"
+                        );
+                    } else {
+                        await e.reply(
+                            "失败！\nError code: " +
+                                error.code +
+                                "\n" +
+                                error.stack +
+                                "\n\n出错了。请尝试处理错误"
+                        );
+                    }
                 } else {
-                    await e.reply("失败！\nError code: " + error.code + "\n" + error.stack + "\n\n出错了。请尝试处理错误");
+                    if (/Already up to date/.test(stdout)) {
+                        e.reply("目前已经是最新了~");
+                        return true;
+                    }
+                    await th.restartApp();
                 }
-            } else {
-                if (/Already up to date/.test(stdout)) {
-                    e.reply("目前已经是最新了~");
-                    return true;
-                }
-                await th.restartApp();
             }
-        });
+        );
     }
 
     async restartApp() {
@@ -113,7 +129,6 @@ export class update extends plugin {
         });
 
         try {
-
             await redis.set("Yunzai:rconsole:restart", data, { EX: 120 });
 
             let cm = `npm run start`;
