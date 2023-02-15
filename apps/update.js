@@ -59,7 +59,7 @@ export class update extends plugin {
 
         let command = '';
         if (isForce) {
-            command = `git checkout ./plugins/${pluginName}/ && git -C ./plugins/${pluginName}/ pull --no-rebase`
+            command = `git checkout . && git -C ./plugins/${pluginName}/ pull --no-rebase`
         } else {
             command = `git -C ./plugins/${pluginName}/ pull --no-rebase`
         }
