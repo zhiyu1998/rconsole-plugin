@@ -7,7 +7,7 @@ import lodash from "lodash";
 import { exec, execSync } from "node:child_process";
 
 /**
- * 处理插件更新
+ * 处理插件更新1
  */
 export class update extends plugin {
     constructor() {
