@@ -34,6 +34,10 @@ index -- 主入口
 ![help](./img/example4.png)
 ![help](./img/example5.png)
 
+##  ☕ 请我喝一杯瑞幸咖啡
+如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下请我喝一杯瑞幸咖啡，这是我开源这个插件的最大动力！
+![help](./img/afdian.jpg)
+
 ##  🤺BUG及时交流群
 【关于Windows适配】目前 [好冷群友](https://gitee.com/hetangx) 已经提供了一个比较可靠的解决方案，已经采纳并使用！
 
