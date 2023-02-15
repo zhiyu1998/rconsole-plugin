@@ -23,7 +23,7 @@ export class update extends plugin {
                 },
                 {
                     /** 命令正则匹配 */
-                    reg: "^#*R(插件)?更新$",
+                    reg: "^#*R(插件)?(强制更新|更新)$",
                     /** 执行方法 */
                     fnc: "rconsoleUpdate",
                 },
@@ -52,9 +52,17 @@ export class update extends plugin {
             await this.e.reply("您无权操作");
             return true;
         }
+
+        let isForce = !!this.e.msg.includes("强制");
+
         const pluginName = "rconsole-plugin";
 
-        let command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
+        let command = '';
+        if (isForce) {
+            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`
+        } else {
+            command = `git checkout ./plugins/${pluginName}/ && git -C ./plugins/${pluginName}/ pull --no-rebase`
+        }
         this.oldCommitId = await this.getcommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");
 
