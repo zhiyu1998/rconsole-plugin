@@ -59,9 +59,9 @@ export class update extends plugin {
 
         let command = '';
         if (isForce) {
-            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`
-        } else {
             command = `git checkout ./plugins/${pluginName}/ && git -C ./plugins/${pluginName}/ pull --no-rebase`
+        } else {
+            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`
         }
         this.oldCommitId = await this.getcommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");
