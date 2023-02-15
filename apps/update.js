@@ -130,4 +130,22 @@ export class update extends plugin {
         logger.info(`${pluginName || "Yunzai-Bot"}更新日志，共${line}条\n${log}`);
         return log;
     }
+
+    async gitErr (err, stdout) {
+        let msg = '更新失败！'
+        let errMsg = err.toString()
+        stdout = stdout.toString()
+        if (errMsg.includes('Timed out')) {
+            await this.reply(msg + `\n连接超时：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')}`)
+        } else if (/Failed to connect|unable to access/g.test(errMsg)) {
+            await this.reply(msg + `\n连接失败：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')}`)
+        } else if (errMsg.includes('be overwritten by merge')) {
+            await this.reply(msg + `存在冲突：\n${errMsg}\n` + '请解决冲突后再更新，或者执行#强制更新，放弃本地修改')
+        } else if (stdout.includes('CONFLICT')) {
+            await this.reply([msg + '存在冲突\n', errMsg, stdout, '\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改'])
+        } else {
+            await this.reply([errMsg, stdout])
+        }
+    }
+
 }
