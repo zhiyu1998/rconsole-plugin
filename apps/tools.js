@@ -17,16 +17,16 @@ import config from "../model/index.js";
 
 const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en" };
 const douyinTypeMap = {
-    2: 'image',
-    4: 'video',
-    68: 'image',
-    0: 'video',
-    51: 'video',
-    55: 'video',
-    58: 'video',
-    61: 'video',
-    150: 'image'
-}
+    2: "image",
+    4: "video",
+    68: "image",
+    0: "video",
+    51: "video",
+    55: "video",
+    58: "video",
+    61: "video",
+    150: "image",
+};
 
 export class tools extends plugin {
     constructor() {
@@ -128,8 +128,8 @@ export class tools extends plugin {
             const json = await resp.json();
             const item = json.aweme_detail;
             e.reply(`识别：抖音, ${item.desc}`);
-            const url_type_code = item.aweme_type
-            const url_type = douyinTypeMap[url_type_code]
+            const url_type_code = item.aweme_type;
+            const url_type = douyinTypeMap[url_type_code];
             if (url_type === "video") {
                 const url_2 = item.video.play_addr.url_list[0];
                 this.downloadVideo(url_2).then(video => {
@@ -149,7 +149,7 @@ export class tools extends plugin {
                     // no_watermark_image_list.push(i.url_list[0])
                     // 有水印图片列表
                     // watermark_image_list.push(i.download_url_list[0])
-                    e.reply(segment.image(i.url_list[0]))
+                    e.reply(segment.image(i.url_list[0]));
                 }
             }
         });
@@ -226,16 +226,16 @@ export class tools extends plugin {
         }
 
         // 动态
-        if (url.includes('t.bilibili.com')) {
+        if (url.includes("t.bilibili.com")) {
             // 去除多余参数
-            if (url.includes('?')) {
+            if (url.includes("?")) {
                 url = url.substring(0, url.indexOf("?"));
             }
-            const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0]
+            const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
             // console.log(dynamicId)
-            getDynamic(dynamicId).then((resp) => {
+            getDynamic(dynamicId).then(resp => {
                 if (resp.dynamicSrc.length > 0) {
-                    e.reply(`识别：哔哩哔哩动态, ${resp.dynamicDesc}`)
+                    e.reply(`识别：哔哩哔哩动态, ${resp.dynamicDesc}`);
                     // let dynamicSrcMsg = []
                     // resp.dynamicSrc.forEach(item => {
                     //     dynamicSrcMsg.push({
@@ -245,13 +245,13 @@ export class tools extends plugin {
                     //     })
                     // })
                     resp.dynamicSrc.forEach(item => {
-                        e.reply(segment.image(item))
-                    })
+                        e.reply(segment.image(item));
+                    });
                 } else {
-                    e.reply(`识别：哔哩哔哩动态, 但是失败！`)
+                    e.reply(`识别：哔哩哔哩动态, 但是失败！`);
                 }
-            })
-            return true
+            });
+            return true;
         }
 
         const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
