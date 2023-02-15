@@ -48,12 +48,12 @@ export class update extends plugin {
      * @returns {Promise<boolean>}
      */
     async rconsoleUpdate(e) {
-        if (!this.e.isMaster) {
-            await this.e.reply("您无权操作");
+        if (!e.isMaster) {
+            await e.reply("您无权操作");
             return true;
         }
 
-        let isForce = !!this.e.msg.includes("强制");
+        let isForce = !!e.msg.includes("强制");
 
         const pluginName = "rconsole-plugin";
 
