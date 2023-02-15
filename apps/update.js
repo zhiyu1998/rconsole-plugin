@@ -2,10 +2,10 @@
 import Version from "../model/version.js";
 import config from "../model/index.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
+import lodash from 'lodash'
 
-import { exec, execSync } from "node:child_process";
+import {exec, execSync} from "node:child_process";
 
-const _path = process.cwd();
 
 /**
  * 处理插件更新
@@ -24,7 +24,7 @@ export class update extends plugin {
                 },
                 {
                     /** 命令正则匹配 */
-                    reg: "^#(R更新|R强制更新)$",
+                    reg: "^#*R(插件)?更新$",
                     /** 执行方法 */
                     fnc: "rconsoleUpdate",
                 },
@@ -44,114 +44,85 @@ export class update extends plugin {
     }
 
     /**
-     *
-     * @param e oicq传递的事件参数e
+     * 更新主程序
+     * @param e
+     * @returns {Promise<boolean>}
      */
     async rconsoleUpdate(e) {
         if (!this.e.isMaster) {
             await this.e.reply("您无权操作");
             return true;
         }
+        const pluginName = 'rconsole-plugin'
 
-        let isForce = !!this.e.msg.includes("强制");
+        let command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
+        this.oldCommitId = await this.getcommitId(pluginName)
+        await e.reply("正在执行更新操作，请稍等");
 
-        let command = "git pull";
-
-        if (isForce) {
-            command = "git checkout . && git pull";
-            await this.e.reply("正在执行强制更新操作，请稍等");
+        let ret = await this.execSync(command)
+        if (ret.error) {
+            e.reply(`更新失败！重试一下！`)
+            await this.gitErr(ret.error, ret.stdout)
+            return false
+        }
+        const time = await this.getTime(pluginName)
+        if (/Already up|已经是最新/g.test(ret.stdout)) {
+            e.reply(`R插件已经是最新: ${this.versionData[0].version}`)
         } else {
-            await this.e.reply("正在执行更新操作，请稍等");
+            this.isUp = true
+            e.reply(`R插件更新成功，最后更新时间：${time}`)
+            e.reply(await this.getLog(pluginName))
         }
-        const th = this;
-        exec(
-            command,
-            { cwd: `${_path}/plugins/rconsole-plugin/` },
-            async function (error, stdout, stderr) {
-                if (error) {
-                    let isChanges = error
-                        .toString()
-                        .includes(
-                            "Your local changes to the following files would be overwritten by merge"
-                        );
-
-                    let isNetwork = error.toString().includes("fatal: unable to access");
-
-                    if (isChanges) {
-                        //git stash && git pull && git stash pop stash@{0}
-                        //需要设置email和username，暂不做处理
-                        await me.e.reply(
-                            "失败！\nError code: " +
-                                error.code +
-                                "\n" +
-                                error.stack +
-                                "\n\n本地代码与远程代码存在冲突,上面报错信息中包含冲突文件名称及路径，请尝试处理冲突\n如果不想保存本地修改请使用【#强制更新】\n(注意：强制更新命令会忽略所有本地对R插件本身文件的修改，本地修改均不会保存，请注意备份)"
-                        );
-                    } else if (isNetwork) {
-                        await e.reply(
-                            "失败！\nError code: " +
-                                error.code +
-                                "\n" +
-                                error.stack +
-                                "\n\n可能是网络问题，请关闭加速器之类的网络工具，或请过一会尝试。"
-                        );
-                    } else {
-                        await e.reply(
-                            "失败！\nError code: " +
-                                error.code +
-                                "\n" +
-                                error.stack +
-                                "\n\n出错了。请尝试处理错误"
-                        );
-                    }
-                } else {
-                    if (/Already up to date/.test(stdout)) {
-                        e.reply("目前已经是最新了~");
-                        return true;
-                    }
-                    await th.restartApp();
-                }
-            }
-        );
+        return true
     }
 
-    async restartApp() {
-        if (!this.e.isMaster) {
-            await this.e.reply("您无权操作");
-            return true;
-        }
-        await this.e.reply("开始执行重启，请稍等...");
-        Bot.logger.mark("开始执行重启，请稍等...");
+    async getcommitId(pluginName) {
+        // let cm = 'git rev-parse --short HEAD'
+        const command = `git -C ./plugins/${pluginName}/ rev-parse --short HEAD`
+        let commitId = execSync(command, {encoding: 'utf-8'})
+        commitId = lodash.trim(commitId)
+        return commitId
+    }
 
-        let data = JSON.stringify({
-            isGroup: !!this.e.isGroup,
-            id: this.e.isGroup ? this.e.group_id : this.e.user_id,
-        });
+    async execSync(cmd) {
+        return new Promise((resolve, reject) => {
+            exec(cmd, {windowsHide: true}, (error, stdout, stderr) => {
+                resolve({error, stdout, stderr})
+            })
+        })
+    }
 
+    async getTime(pluginName) {
+        const cm = `cd ./plugins/${pluginName}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
+        let time = ''
         try {
-            await redis.set("Yunzai:rconsole:restart", data, { EX: 120 });
-
-            let cm = `npm run start`;
-            if (process.argv[1].includes("pm2")) {
-                cm = `npm run restart`;
-            }
-
-            exec(cm, async (error, stdout, stderr) => {
-                if (error) {
-                    await redis.del(`Yunzai:rconsole:restart`);
-                    await this.e.reply(`操作失败！\n${error.stack}`);
-                    Bot.logger.error(`重启失败\n${error.stack}`);
-                } else if (stdout) {
-                    Bot.logger.mark("重启成功，运行已转为后台，查看日志请用命令：npm run log");
-                    Bot.logger.mark("停止后台运行命令：npm stop");
-                    process.exit();
-                }
-            });
+            time = execSync(cm, {encoding: 'utf-8'})
+            time = lodash.trim(time)
         } catch (error) {
-            redis.del(`Yunzai:rconsole:restart`);
-            await this.e.reply(`操作失败！\n${error.stack}`);
+            time = '获取时间失败'
         }
-
-        return true;
+        return time
     }
+
+    async getLog (pluginName) {
+        let cm = 'git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"'
+        if (pluginName) { cm = `cd ./plugins/${pluginName}/ && ${cm}` }
+        let logAll
+        try { logAll = execSync(cm, { encoding: 'utf-8' }) } catch (error) { this.reply(error.toString(), true) }
+        if (!logAll) return false
+        logAll = logAll.split('\n')
+        let log = []
+        for (let str of logAll) {
+            str = str.split('||')
+            if (str[0] === this.oldCommitId) break
+            if (str[1].includes('Merge branch')) continue
+            log.push(str[1])
+        }
+        let line = log.length
+        log = log.join('\n')
+        if (log.length <= 0) return ''
+        logger.info(`${pluginName || 'Yunzai-Bot'}更新日志，共${line}条\n${log}`)
+        return log
+    }
+
 }
