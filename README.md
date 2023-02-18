@@ -125,7 +125,7 @@ async tuiimg (e) {
 > 百度翻译api:https://fanyi-api.baidu.com/doc/21  
 注册完填入方式参考上方注释url (app/tools.js)
 
-> 更改proxy地址在config/tools.yaml的71行：  
+> 更改proxy地址在config/tools.yaml：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '6152' # 魔法端口`
 ## 📦业务
