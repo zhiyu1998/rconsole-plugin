@@ -1,3 +1,6 @@
 defaultPath: './data/rcmp4/' # 保存视频的位置
 proxyAddr: '127.0.0.1' # 魔法地址
 proxyPort: '7890' # 魔法端口
+
+translateAppId: '' # 百度翻译APP ID
+translateSecret: '' # 百度翻译密匙

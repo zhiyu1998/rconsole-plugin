@@ -87,6 +87,9 @@ export class tools extends plugin {
         this.proxyPort = this.toolsConfig.proxyPort;
         this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
         // console.log(this.myProxy)
+        // 加载百度翻译配置
+        this.translateAppId = this.toolsConfig.translateAppId;
+        this.translateSecret = this.toolsConfig.translateSecret;
     }
 
     // 翻译插件
@@ -105,7 +108,8 @@ export class tools extends plugin {
         // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=APP ID&salt=自定义&sign=${ md5("APP ID" + place + "自定义" + "密钥") }&q=${ place }`;
         let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${
             transMap[language[1]]
-        }&appid=&salt=&sign=${md5("" + place + "" + "")}&q=${place}`;
+        }&appid=${this.translateAppId}&salt=rconsole&sign=${md5(this.translateAppId + place + "rconsole" + this.translateSecret)}&q=${place}`;
+        // console.log(url)
         await fetch(url)
             .then(resp => resp.json())
             .then(text => text.trans_result)
