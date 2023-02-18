@@ -124,7 +124,7 @@ async tuiimg (e) {
 注册完之后将`Bearer Token`填入app/tools.js twitter方法的TwitterApi后面的单引号里`const twitterClient = new TwitterApi('', {httpAgent});`
 
 > 百度翻译api:https://fanyi-api.baidu.com/doc/21  
-注册完填入方式参考上方注释url (app/tools.js)；另外，百度翻译需要充钱才能使用！
+注册完填入方式参考上方注释url (app/tools.js)；另外，有群友反馈百度翻译需要充钱才能使用！
 
 > 更改proxy地址在config/tools.yaml：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
