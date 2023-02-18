@@ -38,7 +38,7 @@
 - group: 工具类合集
   list:
     - icon: translate
-      title: "#翻中/英/日 xxx"
+      title: "翻中/英/日 xxx"
       desc: 百度翻译，例如：翻中 I want it!
     - icon: 百科
       title: "#百科/wiki xxx"
