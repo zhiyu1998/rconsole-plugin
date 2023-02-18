@@ -10,7 +10,7 @@
 <img src="https://cdn.jsdelivr.net/gh/xianxincoder/xianxincoder/assets/github-contribution-grid-snake.svg">
 </div>
 
-## 🗃️文件架构
+## 🗃️ 文件架构
 apps -- 业务核心
 
 config -- 配置文件
@@ -27,19 +27,19 @@ utils -- 工具类
 
 index -- 主入口
 
-##  🧏‍♂️使用实例
+## 🧏 ‍使用实例
 ![help](./img/example.png)
 ![help](./img/example2.png)
 ![help](./img/example3.png)
 ![help](./img/example4.png)
 ![help](./img/example5.png)
 
-##  🤺BUG及时交流群
+## 🤺 BUG及时交流群
 【关于Windows适配】目前 [好冷群友](https://gitee.com/hetangx) 已经提供了一个比较可靠的解决方案，已经采纳并使用！
 
 ![help](./img/community.jpg)
 
-## 📔使用说明
+## 📔 使用说明
 
 1.【必要】在`Yunzai-Bot`安装mongodb、axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
 > pnpm add mongodb axios tunnel twitter-api-v2 -w
@@ -55,7 +55,7 @@ sudo apt-get install ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 
-## 🧑‍🌾进阶
+## 🧑‍🌾 进阶
 【可选】备注：考虑到不是所有电脑都有mongodb，如果要开启`#我靠`功能，需要进行以下操作：
 
 ### 使用Python、Mongodb爬虫三次元图片
@@ -128,10 +128,10 @@ async tuiimg (e) {
 > 更改proxy地址在config/tools.yaml：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '6152' # 魔法端口`
-## 📦业务
+## 📦 业务
 ![help](./img/help.jpg)
 
-## 🤳版本
+## 🤳 版本
 ![help](./img/version.jpg)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
@@ -146,7 +146,7 @@ async tuiimg (e) {
 |     mitsuha     | 13  |
 |    [Kr] 5s¹     | 13  |
 
-## 开发团队
+##  👩‍👩‍👧‍👧 开发团队
 | Nickname                                                     | Contribution |
 | :----------------------------------------------------------: |--------------|
 |[易曦翰](https://gitee.com/yixihan) | 后端开发         |
@@ -154,7 +154,7 @@ async tuiimg (e) {
 |[Diviner](https://gitee.com/divinerJJ) | 前端开发         |
 |[小白白](https://gitee.com/little_White01) | 后端开发         |
 
-## 🚀后记
+## 🚀 后记
 * 文件借鉴了很多插件，精简个人认为可以精简的内容。 
 * 素材来源于网络，仅供交流学习使用 
 * 严禁用于任何商业用途和非法行为 
