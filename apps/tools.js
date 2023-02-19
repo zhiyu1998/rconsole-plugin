@@ -110,7 +110,9 @@ export class tools extends plugin {
         // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=APP ID&salt=自定义&sign=${ md5("APP ID" + place + "自定义" + "密钥") }&q=${ place }`;
         let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${
             transMap[language[1]]
-        }&appid=${this.translateAppId}&salt=rconsole&sign=${md5(this.translateAppId + place + "rconsole" + this.translateSecret)}&q=${place}`;
+        }&appid=${this.translateAppId}&salt=rconsole&sign=${md5(
+            this.translateAppId + place + "rconsole" + this.translateSecret
+        )}&q=${place}`;
         // console.log(url)
         await fetch(url)
             .then(resp => resp.json())

@@ -57,11 +57,11 @@ export class update extends plugin {
 
         const pluginName = "rconsole-plugin";
 
-        let command = '';
+        let command = "";
         if (isForce) {
-            command = `git checkout . && git -C ./plugins/${pluginName}/ pull --no-rebase`
+            command = `git checkout . && git -C ./plugins/${pluginName}/ pull --no-rebase`;
         } else {
-            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`
+            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
         }
         this.oldCommitId = await this.getcommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");
@@ -139,21 +139,29 @@ export class update extends plugin {
         return log;
     }
 
-    async gitErr (err, stdout) {
-        let msg = '更新失败！'
-        let errMsg = err.toString()
-        stdout = stdout.toString()
-        if (errMsg.includes('Timed out')) {
-            await this.reply(msg + `\n连接超时：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')}`)
+    async gitErr(err, stdout) {
+        let msg = "更新失败！";
+        let errMsg = err.toString();
+        stdout = stdout.toString();
+        if (errMsg.includes("Timed out")) {
+            await this.reply(msg + `\n连接超时：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, "")}`);
         } else if (/Failed to connect|unable to access/g.test(errMsg)) {
-            await this.reply(msg + `\n连接失败：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')}`)
-        } else if (errMsg.includes('be overwritten by merge')) {
-            await this.reply(msg + `存在冲突：\n${errMsg}\n` + '请解决冲突后再更新，或者执行#强制更新，放弃本地修改')
-        } else if (stdout.includes('CONFLICT')) {
-            await this.reply([msg + '存在冲突\n', errMsg, stdout, '\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改'])
+            await this.reply(msg + `\n连接失败：${errMsg.match(/'(.+?)'/g)[0].replace(/'/g, "")}`);
+        } else if (errMsg.includes("be overwritten by merge")) {
+            await this.reply(
+                msg +
+                    `存在冲突：\n${errMsg}\n` +
+                    "请解决冲突后再更新，或者执行#强制更新，放弃本地修改"
+            );
+        } else if (stdout.includes("CONFLICT")) {
+            await this.reply([
+                msg + "存在冲突\n",
+                errMsg,
+                stdout,
+                "\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改",
+            ]);
         } else {
-            await this.reply([errMsg, stdout])
+            await this.reply([errMsg, stdout]);
         }
     }
-
 }
