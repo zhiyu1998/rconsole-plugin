@@ -63,7 +63,7 @@ export class update extends plugin {
         } else {
             command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
         }
-        this.oldCommitId = await this.getcommitId(pluginName);
+        this.oldCommitId = await this.getCommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");
 
         let ret = await this.execSync(command);
@@ -83,7 +83,7 @@ export class update extends plugin {
         return true;
     }
 
-    async getcommitId(pluginName) {
+    async getCommitId(pluginName) {
         // let cm = 'git rev-parse --short HEAD'
         const command = `git -C ./plugins/${pluginName}/ rev-parse --short HEAD`;
         let commitId = execSync(command, { encoding: "utf-8" });
