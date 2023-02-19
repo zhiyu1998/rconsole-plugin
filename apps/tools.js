@@ -13,7 +13,6 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import config from "../model/index.js";
-// import { get, remove, add } from "../utils/redisu.js";
 
 const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en" };
 const douyinTypeMap = {
