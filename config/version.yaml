@@ -1,8 +1,9 @@
 - {
-  version: 1.0.4,
+  version: 1.0.5,
   data:
     [
-      增加<span class="cmd">#小红书</span>的图片解析,
+      适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,
+      增加<span class="cmd">小红书</span>的图片解析,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
       更新风控缓解、重构系统文件、增加部分接口撤回操作
