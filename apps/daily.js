@@ -1,28 +1,16 @@
-import common from "../../../lib/common/common.js";
 import fetch from "node-fetch";
-import schedule from "node-schedule";
 import { Group, segment } from "oicq";
+import { autoTask } from "../utils/common.js"
 
 // 指定定时发送的群号
 const groupList = ["169721415"];
 
 // 是否开启定时推送，默认为 true
-let isAutoPush = true;
-function autoTask(func, time) {
-    if (isAutoPush) {
-        schedule.scheduleJob(time, () => {
-            for (let i = 0; i < groupList.length; i++) {
-                let group = Bot.pickGroup(groupList[i]);
-                func(group);
-                common.sleep(1000);
-            }
-        });
-    }
-}
+let isAutoPush = false;
 
 // 定时任务合集
-autoTask(pushDailyWorld, "0 30 8 * * ?");
-autoTask(pushTouchFish, "0 31 8 * * ?");
+autoTask(pushDailyWorld, "0 30 8 * * ?", groupList, isAutoPush);
+autoTask(pushTouchFish, "0 31 8 * * ?", groupList, isAutoPush);
 
 export class daily extends plugin {
     constructor(e) {

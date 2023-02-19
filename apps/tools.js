@@ -12,20 +12,9 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
+import { transMap, douyinTypeMap } from "../utils/constant.js"
 import config from "../model/index.js";
 
-const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en" };
-const douyinTypeMap = {
-    2: "image",
-    4: "video",
-    68: "image",
-    0: "video",
-    51: "video",
-    55: "video",
-    58: "video",
-    61: "video",
-    150: "image",
-};
 
 export class tools extends plugin {
     constructor() {
