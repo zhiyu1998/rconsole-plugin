@@ -90,6 +90,8 @@ export class tools extends plugin {
         // 加载百度翻译配置
         this.translateAppId = this.toolsConfig.translateAppId;
         this.translateSecret = this.toolsConfig.translateSecret;
+        // 加载twitter配置
+        this.bearerToken = this.toolsConfig.bearerToken;
     }
 
     // 翻译插件
@@ -354,7 +356,7 @@ export class tools extends plugin {
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
         const httpAgent = new HttpProxyAgent(this.myProxy);
-        const twitterClient = new TwitterApi("", { httpAgent });
+        const twitterClient = new TwitterApi(this.bearerToken, { httpAgent });
 
         // Tell typescript it's a readonly app
         const readOnlyClient = twitterClient.readOnly;
