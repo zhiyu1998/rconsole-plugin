@@ -126,7 +126,7 @@ export class tools extends plugin {
                 await (function (){
                     return fetch(url).then(resp => resp.json())
                 })
-            ).then(resp_json => {
+            ).then(async resp_json => {
                 const item = resp_json.aweme_detail;
                 e.reply(`识别：抖音, ${item.desc}`);
                 const url_type_code = item.aweme_type;
@@ -142,16 +142,22 @@ export class tools extends plugin {
                     });
                 } else if (url_type === "image") {
                     // 无水印图片列表
-                    // let no_watermark_image_list = []
+                    let no_watermark_image_list = [];
                     // 有水印图片列表
-                    // let watermark_image_list = []
+                    // let watermark_image_list = [];
                     for (let i of item.images) {
                         // 无水印图片列表
-                        // no_watermark_image_list.push(i.url_list[0])
+                        no_watermark_image_list.push({
+                            message: segment.image(i.url_list[0]),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        })
                         // 有水印图片列表
-                        // watermark_image_list.push(i.download_url_list[0])
-                        e.reply(segment.image(i.url_list[0]));
+                        // watermark_image_list.push(i.download_url_list[0]);
+                        // e.reply(segment.image(i.url_list[0]));
                     }
+                    // console.log(no_watermark_image_list)
+                    await this.reply(await Bot.makeForwardMsg(no_watermark_image_list))
                 }
             })
         });
