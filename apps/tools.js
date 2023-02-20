@@ -145,7 +145,7 @@ export class tools extends plugin {
                     // no_watermark_image_list.push(i.url_list[0])
                     // 有水印图片列表
                     // watermark_image_list.push(i.download_url_list[0])
-                    e.reply(segment.image(i.url_list[0]));
+                    e.reply(segment.image(i.download_url_list[0]));
                 }
             }
         });
@@ -338,7 +338,7 @@ export class tools extends plugin {
         return true;
     }
 
-    // twitter解析
+    // 小蓝鸟解析
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
         // 配置参数及解析
@@ -358,7 +358,7 @@ export class tools extends plugin {
                 expansions: ["entities.mentions.username", "attachments.media_keys"],
             })
             .then(resp => {
-                e.reply(`识别：腿忒学习版，${resp.data.text}`);
+                e.reply(`识别：小蓝鸟学习版，${resp.data.text}`);
                 const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
                 // 创建文件夹（如果没有过这个群）
                 if (!fs.existsSync(downloadPath)) {

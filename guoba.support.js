@@ -27,7 +27,7 @@ export function supportGuoba() {
                 {
                     field: "tools.proxyAddr",
                     label: "魔法地址",
-                    bottomHelpMessage: "tiktok/twitter等要使用魔法时需要填写",
+                    bottomHelpMessage: "tiktok/小蓝鸟等要使用魔法时需要填写",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -37,7 +37,7 @@ export function supportGuoba() {
                 {
                     field: "tools.proxyPort",
                     label: "魔法端口",
-                    bottomHelpMessage: "tiktok/twitter等要使用魔法时需要填写",
+                    bottomHelpMessage: "tiktok/小蓝鸟等要使用魔法时需要填写",
                     component: "Input",
                     required: false,
                     componentProps: {
