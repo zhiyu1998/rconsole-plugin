@@ -1,5 +1,5 @@
 - {
-  version: 1.0.5,
+  version: 1.0.6,
   data:
     [
       适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,

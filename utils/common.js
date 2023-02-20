@@ -43,4 +43,29 @@ function autoTask(func, time, groupList, isAutoPush = false) {
     }
 }
 
-export { jFeatch, autoTask };
+/**
+ * 重试函数（暂时只用于抖音的api）
+ * @param func
+ * @param maxRetries
+ * @param delay
+ * @returns {Promise<unknown>}
+ */
+function retry(func, maxRetries = 3, delay = 1000) {
+    return new Promise((resolve, reject) => {
+        const attempt = (remainingTries) => {
+            func()
+                .then(resolve)
+                .catch(error => {
+                    if (remainingTries === 1) {
+                        reject(error);
+                    } else {
+                        console.log(`错误: ${error}. 重试将在 ${delay/1000} 秒...`);
+                        setTimeout(() => attempt(remainingTries - 1), delay);
+                    }
+                });
+        };
+        attempt(maxRetries);
+    });
+}
+
+export { jFeatch, autoTask, retry };

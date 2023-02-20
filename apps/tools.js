@@ -13,6 +13,7 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap } from "../utils/constant.js"
+import { retry } from "../utils/common.js";
 import config from "../model/index.js";
 
 
@@ -120,34 +121,39 @@ export class tools extends plugin {
             const douId = douRex.exec(res)[1];
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
-            const resp = await fetch(url);
-            const json = await resp.json();
-            const item = json.aweme_detail;
-            e.reply(`识别：抖音, ${item.desc}`);
-            const url_type_code = item.aweme_type;
-            const url_type = douyinTypeMap[url_type_code];
-            if (url_type === "video") {
-                const url_2 = item.video.play_addr.url_list[0];
-                this.downloadVideo(url_2).then(video => {
-                    e.reply(
-                        segment.video(
-                            `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`
-                        )
-                    );
-                });
-            } else if (url_type === "image") {
-                // 无水印图片列表/No watermark image list
-                // let no_watermark_image_list = []
-                // 有水印图片列表/With watermark image list
-                // let watermark_image_list = []
-                for (let i of item.images) {
+            // 默认重试3次，每次间隔1s (防止SyntaxError: Unexpected token b in JSON at position 0)
+            retry(
+                await (function (){
+                    return fetch(url).then(resp => resp.json())
+                })
+            ).then(resp_json => {
+                const item = resp_json.aweme_detail;
+                e.reply(`识别：抖音, ${item.desc}`);
+                const url_type_code = item.aweme_type;
+                const url_type = douyinTypeMap[url_type_code];
+                if (url_type === "video") {
+                    const url_2 = item.video.play_addr.url_list[0];
+                    this.downloadVideo(url_2).then(video => {
+                        e.reply(
+                            segment.video(
+                                `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`
+                            )
+                        );
+                    });
+                } else if (url_type === "image") {
                     // 无水印图片列表
-                    // no_watermark_image_list.push(i.url_list[0])
+                    // let no_watermark_image_list = []
                     // 有水印图片列表
-                    // watermark_image_list.push(i.download_url_list[0])
-                    e.reply(segment.image(i.download_url_list[0]));
+                    // let watermark_image_list = []
+                    for (let i of item.images) {
+                        // 无水印图片列表
+                        // no_watermark_image_list.push(i.url_list[0])
+                        // 有水印图片列表
+                        // watermark_image_list.push(i.download_url_list[0])
+                        e.reply(segment.image(i.url_list[0]));
+                    }
                 }
-            }
+            })
         });
         return true;
     }
