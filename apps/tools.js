@@ -376,20 +376,21 @@ export class tools extends plugin {
                 if (!fs.existsSync(downloadPath)) {
                     mkdirsSync(downloadPath);
                 }
-                // 开始读取数据
-                if (resp.includes.media[0].type === "photo") {
-                    // 图片
-                    resp.includes.media.map(item => {
+                // 逐个遍历判断
+                for (let item of resp.includes.media) {
+                    if (item.type === "photo") {
+                        // 图片
                         const filePath = `${downloadPath}/${item.url.split("/").pop()}`;
-                        this.downloadImgs(item.url, downloadPath).then(tmp => {
+                        this.downloadImg(item.url, downloadPath).then(_ => {
                             e.reply(segment.image(fs.readFileSync(filePath)));
+                            fs.unlinkSync(filePath)
                         });
-                    });
-                } else {
-                    // 视频
-                    this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(video => {
-                        e.reply(segment.video(`${downloadPath}/temp.mp4`));
-                    });
+                    } else if (item.type === "video") {
+                        // 视频
+                        this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(_ => {
+                            e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                        });
+                    }
                 }
             });
         return true;
@@ -607,7 +608,7 @@ export class tools extends plugin {
     }
 
     // 工具：下载一张网络图片
-    async downloadImgs(img, dir) {
+    async downloadImg (img, dir) {
         const filename = img.split("/").pop();
         const filepath = `${dir}/${filename}`;
         const writer = fs.createWriteStream(filepath);
@@ -628,8 +629,16 @@ export class tools extends plugin {
             .then(res => {
                 res.data.pipe(writer);
                 return new Promise((resolve, reject) => {
-                    writer.on("finish", () => resolve(filepath));
-                    writer.on("error", reject);
+                    writer.on("finish", () => {
+                        writer.close(() => {
+                            resolve(filepath);
+                        });
+                    });
+                    writer.on("error", (err) => {
+                        fs.unlink(filepath, () => {
+                            reject(err);
+                        });
+                    });
                 });
             });
     }
