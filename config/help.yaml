@@ -58,6 +58,9 @@
     - icon: redbook
       title: "小红书"
       desc: 小红书分享实时下载
+    - icon: literature
+      title: "论文"
+      desc: SCI论文实时解析
 - group: 其他指令[实验]
   list:
     - icon: update

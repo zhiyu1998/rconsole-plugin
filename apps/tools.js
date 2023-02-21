@@ -18,7 +18,7 @@ import config from "../model/index.js";
 
 
 export class tools extends plugin {
-    constructor() {
+    constructor () {
         super({
             name: "工具和学习类",
             dsc: "工具相关指令",
@@ -61,6 +61,10 @@ export class tools extends plugin {
                     reg: "(.*)(xhslink.com|xiaohongshu.com)",
                     fnc: "redbook",
                 },
+                {
+                    reg: "(.*)(doi.org)",
+                    fnc: "literature"
+                }
             ],
         });
         // http://api.tuwei.space/girl
@@ -69,12 +73,12 @@ export class tools extends plugin {
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
         // redis的key
-        this.redisKey = `Yz:tools:cache:${this.group_id}`;
+        this.redisKey = `Yz:tools:cache:${ this.group_id }`;
         // 代理接口
         // TODO 填写服务器的内网ID和clash的端口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
-        this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
+        this.myProxy = `http://${ this.proxyAddr }:${ this.proxyPort }`;
         // console.log(this.myProxy)
         // 加载百度翻译配置
         this.translateAppId = this.toolsConfig.translateAppId;
@@ -84,7 +88,7 @@ export class tools extends plugin {
     }
 
     // 翻译插件
-    async trans(e) {
+    async trans (e) {
         const languageReg = /翻(.)/g;
         const msg = e.msg.trim();
         const language = languageReg.exec(msg);
@@ -99,20 +103,20 @@ export class tools extends plugin {
         // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=APP ID&salt=自定义&sign=${ md5("APP ID" + place + "自定义" + "密钥") }&q=${ place }`;
         let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${
             transMap[language[1]]
-        }&appid=${this.translateAppId}&salt=rconsole&sign=${md5(
+        }&appid=${ this.translateAppId }&salt=rconsole&sign=${ md5(
             this.translateAppId + place + "rconsole" + this.translateSecret
-        )}&q=${place}`;
+        ) }&q=${ place }`;
         // console.log(url)
         await fetch(url)
             .then(resp => resp.json())
             .then(text => text.trans_result)
-            .then(res => this.reply(`${res[0].dst}`, true))
+            .then(res => this.reply(`${ res[0].dst }`, true))
             .catch(err => logger.error(err));
         return true;
     }
 
     // 抖音解析
-    async douyin(e) {
+    async douyin (e) {
         const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const douUrl = urlRex.exec(e.msg.trim())[0];
 
@@ -120,15 +124,15 @@ export class tools extends plugin {
             const douRex = /.*video\/(\d+)\/(.*?)/g;
             const douId = douRex.exec(res)[1];
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
-            const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
+            const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
             // 默认重试3次，每次间隔1s (防止SyntaxError: Unexpected token b in JSON at position 0)
             retry(
-                await (function (){
+                await (function () {
                     return fetch(url).then(resp => resp.json())
                 })
             ).then(async resp_json => {
                 const item = resp_json.aweme_detail;
-                e.reply(`识别：抖音, ${item.desc}`);
+                e.reply(`识别：抖音, ${ item.desc }`);
                 const url_type_code = item.aweme_type;
                 const url_type = douyinTypeMap[url_type_code];
                 if (url_type === "video") {
@@ -136,7 +140,7 @@ export class tools extends plugin {
                     this.downloadVideo(url_2).then(video => {
                         e.reply(
                             segment.video(
-                                `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`
+                                `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`
                             )
                         );
                     });
@@ -165,7 +169,7 @@ export class tools extends plugin {
     }
 
     // tiktok解析
-    async tiktok(e) {
+    async tiktok (e) {
         const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#@]*/g;
         const urlShortRex = /(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg.trim();
@@ -185,7 +189,7 @@ export class tools extends plugin {
         }
         const idVideo = await this.getIdVideo(url);
         // API链接
-        const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
+        const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${ idVideo }&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
 
         await axios
             .get(API_URL, {
@@ -206,11 +210,11 @@ export class tools extends plugin {
             })
             .then(resp => {
                 const data = resp.data.aweme_list[0];
-                e.reply(`识别：tiktok, ${data.desc}`);
+                e.reply(`识别：tiktok, ${ data.desc }`);
                 this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
                     e.reply(
                         segment.video(
-                            `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`
+                            `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`
                         )
                     );
                 });
@@ -219,7 +223,7 @@ export class tools extends plugin {
     }
 
     // bilibi解析
-    async bili(e) {
+    async bili (e) {
         const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg.trim();
@@ -243,7 +247,7 @@ export class tools extends plugin {
             // console.log(dynamicId)
             getDynamic(dynamicId).then(resp => {
                 if (resp.dynamicSrc.length > 0) {
-                    e.reply(`识别：哔哩哔哩动态, ${resp.dynamicDesc}`);
+                    e.reply(`识别：哔哩哔哩动态, ${ resp.dynamicDesc }`);
                     // let dynamicSrcMsg = []
                     // resp.dynamicSrc.forEach(item => {
                     //     dynamicSrcMsg.push({
@@ -262,7 +266,7 @@ export class tools extends plugin {
             return true;
         }
 
-        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/`;
         if (!fs.existsSync(path)) {
             mkdirsSync(path);
         }
@@ -274,12 +278,12 @@ export class tools extends plugin {
             // 获取视频信息，然后发送
             fetch(
                 videoId.startsWith("BV")
-                    ? `${baseVideoInfo}?bvid=${videoId}`
-                    : `${baseVideoInfo}?aid=${videoId}`
+                    ? `${ baseVideoInfo }?bvid=${ videoId }`
+                    : `${ baseVideoInfo }?aid=${ videoId }`
             )
                 .then(resp => resp.json())
                 .then(resp => {
-                    e.reply(`识别：哔哩哔哩, ${resp.data.title}`).catch(err => {
+                    e.reply(`识别：哔哩哔哩, ${ resp.data.title }`).catch(err => {
                         e.reply("解析失败，重试一下");
                         console.log(err);
                     });
@@ -288,9 +292,9 @@ export class tools extends plugin {
 
         await getDownloadUrl(url)
             .then(data => {
-                this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
+                this.downBili(`${ path }temp`, data.videoUrl, data.audioUrl)
                     .then(data => {
-                        e.reply(segment.video(`${path}temp.mp4`));
+                        e.reply(segment.video(`${ path }temp.mp4`));
                     })
                     .catch(err => {
                         console.log(err);
@@ -305,9 +309,9 @@ export class tools extends plugin {
     }
 
     // 百科
-    async wiki(e) {
+    async wiki (e) {
         const key = e.msg.replace(/#|百科|wiki/g, "").trim();
-        const url = `https://xiaoapi.cn/API/bk.php?m=json&type=sg&msg=${encodeURI(key)}`;
+        const url = `https://xiaoapi.cn/API/bk.php?m=json&type=sg&msg=${ encodeURI(key) }`;
         // const url2 = 'https://api.jikipedia.com/go/auto_complete'
         Promise.all([
             // axios.post(url2, {
@@ -341,8 +345,8 @@ export class tools extends plugin {
             const data = res[0];
             // const data2 = res[0]
             const template = `
-                      解释：${_.get(data, "msg")}\n
-                      详情：${_.get(data, "more")}\n
+                      解释：${ _.get(data, "msg") }\n
+                      详情：${ _.get(data, "more") }\n
                     `;
             // 小鸡解释：${ _.get(data2, 'content') }
             e.reply(template);
@@ -352,7 +356,7 @@ export class tools extends plugin {
 
     // 小蓝鸟解析
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
-    async twitter(e) {
+    async twitter (e) {
         // 配置参数及解析
         const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg);
@@ -367,11 +371,11 @@ export class tools extends plugin {
             .singleTweet(id, {
                 "media.fields":
                     "duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants",
-                expansions: ["entities.mentions.username", "attachments.media_keys"],
+                expansions: [ "entities.mentions.username", "attachments.media_keys" ],
             })
             .then(resp => {
-                e.reply(`识别：小蓝鸟学习版，${resp.data.text}`);
-                const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+                e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
+                const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
                 // 创建文件夹（如果没有过这个群）
                 if (!fs.existsSync(downloadPath)) {
                     mkdirsSync(downloadPath);
@@ -380,7 +384,7 @@ export class tools extends plugin {
                 for (let item of resp.includes.media) {
                     if (item.type === "photo") {
                         // 图片
-                        const filePath = `${downloadPath}/${item.url.split("/").pop()}`;
+                        const filePath = `${ downloadPath }/${ item.url.split("/").pop() }`;
                         this.downloadImg(item.url, downloadPath).then(_ => {
                             e.reply(segment.image(fs.readFileSync(filePath)));
                             fs.unlinkSync(filePath)
@@ -388,7 +392,7 @@ export class tools extends plugin {
                     } else if (item.type === "video") {
                         // 视频
                         this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(_ => {
-                            e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                            e.reply(segment.video(`${ downloadPath }/temp.mp4`));
                         });
                     }
                 }
@@ -397,9 +401,9 @@ export class tools extends plugin {
     }
 
     // 视频解析
-    async tx(e) {
+    async tx (e) {
         const url = e.msg;
-        const data = await (await fetch(`https://xian.txma.cn/API/jx_txjx.php?url=${url}`)).json();
+        const data = await (await fetch(`https://xian.txma.cn/API/jx_txjx.php?url=${ url }`)).json();
         const k = data.url;
         const name = data.title;
         if (k && name) {
@@ -416,7 +420,7 @@ export class tools extends plugin {
     }
 
     // 请求参数
-    async douyinRequest(url) {
+    async douyinRequest (url) {
         const params = {
             headers: {
                 "User-Agent":
@@ -438,12 +442,12 @@ export class tools extends plugin {
     }
 
     // 工具：根URL据下载视频 / 音频
-    async downloadVideo(url, isProxy = false) {
-        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+    async downloadVideo (url, isProxy = false) {
+        const groupPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
         if (!fs.existsSync(groupPath)) {
             mkdirsSync(groupPath);
         }
-        const target = `${groupPath}/temp.mp4`;
+        const target = `${ groupPath }/temp.mp4`;
         // 待优化
         if (fs.existsSync(target)) {
             console.log(`视频已存在`);
@@ -473,7 +477,7 @@ export class tools extends plugin {
                 }),
             });
         }
-        console.log(`开始下载: ${url}`);
+        console.log(`开始下载: ${ url }`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
 
@@ -484,7 +488,7 @@ export class tools extends plugin {
     }
 
     // 工具：找到tiktok的视频id
-    async getIdVideo(url) {
+    async getIdVideo (url) {
         const matching = url.includes("/video/");
         if (!matching) {
             this.e.reply("没找到，正在获取随机视频！");
@@ -495,8 +499,8 @@ export class tools extends plugin {
     }
 
     // acfun解析
-    async acfun(e) {
-        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp/`;
+    async acfun (e) {
+        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp/`;
         if (!fs.existsSync(path)) {
             mkdirsSync(path);
         }
@@ -504,15 +508,15 @@ export class tools extends plugin {
         let inputMsg = e.msg;
         // 适配手机分享：https://m.acfun.cn/v/?ac=32838812&sid=d2b0991bd6ad9c09
         if (inputMsg.includes("m.acfun.cn")) {
-            inputMsg = `https://www.acfun.cn/v/ac${/ac=([^&?]*)/.exec(inputMsg)[1]}`;
+            inputMsg = `https://www.acfun.cn/v/ac${ /ac=([^&?]*)/.exec(inputMsg)[1] }`;
         }
 
         parseUrl(inputMsg).then(res => {
-            e.reply(`识别：猴山，${res.videoName}`);
+            e.reply(`识别：猴山，${ res.videoName }`);
             parseM3u8(res.urlM3u8s[res.urlM3u8s.length - 1]).then(res2 => {
                 downloadM3u8Videos(res2.m3u8FullUrls, path).then(_ => {
-                    mergeAcFileToMp4(res2.tsNames, path, `${path}out.mp4`).then(_ => {
-                        e.reply(segment.video(`${path}out.mp4`));
+                    mergeAcFileToMp4(res2.tsNames, path, `${ path }out.mp4`).then(_ => {
+                        e.reply(segment.video(`${ path }out.mp4`));
                     });
                 });
             });
@@ -521,11 +525,11 @@ export class tools extends plugin {
     }
 
     // 小红书解析
-    async redbook(e) {
+    async redbook (e) {
         const msgUrl = /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
             e.msg
         )[0];
-        const url = `https://dlpanda.com/zh-CN/xhs?url=${msgUrl}`;
+        const url = `https://dlpanda.com/zh-CN/xhs?url=${ msgUrl }`;
 
         await axios
             .get(url, {
@@ -542,13 +546,13 @@ export class tools extends plugin {
                 const reg = /<img(.*)src="\/\/ci\.xiaohongshu\.com(.*?)"/g;
                 let res = "";
 
-                const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+                const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
                 // 创建文件夹（如果没有过这个群）
                 if (!fs.existsSync(downloadPath)) {
                     mkdirsSync(downloadPath);
                 }
                 while ((res = reg.exec(resp.data))) {
-                    const addr = `https://ci.xiaohongshu.com${res[2]}`;
+                    const addr = `https://ci.xiaohongshu.com${ res[2] }`;
                     axios
                         .get(addr, {
                             headers: {
@@ -558,7 +562,7 @@ export class tools extends plugin {
                             responseType: "stream",
                         })
                         .then(resp => {
-                            const filepath = `${downloadPath}/${/com\/(.*)\?/.exec(addr)[1]}.jpg`;
+                            const filepath = `${ downloadPath }/${ /com\/(.*)\?/.exec(addr)[1] }.jpg`;
                             const writer = fs.createWriteStream(filepath);
                             resp.data.pipe(writer);
                             return new Promise((resolve, reject) => {
@@ -576,7 +580,29 @@ export class tools extends plugin {
         return true;
     }
 
-    async downBili(title, videoUrl, audioUrl) {
+    // 文献解析
+    async literature (e) {
+        const litReg = /(http:|https:)\/\/doi.org\/[A-Za-z\d._?%&+\-=\/#@]*/
+        const url = litReg.exec(e.msg.trim())[0];
+        const waitList = [
+            "https://sci-hub.se/",
+            "https://sci-hub.st/",
+            "https://sci-hub.do/",
+            "https://sci-hubtw.hkvisa.net/",
+            "https://sci-hub.ren/",
+            "https://sci-hub.ee/",
+            "https://sci-hub.ru/",
+        ];
+        const flag = /doi.org\/(.*)/.exec(url)[1];
+        const newWaitList = waitList.map((item) => {
+            return item + flag;
+        });
+        await Promise.race(newWaitList).then(resp => {
+            e.reply(resp)
+        })
+    }
+
+    async downBili (title, videoUrl, audioUrl) {
         return Promise.all([
             downloadBFile(
                 videoUrl,
@@ -610,7 +636,7 @@ export class tools extends plugin {
     // 工具：下载一张网络图片
     async downloadImg (img, dir) {
         const filename = img.split("/").pop();
-        const filepath = `${dir}/${filename}`;
+        const filepath = `${ dir }/${ filename }`;
         const writer = fs.createWriteStream(filepath);
         return axios
             .get(img, {
@@ -641,5 +667,24 @@ export class tools extends plugin {
                     });
                 });
             });
+    }
+
+    // 工具：下载pdf文件
+    async downloadPDF (url, filename) {
+        return axios({
+            url: url,
+            responseType: "stream",
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36",
+            },
+        }).then((response) => {
+            const writer = fs.createWriteStream(filename);
+            response.data.pipe(writer);
+            return new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
+        });
     }
 }
