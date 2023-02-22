@@ -1,32 +1,10 @@
 // 主库
 import { segment } from "oicq";
-import common from "../../../lib/common/common.js";
 import fetch from "node-fetch";
 // 配置文件
 import config from "../model/index.js";
 // 其他库
 import _ from "lodash";
-// import mongodb from 'mongodb'
-
-// Mongodb初始化
-// function initMongo () {
-//     const MongoClient = mongodb.MongoClient
-//     const url = 'mongodb://localhost:27017/'
-//     return new Promise((resolve, reject) => {
-//         MongoClient.connect(url, (err, db) => {
-//             const dbo = db.db('test')
-//             if (err) {
-//                 throw err // 和调用 reject(err) 效果类似
-//             }
-//             let collection = dbo.collection('temp')
-//             resolve(collection)
-//         })
-//     })
-// }
-//
-// const mongo = initMongo()
-// 60s后撤回
-const recallTime = 109;
 
 export class mystery extends plugin {
     constructor() {
@@ -52,9 +30,6 @@ export class mystery extends plugin {
                     reg: "^#(啊?|啊？)$",
                     fnc: "aaa",
                 },
-                // {
-                //     reg: '^#我靠', fnc: 'tuiimg'
-                // }
             ],
         });
         this.mysteryConfig = config.getConfig("mystery");
@@ -270,27 +245,6 @@ export class mystery extends plugin {
 
         return true;
     }
-
-    // async tuiimg (e) {
-    //     const MAX_SIZE = this.mysteryConfig.tuiimg.count
-    //     this.reply('这群早晚被你整没了...')
-    //     let images = []
-    //     const template = {
-    //         nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
-    //     }
-    //     await mongo.then(conn => {
-    //         return conn.aggregate([ { $sample: { size: MAX_SIZE } } ]).toArray()
-    //     }).then((result) => {
-    //         result.forEach((item) => {
-    //             images.push({
-    //                 message: segment.image(item.url), ...template
-    //             })
-    //         })
-    //     })
-    //     return !!(await this.reply(await Bot.makeForwardMsg(images), false, {
-    //         recallMsg: recallTime
-    //     }))
-    // }
 
     // 正则：获取图片
     getCos6Img(string) {

@@ -33,8 +33,8 @@
       title: "#啊?"
       desc: 啊？
     - icon: pic5
-      title: "#我靠"
-      desc: 神秘的芒果
+      title: "@"
+      desc: 自定义对话
 - group: 工具类合集
   list:
     - icon: translate

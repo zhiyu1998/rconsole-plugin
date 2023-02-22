@@ -43,7 +43,7 @@ index -- 主入口
 ## 📔 使用说明
 
 1.【必要】在`Yunzai-Bot`安装mongodb、axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
-> pnpm add mongodb axios tunnel twitter-api-v2 -w
+> pnpm add axios tunnel twitter-api-v2 -w
 
 2.【必要】下载插件
 > git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
@@ -56,67 +56,26 @@ sudo apt-get install ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 
-## 🧑‍🌾 进阶
-【可选】备注：考虑到不是所有电脑都有mongodb，如果要开启`#我靠`功能，需要进行以下操作：
+## 🧑‍🌾 【可选】进阶内容
+这个功能由[烦烦同学](https://github.com/nilfunc
+)提出的需求，正好符合插件的宗旨`为朋友所写的功能`。在使用这个功能之前需要安装以下：  
+在Yunzai主目录使用以下命令
+> pnpm add mongoose -w
 
-### 使用Python、Mongodb爬虫三次元图片
-首先去test文件跑python代码(要安装`requirements.txt`要求的依赖)
-> python3 ./test/main.py
+安装Mongodb（别看错了，下载`4.`版本）：
+> 官网地址：https://www.mongodb.com/try/download/community
 
-需要把以下代码(apps/mystery.js)注释取消：
-```javascript
-// in apps/mystery.js
+### 使用Mongoose进行自定义对话
+需要把代码(apps/rchat.js)注释取消（因为不是每个人都想装mongodb）：
+> 注释的地方例如：// import mongoose from "mongoose";  
+> 取消注释快捷键：`ctrl + /`
 
-// Mongodb初始化
-import mongodb from 'mongodb'
-
-// Mongodb初始化
-function initMongo () {
-    const MongoClient = mongodb.MongoClient
-    const url = 'mongodb://localhost:27017/'
-    return new Promise((resolve, reject) => {
-        MongoClient.connect(url, (err, db) => {
-            const dbo = db.db('test')
-            if (err) {
-                throw err // 和调用 reject(err) 效果类似
-            }
-            let collection = dbo.collection('temp')
-            resolve(collection)
-        })
-    })
-}
-
-const mongo = initMongo()
-// ...
-{
-    reg: '^#我靠', fnc: 'tuiimg'
-}
-// ...
-async tuiimg (e) {
-    const MAX_SIZE = this.mysteryConfig.tuiimg.count
-    this.reply('这群早晚被你整没了...')
-    let images = []
-    const template = {
-        nickname: this.e.sender.card || this.e.user_id, user_id: this.e.user_id
-    }
-    await mongo.then(conn => {
-        return conn.aggregate([ { $sample: { size: MAX_SIZE } } ]).toArray()
-    }).then((result) => {
-        result.forEach((item) => {
-            images.push({
-                message: segment.image(item.url), ...template
-            })
-        })
-    })
-    return !!(await this.reply(await Bot.makeForwardMsg(images), false, {
-        recallMsg: recallTime
-    }))
-}
-```
-
-> 备注: 
-> 1. linux/windows系统下自己装一个mongodb，上一个密码(不上有风险)  
-> 2. `test/main.py`爬取链接（要有python环境、配合mongodb使用）
+### 进阶内容使用说明
+❓ 询问：@机器人 （问题）  
+➕增加问题：@机器人 add（问题）  
+❌删除问题：@机器人 del（问题）  
+⭕更新问题：@机器人 update（问题）  
+![help](./img/example6.png)
 
 ### 其他进阶操作
 【可选】相关配置(apps/tools.js)：
