@@ -19,7 +19,7 @@ export class mystery extends plugin {
                     fnc: "mystery",
                 },
                 {
-                    reg: "^#*来份涩图 (.*)$",
+                    reg: "^#*来份涩图(.*)$",
                     fnc: "setu",
                 },
                 {
@@ -27,7 +27,7 @@ export class mystery extends plugin {
                     fnc: "cospro",
                 },
                 {
-                    reg: "^#(啊?|啊？)$",
+                    reg: "^#(啊)$",
                     fnc: "aaa",
                 },
             ],
