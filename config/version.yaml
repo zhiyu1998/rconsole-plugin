@@ -2,7 +2,6 @@
   version: 1.0.7,
   data:
     [
-      增加<span class="cmd">自定义对话</span>进阶功能,
       增加<span class="cmd">SCI论文</span>解析,
       适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       增加<span class="cmd">小红书</span>的图片解析,

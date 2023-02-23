@@ -32,9 +32,6 @@
     - icon: pic4
       title: "#啊?"
       desc: 啊？
-    - icon: pic5
-      title: "@"
-      desc: 自定义对话
 - group: 工具类合集
   list:
     - icon: translate
