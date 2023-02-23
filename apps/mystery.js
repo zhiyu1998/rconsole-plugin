@@ -188,14 +188,14 @@ export class mystery extends plugin {
             })
             .then(json => {
                 if (!json.length) {
-                    e.reply("探索失败，你再我去一次吧");
+                    e.reply("请求失败，你再试一次吧");
                     return false;
                 }
                 const content = json[randomIndex].content;
                 images = this.getImages2(content.rendered);
                 // 如果图片为空直接返回
                 if (images.length === 0) {
-                    e.reply("探索失败，你再我去一次吧");
+                    e.reply("请求失败，你再试一次吧");
                     return false;
                 }
                 // 洗牌
@@ -220,7 +220,7 @@ export class mystery extends plugin {
     async setu(e) {
         const keyword = e.msg.split(" ")[1];
         const numb = this.mysteryConfig.setu.count;
-        await e.reply("正在给你找图片啦～", true, { recallMsg: 7 });
+        await e.reply("真变态啊...", true, { recallMsg: 7 });
 
         let url = `https://api.lolicon.app/setu/v2?r18=${keyword}&num=${numb}`; //←此处修改图片类型，0为非18，1为18，2为18非18混合
         const response = await fetch(url);
@@ -238,7 +238,7 @@ export class mystery extends plugin {
         const res = await this.reply(await Bot.makeForwardMsg(images), false, { recallMsg: 60 });
 
         if (!res) {
-            return e.reply("好、好涩(//// ^ ////)……不、不行啦……被、被吞啦o(≧口≦)o", true, {
+            return e.reply("请求失败，你再试一次吧", true, {
                 recallMsg: 60,
             });
         }
