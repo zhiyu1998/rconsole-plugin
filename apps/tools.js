@@ -384,7 +384,7 @@ export class tools extends plugin {
                     "duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants",
                 expansions: [ "entities.mentions.username", "attachments.media_keys" ],
             })
-            .then(resp => {
+            .then(async resp => {
                 e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
                 const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
                 // 创建文件夹（如果没有过这个群）
@@ -392,14 +392,11 @@ export class tools extends plugin {
                     mkdirsSync(downloadPath);
                 }
                 // 逐个遍历判断
+                let task = []
                 for (let item of resp.includes.media) {
                     if (item.type === "photo") {
                         // 图片
-                        const filePath = `${ downloadPath }/${ item.url.split("/").pop() }`;
-                        this.downloadImg(item.url, downloadPath).then(_ => {
-                            e.reply(segment.image(fs.readFileSync(filePath)));
-                            fs.unlinkSync(filePath);
-                        });
+                        task.push(this.downloadImg(item.url, downloadPath))
                     } else if (item.type === "video") {
                         // 视频
                         this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(_ => {
@@ -407,6 +404,25 @@ export class tools extends plugin {
                         });
                     }
                 }
+                let images = []
+                let path = []
+                // 获取所有图片的promise
+                await Promise.all(task).then(resp => {
+                    // console.log(resp)
+                    resp.forEach(item => {
+                        path.push(item)
+                        images.push({
+                            message: segment.image(fs.readFileSync(item)),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        });
+                    })
+                })
+                await e.reply(await Bot.makeForwardMsg(images))
+                // 清理文件
+                path.forEach(item => {
+                    fs.unlinkSync(item);
+                })
             });
         return true;
     }
