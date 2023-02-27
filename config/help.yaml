@@ -21,6 +21,9 @@
     - icon: pic1
       title: "#累了"
       desc: 疲惫往往是过度劳累
+    - icon: youthLearning
+      title: "#青年大学习"
+      desc: 青年大学习答案和截图
 - group: 工具类合集
   list:
     - icon: translate

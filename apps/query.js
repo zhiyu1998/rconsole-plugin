@@ -6,6 +6,9 @@ import config from "../model/index.js";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import _ from "lodash";
+// http库
+import axios from "axios";
+import fs from "node:fs";
 
 export class query extends plugin {
     constructor() {
@@ -40,13 +43,17 @@ export class query extends plugin {
                     fnc: "hotSearch",
                 },
                 {
-                    reg: "#买家秀",
+                    reg: "^#买家秀$",
                     fnc: "buyerShow",
                 },
                 {
                     reg: "^#(累了)$",
                     fnc: "cospro",
-                }
+                },
+                {
+                    reg: "^#青年大学习$",
+                    fnc: "youthLearning",
+                },
             ],
         });
         this.catConfig = config.getConfig("query");
@@ -295,6 +302,109 @@ export class query extends plugin {
                 e.reply(segment.image(item));
             });
         });
+        return true;
+    }
+
+    // 青年大学习
+    async youthLearning(e) {
+        await axios
+            .get(
+                "https://qczj.h5yunban.com/qczj-youth-learning/cgi-bin/common-api/course/current",
+                {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53",
+                    },
+                }
+            )
+            .then(resp => {
+                // console.log(resp.data);
+                return resp.data.result.uri.replace("index.html", "m.html");
+            })
+            .then(async uri => {
+                axios
+                    .get(uri, {
+                        headers: {
+                            "User-Agent":
+                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53",
+                        },
+                    })
+                    .then(resp => {
+                        const content = resp.data;
+                        const resList = content.match(/<div class="w\d option" (.*)><\/div>/g);
+                        const valueList = resList.map(item => {
+                            return item.match(/data-a="(\d+)"/)[1];
+                        });
+                        let result = [];
+                        for (let i = 0; i < valueList.length; i += 4) {
+                            const group = valueList.slice(i, i + 4);
+                            switch (group.join("")) {
+                                case "2221":
+                                    result.push("D");
+                                    break;
+                                case "1222":
+                                    result.push("A");
+                                    break;
+                                case "2122":
+                                    result.push("B");
+                                    break;
+                                case "2212":
+                                    result.push("C");
+                                    break;
+                                case "1111":
+                                    result.push("ABCD");
+                                    break;
+                                default:
+                                    result.push("");
+                                    break;
+                            }
+                        }
+                        // 封装以下答案
+                        let ans = "";
+                        for (let i = 0; i < result.length; i++) {
+                            ans += `${i + 1}. ${result[i]}\n`;
+                        }
+                        e.reply(ans);
+                        const imgMatch =
+                            "https://h5.cyol.com/special/daxuexi/fk2hp2n7xv/index.html".match(
+                                /[^\/]+/g
+                            );
+                        const imgId = imgMatch[imgMatch.length - 2];
+
+                        axios
+                            .get(`https://h5.cyol.com/special/daxuexi/${imgId}/images/end.jpg`, {
+                                headers: {
+                                    "User-Agent":
+                                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                                },
+                                responseType: "stream",
+                            })
+                            .then(resp => {
+                                const filePath = "./youthLearning.png";
+                                const writer = fs.createWriteStream(filePath);
+                                resp.data.pipe(writer);
+                                return new Promise((resolve, reject) => {
+                                    writer.on("finish", () => {
+                                        writer.close(() => {
+                                            resolve(filePath);
+                                        });
+                                    });
+                                    writer.on("error", err => {
+                                        fs.unlink(filePath, () => {
+                                            reject(err);
+                                        });
+                                    });
+                                });
+                            })
+                            .then(filePath => {
+                                e.reply(segment.image(fs.readFileSync(filePath)));
+                                fs.unlinkSync(filePath, (err) => {
+                                    if (err) throw err;
+                                    console.error('删除青年大学习文件失败');
+                                });
+                            });
+                    });
+            });
         return true;
     }
 
