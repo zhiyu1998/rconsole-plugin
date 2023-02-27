@@ -71,8 +71,6 @@ export class tools extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
-        // redis的key
-        this.redisKey = `Yz:tools:cache:${ this.group_id }`;
         // 代理接口
         // TODO 填写服务器的内网ID和clash的端口
         this.proxyAddr = this.toolsConfig.proxyAddr;
