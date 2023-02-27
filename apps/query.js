@@ -336,6 +336,7 @@ export class query extends plugin {
                             return item.match(/data-a="(\d+)"/)[1];
                         });
                         let result = [];
+                        // 转换ABCD
                         for (let i = 0; i < valueList.length; i += 4) {
                             const group = valueList.slice(i, i + 4);
                             switch (group.join("")) {
@@ -359,7 +360,7 @@ export class query extends plugin {
                                     break;
                             }
                         }
-                        // 封装以下答案
+                        // 封装答案
                         let ans = "";
                         for (let i = 0; i < result.length; i++) {
                             ans += `${i + 1}. ${result[i]}\n`;
