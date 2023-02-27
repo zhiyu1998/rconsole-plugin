@@ -427,25 +427,6 @@ export class tools extends plugin {
         return true;
     }
 
-    // 视频解析
-    async tx (e) {
-        const url = e.msg;
-        const data = await (await fetch(`https://xian.txma.cn/API/jx_txjx.php?url=${ url }`)).json();
-        const k = data.url;
-        const name = data.title;
-        if (k && name) {
-            e.reply(name + "\n" + k);
-            let forward = await this.makeForwardMsg(url);
-            e.reply(forward);
-            return true;
-        } else {
-            e.reply("解析腾讯视频失败~\n去浏览器使用拼接接口吧...");
-            let forward = await this.makeForwardMsg(url);
-            e.reply(forward);
-            return true;
-        }
-    }
-
     // 请求参数
     async douyinRequest (url) {
         const params = {
