@@ -43,6 +43,10 @@ export class query extends plugin {
                     reg: "#买家秀",
                     fnc: "buyerShow",
                 },
+                {
+                    reg: "^#(累了)$",
+                    fnc: "cospro",
+                }
             ],
         });
         this.catConfig = config.getConfig("query");
@@ -292,6 +296,27 @@ export class query extends plugin {
             });
         });
         return true;
+    }
+
+    async cospro(e) {
+        let req = [
+            ...(await fetch("https://imgapi.cn/cos2.php?return=jsonpro")
+                .then(resp => resp.json())
+                .then(json => json.imgurls)),
+            ...(await fetch("https://imgapi.cn/cos.php?return=jsonpro")
+                .then(resp => resp.json())
+                .then(json => json.imgurls)),
+        ];
+        e.reply("哪天克火掉一定是在这个群里面...");
+        let images = [];
+        req.forEach(item => {
+            images.push({
+                message: segment.image(encodeURI(item)),
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            });
+        });
+        return !!(await this.reply(await Bot.makeForwardMsg(images)));
     }
 
     // 删除标签

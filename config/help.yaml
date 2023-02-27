@@ -18,20 +18,9 @@
     - icon: buyer
       title: "#买家秀"
       desc: 淘宝买家秀
-- group: 神秘功能合集
-  list:
     - icon: pic1
-      title: "#雀食/#确实"
-      desc: 原汤化原食
-    - icon: pic2
-      title: "#来份涩图 1/0"
-      desc: 涩涩的
-    - icon: pic3
       title: "#累了"
       desc: 疲惫往往是过度劳累
-    - icon: pic4
-      title: "#啊?"
-      desc: 啊？
 - group: 工具类合集
   list:
     - icon: translate
@@ -58,7 +47,7 @@
     - icon: literature
       title: "论文"
       desc: SCI论文实时解析
-- group: 其他指令[实验]
+- group: 其他指令
   list:
     - icon: update
       title: "#R插件更新"
