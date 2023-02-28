@@ -1,5 +1,7 @@
 import schedule from "node-schedule";
 import common from "../../../lib/common/common.js";
+import axios from "axios";
+import fs from "node:fs";
 
 /**
  * 请求模板
@@ -65,6 +67,30 @@ function retry(func, maxRetries = 3, delay = 1000) {
                 });
         };
         attempt(maxRetries);
+    });
+}
+
+/**
+ * 工具：下载pdf文件
+ * @param url
+ * @param filename
+ * @returns {Promise<unknown>}
+ */
+function downloadPDF (url, filename) {
+    return axios({
+        url: url,
+        responseType: "stream",
+        headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36",
+        },
+    }).then(response => {
+        const writer = fs.createWriteStream(filename);
+        response.data.pipe(writer);
+        return new Promise((resolve, reject) => {
+            writer.on("finish", resolve);
+            writer.on("error", reject);
+        });
     });
 }
 
