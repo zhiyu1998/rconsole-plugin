@@ -151,7 +151,7 @@ export class tools extends plugin {
                 const dyApi = 'https://www.douyin.com/aweme/v1/web/aweme/detail/?'
                 const params = `aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`
                 // xg参数
-                axios.post(`http://47.115.200.238/xg/path?url=${params.replace('&','%26')}`, {
+                axios.post(`http://47.115.200.238/xg/path?url=${params.replaceAll('&','%26')}`, {
                     headers: {
                         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
                         "referer": "https://www.douyin.com/",
