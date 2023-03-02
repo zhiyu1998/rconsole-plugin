@@ -54,6 +54,14 @@ export class query extends plugin {
                     reg: "^#青年大学习$",
                     fnc: "youthLearning",
                 },
+                {
+                    reg: "^#(搜书)(.*)$$",
+                    fnc: "searchBook",
+                },
+                {
+                    reg: "^#(bookid)(.*)$$",
+                    fnc: "searchBookById",
+                }
             ],
         });
         this.catConfig = config.getConfig("query");
@@ -428,6 +436,106 @@ export class query extends plugin {
             });
         });
         return !!(await this.reply(await Bot.makeForwardMsg(images)));
+    }
+
+    // 搜书
+    async searchBook(e) {
+        let keyword = e.msg.replace(/#|搜书/g, "").trim();
+        const thisBookMethod = this
+        const sendTemplate = {
+            nickname: this.e.sender.card || this.e.user_id,
+            user_id: this.e.user_id,
+        };
+        axios.post('https://api.ylibrary.org/api/search/', {
+            headers: {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
+                "referer": "https://search.zhelper.net/"
+            },
+            "keyword": keyword,
+            "page": 1,
+            "sensitive": false
+        }).then(async resp => {
+            const dataBook = resp.data.data;
+            let bookMsg = []
+            await dataBook.forEach(item => {
+                const { title, author, publisher, isbn, extension, filesize, year, id, source } = item
+                bookMsg.push({
+                    message: { type: "text", text: `${id}: <${title}>\n`
+                            + `作者：${author}\n`
+                            + `书籍类型：${extension}\n`
+                            + `出版年月：${year}\n`
+                            + `来源：${source}`
+                    },
+                    ...sendTemplate,
+                })
+            })
+            await e.reply(await Bot.makeForwardMsg(bookMsg))
+            await e.reply("请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）")
+
+            thisBookMethod.setContext("searchBookContext");
+        })
+    }
+
+    // 通过id搜书
+    async searchBookById(e) {
+        let keyword = e.msg.replace(/#|bookkey/g, "").trim();
+        let id, source;
+        if (keyword.includes(" ")) {
+            [id, source] = keyword.split(" ")
+        } else {
+            id = /\d+/.exec(keyword)[0];
+            source = ""
+        }
+        await this.getBookDetail(e, id, source)
+    }
+
+    /**
+     * @link searchBookById 的上下文
+     * @returns {Promise<void>}
+     */
+    async searchBookContext() {
+        // 当前消息
+        const curMsg = this.e;
+        // 上一个消息
+        // const preMsg = this.getContext();
+        if (!curMsg.msg) {
+            this.e.reply("请回复id和来源！")
+            return
+        }
+        // 获取id和来源
+        let id, source;
+        if (curMsg.msg.includes(" ")) {
+            [id, source] = curMsg.msg.split(" ")
+        } else {
+            id = /\d+/.exec(curMsg.msg)[0];
+            source = ""
+        }
+        await this.getBookDetail(curMsg, id, source)
+        this.finish("searchBookContext");
+    }
+
+    /**
+     * 获取书籍下载方式
+     * @param e
+     * @param id
+     * @param source
+     * @returns {Promise<AxiosResponse<any>>}
+     */
+    async getBookDetail(e, id, source) {
+        return axios.post('https://api.ylibrary.org/api/detail/', {
+            headers: {
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
+                "referer": "https://search.zhelper.net/"
+            },
+            "id": id,
+            "source": source || "zlibrary",
+        }).then(resp => {
+            const detailData = resp.data;
+            const Libgen = `https://libgendown.1kbtool.com/${detailData.md5}`
+            const ipfs = `https://ipfs-checker.1kbtool.com/${detailData.ipfs_cid}`
+            e.reply(`方式一：${Libgen}\n` +
+                `方式二：${ipfs}`)
+        })
     }
 
     // 删除标签
