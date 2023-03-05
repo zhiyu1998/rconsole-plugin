@@ -13,7 +13,11 @@ class RConfig {
     this.watcher = { config: {} }
   }
 
-  // 获取配置文件
+  /**
+   * 获取配置文件
+   * @param name
+   * @returns {any}
+   */
   getConfig (name) {
     let ignore = []
 
@@ -25,11 +29,9 @@ class RConfig {
   }
 
   /**
-     * 获取配置yaml
-     * @param app 功能
-     * @param name 名称
-     * @param type 默认跑配置-defSet，用户配置-config
-     */
+   * 获取配置yaml
+   * @param name 名称
+   */
   getYaml (name) {
     // 获取文件路径
     let file = this.getFilePath(name)
@@ -42,9 +44,7 @@ class RConfig {
 
   /**
    * 获取文件路径
-   * @param app
    * @param name
-   * @param type
    * @returns {string}
    */
   getFilePath (name) {
@@ -54,9 +54,7 @@ class RConfig {
   /**
    * 听配置文件
    * @param file
-   * @param app
    * @param name
-   * @param type
    */
   watch (file, name) {
     const watcher = chokidar.watch(file)
@@ -68,9 +66,7 @@ class RConfig {
 
   /**
    * 保存配置
-   * @param app
    * @param name
-   * @param type
    * @param data
    */
   saveSet (name, data) {
