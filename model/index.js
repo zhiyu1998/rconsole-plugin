@@ -60,6 +60,7 @@ class RConfig {
     const watcher = chokidar.watch(file)
 
     watcher.on('change', (path) => {
+      delete 
       logger.mark(`[修改配置文件][${name}]`)
     })
   }

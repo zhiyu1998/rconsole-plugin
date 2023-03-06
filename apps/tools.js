@@ -507,27 +507,26 @@ export class tools extends plugin {
                 timeout: 10000,
                 proxy: false,
             })
-            .then(resp => {
+            .then(async resp => {
                 const reg = /<img(.*)src="\/\/ci\.xiaohongshu\.com(.*?)"/g;
-                let res = "";
 
                 const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
                 // 创建文件夹（如果没有过这个群）
                 if (!fs.existsSync(downloadPath)) {
                     mkdirsSync(downloadPath);
                 }
-                while ((res = reg.exec(resp.data))) {
-                    const addr = `https://ci.xiaohongshu.com${ res[2] }`;
-                    axios
-                        .get(addr, {
-                            headers: {
-                                "User-Agent":
-                                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                            },
-                            responseType: "stream",
-                        })
+                const res = resp.data.match(reg)
+                const imagesPath = res.map(item => {
+                    const addr = `https:${item.split('"')[3]}`;
+                    return axios.get(addr, {
+                        headers: {
+                            "User-Agent":
+                                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                        },
+                        responseType: "stream",
+                    })
                         .then(resp => {
-                            const filepath = `${ downloadPath }/${ /com\/(.*)\?/.exec(addr)[1] }.jpg`;
+                            const filepath = `${downloadPath}/${/com\/(.*)\?/.exec(addr)[1]}.jpg`;
                             const writer = fs.createWriteStream(filepath);
                             resp.data.pipe(writer);
                             return new Promise((resolve, reject) => {
@@ -535,11 +534,17 @@ export class tools extends plugin {
                                 writer.on("error", reject);
                             });
                         })
-                        .then(filepath => {
-                            e.reply(segment.image(fs.readFileSync(filepath)));
-                            fs.unlinkSync(filepath);
-                        });
-                }
+                })
+                const images = await Promise.all(imagesPath).then(paths => {
+                    return paths.map(item => {
+                        return {
+                            message: segment.image(fs.readFileSync(item)),
+                            nickname: e.sender.card || e.user_id,
+                            user_id: e.user_id,
+                        }
+                    })
+                })
+                await this.reply(await Bot.makeForwardMsg(images));
             });
 
         return true;
