@@ -62,13 +62,13 @@ sudo apt-get install ffmpeg
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
-> 小蓝鸟api:https://developer.twitter.com/en  
+> `小蓝鸟`api:https://developer.twitter.com/en  
 注册完之后将`Bearer Token`填入config/tools.yaml`
 
-> 百度翻译api:https://fanyi-api.baidu.com/doc/21  
+> `百度翻译`api:https://fanyi-api.baidu.com/doc/21  
 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
 
-> 更改proxy地址在config/tools.yaml：  
+> (非必要不更改)更改魔法在`config/tools.yaml` 或 [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)的配置位置：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '7890' # 魔法端口`
 ## 📦 业务
