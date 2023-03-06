@@ -549,7 +549,7 @@ export class tools extends plugin {
                 await this.reply(await Bot.makeForwardMsg(images));
                 // 清理文件
                 path.forEach(item => {
-                    fs.fs.unlinkSync(item);
+                    fs.unlinkSync(item);
                 })
             });
 
