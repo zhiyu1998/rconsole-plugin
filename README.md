@@ -56,7 +56,7 @@ git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plu
 ```shell
 # ubuntu
 sudo apt-get install ffmpeg
-# centos 参考：https://blog.csdn.net/XIAOGUANG_/article/details/105343886
+# 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 
