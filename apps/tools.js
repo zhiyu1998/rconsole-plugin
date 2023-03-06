@@ -535,8 +535,10 @@ export class tools extends plugin {
                             });
                         })
                 })
+                let path = []
                 const images = await Promise.all(imagesPath).then(paths => {
                     return paths.map(item => {
+                        path.push(item)
                         return {
                             message: segment.image(fs.readFileSync(item)),
                             nickname: e.sender.card || e.user_id,
@@ -545,6 +547,10 @@ export class tools extends plugin {
                     })
                 })
                 await this.reply(await Bot.makeForwardMsg(images));
+                // 清理文件
+                path.forEach(item => {
+                    fs.fs.unlinkSync(item);
+                })
             });
 
         return true;
