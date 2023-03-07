@@ -78,7 +78,6 @@ sudo apt-get install ffmpeg
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
-![help](./img/afdian.jpg)
 感谢以下朋友的支持！（排名不分多少）
 
 |       昵称        | 赞助   |
