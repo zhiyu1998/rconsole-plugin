@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import { Group, segment } from "oicq";
-import { autoTask } from "../utils/common.js"
+import { autoTask } from "../utils/common.js";
 
 // 指定定时发送的群号
 const groupList = ["169721415"];
@@ -60,7 +60,7 @@ export class daily extends plugin {
 async function pushDailyWorld(e) {
     // 每天60秒读懂世界接口地址
     const url = await fetch("https://api.vvhan.com/api/60s?type=json").catch(err =>
-        console.error(err)
+        console.error(err),
     );
     const imgUrl = await url.json();
     const res = await imgUrl.imgUrl;
@@ -80,7 +80,7 @@ async function pushDailyWorld(e) {
 
 async function pushTouchFish(e) {
     const url = await fetch("https://api.vvhan.com/api/moyu?type=json").catch(err =>
-        console.error(err)
+        console.error(err),
     );
     const imgUrl = await url.json();
     const res = await imgUrl.url;

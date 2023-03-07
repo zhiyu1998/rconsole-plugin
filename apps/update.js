@@ -151,7 +151,7 @@ export class update extends plugin {
             await this.reply(
                 msg +
                     `存在冲突：\n${errMsg}\n` +
-                    "请解决冲突后再更新，或者执行#强制更新，放弃本地修改"
+                    "请解决冲突后再更新，或者执行#强制更新，放弃本地修改",
             );
         } else if (stdout.includes("CONFLICT")) {
             await this.reply([

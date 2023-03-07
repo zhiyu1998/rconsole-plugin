@@ -139,7 +139,7 @@ export class query extends plugin {
                             return true;
                         }
                         e.reply(
-                            `识别：${resp.data[0].name}\n烂番茄评分：${resp.imdbRating}\n豆瓣评分：${resp.doubanRating}\n评分：${resp.imdbRating}`
+                            `识别：${resp.data[0].name}\n烂番茄评分：${resp.imdbRating}\n豆瓣评分：${resp.doubanRating}\n评分：${resp.imdbRating}`,
                         );
                     });
             });
@@ -151,7 +151,7 @@ export class query extends plugin {
         let images = [];
         let reqRes = [
             ...(await fetch(`https://shibe.online/api/cats?count=${numb}`).then(data =>
-                data.json()
+                data.json(),
             )),
             ...(await fetch(`https://api.thecatapi.com/v1/images/search?limit=${numb}`)
                 .then(data => data.json())
@@ -323,7 +323,7 @@ export class query extends plugin {
                         "User-Agent":
                             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53",
                     },
-                }
+                },
             )
             .then(resp => {
                 // console.log(resp.data);
@@ -482,7 +482,7 @@ export class query extends plugin {
                 });
                 await e.reply(await Bot.makeForwardMsg(bookMsg));
                 await e.reply(
-                    "请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）"
+                    "请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）",
                 );
 
                 thisBookMethod.setContext("searchBookContext");
