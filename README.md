@@ -42,15 +42,21 @@ index -- 主入口
 
 ## 📔 使用说明
 
-1.【必要】在`Yunzai-Bot`安装axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
+1.【必要】下载插件
 ```shell
-pnpm add axios tunnel twitter-api-v2 -w
-```
-
-2.【必要】下载插件
 ```shell
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
+``````
+
+
+
+2.【必要】在`Yunzai-Bot`安装axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
+```shell
+pnpm install -P
+或
+pnpm add axios tunnel twitter-api-v2
 ```
+
 
 3.【可选】要使用`视频解析`功能要下载插件【推荐ubuntu系统】
 ```shell
