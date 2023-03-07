@@ -491,7 +491,7 @@ export class query extends plugin {
 
     // 通过id搜书
     async searchBookById(e) {
-        let keyword = e.msg.replace(/#|bookkey/g, "").trim();
+        let keyword = e.msg.replace(/#bookid/, "").trim();
         let id, source;
         if (keyword.includes(" ")) {
             [id, source] = keyword.split(" ");
@@ -546,10 +546,30 @@ export class query extends plugin {
                 source: source || "zlibrary",
             })
             .then(resp => {
-                const detailData = resp.data;
-                const Libgen = `https://libgendown.1kbtool.com/${detailData.md5}`;
-                const ipfs = `https://ipfs-checker.1kbtool.com/${detailData.ipfs_cid}`;
-                e.reply(`方式一：${Libgen}\n` + `方式二：${ipfs}`);
+                const {
+                    author,
+                    extension,
+                    filesize,
+                    id,
+                    in_libgen,
+                    ipfs_cid,
+                    md5,
+                    publisher,
+                    source,
+                    title,
+                    year,
+                } = resp.data;
+                const Libgen = `https://libgendown.1kbtool.com/${md5}`;
+                const ipfs = `https://ipfs-checker.1kbtool.com/${ipfs_cid}?filename=${encodeURIComponent(title)}_${source}-search.${extension}`;
+                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(title)}_${author}_${id}_${source}-search.${extension}`;
+                const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
+                const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
+                e.reply(
+                    `方式1：${Libgen}\n\n` +
+                    `方式2：${ipfs}\n\n` +
+                    `方式3：${cleverPass}\n\n` +
+                    `方式4：${cleverPass2}`,
+                );
             });
     }
 
