@@ -47,11 +47,11 @@ index -- 主入口
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 ``````
 
-2.【必要】在`Yunzai-Bot`安装axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
+2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）、TwitterAPI依赖
+
+
 ```shell
-pnpm install -P
-或
-pnpm add axios tunnel twitter-api-v2
+pnpm i -P --prefix .\plugins\rconsole-plugin\
 ```
 
 
