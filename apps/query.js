@@ -561,7 +561,7 @@ export class query extends plugin {
                 } = resp.data;
                 const Libgen = `https://libgendown.1kbtool.com/${md5}`;
                 const ipfs = `https://ipfs-checker.1kbtool.com/${ipfs_cid}?filename=${encodeURIComponent(title)}_${source}-search.${extension}`;
-                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(title)}_${author}_${id}_${source}-search.${extension}`;
+                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(title)}_${encodeURIComponent(author)}_${id}_${source}-search.${extension}`;
                 const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
                 const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
                 e.reply(
