@@ -44,11 +44,8 @@ index -- 主入口
 
 1.【必要】下载插件
 ```shell
-```shell
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 ``````
-
-
 
 2.【必要】在`Yunzai-Bot`安装axios(0.27.2)、代理工具（tunnel）、TwitterAPI依赖
 ```shell
