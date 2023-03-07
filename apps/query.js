@@ -61,7 +61,7 @@ export class query extends plugin {
                 {
                     reg: "^#(bookid)(.*)$$",
                     fnc: "searchBookById",
-                }
+                },
             ],
         });
         this.catConfig = config.getConfig("query");
@@ -345,28 +345,26 @@ export class query extends plugin {
                         });
                         let result = [];
                         // 转换ABCD
+                        const digitToLetter = {
+                            0: "A",
+                            1: "B",
+                            2: "C",
+                            3: "D",
+                        };
                         for (let i = 0; i < valueList.length; i += 4) {
                             const group = valueList.slice(i, i + 4);
-                            switch (group.join("")) {
-                                case "2221":
-                                    result.push("D");
-                                    break;
-                                case "1222":
-                                    result.push("A");
-                                    break;
-                                case "2122":
-                                    result.push("B");
-                                    break;
-                                case "2212":
-                                    result.push("C");
-                                    break;
-                                case "1111":
-                                    result.push("ABCD");
-                                    break;
-                                default:
-                                    result.push("");
-                                    break;
+                            if (group.length < 4) {
+                                continue;
                             }
+
+                            const letters = group
+                                .map((d, indx) => {
+                                    if (d === "1") {
+                                        return digitToLetter[indx];
+                                    }
+                                })
+                                .join("");
+                            result.push(letters);
                         }
                         // 封装答案
                         let ans = "";
@@ -374,10 +372,7 @@ export class query extends plugin {
                             ans += `${i + 1}. ${result[i]}\n`;
                         }
                         e.reply(ans);
-                        const imgMatch =
-                            "https://h5.cyol.com/special/daxuexi/fk2hp2n7xv/index.html".match(
-                                /[^\/]+/g
-                            );
+                        const imgMatch = uri.match(/[^\/]+/g);
                         const imgId = imgMatch[imgMatch.length - 2];
 
                         axios
@@ -407,9 +402,9 @@ export class query extends plugin {
                             })
                             .then(filePath => {
                                 e.reply(segment.image(fs.readFileSync(filePath)));
-                                fs.unlinkSync(filePath, (err) => {
+                                fs.unlinkSync(filePath, err => {
                                     if (err) throw err;
-                                    console.error('删除青年大学习文件失败');
+                                    console.error("删除青年大学习文件失败");
                                 });
                             });
                     });
@@ -441,39 +436,57 @@ export class query extends plugin {
     // 搜书
     async searchBook(e) {
         let keyword = e.msg.replace(/#|搜书/g, "").trim();
-        const thisBookMethod = this
+        const thisBookMethod = this;
         const sendTemplate = {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         };
-        axios.post('https://api.ylibrary.org/api/search/', {
-            headers: {
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                "referer": "https://search.zhelper.net/"
-            },
-            "keyword": keyword,
-            "page": 1,
-            "sensitive": false
-        }).then(async resp => {
-            const dataBook = resp.data.data;
-            let bookMsg = []
-            await dataBook.forEach(item => {
-                const { title, author, publisher, isbn, extension, filesize, year, id, source } = item
-                bookMsg.push({
-                    message: { type: "text", text: `${id}: <${title}>\n`
-                            + `作者：${author}\n`
-                            + `书籍类型：${extension}\n`
-                            + `出版年月：${year}\n`
-                            + `来源：${source}`
-                    },
-                    ...sendTemplate,
-                })
+        axios
+            .post("https://api.ylibrary.org/api/search/", {
+                headers: {
+                    "user-agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
+                    referer: "https://search.zhelper.net/",
+                },
+                keyword: keyword,
+                page: 1,
+                sensitive: false,
             })
-            await e.reply(await Bot.makeForwardMsg(bookMsg))
-            await e.reply("请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）")
+            .then(async resp => {
+                const dataBook = resp.data.data;
+                let bookMsg = [];
+                await dataBook.forEach(item => {
+                    const {
+                        title,
+                        author,
+                        publisher,
+                        isbn,
+                        extension,
+                        filesize,
+                        year,
+                        id,
+                        source,
+                    } = item;
+                    bookMsg.push({
+                        message: {
+                            type: "text",
+                            text:
+                                `${id}: <${title}>\n` +
+                                `作者：${author}\n` +
+                                `书籍类型：${extension}\n` +
+                                `出版年月：${year}\n` +
+                                `来源：${source}`,
+                        },
+                        ...sendTemplate,
+                    });
+                });
+                await e.reply(await Bot.makeForwardMsg(bookMsg));
+                await e.reply(
+                    "请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）"
+                );
 
-            thisBookMethod.setContext("searchBookContext");
-        })
+                thisBookMethod.setContext("searchBookContext");
+            });
     }
 
     // 通过id搜书
@@ -481,12 +494,12 @@ export class query extends plugin {
         let keyword = e.msg.replace(/#|bookkey/g, "").trim();
         let id, source;
         if (keyword.includes(" ")) {
-            [id, source] = keyword.split(" ")
+            [id, source] = keyword.split(" ");
         } else {
             id = /\d+/.exec(keyword)[0];
-            source = ""
+            source = "";
         }
-        await this.getBookDetail(e, id, source)
+        await this.getBookDetail(e, id, source);
     }
 
     /**
@@ -499,18 +512,18 @@ export class query extends plugin {
         // 上一个消息
         // const preMsg = this.getContext();
         if (!curMsg.msg) {
-            this.e.reply("请回复id和来源！")
-            return
+            this.e.reply("请回复id和来源！");
+            return;
         }
         // 获取id和来源
         let id, source;
         if (curMsg.msg.includes(" ")) {
-            [id, source] = curMsg.msg.split(" ")
+            [id, source] = curMsg.msg.split(" ");
         } else {
             id = /\d+/.exec(curMsg.msg)[0];
-            source = ""
+            source = "";
         }
-        await this.getBookDetail(curMsg, id, source)
+        await this.getBookDetail(curMsg, id, source);
         this.finish("searchBookContext");
     }
 
@@ -522,20 +535,22 @@ export class query extends plugin {
      * @returns {Promise<AxiosResponse<any>>}
      */
     async getBookDetail(e, id, source) {
-        return axios.post('https://api.ylibrary.org/api/detail/', {
-            headers: {
-                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                "referer": "https://search.zhelper.net/"
-            },
-            "id": id,
-            "source": source || "zlibrary",
-        }).then(resp => {
-            const detailData = resp.data;
-            const Libgen = `https://libgendown.1kbtool.com/${detailData.md5}`
-            const ipfs = `https://ipfs-checker.1kbtool.com/${detailData.ipfs_cid}`
-            e.reply(`方式一：${Libgen}\n` +
-                `方式二：${ipfs}`)
-        })
+        return axios
+            .post("https://api.ylibrary.org/api/detail/", {
+                headers: {
+                    "user-agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
+                    referer: "https://search.zhelper.net/",
+                },
+                id: id,
+                source: source || "zlibrary",
+            })
+            .then(resp => {
+                const detailData = resp.data;
+                const Libgen = `https://libgendown.1kbtool.com/${detailData.md5}`;
+                const ipfs = `https://ipfs-checker.1kbtool.com/${detailData.ipfs_cid}`;
+                e.reply(`方式一：${Libgen}\n` + `方式二：${ipfs}`);
+            });
     }
 
     // 删除标签
