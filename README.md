@@ -34,12 +34,6 @@ index -- 主入口
 ![help](./img/example4.png)
 ![help](./img/example5.png)
 
-## 🤺 BUG及时交流群
-【关于Windows适配】目前 [好冷群友](https://gitee.com/hetangx) 已经提供了一个比较可靠的解决方案，已经采纳并使用！
-
-![help](./img/community.jpg)
-> 备用方案：https://t.me/+ZsZMNE8OI7E3MDdl
-
 ## 📔 使用说明
 
 1.【必要】下载插件
