@@ -503,7 +503,7 @@ export class query extends plugin {
     }
 
     /**
-     * @link searchBookById 的上下文
+     * @link searchBook 的上下文
      * @returns {Promise<void>}
      */
     async searchBookContext() {
