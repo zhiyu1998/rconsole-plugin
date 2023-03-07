@@ -71,8 +71,10 @@ sudo apt-get install ffmpeg
 ## 📦 业务
 ![help](./img/help.jpg)
 
-## 🤳 版本
-![help](./img/version.jpg)
+## 🔗 链接
+
+- [云崽](https://gitee.com/Le-niao/Yunzai-Bot)
+- [插件库](https://gitee.com/Hikari666/Yunzai-Bot-plugins-index)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
