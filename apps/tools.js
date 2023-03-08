@@ -244,7 +244,8 @@ export class tools extends plugin {
         } else {
             url = urlRex.exec(url)[0];
         }
-        const idVideo = await this.getIdVideo(url);
+        let idVideo = await this.getIdVideo(url)
+        idVideo = idVideo.replace(/\//g, "");
         // API链接
         const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
 
