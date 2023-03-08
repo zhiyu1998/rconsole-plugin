@@ -284,7 +284,7 @@ export class tools extends plugin {
     async bili(e) {
         const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url = e.msg.trim();
+        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") :e.msg.trim();
         // 短号处理
         if (url.includes("b23.tv")) {
             const bShortUrl = bShortRex.exec(url)[0];
