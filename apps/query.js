@@ -545,7 +545,7 @@ export class query extends plugin {
                 id: id,
                 source: source || "zlibrary",
             })
-            .then(resp => {
+            .then(async resp => {
                 const {
                     author,
                     extension,
@@ -564,12 +564,19 @@ export class query extends plugin {
                 const reqUrl = `${md5}#${filesize}#${encodeURIComponent(title)}_${encodeURIComponent(author)}_${id}_${source}-search.${extension}`;
                 const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
                 const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
-                e.reply(
-                    `方式1：${Libgen}\n\n` +
-                    `方式2：${ipfs}\n\n` +
-                    `方式3：${cleverPass}\n\n` +
+                let bookMethods = [
+                    `方式1：${Libgen}`,
+                    `方式2：${ipfs}`,
+                    `方式3：${cleverPass}`,
                     `方式4：${cleverPass2}`,
-                );
+                ].map(item => {
+                    return {
+                        message: {type: "text", text: item},
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }
+                })
+                await this.reply(await Bot.makeForwardMsg(bookMethods))
             });
     }
 

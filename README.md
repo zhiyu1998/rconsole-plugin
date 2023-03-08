@@ -45,7 +45,7 @@ git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plu
 
 
 ```shell
-pnpm i -P --prefix .\plugins\rconsole-plugin\
+pnpm i -P --prefix ./plugins/rconsole-plugin/
 ```
 
 
