@@ -12,8 +12,8 @@ import { exec, execSync } from "node:child_process";
 export class update extends plugin {
     constructor() {
         super({
-            name: "更新插件",
-            dsc: "更新插件代码",
+            name: "R插件更新插件",
+            dsc: "R插件更新插件代码",
             event: "message",
             priority: 4000,
             rule: [

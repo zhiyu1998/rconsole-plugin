@@ -13,8 +13,8 @@ import fs from "node:fs";
 export class query extends plugin {
     constructor() {
         super({
-            name: "查询类",
-            dsc: "查询相关指令",
+            name: "R插件查询类",
+            dsc: "R插件查询相关指令",
             event: "message.group",
             priority: 500,
             rule: [

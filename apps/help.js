@@ -10,8 +10,8 @@ let helpData = {
 export class help extends plugin {
     constructor(e) {
         super({
-            name: "rconsole插件帮助",
-            dsc: "rconsole插件帮助插件帮助",
+            name: "R插件帮助",
+            dsc: "R插件帮助插件帮助",
             event: "message",
             priority: 500,
             rule: [

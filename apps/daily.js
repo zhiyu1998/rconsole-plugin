@@ -15,8 +15,8 @@ autoTask(pushTouchFish, "0 31 8 * * ?", groupList, isAutoPush);
 export class daily extends plugin {
     constructor(e) {
         super({
-            name: "rconsole插件帮助",
-            dsc: "rconsole插件帮助插件帮助",
+            name: "R插件每日任务",
+            dsc: "R插件每日任务",
             event: "message",
             priority: 500,
             rule: [

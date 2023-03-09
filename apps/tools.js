@@ -19,8 +19,8 @@ import config from "../model/index.js";
 export class tools extends plugin {
     constructor() {
         super({
-            name: "工具和学习类",
-            dsc: "工具相关指令",
+            name: "R插件工具和学习类",
+            dsc: "R插件工具相关指令",
             event: "message.group",
             priority: 500,
             rule: [
