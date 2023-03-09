@@ -454,6 +454,11 @@ export class tools extends plugin {
                         );
                     }
                 }
+                // 如果没有图片直接返回走
+                if (task.length === 0) {
+                    return true;
+                }
+                // 下面是有图片的情况
                 let images = [];
                 let path = [];
                 // 获取所有图片的promise
