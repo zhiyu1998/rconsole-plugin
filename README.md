@@ -56,6 +56,8 @@ sudo apt-get install ffmpeg
 # 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
+4. 【可选】小程序解析仅适配了[Yoimiya/Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
+![小程序解析](./img/example6.png)
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
@@ -73,7 +75,7 @@ sudo apt-get install ffmpeg
 
 ## 🔗 链接
 
-- [云崽](https://gitee.com/Le-niao/Yunzai-Bot)
+- [云崽](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
 - [插件库](https://gitee.com/Hikari666/Yunzai-Bot-plugins-index)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
