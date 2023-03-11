@@ -13,7 +13,7 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
-import { retry } from "../utils/common.js";
+import { downloadVideo, getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
 
 export class tools extends plugin {
@@ -176,7 +176,7 @@ export class tools extends plugin {
                                 const urlType = douyinTypeMap[urlTypeCode];
                                 if (urlType === "video") {
                                     const url_2 = item.video.play_addr.url_list[2];
-                                    this.downloadVideo(url_2, false, headers).then(video => {
+                                    downloadVideo(url_2, false, headers).then(video => {
                                         e.reply(
                                             segment.video(
                                                 `${this.defaultPath}${
@@ -244,7 +244,7 @@ export class tools extends plugin {
         } else {
             url = urlRex.exec(url)[0];
         }
-        let idVideo = await this.getIdVideo(url);
+        let idVideo = await getIdVideo(url);
         idVideo = idVideo.replace(/\//g, "");
         // API链接
         const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
@@ -269,7 +269,7 @@ export class tools extends plugin {
             .then(resp => {
                 const data = resp.data.aweme_list[0];
                 e.reply(`识别：tiktok, ${data.desc}`);
-                this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
+                downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
                     e.reply(
                         segment.video(
                             `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`,
@@ -350,7 +350,9 @@ export class tools extends plugin {
                 let { view, danmaku, reply, favorite, coin, share, like } = respData.stat;
                 // 数据处理
                 const dataProcessing = data => {
-                    return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
+                    return Number(data) >= TEN_THOUSAND
+                        ? (data / TEN_THOUSAND).toFixed(1) + "万"
+                        : data;
                 };
                 // 组合内容
                 const combineContent = `总播放量：${dataProcessing(
@@ -360,7 +362,7 @@ export class tools extends plugin {
                 )}, 收藏数：${dataProcessing(favorite)}, 投币：${dataProcessing(
                     coin,
                 )}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(like)}\n`;
-                const msgCombine = [title, combineContent/*, segment.image(videoCover)*/];
+                const msgCombine = [title, combineContent /*, segment.image(videoCover)*/];
                 await e.reply(msgCombine);
             });
         })();
@@ -463,7 +465,7 @@ export class tools extends plugin {
                         task.push(this.downloadImg(item.url, downloadPath));
                     } else if (item.type === "video") {
                         // 视频
-                        await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
+                        await downloadVideo(resp.includes.media[0].variants[0].url, true).then(
                             _ => {
                                 e.reply(segment.video(`${downloadPath}/temp.mp4`));
                             },
@@ -614,6 +616,13 @@ export class tools extends plugin {
         });
     }
 
+    /**
+     * 哔哩哔哩下载
+     * @param title
+     * @param videoUrl
+     * @param audioUrl
+     * @returns {Promise<unknown>}
+     */
     async downBili(title, videoUrl, audioUrl) {
         return Promise.all([
             downloadBFile(
@@ -645,7 +654,12 @@ export class tools extends plugin {
         });
     }
 
-    // 工具：下载一张网络图片
+    /**
+     * 下载一张网络图片(自动以url的最后一个为名字)
+     * @param img
+     * @param dir
+     * @returns {Promise<unknown>}
+     */
     async downloadImg(img, dir) {
         const filename = img.split("/").pop();
         const filepath = `${dir}/${filename}`;
@@ -681,7 +695,11 @@ export class tools extends plugin {
             });
     }
 
-    // 请求参数
+    /**
+     * douyin 请求参数
+     * @param url
+     * @returns {Promise<unknown>}
+     */
     async douyinRequest(url) {
         const params = {
             headers: {
@@ -701,62 +719,5 @@ export class tools extends plugin {
                     reject(err);
                 });
         });
-    }
-
-    // 工具：根URL据下载视频 / 音频
-    async downloadVideo(url, isProxy = false, headers = null) {
-        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
-        if (!fs.existsSync(groupPath)) {
-            mkdirsSync(groupPath);
-        }
-        const target = `${groupPath}/temp.mp4`;
-        // 待优化
-        if (fs.existsSync(target)) {
-            console.log(`视频已存在`);
-            fs.unlinkSync(target);
-        }
-        let res;
-        if (!isProxy) {
-            res = await axios.get(url, {
-                headers: headers || {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-                responseType: "stream",
-            });
-        } else {
-            res = await axios.get(url, {
-                headers: headers || {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-                responseType: "stream",
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-                httpsAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-            });
-        }
-        console.log(`开始下载: ${url}`);
-        const writer = fs.createWriteStream(target);
-        res.data.pipe(writer);
-
-        return new Promise((resolve, reject) => {
-            writer.on("finish", resolve);
-            writer.on("error", reject);
-        });
-    }
-
-    // 工具：找到tiktok的视频id
-    async getIdVideo(url) {
-        const matching = url.includes("/video/");
-        if (!matching) {
-            this.e.reply("没找到，正在获取随机视频！");
-            return null;
-        }
-        const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
-        return idVideo.length > 19 ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
     }
 }
