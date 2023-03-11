@@ -2,8 +2,6 @@ import schedule from "node-schedule";
 import common from "../../../lib/common/common.js";
 import axios from "axios";
 import fs from "node:fs";
-import { mkdirsSync } from "./file.js";
-import tunnel from "tunnel";
 
 /**
  * 请求模板
