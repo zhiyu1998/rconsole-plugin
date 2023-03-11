@@ -545,10 +545,10 @@ export class query extends plugin {
                 const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
                 const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
                 let bookMethods = [
-                    `方式1：${Libgen}`,
-                    `方式2：${ipfs}`,
-                    `方式3：${cleverPass}`,
-                    `方式4：${cleverPass2}`,
+                    `Libgen：${Libgen}`,
+                    `ipfs：${ipfs}`,
+                    `秒传：${cleverPass}`,
+                    `秒传Lite：${cleverPass2}`,
                 ].map(item => {
                     return {
                         message: {type: "text", text: item},
