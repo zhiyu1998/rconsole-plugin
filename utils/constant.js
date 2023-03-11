@@ -21,3 +21,5 @@ export const douyinTypeMap = {
     61: "video",
     150: "image",
 };
+
+export const TEN_THOUSAND = 10000;

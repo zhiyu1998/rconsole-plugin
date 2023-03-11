@@ -12,7 +12,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap } from "../utils/constant.js";
+import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
 import { retry } from "../utils/common.js";
 import config from "../model/index.js";
 
@@ -244,7 +244,7 @@ export class tools extends plugin {
         } else {
             url = urlRex.exec(url)[0];
         }
-        let idVideo = await this.getIdVideo(url)
+        let idVideo = await this.getIdVideo(url);
         idVideo = idVideo.replace(/\//g, "");
         // API链接
         const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${idVideo}&version_code=262&app_name=musical_ly&channel=App&device_id=null&os_version=14.4.2&device_platform=iphone&device_type=iPhone9`;
@@ -284,7 +284,7 @@ export class tools extends plugin {
     async bili(e) {
         const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") :e.msg.trim();
+        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         // 短号处理
         if (url.includes("b23.tv")) {
             const bShortUrl = bShortRex.exec(url)[0];
@@ -339,14 +339,30 @@ export class tools extends plugin {
                 videoId.startsWith("BV")
                     ? `${baseVideoInfo}?bvid=${videoId}`
                     : `${baseVideoInfo}?aid=${videoId}`,
-            )
-                .then(resp => resp.json())
-                .then(resp => {
-                    e.reply(`识别：哔哩哔哩, ${resp.data.title}`).catch(err => {
-                        e.reply("解析失败，重试一下");
-                        console.log(err);
-                    });
-                });
+            ).then(async resp => {
+                const respJson = await resp.json();
+                const respData = respJson.data;
+                // 视频标题
+                const title = "识别：哔哩哔哩，" + respData.title + "\n";
+                // 视频图片(暂时不加入，影响性能)
+                // const videoCover = respData.pic;
+                // 视频信息
+                let { view, danmaku, reply, favorite, coin, share, like } = respData.stat;
+                // 数据处理
+                const dataProcessing = data => {
+                    return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
+                };
+                // 组合内容
+                const combineContent = `总播放量：${dataProcessing(
+                    view,
+                )}, 弹幕数量：${dataProcessing(danmaku)}, 回复量：${dataProcessing(
+                    reply,
+                )}, 收藏数：${dataProcessing(favorite)}, 投币：${dataProcessing(
+                    coin,
+                )}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(like)}\n`;
+                const msgCombine = [title, combineContent/*, segment.image(videoCover)*/];
+                await e.reply(msgCombine);
+            });
         })();
 
         await getDownloadUrl(url)
