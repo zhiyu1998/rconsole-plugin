@@ -462,7 +462,7 @@ export class query extends plugin {
                 });
                 await e.reply(await Bot.makeForwardMsg(bookMsg));
                 await e.reply(
-                    "请选择一个你想要的ID、来源，例如：11918807 zlibrary（只回复11918807默认zlibrary）",
+                    "请选择一个你想要的ID、来源，例如：11918807 superlib（只回复11918807默认zlibrary）书源若不对应则回复无效链接",
                 );
 
                 thisBookMethod.setContext("searchBookContext");
