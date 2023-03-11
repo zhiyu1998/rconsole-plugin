@@ -1,7 +1,7 @@
 // 主库
 import fetch from "node-fetch";
 import fs from "node:fs";
-import { segment } from "oicq";
+import { Gfs, segment } from "oicq";
 // 其他库
 import md5 from "md5";
 import axios from "axios";
@@ -15,6 +15,7 @@ import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../ut
 import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
 import { getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
+import { resolve } from "patch-package/dist/path.js";
 
 export class tools extends plugin {
     constructor() {
@@ -49,8 +50,8 @@ export class tools extends plugin {
                     fnc: "twitter",
                 },
                 {
-                    reg: "https://(m.)?v.qq.com/(.*)",
-                    fnc: "tx",
+                    reg: "music.163.com",
+                    fnc: "netease",
                 },
                 {
                     reg: "(acfun.cn)",
@@ -68,7 +69,7 @@ export class tools extends plugin {
                     reg: "^#清理data垃圾$",
                     fnc: "clearTrash",
                     permission: "master",
-                }
+                },
             ],
         });
         // http://api.tuwei.space/girl
@@ -623,7 +624,7 @@ export class tools extends plugin {
 
     // 清理垃圾文件
     async clearTrash(e) {
-        const directory = './data/';
+        const directory = "./data/";
         try {
             fs.readdir(directory, (err, files) => {
                 for (const file of files) {
@@ -636,8 +637,61 @@ export class tools extends plugin {
             await e.reply(`清理完成！`);
         } catch (err) {
             console.log(err);
-            e.reply("清理失败，重试或者自动清理即可")
+            e.reply("清理失败，重试或者自动清理即可");
         }
+    }
+
+    async netease(e) {
+        const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
+        const realMusicUrl = musicUrlReg.exec(message)[0];
+        const id = musicUrlReg.exec(message)[2];
+        console.log(id);
+        fetch(`https://api.vvhan.com/api/music?id=${id}&type=song&media=netease`, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "Content-Type": "application/json",
+            },
+        })
+            .then(resp => resp.json())
+            .then(resp => {
+                console.log(resp);
+                const { name, author, mp3url, cover } = resp;
+                e.reply([`识别：网易云音乐，${name}--${author}`, segment.image(cover)]);
+                console.log(mp3url);
+                fetch(mp3url, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    responseType: "stream",
+                    redirect: 'manual'
+                })
+                    .then(res => {
+                        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp3`
+                        const fileStream = fs.createWriteStream(path);
+                        res.body.pipe(fileStream);
+                        return new Promise((resolve, reject) => {
+                            fileStream.on("finish", () => {
+                                fileStream.close(() => {
+                                    resolve(path);
+                                });
+                            });
+                            fileStream.on("error", err => {
+                                fs.unlink(path, () => {
+                                    reject(err);
+                                });
+                            });
+                        });
+                    }).then(path => {
+                        Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${name}.mp3`)
+                    })
+                    .catch(err => {
+                        console.error(`Error downloading file: ${err.message}`);
+                    });
+            });
+        return true;
     }
 
     /**

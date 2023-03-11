@@ -206,18 +206,10 @@ export class query extends plugin {
 
     async hotSearch(e) {
         let keyword = e.msg.replace(/#|热搜/g, "").trim();
-        console.log(keyword);
-        // 虎扑/知乎/36氪/百度/哔哩哔哩/贴吧/微博/抖音/豆瓣/少数派/IT资讯/微信
         let url = "https://api.vvhan.com/api/hotlist?type=";
         switch (keyword) {
-            case "虎扑":
-                url += "huPu";
-                break;
             case "知乎":
                 url += "zhihuHot";
-                break;
-            case "36氪":
-                url += "36Ke";
                 break;
             case "百度":
                 url += "baiduRD";
@@ -234,20 +226,8 @@ export class query extends plugin {
             case "抖音":
                 url += "douyinHot";
                 break;
-            case "豆瓣":
-                url += "douban";
-                break;
-            case "少数派":
-                url += "ssPai";
-                break;
-            case "IT资讯":
-                url += "itInfo";
-                break;
-            case "微信":
-                url += "wxHot";
-                break;
             default:
-                url += "history";
+                url += "bili";
                 break;
         }
         let sendTemplate = {
