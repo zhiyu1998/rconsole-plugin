@@ -29,15 +29,15 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "(.*)(v.douyin.com)",
+                    reg: "(v.douyin.com)",
                     fnc: "douyin",
                 },
                 {
-                    reg: "(.*)(www.tiktok.com)|(vt.tiktok.com)|(vm.tiktok.com)",
+                    reg: "(www.tiktok.com)|(vt.tiktok.com)|(vm.tiktok.com)",
                     fnc: "tiktok",
                 },
                 {
-                    reg: "(.*)(bilibili.com|b23.tv|t.bilibili.com)",
+                    reg: "(bilibili.com|b23.tv|t.bilibili.com)",
                     fnc: "bili",
                 },
                 {
@@ -53,7 +53,7 @@ export class tools extends plugin {
                     fnc: "tx",
                 },
                 {
-                    reg: "(.*)(acfun.cn)",
+                    reg: "(acfun.cn)",
                     fnc: "acfun",
                 },
                 {
@@ -61,9 +61,14 @@ export class tools extends plugin {
                     fnc: "redbook",
                 },
                 {
-                    reg: "(.*)(doi.org)",
+                    reg: "(doi.org)",
                     fnc: "literature",
                 },
+                {
+                    reg: "^#清理data垃圾$",
+                    fnc: "clearTrash",
+                    permission: "master",
+                }
             ],
         });
         // http://api.tuwei.space/girl
@@ -614,6 +619,25 @@ export class tools extends plugin {
         await Promise.race(newWaitList).then(resp => {
             e.reply(resp);
         });
+    }
+
+    // 清理垃圾文件
+    async clearTrash(e) {
+        const directory = './data/';
+        try {
+            fs.readdir(directory, (err, files) => {
+                for (const file of files) {
+                    // 如果文件名符合规则，执行删除操作
+                    if (/^[0-9a-f]{32}$/.test(file)) {
+                        fs.unlinkSync(directory + file);
+                    }
+                }
+            });
+            await e.reply(`清理完成！`);
+        } catch (err) {
+            console.log(err);
+            e.reply("清理失败，重试或者自动清理即可")
+        }
     }
 
     /**
