@@ -764,20 +764,30 @@ export class tools extends plugin {
             fs.unlinkSync(target);
         }
         let res;
+        if (isProxy) {
+            res = await axios.get(url, {
+                headers: headers || {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                responseType: "stream",
+                httpAgent: tunnel.httpOverHttp({
+                    proxy: { host: this.proxyAddr, port: this.proxyPort },
+                }),
+                httpsAgent: tunnel.httpOverHttp({
+                    proxy: { host: this.proxyAddr, port: this.proxyPort },
+                }),
+            });
+        } else {
+            res = await axios.get(url, {
+                headers: headers || {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                responseType: "stream",
+            });
+        }
 
-        res = await axios.get(url, {
-            headers: headers || {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            responseType: "stream",
-            httpAgent: isProxy && tunnel.httpOverHttp({
-                proxy: { host: this.proxyAddr, port: this.proxyPort },
-            }),
-            httpsAgent: isProxy && tunnel.httpOverHttp({
-                proxy: { host: this.proxyAddr, port: this.proxyPort },
-            }),
-        });
         console.log(`开始下载: ${url}`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
