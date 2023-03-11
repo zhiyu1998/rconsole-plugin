@@ -181,7 +181,7 @@ export class tools extends plugin {
                                 const urlType = douyinTypeMap[urlTypeCode];
                                 if (urlType === "video") {
                                     const url_2 = item.video.play_addr.url_list[2];
-                                    downloadVideo(url_2, false, headers).then(video => {
+                                    this.downloadVideo(url_2, false, headers).then(video => {
                                         e.reply(
                                             segment.video(
                                                 `${this.defaultPath}${
@@ -274,7 +274,7 @@ export class tools extends plugin {
             .then(resp => {
                 const data = resp.data.aweme_list[0];
                 e.reply(`识别：tiktok, ${data.desc}`);
-                downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
+                this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
                     e.reply(
                         segment.video(
                             `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`,
@@ -470,7 +470,7 @@ export class tools extends plugin {
                         task.push(this.downloadImg(item.url, downloadPath));
                     } else if (item.type === "video") {
                         // 视频
-                        await downloadVideo(resp.includes.media[0].variants[0].url, true).then(
+                        await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
                             _ => {
                                 e.reply(segment.video(`${downloadPath}/temp.mp4`));
                             },
