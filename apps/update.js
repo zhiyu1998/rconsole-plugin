@@ -57,11 +57,9 @@ export class update extends plugin {
 
         const pluginName = "rconsole-plugin";
 
-        let command = "";
+        let command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
         if (isForce) {
-            command = `git checkout . && git -C ./plugins/${pluginName}/ pull --no-rebase`;
-        } else {
-            command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
+            command = `git reset --hard origin/master && ${command}`;
         }
         this.oldCommitId = await this.getCommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");

@@ -3,17 +3,17 @@ import config from './index.js'
 import cfg from '../../../lib/config/config.js'
 
 export default class Help extends base {
-    constructor (e) {
+    constructor(e) {
         super(e)
         this.model = 'help'
     }
 
-    static async get (e) {
+    static async get(e) {
         let html = new Help(e)
         return await html.getData()
     }
 
-    async getData () {
+    async getData() {
         let helpData = config.getConfig('help')
 
         let groupCfg = cfg.getGroup(this.group_id)
@@ -27,7 +27,7 @@ export default class Help extends base {
             })
         }
 
-        let versionData = config.getConfig('version')
+        const versionData = config.getConfig('version')
 
         const version =
             (versionData && versionData.length && versionData[0].version) || '1.0.0'
