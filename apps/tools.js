@@ -13,7 +13,7 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
-import { downloadVideo, getIdVideo } from "../utils/common.js";
+import { getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
 
 export class tools extends plugin {
@@ -742,6 +742,49 @@ export class tools extends plugin {
                 .catch(err => {
                     reject(err);
                 });
+        });
+    }
+
+    /**
+     * 工具：根URL据下载视频 / 音频
+     * @param url       下载地址
+     * @param isProxy   是否需要魔法
+     * @param headers   覆盖头节点
+     * @returns {Promise<unknown>}
+     */
+    async downloadVideo(url, isProxy = false, headers = null) {
+        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        if (!fs.existsSync(groupPath)) {
+            mkdirsSync(groupPath);
+        }
+        const target = `${groupPath}/temp.mp4`;
+        // 待优化
+        if (fs.existsSync(target)) {
+            console.log(`视频已存在`);
+            fs.unlinkSync(target);
+        }
+        let res;
+
+        res = await axios.get(url, {
+            headers: headers || {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            responseType: "stream",
+            httpAgent: isProxy && tunnel.httpOverHttp({
+                proxy: { host: this.proxyAddr, port: this.proxyPort },
+            }),
+            httpsAgent: isProxy && tunnel.httpOverHttp({
+                proxy: { host: this.proxyAddr, port: this.proxyPort },
+            }),
+        });
+        console.log(`开始下载: ${url}`);
+        const writer = fs.createWriteStream(target);
+        res.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on("finish", resolve);
+            writer.on("error", reject);
         });
     }
 }
