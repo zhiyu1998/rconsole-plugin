@@ -644,7 +644,7 @@ export class tools extends plugin {
     async netease(e) {
         const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
-        const id = /id=(\d+)/.exec(message)[1] || musicUrlReg.exec(message)[2];
+        const id = musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
         console.log(id);
         fetch(`https://api.vvhan.com/api/music?id=${id}&type=song&media=netease`, {
             headers: {
