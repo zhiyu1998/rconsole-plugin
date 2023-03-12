@@ -2,9 +2,9 @@
   version: 1.0.10,
   data:
     [
-      适配<span class="cmd">bilibili小程序解析</span>查询,
+      适配<span class="cmd">netease解析</span>,
+      适配<span class="cmd">bilibili小程序解析</span>,
       增加<span class="cmd">#搜书</span>查询,
-      增加<span class="cmd">#青年大学习</span>查询,
       适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
