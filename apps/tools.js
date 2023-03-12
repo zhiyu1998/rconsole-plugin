@@ -645,25 +645,30 @@ export class tools extends plugin {
         const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const id = musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
-        fetch(`https://api.vvhan.com/api/music?id=${id}&type=song&media=netease`, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                "Content-Type": "application/json",
-            },
-        })
-            .then(resp => resp.json())
-            .then(resp => {
-                const { name, author, mp3url, cover } = resp;
-                e.reply([`识别：网易云音乐，${name}--${author}`, segment.image(cover)]);
-                // 下载音乐并上传到群
-                this.downloadMp3(mp3url).then(path => {
-                        Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${name}.mp3`)
-                    })
+        const musicJson = JSON.parse(message)
+        const {musicUrl, preview, title, desc} = musicJson.meta.music
+        // 如果没有下载地址跳出if
+        if (_.isNull(musicUrl) || _.isUndefined(musicUrl)) {
+            e.reply(`识别：网易云音乐，解析失败！`);
+            return
+        } else {
+            fetch(`https://www.oranges1.top/neteaseapi.do/song/url?id=${id}`, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+            }).then(async resp => {
+                const url = await JSON.parse(await resp.text()).data[0].url
+                // 反之解析官方地址
+                e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+                this.downloadMp3(url, 'follow').then(path => {
+                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+                })
                     .catch(err => {
                         console.error(`下载音乐失败，错误信息为: ${err.message}`);
                     });
-            });
+            })
+        }
         return true;
     }
 
