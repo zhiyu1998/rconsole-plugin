@@ -644,13 +644,14 @@ export class tools extends plugin {
     async netease(e) {
         const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
-        const musicUrl = musicUrlReg.exec(message)
-        const musicDownloadUrl = musicUrl?.[0]
         // 如果存在直接内容
-        if (musicDownloadUrl) {
-            const musicJson = JSON.parse(message)
-            const {musicUrl, preview, title, desc} = musicJson.meta.music
-            console.log(111);
+        const musicJson = JSON.parse(message)
+        const {musicUrl, preview, title, desc} = musicJson.meta.music
+        // 如果没有下载地址跳出if
+        if (_.isNull(musicUrl) || _.isUndefined(musicUrl)) {
+            e.reply(`识别：网易云音乐，官方解析失败，开始执行第三方解析！`);
+        } else {
+            // 反之解析官方地址
             e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
             await this.downloadMp3(musicUrl, 'follow').then(path => {
                 Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
