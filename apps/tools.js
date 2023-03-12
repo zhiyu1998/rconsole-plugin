@@ -644,26 +644,7 @@ export class tools extends plugin {
     async netease(e) {
         const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
-        // 如果存在直接内容
-        const musicJson = JSON.parse(message)
-        const {musicUrl, preview, title, desc} = musicJson.meta.music
-        // 如果没有下载地址跳出if
-        if (_.isNull(musicUrl) || _.isUndefined(musicUrl)) {
-            e.reply(`识别：网易云音乐，官方解析失败，开始执行第三方解析！`);
-        } else {
-            // 反之解析官方地址
-            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
-            await this.downloadMp3(musicUrl, 'follow').then(path => {
-                Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
-            })
-                .catch(err => {
-                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                });
-            // 中断后续执行
-            return true;
-        }
-        // 不存在直接内容，通过第三方api获取
-        const id = /id=(\d+)/.exec(message)[1];
+        const id = musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
         fetch(`https://api.vvhan.com/api/music?id=${id}&type=song&media=netease`, {
             headers: {
                 "User-Agent":
