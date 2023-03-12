@@ -1,5 +1,5 @@
 - {
-  version: 1.0.9,
+  version: 1.0.10,
   data:
     [
       适配<span class="cmd">bilibili小程序解析</span>查询,
