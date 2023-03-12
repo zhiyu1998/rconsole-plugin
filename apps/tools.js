@@ -644,8 +644,25 @@ export class tools extends plugin {
     async netease(e) {
         const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
-        const id = musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
-        console.log(id);
+        const musicUrl = musicUrlReg.exec(message)
+        const musicDownloadUrl = musicUrl?.[0]
+        // 如果存在直接内容
+        if (musicDownloadUrl) {
+            const musicJson = JSON.parse(message)
+            const {musicUrl, preview, title, desc} = musicJson.meta.music
+            console.log(111);
+            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+            await this.downloadMp3(musicUrl, 'follow').then(path => {
+                Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+            })
+                .catch(err => {
+                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                });
+            // 中断后续执行
+            return true;
+        }
+        // 不存在直接内容，通过第三方api获取
+        const id = /id=(\d+)/.exec(message)[1];
         fetch(`https://api.vvhan.com/api/music?id=${id}&type=song&media=netease`, {
             headers: {
                 "User-Agent":
@@ -655,39 +672,14 @@ export class tools extends plugin {
         })
             .then(resp => resp.json())
             .then(resp => {
-                console.log(resp);
                 const { name, author, mp3url, cover } = resp;
                 e.reply([`识别：网易云音乐，${name}--${author}`, segment.image(cover)]);
-                console.log(mp3url);
-                fetch(mp3url, {
-                    headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                    responseType: "stream",
-                    redirect: 'manual'
-                })
-                    .then(res => {
-                        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp3`
-                        const fileStream = fs.createWriteStream(path);
-                        res.body.pipe(fileStream);
-                        return new Promise((resolve, reject) => {
-                            fileStream.on("finish", () => {
-                                fileStream.close(() => {
-                                    resolve(path);
-                                });
-                            });
-                            fileStream.on("error", err => {
-                                fs.unlink(path, () => {
-                                    reject(err);
-                                });
-                            });
-                        });
-                    }).then(path => {
+                // 下载音乐并上传到群
+                this.downloadMp3(mp3url).then(path => {
                         Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${name}.mp3`)
                     })
                     .catch(err => {
-                        console.error(`Error downloading file: ${err.message}`);
+                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
                     });
             });
         return true;
@@ -849,5 +841,39 @@ export class tools extends plugin {
             writer.on("finish", resolve);
             writer.on("error", reject);
         });
+    }
+
+    /**
+     * 下载mp3
+     * @param mp3Url
+     * @param redirect
+     * @returns {Promise<unknown>}
+     */
+    async downloadMp3(mp3Url, redirect='manual') {
+        return fetch(mp3Url, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            responseType: "stream",
+            redirect: redirect || 'manual'
+        })
+            .then(res => {
+                const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp3`
+                const fileStream = fs.createWriteStream(path);
+                res.body.pipe(fileStream);
+                return new Promise((resolve, reject) => {
+                    fileStream.on("finish", () => {
+                        fileStream.close(() => {
+                            resolve(path);
+                        });
+                    });
+                    fileStream.on("error", err => {
+                        fs.unlink(path, () => {
+                            reject(err);
+                        });
+                    });
+                });
+            })
     }
 }
