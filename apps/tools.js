@@ -15,7 +15,6 @@ import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../ut
 import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
 import { getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
-import { resolve } from "patch-package/dist/path.js";
 
 export class tools extends plugin {
     constructor() {
@@ -843,7 +842,7 @@ export class tools extends plugin {
                     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
             },
             responseType: "stream",
-            redirect: redirect || 'manual'
+            redirect: redirect
         })
             .then(res => {
                 const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp3`
