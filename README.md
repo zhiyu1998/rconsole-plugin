@@ -58,7 +58,7 @@ sudo apt-get install ffmpeg
 ````
 4. 【可选】小程序解析仅适配了[Yoimiya/Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
 
-如果解析问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
+如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
 ![小程序解析](./img/example6.png)
 
 ## 🧑‍🌾 进阶内容
@@ -84,7 +84,7 @@ sudo apt-get install ffmpeg
 感谢下面的朋友对我插件的贡献（排名不分高低）
 * [好冷](https://gitee.com/hetangx) 提供Windows解决方案
 * [一杯凉](https://gitee.com/yibeiliang) 提供小程序解析冲突解决方案
-* [x0rz4](https://gitee.com/x0rz4) 提供解决依赖掉包解决方案
+* [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
