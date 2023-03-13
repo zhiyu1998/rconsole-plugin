@@ -421,12 +421,13 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         };
+        // 主要数据来源
         axios
             .post("https://api.ylibrary.org/api/search/", {
                 headers: {
                     "user-agent":
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    referer: "https://search.zhelper.net/",
+                    "referer": "https://search.zhelper.net/"
                 },
                 keyword: keyword,
                 page: 1,
@@ -447,6 +448,7 @@ export class query extends plugin {
                         id,
                         source,
                     } = item;
+                    // 数据组合
                     bookMsg.push({
                         message: {
                             type: "text",
@@ -455,7 +457,10 @@ export class query extends plugin {
                                 `作者：${author}\n` +
                                 `书籍类型：${extension}\n` +
                                 `出版年月：${year}\n` +
-                                `来源：${source}`,
+                                `来源：${source}\n` +
+                                `ISBN：${isbn||"暂无"}\n` +
+                                `出版社：${publisher}\n` +
+                                `文件大小：${(Number(filesize)/1024/1024).toFixed(2)}MB`
                         },
                         ...sendTemplate,
                     });
@@ -480,6 +485,31 @@ export class query extends plugin {
             source = "";
         }
         await this.getBookDetail(e, id, source);
+    }
+
+    /**
+     * 获取直接下载的来源
+     * @param keyword 书名
+     * @returns {Promise<void>}
+     */
+    async getDirectDownload(keyword) {
+        // 下载字典（异步去执行）
+        return  axios
+            .post("https://worker.zlib.app/api/search/", {
+                headers: {
+                    "user-agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
+                    "referer": "https://search.zhelper.net/"
+                },
+                keyword: keyword,
+                page: 1,
+                sensitive: false,
+            }).then(resp => {
+                // 标题去重
+                return resp.data.data.filter(item => {
+                    return item.title === keyword
+                }).map(item => `https://worker.zlib.app/download/${item.id}`)
+            })
     }
 
     /**
@@ -557,6 +587,17 @@ export class query extends plugin {
                     }
                 })
                 await this.reply(await Bot.makeForwardMsg(bookMethods))
+                // 异步获取直连
+                this.getDirectDownload(title).then(async res => {
+                    const directDownloadUrls = res.map(item => {
+                        return {
+                            message: {type: "text", text: item},
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        }
+                    })
+                    await this.reply(await Bot.makeForwardMsg(directDownloadUrls??"无直连下载"))
+                })
             });
     }
 
