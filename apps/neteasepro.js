@@ -2,8 +2,9 @@ import plugin from "../../../lib/plugins/plugin.js";
 import axios from "axios";
 import fs from 'node:fs';
 import {segment} from "oicq";
-import {getQrCode, getKey, getLoginStatus, getDailyRecommend, getCookies} from '../utils/netease.js';
+import {getQrCode, getKey, getLoginStatus, getDailyRecommend, getCookies, getUserRecord, checkMusic, getSong} from '../utils/netease.js';
 import {ha12store, store2ha1} from '../utils/encrypt.js';
+import fetch from "node-fetch";
 
 
 export class neteasepro extends plugin {
@@ -27,13 +28,21 @@ export class neteasepro extends plugin {
                 {
                     reg: '#网易云每日推荐',
                     fnc: 'neteaseDailyRecommend'
-                }
+                },
+                {
+                    reg: '#网易云听歌排行',
+                    fnc: 'neteaseListenRank'
+                },
+                {
+                    reg: "music.163.com",
+                    fnc: "netease",
+                },
             ]
         })
     }
 
     async neteaseCloudLogin(e) {
-        let userInfo;
+        let neteaseCookie;
         // 如果不存在cookie
         if (!await redis.exists(await this.getRedisKey(e.user_id))) {
             // 获取密钥
@@ -49,44 +58,121 @@ export class neteasepro extends plugin {
             // 定时轮询
             await this.poll(key).then(async cookie => {
                 // 存放到redis
-                await redis.set(await this.getRedisKey(e.user_id), ha12store(cookie))
+                neteaseCookie = cookie
             });
+        } else {
+            // 已经登陆过的，直接从redis取出
+            neteaseCookie = await store2ha1(JSON.parse(await redis.get(await this.getRedisKey(e.user_id))).cookie)
         }
-        // 从redis中获取
-        const realCookie = await store2ha1(await redis.get(await this.getRedisKey(e.user_id)));
         // 获取用户信息
-        userInfo = await getLoginStatus(realCookie);
+        const userInfo = await getLoginStatus(neteaseCookie);
         // 提取信息
-        const {nickname, avatarUrl} = userInfo.profile;
+        const {userId, nickname, avatarUrl} = userInfo.profile;
         e.reply(["欢迎使用 🎶网易云音乐 🎶，" + nickname, segment.image(avatarUrl)])
+        // 重组后存放到redis {uid, cookie}
+        await redis.set(await this.getRedisKey(e.user_id), JSON.stringify({
+            uid: userId,
+            cookie: (await ha12store(neteaseCookie))
+        }));
+        return true
     }
 
     async neteaseDailyRecommend(e) {
-        const realCookie = await this.aopBefore(e);
+        const realCookie = (await this.aopBefore(e)).cookie;
         if (realCookie === "") {
             return true;
         }
         // 获取每日推荐所有数据
         const dailyRecommend = await getDailyRecommend(realCookie);
         //  由于数据过大，取前10
-        let combineMsg = []
-        dailyRecommend.dailySongs.slice(0, 10).forEach(item => {
-            combineMsg.push([`${item?.id}: ${item?.name}-${item?.ar?.[0].name}-${item?.al?.name}`, segment.image(item?.al?.picUrl)])
+        const combineMsg = await dailyRecommend.dailySongs.slice(0, 10).map(item => {
+            // 组合数据
+            return {
+                message: [segment.text(`${item?.id}: ${item?.name}-${item?.ar?.[0].name}-${item?.al?.name}`)
+                    , segment.image(item?.al?.picUrl)],
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }
         })
         await e.reply(await Bot.makeForwardMsg(combineMsg));
     }
 
-    // 切面方法检测cookie
+    async neteaseListenRank(e) {
+        const userInfo = await this.aopBefore(e)
+        const realCookie = userInfo.cookie;
+        if (realCookie === "") {
+            return true;
+        }
+        // 获取用户id
+        const uid = userInfo.uid;
+        // 获取听歌排行榜
+        const userRecord = await getUserRecord(uid)
+        let rankId = 0;
+        e.reply(" 😘亲，这是你的听歌排行榜Top10")
+        const rank = userRecord.weekData.slice(0, 10).map(item => {
+            // 组合数据
+            const song = item.song;
+            rankId++;
+            return {
+                message: [segment.text(`No.${rankId} ${song?.id}: ${song?.name}-${song?.ar?.[0].name}-${song?.al?.name}`)
+                    , segment.image(song?.al?.picUrl)],
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }
+        })
+        await e.reply(await Bot.makeForwardMsg(rank));
+    }
+
+    async netease(e) {
+        const message = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
+        const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
+        const id = musicUrlReg2.exec(message)[3] || musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
+        const musicJson = JSON.parse(message)
+        const {musicUrl, preview, title, desc} = musicJson.meta.music || musicJson.meta.news;
+        console.log(musicUrl, preview, title, desc)
+        // 如果没有登陆，就使用官方接口
+        e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+        if (!await redis.exists(await this.getRedisKey(e.user_id))) {
+            this.downloadMp3(`music.163.com/song/media/outer/url?id=${id}`, 'follow').then(path => {
+                Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+            })
+                .catch(err => {
+                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                });
+            return true;
+        }
+        // 检查当前歌曲是否可用
+        const checkOne = await checkMusic(id);
+        if (checkOne.success === 'false') {
+            e.reply(checkOne.message);
+            return true;
+        }
+        const userInfo = await this.aopBefore(e)
+        // 可用，开始下载
+        const userDownloadUrl = (await getSong(id, await userInfo.cookie))[0].url
+        await this.downloadMp3(userDownloadUrl).then(path => {
+            Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+        })
+            .catch(err => {
+                console.error(`下载音乐失败，错误信息为: ${err.message}`);
+            });
+        return true;
+    }
+
+    // 切面方法检测cookie & 获取cookie和uid
     async aopBefore(e) {
         // 取出cookie
-        const cookie = await redis.get(await this.getRedisKey(e.user_id));
+        let userInfo = JSON.parse(await redis.get(await this.getRedisKey(e.user_id)));
+        const cookie = userInfo.cookie;
         // 如果不存在cookie
         if (!cookie) {
             e.reply("请先#网易云登录");
             return "";
         }
         // 解析cookie
-        return store2ha1(cookie);
+        userInfo.cookie = store2ha1(cookie)
+        return userInfo;
     }
 
     // 下载二维码
@@ -129,6 +215,40 @@ export class neteasepro extends plugin {
                 }
             }, 3000)
         });
+    }
+
+    /**
+     * 下载mp3
+     * @param mp3Url
+     * @param redirect
+     * @returns {Promise<unknown>}
+     */
+    async downloadMp3(mp3Url, redirect='manual') {
+        return fetch(mp3Url, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            responseType: "stream",
+            redirect: redirect
+        })
+            .then(res => {
+                const path = `./data/rcmp4/${this.e.group_id || this.e.user_id}/temp.mp3`
+                const fileStream = fs.createWriteStream(path);
+                res.body.pipe(fileStream);
+                return new Promise((resolve, reject) => {
+                    fileStream.on("finish", () => {
+                        fileStream.close(() => {
+                            resolve(path);
+                        });
+                    });
+                    fileStream.on("error", err => {
+                        fs.unlink(path, () => {
+                            reject(err);
+                        });
+                    });
+                });
+            })
     }
 
     // 获取redis的key

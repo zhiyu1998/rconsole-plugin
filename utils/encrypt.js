@@ -4,7 +4,7 @@ import crypto from "crypto";
 const key = crypto.createHash("sha256").update("rconsole").digest();
 
 /**
- * AES解密
+ * AES加密
  * @param ha1
  * @returns {Promise<string>}
  */
@@ -43,11 +43,10 @@ async function store2ha1(passstore) {
             return d;
         }
     } catch (e) {
-        console.log(
+        console.error(
             "在[default]部分设置的passwordSecret无法解密信息。请确保所有节点的passwordSecret相同。如果您更改了密码保密信息，可能需要重新添加用户。",
             e
         );
-        process.exit(1);
     }
 }
 

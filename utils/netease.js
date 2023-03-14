@@ -30,7 +30,6 @@ async function getLoginStatus(cookie) {
         },
     })
         .then(resp => {
-            console.log(resp.data.data)
             return resp.data.data
         });
 }
@@ -78,10 +77,56 @@ async function getQrCode(key) {
     });
 }
 
+/**
+ * 获取听歌排行榜
+ * @param uid
+ * @returns {Promise<AxiosResponse<any>>}
+ */
+async function getUserRecord(uid) {
+    return axios({
+        url: `${BASE_URL}/user/record?uid=${uid}&type=1&timestamp=${Date.now()}`,
+        method: 'get',
+    })
+        .then(resp => {
+            return resp.data
+        });
+}
+
+/**
+ * 检查当前歌曲是否可用
+ * @param id
+ * @returns {Promise<AxiosResponse<any>>} 返回{success:true|false, message: 'ok'}
+ */
+async function checkMusic(id) {
+    return axios({
+        url: `${BASE_URL}/check/music?id=${id}&timestamp=${Date.now()}`,
+        method: 'get',
+    })
+        .then(resp => {
+            return resp.data
+        });
+}
+
+async function getSong(id, cookie) {
+    return axios({
+        url: `${BASE_URL}/song/url/v1?id=${id}&level=standard&timestamp=${Date.now()}`,
+        method: 'post',
+        data: {
+            cookie,
+        },
+    })
+        .then(resp => {
+            return resp.data.data
+        });
+}
+
 export {
     getCookies,
     getLoginStatus,
     getDailyRecommend,
     getKey,
     getQrCode,
+    getUserRecord,
+    checkMusic,
+    getSong
 }
