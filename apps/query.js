@@ -8,7 +8,7 @@ import _ from "lodash";
 import axios from "axios";
 import fs from "node:fs";
 // 常量
-import {CAT_LIMIT} from "../utils/constant.js";
+import { CAT_LIMIT } from "../utils/constant.js";
 
 export class query extends plugin {
     constructor() {
@@ -425,7 +425,7 @@ export class query extends plugin {
                 headers: {
                     "user-agent":
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    "referer": "https://search.zhelper.net/"
+                    referer: "https://search.zhelper.net/",
                 },
                 keyword: keyword,
                 page: 1,
@@ -456,9 +456,9 @@ export class query extends plugin {
                                 `书籍类型：${extension}\n` +
                                 `出版年月：${year}\n` +
                                 `来源：${source}\n` +
-                                `ISBN：${isbn||"暂无"}\n` +
+                                `ISBN：${isbn || "暂无"}\n` +
                                 `出版社：${publisher}\n` +
-                                `文件大小：${(Number(filesize)/1024/1024).toFixed(2)}MB`
+                                `文件大小：${(Number(filesize) / 1024 / 1024).toFixed(2)}MB`,
                         },
                         ...sendTemplate,
                     });
@@ -492,22 +492,25 @@ export class query extends plugin {
      */
     async getDirectDownload(keyword) {
         // 下载字典（异步去执行）
-        return  axios
+        return axios
             .post("https://worker.zlib.app/api/search/", {
                 headers: {
                     "user-agent":
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    "referer": "https://search.zhelper.net/"
+                    referer: "https://search.zhelper.net/",
                 },
                 keyword: keyword,
                 page: 1,
                 sensitive: false,
-            }).then(resp => {
-                // 标题去重
-                return resp.data.data.filter(item => {
-                    return item.title === keyword
-                }).map(item => `https://worker.zlib.app/download/${item.id}`)
             })
+            .then(resp => {
+                // 标题去重
+                return resp.data.data
+                    .filter(item => {
+                        return item.title === keyword;
+                    })
+                    .map(item => `https://worker.zlib.app/download/${item.id}`);
+            });
     }
 
     /**
@@ -568,8 +571,12 @@ export class query extends plugin {
                     year,
                 } = resp.data;
                 const Libgen = `https://libgendown.1kbtool.com/${md5}`;
-                const ipfs = `https://ipfs-checker.1kbtool.com/${ipfs_cid}?filename=${encodeURIComponent(title)}_${source}-search.${extension}`;
-                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(title)}_${encodeURIComponent(author)}_${id}_${source}-search.${extension}`;
+                const ipfs = `https://ipfs-checker.1kbtool.com/${ipfs_cid}?filename=${encodeURIComponent(
+                    title,
+                )}_${source}-search.${extension}`;
+                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(
+                    title,
+                )}_${encodeURIComponent(author)}_${id}_${source}-search.${extension}`;
                 const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
                 const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
                 let bookMethods = [
@@ -579,12 +586,12 @@ export class query extends plugin {
                     `秒传Lite：${cleverPass2}`,
                 ].map(item => {
                     return {
-                        message: {type: "text", text: item},
+                        message: { type: "text", text: item },
                         nickname: this.e.sender.card || this.e.user_id,
                         user_id: this.e.user_id,
-                    }
-                })
-                await this.reply(await Bot.makeForwardMsg(bookMethods))
+                    };
+                });
+                await this.reply(await Bot.makeForwardMsg(bookMethods));
                 // 异步获取直连
                 console.log(source);
                 console.log(source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8"));
@@ -592,15 +599,15 @@ export class query extends plugin {
                     this.getDirectDownload(title).then(async res => {
                         const directDownloadUrls = res.map(item => {
                             return {
-                                message: {type: "text", text: item},
+                                message: { type: "text", text: item },
                                 nickname: this.e.sender.card || this.e.user_id,
                                 user_id: this.e.user_id,
-                            }
-                        })
+                            };
+                        });
                         if (directDownloadUrls.length) {
-                            await this.reply(await Bot.makeForwardMsg(directDownloadUrls))
+                            await this.reply(await Bot.makeForwardMsg(directDownloadUrls));
                         }
-                    })
+                    });
                 }
             });
     }
