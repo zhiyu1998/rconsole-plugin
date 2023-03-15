@@ -26,7 +26,7 @@ export class neteasepro extends plugin {
             /** https://oicqjs.github.io/oicq/#events */
             event: "message",
             /** 优先级，数字越小等级越高 */
-            priority: 1,
+            priority: 500,
             rule: [
                 {
                     /** 命令正则匹配 */
@@ -235,6 +235,7 @@ export class neteasepro extends plugin {
             });
     }
 
+    // 判断是否是json的字符串
     async isJSON(str) {
         if (typeof str !== "string") {
             return false;
