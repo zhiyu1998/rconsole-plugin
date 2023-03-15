@@ -586,7 +586,9 @@ export class query extends plugin {
                 })
                 await this.reply(await Bot.makeForwardMsg(bookMethods))
                 // 异步获取直连
-                if (source === Buffer.from("ei1saWJpcmFyeQ==", "base64").toString("utf8")) {
+                console.log(source);
+                console.log(source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8"));
+                if (source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8")) {
                     this.getDirectDownload(title).then(async res => {
                         const directDownloadUrls = res.map(item => {
                             return {
@@ -595,7 +597,9 @@ export class query extends plugin {
                                 user_id: this.e.user_id,
                             }
                         })
-                        await this.reply(await Bot.makeForwardMsg(directDownloadUrls??"无直连下载"))
+                        if (directDownloadUrls.length) {
+                            await this.reply(await Bot.makeForwardMsg(directDownloadUrls))
+                        }
                     })
                 }
             });
