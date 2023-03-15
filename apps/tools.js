@@ -49,10 +49,6 @@ export class tools extends plugin {
                     fnc: "twitter",
                 },
                 {
-                    reg: "music.163.com",
-                    fnc: "netease",
-                },
-                {
                     reg: "(acfun.cn)",
                     fnc: "acfun",
                 },
@@ -640,43 +636,6 @@ export class tools extends plugin {
         }
     }
 
-    async netease(e) {
-        const message =
-            e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
-        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
-        const id = musicUrlReg.exec(message)[2] || /id=(\d+)/.exec(message)[1];
-        const musicJson = JSON.parse(message);
-        const { musicUrl, preview, title, desc } = musicJson.meta.music;
-        // 如果没有下载地址跳出if
-        if (_.isNull(musicUrl) || _.isUndefined(musicUrl)) {
-            e.reply(`识别：网易云音乐，解析失败！`);
-            return;
-        } else {
-            fetch(`https://www.oranges1.top/neteaseapi.do/song/url?id=${id}`, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-            }).then(async resp => {
-                const url = await JSON.parse(await resp.text()).data[0].url;
-                // 反之解析官方地址
-                e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
-                this.downloadMp3(url, "follow")
-                    .then(path => {
-                        Bot.acquireGfs(e.group_id).upload(
-                            fs.readFileSync(path),
-                            "/",
-                            `${title.replace(/[\/\?<>\\:\*\|".… ]/g, "")}.mp3`,
-                        );
-                    })
-                    .catch(err => {
-                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                    });
-            });
-        }
-        return true;
-    }
-
     /**
      * 哔哩哔哩下载
      * @param title
@@ -832,39 +791,6 @@ export class tools extends plugin {
         return new Promise((resolve, reject) => {
             writer.on("finish", resolve);
             writer.on("error", reject);
-        });
-    }
-
-    /**
-     * 下载mp3
-     * @param mp3Url
-     * @param redirect
-     * @returns {Promise<unknown>}
-     */
-    async downloadMp3(mp3Url, redirect = "manual") {
-        return fetch(mp3Url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            responseType: "stream",
-            redirect: redirect,
-        }).then(res => {
-            const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp3`;
-            const fileStream = fs.createWriteStream(path);
-            res.body.pipe(fileStream);
-            return new Promise((resolve, reject) => {
-                fileStream.on("finish", () => {
-                    fileStream.close(() => {
-                        resolve(path);
-                    });
-                });
-                fileStream.on("error", err => {
-                    fs.unlink(path, () => {
-                        reject(err);
-                    });
-                });
-            });
         });
     }
 }
