@@ -11,6 +11,7 @@ import {
     getUserRecord,
     checkMusic,
     getSong,
+    getSongDetail,
 } from "../utils/netease.js";
 import { ha12store, store2ha1 } from "../utils/encrypt.js";
 import fetch from "node-fetch";
@@ -153,24 +154,27 @@ export class neteasepro extends plugin {
             musicUrlReg2.exec(message)[3] ||
             musicUrlReg.exec(message)[2] ||
             /id=(\d+)/.exec(message)[1];
-        const musicJson = JSON.parse(message);
-        const { musicUrl, preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
-        console.log(musicUrl, preview, title, desc);
-        // 如果没有登陆，就使用官方接口
-        e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
-        if (!(await redis.exists(await this.getRedisKey(e.user_id)))) {
-            this.downloadMp3(`music.163.com/song/media/outer/url?id=${id}`, "follow")
-                .then(path => {
-                    Bot.acquireGfs(e.group_id).upload(
-                        fs.readFileSync(path),
-                        "/",
-                        `${title.replace(/[\/\?<>\\:\*\|".… ]/g, "")}.mp3`,
-                    );
-                })
-                .catch(err => {
-                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                });
-            return true;
+        const isMessageJson = await this.isJSON(message);
+        if (isMessageJson) {
+            const musicJson = JSON.parse(message);
+            const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
+            // console.log(musicUrl, preview, title, desc);
+            // 如果没有登陆，就使用官方接口
+            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+            if (!(await redis.exists(await this.getRedisKey(e.user_id)))) {
+                this.downloadMp3(`music.163.com/song/media/outer/url?id=${id}`, "follow")
+                    .then(path => {
+                        Bot.acquireGfs(e.group_id).upload(
+                            fs.readFileSync(path),
+                            "/",
+                            `${title.replace(/[\/\?<>\\:\*\|".… ]/g, "")}.mp3`,
+                        );
+                    })
+                    .catch(err => {
+                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                    });
+                return true;
+            }
         }
         // 检查当前歌曲是否可用
         const checkOne = await checkMusic(id);
@@ -181,13 +185,13 @@ export class neteasepro extends plugin {
         const userInfo = await this.aopBefore(e);
         // 可用，开始下载
         const userDownloadUrl = (await getSong(id, await userInfo.cookie))[0].url;
+        const title = await getSongDetail(id).then(res => {
+            const song = res.songs[0];
+            return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+        });
         await this.downloadMp3(userDownloadUrl)
             .then(path => {
-                Bot.acquireGfs(e.group_id).upload(
-                    fs.readFileSync(path),
-                    "/",
-                    `${title.replace(/[\/\?<>\\:\*\|".… ]/g, "")}.mp3`,
-                );
+                Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${title}.mp3`);
             })
             .catch(err => {
                 console.error(`下载音乐失败，错误信息为: ${err.message}`);
@@ -231,13 +235,25 @@ export class neteasepro extends plugin {
             });
     }
 
+    async isJSON(str) {
+        if (typeof str !== "string") {
+            return false;
+        }
+        try {
+            JSON.parse(str);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
     // 定时轮询
     async poll(key) {
         let timer;
         return new Promise((resolve, reject) => {
             timer = setInterval(async () => {
                 const statusRes = await getCookies(key);
-                console.log(statusRes);
+                // console.log(statusRes);
                 if (statusRes.code === 800) {
                     clearInterval(timer);
                     reject("二维码已过期,请重新获取");

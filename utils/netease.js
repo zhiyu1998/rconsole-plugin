@@ -115,6 +115,15 @@ async function getSong(id, cookie) {
     });
 }
 
+async function getSongDetail(ids) {
+    return axios({
+        url: `${BASE_URL}/song/detail?ids=${ids}&timestamp=${Date.now()}`,
+        method: "get",
+    }).then(resp => {
+        return resp.data;
+    });
+}
+
 export {
     getCookies,
     getLoginStatus,
@@ -124,4 +133,5 @@ export {
     getUserRecord,
     checkMusic,
     getSong,
+    getSongDetail
 };
