@@ -1,5 +1,5 @@
 - {
-  version: 1.1.0,
+  version: 1.1.0-rc0,
   data:
     [
       升级<span class="cmd">netease解析</span>全面重构！,
