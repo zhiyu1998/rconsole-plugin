@@ -27,11 +27,7 @@ async function store2ha1(passstore) {
         const parts = passstore.split(".");
         if (parts.length === 2) {
             // 新的加密方式 with IV: IV.E
-            const c = crypto.createDecipheriv(
-                "aes-256-cbc",
-                key,
-                Buffer.from(parts[0], "hex")
-            );
+            const c = crypto.createDecipheriv("aes-256-cbc", key, Buffer.from(parts[0], "hex"));
             let d = c.update(parts[1], "hex", "binary");
             d += c.final("binary");
             return d;
@@ -45,12 +41,9 @@ async function store2ha1(passstore) {
     } catch (e) {
         console.error(
             "在[default]部分设置的passwordSecret无法解密信息。请确保所有节点的passwordSecret相同。如果您更改了密码保密信息，可能需要重新添加用户。",
-            e
+            e,
         );
     }
 }
 
-export {
-    ha12store,
-    store2ha1
-}
+export { ha12store, store2ha1 };
