@@ -1,14 +1,14 @@
 // 主库
 import { segment } from "oicq";
 import fetch from "node-fetch";
-// 配置文件
-import config from "../model/index.js";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import _ from "lodash";
 // http库
 import axios from "axios";
 import fs from "node:fs";
+// 常量
+import {CAT_LIMIT} from "../utils/constant.js";
 
 export class query extends plugin {
     constructor() {
@@ -64,7 +64,6 @@ export class query extends plugin {
                 },
             ],
         });
-        this.catConfig = config.getConfig("query");
     }
 
     async doctor(e) {
@@ -147,13 +146,12 @@ export class query extends plugin {
     }
 
     async cat(e) {
-        const numb = this.catConfig.count;
         let images = [];
         let reqRes = [
-            ...(await fetch(`https://shibe.online/api/cats?count=${numb}`).then(data =>
+            ...(await fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data =>
                 data.json(),
             )),
-            ...(await fetch(`https://api.thecatapi.com/v1/images/search?limit=${numb}`)
+            ...(await fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`)
                 .then(data => data.json())
                 .then(json => json.map(item => item.url))),
         ];

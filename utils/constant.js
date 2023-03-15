@@ -23,3 +23,5 @@ export const douyinTypeMap = {
 };
 
 export const TEN_THOUSAND = 10000;
+
+export const CAT_LIMIT = 10;
