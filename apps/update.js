@@ -59,7 +59,7 @@ export class update extends plugin {
 
         let command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
         if (isForce) {
-            command = `git reset --hard origin/master && ${command}`;
+            command = `git -C ./plugins/${pluginName}/ checkout . && ${command}`;
         }
         this.oldCommitId = await this.getCommitId(pluginName);
         await e.reply("正在执行更新操作，请稍等");
