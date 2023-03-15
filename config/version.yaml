@@ -1,8 +1,8 @@
 - {
-  version: 1.0.10,
+  version: 1.1.0,
   data:
     [
-      适配<span class="cmd">netease解析</span>,
+      升级<span class="cmd">netease解析</span>全面重构！,
       适配<span class="cmd">bilibili小程序解析</span>,
       增加<span class="cmd">#搜书</span>查询,
       适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,
