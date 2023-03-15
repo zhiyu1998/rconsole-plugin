@@ -588,16 +588,18 @@ export class query extends plugin {
                 })
                 await this.reply(await Bot.makeForwardMsg(bookMethods))
                 // 异步获取直连
-                this.getDirectDownload(title).then(async res => {
-                    const directDownloadUrls = res.map(item => {
-                        return {
-                            message: {type: "text", text: item},
-                            nickname: this.e.sender.card || this.e.user_id,
-                            user_id: this.e.user_id,
-                        }
+                if (source === Buffer.from("ei1saWJpcmFyeQ==", "base64").toString("utf8")) {
+                    this.getDirectDownload(title).then(async res => {
+                        const directDownloadUrls = res.map(item => {
+                            return {
+                                message: {type: "text", text: item},
+                                nickname: this.e.sender.card || this.e.user_id,
+                                user_id: this.e.user_id,
+                            }
+                        })
+                        await this.reply(await Bot.makeForwardMsg(directDownloadUrls??"无直连下载"))
                     })
-                    await this.reply(await Bot.makeForwardMsg(directDownloadUrls??"无直连下载"))
-                })
+                }
             });
     }
 
