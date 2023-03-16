@@ -593,13 +593,13 @@ export class query extends plugin {
                 });
                 await this.reply(await Bot.makeForwardMsg(bookMethods));
                 // 异步获取直连
-                console.log(source);
-                console.log(source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8"));
+                // console.log(source);
+                // console.log(source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8"));
                 if (source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8")) {
                     this.getDirectDownload(title).then(async res => {
-                        const directDownloadUrls = res.map(item => {
+                        const directDownloadUrls = res.map((item, index) => {
                             return {
-                                message: { type: "text", text: item },
+                                message: { type: "text", text: `下载直链${index}：${item}` },
                                 nickname: this.e.sender.card || this.e.user_id,
                                 user_id: this.e.user_id,
                             };
