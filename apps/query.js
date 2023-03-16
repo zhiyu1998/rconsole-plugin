@@ -420,7 +420,6 @@ export class query extends plugin {
         // 主要数据来源
         await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]).then(async allRes => {
             const [zHelper, yiBook] = allRes;
-            console.log(allRes);
             if (!_.isUndefined(yiBook) && yiBook.length > 0) {
                 await e.reply(await Bot.makeForwardMsg(yiBook));
             }
