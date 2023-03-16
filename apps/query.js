@@ -9,6 +9,8 @@ import axios from "axios";
 import fs from "node:fs";
 // 常量
 import { CAT_LIMIT } from "../utils/constant.js";
+// 书库
+import { getZHelper, getYiBook, getBookDetail } from "../utils/books.js";
 
 export class query extends plugin {
     constructor() {
@@ -415,61 +417,22 @@ export class query extends plugin {
     async searchBook(e) {
         let keyword = e.msg.replace(/#|搜书/g, "").trim();
         const thisBookMethod = this;
-        const sendTemplate = {
-            nickname: this.e.sender.card || this.e.user_id,
-            user_id: this.e.user_id,
-        };
         // 主要数据来源
-        axios
-            .post("https://api.ylibrary.org/api/search/", {
-                headers: {
-                    "user-agent":
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    referer: "https://search.zhelper.net/",
-                },
-                keyword: keyword,
-                page: 1,
-                sensitive: false,
-            })
-            .then(async resp => {
-                const dataBook = resp.data.data;
-                let bookMsg = [];
-                await dataBook.forEach(item => {
-                    const {
-                        title,
-                        author,
-                        publisher,
-                        isbn,
-                        extension,
-                        filesize,
-                        year,
-                        id,
-                        source,
-                    } = item;
-                    // 数据组合
-                    bookMsg.push({
-                        message: {
-                            type: "text",
-                            text:
-                                `${id}: <${title}>\n` +
-                                `作者：${author}\n` +
-                                `书籍类型：${extension}\n` +
-                                `出版年月：${year}\n` +
-                                `来源：${source}\n` +
-                                `ISBN：${isbn || "暂无"}\n` +
-                                `出版社：${publisher}\n` +
-                                `文件大小：${(Number(filesize) / 1024 / 1024).toFixed(2)}MB`,
-                        },
-                        ...sendTemplate,
-                    });
-                });
-                await e.reply(await Bot.makeForwardMsg(bookMsg));
+        await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]).then(async allRes => {
+            const [zHelper, yiBook] = allRes;
+            console.log(allRes);
+            if (!_.isUndefined(yiBook) && yiBook.length > 0) {
+                await e.reply(await Bot.makeForwardMsg(yiBook));
+            }
+            if (!_.isUndefined(zHelper) && zHelper.length > 0) {
+                await e.reply(await Bot.makeForwardMsg(zHelper));
                 await e.reply(
                     "请选择一个你想要的ID、来源，例如：11918807 superlib（只回复11918807默认zlibrary）书源若不对应则回复无效链接",
                 );
-
                 thisBookMethod.setContext("searchBookContext");
-            });
+            }
+        });
+        return true;
     }
 
     // 通过id搜书
@@ -482,35 +445,8 @@ export class query extends plugin {
             id = /\d+/.exec(keyword)[0];
             source = "";
         }
-        await this.getBookDetail(e, id, source);
-    }
-
-    /**
-     * 获取直接下载的来源
-     * @param keyword 书名
-     * @returns {Promise<void>}
-     */
-    async getDirectDownload(keyword) {
-        // 下载字典（异步去执行）
-        return axios
-            .post("https://worker.zlib.app/api/search/", {
-                headers: {
-                    "user-agent":
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    referer: "https://search.zhelper.net/",
-                },
-                keyword: keyword,
-                page: 1,
-                sensitive: false,
-            })
-            .then(resp => {
-                // 标题去重
-                return resp.data.data
-                    .filter(item => {
-                        return item.title === keyword;
-                    })
-                    .map(item => `https://worker.zlib.app/download/${item.id}`);
-            });
+        const res = await getBookDetail(e, id, source);
+        await this.reply(await Bot.makeForwardMsg(res))
     }
 
     /**
@@ -534,82 +470,9 @@ export class query extends plugin {
             id = /\d+/.exec(curMsg.msg)[0];
             source = "";
         }
-        await this.getBookDetail(curMsg, id, source);
+        const res = await getBookDetail(curMsg, id, source);
+        await this.reply(await Bot.makeForwardMsg(res))
         this.finish("searchBookContext");
-    }
-
-    /**
-     * 获取书籍下载方式
-     * @param e
-     * @param id
-     * @param source
-     * @returns {Promise<AxiosResponse<any>>}
-     */
-    async getBookDetail(e, id, source) {
-        return axios
-            .post("https://api.ylibrary.org/api/detail/", {
-                headers: {
-                    "user-agent":
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36 Edg/111.0.1660.14",
-                    referer: "https://search.zhelper.net/",
-                },
-                id: id,
-                source: source || "zlibrary",
-            })
-            .then(async resp => {
-                const {
-                    author,
-                    extension,
-                    filesize,
-                    id,
-                    in_libgen,
-                    ipfs_cid,
-                    md5,
-                    publisher,
-                    source,
-                    title,
-                    year,
-                } = resp.data;
-                const Libgen = `https://libgendown.1kbtool.com/${md5}`;
-                const ipfs = `https://ipfs-checker.1kbtool.com/${ipfs_cid}?filename=${encodeURIComponent(
-                    title,
-                )}_${source}-search.${extension}`;
-                const reqUrl = `${md5}#${filesize}#${encodeURIComponent(
-                    title,
-                )}_${encodeURIComponent(author)}_${id}_${source}-search.${extension}`;
-                const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
-                const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
-                let bookMethods = [
-                    `Libgen：${Libgen}`,
-                    `ipfs：${ipfs}`,
-                    `秒传：${cleverPass}`,
-                    `秒传Lite：${cleverPass2}`,
-                ].map(item => {
-                    return {
-                        message: { type: "text", text: item },
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
-                });
-                await this.reply(await Bot.makeForwardMsg(bookMethods));
-                // 异步获取直连
-                // console.log(source);
-                // console.log(source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8"));
-                if (source === Buffer.from("ei1saWJyYXJ5", "base64").toString("utf8")) {
-                    this.getDirectDownload(title).then(async res => {
-                        const directDownloadUrls = res.map((item, index) => {
-                            return {
-                                message: { type: "text", text: `下载直链${index}：${item}` },
-                                nickname: this.e.sender.card || this.e.user_id,
-                                user_id: this.e.user_id,
-                            };
-                        });
-                        if (directDownloadUrls.length) {
-                            await this.reply(await Bot.makeForwardMsg(directDownloadUrls));
-                        }
-                    });
-                }
-            });
     }
 
     // 删除标签
