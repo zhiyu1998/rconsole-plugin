@@ -155,7 +155,8 @@ export class neteasepro extends plugin {
             musicUrlReg.exec(message)[2] ||
             /id=(\d+)/.exec(message)[1];
         const isMessageJson = await this.isJSON(message);
-        if (isMessageJson) {
+        // 如果是小程序 & 是游客
+        if (isMessageJson && !(await redis.get(await this.getRedisKey(e.user_id)))) {
             const musicJson = JSON.parse(message);
             const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
             // console.log(musicUrl, preview, title, desc);
