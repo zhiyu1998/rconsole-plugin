@@ -166,7 +166,7 @@ export class neteasepro extends plugin {
             } else {
                 // 非小程序
                 const title = await getSongDetail(id).then(res => {
-                    const song = res?.songs[0];
+                    const song = res.songs?.[0];
                     return song.length > 0 ? `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "") : "暂无信息";
                 });
                 e.reply(`识别：网易云音乐，${title}`);
