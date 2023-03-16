@@ -445,7 +445,7 @@ export class query extends plugin {
             source = "";
         }
         const res = await getBookDetail(e, id, source);
-        await this.reply(await Bot.makeForwardMsg(res))
+        await this.reply(await Bot.makeForwardMsg(res));
     }
 
     /**
@@ -470,7 +470,7 @@ export class query extends plugin {
             source = "";
         }
         const res = await getBookDetail(curMsg, id, source);
-        await this.reply(await Bot.makeForwardMsg(res))
+        await this.reply(await Bot.makeForwardMsg(res));
         this.finish("searchBookContext");
     }
 
