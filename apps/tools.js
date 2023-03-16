@@ -119,8 +119,7 @@ export class tools extends plugin {
         const douUrl = urlRex.exec(e.msg.trim())[0];
 
         await this.douyinRequest(douUrl).then(async res => {
-            const douRex = /.*video\/(\d+)\/(.*?)/g;
-            const douId = douRex.exec(res)[1];
+            const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
             // 且行且珍惜，下面是已经过期的两个抖音api，获取难度越来越大
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
