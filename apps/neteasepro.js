@@ -154,28 +154,36 @@ export class neteasepro extends plugin {
             musicUrlReg2.exec(message)[3] ||
             musicUrlReg.exec(message)[2] ||
             /id=(\d+)/.exec(message)[1];
-        const isMessageJson = await this.isJSON(message);
-        // 如果是小程序 & 是游客
-        if (isMessageJson && !(await redis.get(await this.getRedisKey(e.user_id)))) {
-            const musicJson = JSON.parse(message);
-            const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
-            // console.log(musicUrl, preview, title, desc);
-            // 如果没有登陆，就使用官方接口
-            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
-            if (!(await redis.exists(await this.getRedisKey(e.user_id)))) {
-                this.downloadMp3(`music.163.com/song/media/outer/url?id=${id}`, "follow")
-                    .then(path => {
-                        Bot.acquireGfs(e.group_id).upload(
-                            fs.readFileSync(path),
-                            "/",
-                            `${title.replace(/[\/\?<>\\:\*\|".… ]/g, "")}.mp3`,
-                        );
-                    })
-                    .catch(err => {
-                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                    });
-                return true;
+        // 是游客
+        if (!(await redis.get(await this.getRedisKey(e.user_id)))) {
+            // 是小程序
+            if (await this.isJSON(message)) {
+                const musicJson = JSON.parse(message);
+                const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
+                // console.log(musicUrl, preview, title, desc);
+                // 如果没有登陆，就使用官方接口
+                e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+            } else {
+                // 非小程序
+                const title = await getSongDetail(id).then(res => {
+                    const song = res.songs[0];
+                    return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+                });
+                e.reply(`识别：网易云音乐，${title}`);
             }
+            // 下载游客歌曲
+            this.downloadMp3(`https://music.163.com/song/media/outer/url?id=${id}`, "follow")
+                .then(path => {
+                    Bot.acquireGfs(e.group_id).upload(
+                        fs.readFileSync(path),
+                        "/",
+                        `${id}.mp3`,
+                    );
+                })
+                .catch(err => {
+                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                });
+            return true;
         }
         // 检查当前歌曲是否可用
         const checkOne = await checkMusic(id);
