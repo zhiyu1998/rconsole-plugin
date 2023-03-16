@@ -151,7 +151,7 @@ export class neteasepro extends plugin {
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const id =
-            musicUrlReg2.exec(message)[3] ||
+            musicUrlReg2.exec(message)[2] ||
             musicUrlReg.exec(message)[2] ||
             /id=(\d+)/.exec(message)[1];
         // 是游客
