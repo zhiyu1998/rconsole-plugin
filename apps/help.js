@@ -2,11 +2,6 @@ import Help from "../model/help.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import md5 from "md5";
 
-let helpData = {
-    md5: "",
-    img: "",
-};
-
 export class help extends plugin {
     constructor(e) {
         super({
@@ -31,8 +26,12 @@ export class help extends plugin {
     }
 
     async cache(data) {
+        let helpData = {
+            md5: "",
+            img: "",
+        };
         let tmp = md5(JSON.stringify(data));
-        if (helpData.md5 == tmp) return helpData.img;
+        if (helpData.md5 === tmp) return helpData.img;
 
         helpData.img = await puppeteer.screenshot("help", data);
         helpData.md5 = tmp;
