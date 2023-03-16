@@ -109,4 +109,13 @@ async function getIdVideo(url) {
     return idVideo.length > 19 ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
 }
 
-export { jFeatch, autoTask, retry, getIdVideo };
+function generateRandomStr(randomlength = 16){
+    const base_str = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789='
+    let random_str = ''
+    for (let i = 0; i < randomlength; i++) {
+        random_str += base_str.charAt(Math.floor(Math.random() * base_str.length))
+    }
+    return random_str
+}
+
+export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr };

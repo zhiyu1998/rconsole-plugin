@@ -13,7 +13,7 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
-import { getIdVideo } from "../utils/common.js";
+import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 
 export class tools extends plugin {
@@ -145,14 +145,15 @@ export class tools extends plugin {
                 const ttwid = resp.headers.get("set-cookie");
                 const odin_tt =
                     "a09d8eb0d95b7b9adb4b6fc6591918bfb996096967a7aa4305bd81b5150a8199d2e29ed21883cdd7709c5beaa2be3baa";
+                const passport_csrf_token = '2f142a9bb5db1f81f249d6fc997fe4a1'
                 const headers = {
                     "user-agent":
                         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
                     referer: "https://www.douyin.com/",
-                    Cookie: `ttwid=${ttwid};${odin_tt}`,
+                    Cookie: `ttwid=${ttwid};odin_tt=${odin_tt};passport_csrf_token=${passport_csrf_token}`,
                 };
                 const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
-                const params = `aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
+                const params = `msToken=${generateRandomStr(107)}&aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
                 // xg参数
                 axios
                     .post(`http://47.115.200.238/xg/path?url=${params.replaceAll("&", "%26")}`, {
