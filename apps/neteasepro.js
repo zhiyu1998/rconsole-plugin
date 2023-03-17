@@ -30,7 +30,7 @@ export class neteasepro extends plugin {
             rule: [
                 {
                     /** 命令正则匹配 */
-                    reg: "#网易云登陆",
+                    reg: "#网易云登录",
                     /** 执行方法 */
                     fnc: "neteaseCloudLogin",
                 },
@@ -72,7 +72,7 @@ export class neteasepro extends plugin {
         } else {
             // 已经登陆过的，直接从redis取出
             neteaseCookie = await store2ha1(
-                JSON.parse(await redis.get(await this.getRedisKey(e.user_id))).cookie,
+                JSON.parse(await redis.get(await this.getRedisKey(e.user_id))).cookie
             );
         }
         // 获取用户信息
@@ -151,8 +151,8 @@ export class neteasepro extends plugin {
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const id =
-            musicUrlReg2.exec(message)[3] ||
-            musicUrlReg.exec(message)[2] ||
+            musicUrlReg2.exec(message)?.[3] ||
+            musicUrlReg.exec(message)?.[2] ||
             /id=(\d+)/.exec(message)[1];
         // 是游客
         if (!(await redis.get(await this.getRedisKey(e.user_id)))) {
@@ -212,7 +212,7 @@ export class neteasepro extends plugin {
     async aopBefore(e) {
         // 取出cookie
         let userInfo = JSON.parse(await redis.get(await this.getRedisKey(e.user_id)));
-        const cookie = userInfo.cookie;
+        const cookie = userInfo?.cookie;
         // 如果不存在cookie
         if (!cookie) {
             e.reply("请先#网易云登录");
