@@ -15,6 +15,7 @@ import {
 } from "../utils/netease.js";
 import { ha12store, store2ha1 } from "../utils/encrypt.js";
 import fetch from "node-fetch";
+import _ from "lodash";
 
 export class neteasepro extends plugin {
     constructor() {
@@ -70,9 +71,16 @@ export class neteasepro extends plugin {
                 neteaseCookie = cookie;
             });
         } else {
+            const userData = await redis.get(await this.getRedisKey(e.user_id));
+            // 如果cookie存在但是为空
+            if (_.isEmpty(userData)) {
+                await redis.del(await this.getRedisKey(e.user_id));
+                e.reply("发生已知错误：cookie为空，请重试 #网易云登录 即可！")
+                return;
+            }
             // 已经登陆过的，直接从redis取出
             neteaseCookie = await store2ha1(
-                JSON.parse(await redis.get(await this.getRedisKey(e.user_id))).cookie
+                JSON.parse(userData).cookie
             );
         }
         // 获取用户信息
@@ -211,16 +219,28 @@ export class neteasepro extends plugin {
     // 切面方法检测cookie & 获取cookie和uid
     async aopBefore(e) {
         // 取出cookie
-        let userInfo = JSON.parse(await redis.get(await this.getRedisKey(e.user_id)));
-        const cookie = userInfo?.cookie;
+        const userDataJson = await redis.get(await this.getRedisKey(e.user_id));
         // 如果不存在cookie
-        if (!cookie) {
+        if (_.isEmpty(userDataJson)) {
             e.reply("请先#网易云登录");
             return "";
         }
+        let userData = JSON.parse(userDataJson);
+        const cookie = userData?.cookie;
+        console.log(cookie);
         // 解析cookie
-        userInfo.cookie = store2ha1(cookie);
-        return userInfo;
+        userData.cookie = await store2ha1(cookie);
+        // 检查cookie是否可用
+        const userInfo = await getLoginStatus(userData.cookie);
+        console.log(userData);
+        if (_.isNil(userInfo.profile)) {
+            e.reply("cookie已经过期，请重新#网易云登录！");
+            // 删除过期的cookie
+            await redis.del(await this.getRedisKey(e.user_id));
+            return "";
+        }
+        // 没有过期直接返回
+        return userData;
     }
 
     // 下载二维码
