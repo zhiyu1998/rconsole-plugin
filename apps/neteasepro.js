@@ -75,13 +75,11 @@ export class neteasepro extends plugin {
             // 如果cookie存在但是为空
             if (_.isEmpty(userData)) {
                 await redis.del(await this.getRedisKey(e.user_id));
-                e.reply("发生已知错误：cookie为空，请重试 #网易云登录 即可！")
+                e.reply("发生已知错误：cookie为空，请重试 #网易云登录 即可！");
                 return;
             }
             // 已经登陆过的，直接从redis取出
-            neteaseCookie = await store2ha1(
-                JSON.parse(userData).cookie
-            );
+            neteaseCookie = await store2ha1(JSON.parse(userData).cookie);
         }
         // 获取用户信息
         const userInfo = await getLoginStatus(neteaseCookie);
@@ -175,18 +173,16 @@ export class neteasepro extends plugin {
                 // 非小程序
                 const title = await getSongDetail(id).then(res => {
                     const song = res.songs?.[0];
-                    return song.length > 0 ? `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "") : "暂无信息";
+                    return song.length > 0
+                        ? `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "")
+                        : "暂无信息";
                 });
                 e.reply(`识别：网易云音乐，${title}`);
             }
             // 下载游客歌曲
             this.downloadMp3(`https://music.163.com/song/media/outer/url?id=${id}`, "follow")
                 .then(path => {
-                    Bot.acquireGfs(e.group_id).upload(
-                        fs.readFileSync(path),
-                        "/",
-                        `${id}.mp3`,
-                    );
+                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${id}.mp3`);
                 })
                 .catch(err => {
                     console.error(`下载音乐失败，错误信息为: ${err.message}`);
