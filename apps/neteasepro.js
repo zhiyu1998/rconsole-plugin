@@ -1,19 +1,19 @@
 import plugin from "../../../lib/plugins/plugin.js";
 import axios from "axios";
 import fs from "node:fs";
-import { segment } from "oicq";
+import {segment} from "oicq";
 import {
-    getQrCode,
+    checkMusic,
+    getCookies,
+    getDailyRecommend,
     getKey,
     getLoginStatus,
-    getDailyRecommend,
-    getCookies,
-    getUserRecord,
-    checkMusic,
+    getQrCode,
     getSong,
     getSongDetail,
+    getUserRecord,
 } from "../utils/netease.js";
-import { ha12store, store2ha1 } from "../utils/encrypt.js";
+import {ha12store, store2ha1} from "../utils/encrypt.js";
 import fetch from "node-fetch";
 import _ from "lodash";
 
@@ -104,21 +104,16 @@ export class neteasepro extends plugin {
         }
         // 获取每日推荐所有数据
         const dailyRecommend = await getDailyRecommend(realCookie);
-        //  由于数据过大，取前10
-        const combineMsg = await dailyRecommend.dailySongs.slice(0, 10).map(item => {
+        const combineMsg = await dailyRecommend.dailySongs.map(async item => {
             // 组合数据
             return {
-                message: [
-                    segment.text(
-                        `${item?.id}: ${item?.name}-${item?.ar?.[0].name}-${item?.al?.name}`,
-                    ),
-                    segment.image(item?.al?.picUrl),
-                ],
+                message: segment.json(await this.musicPack(item)),
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
             };
         });
-        await e.reply(await Bot.makeForwardMsg(combineMsg));
+        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(combineMsg))
+        await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
     async neteaseListenRank(e) {
@@ -131,24 +126,19 @@ export class neteasepro extends plugin {
         const uid = userInfo.uid;
         // 获取听歌排行榜
         const userRecord = await getUserRecord(uid);
-        let rankId = 0;
         e.reply(" 😘亲，这是你的听歌排行榜Top10");
-        const rank = userRecord.weekData.slice(0, 10).map(item => {
+        //  由于数据过大，取前10
+        const rank = userRecord.weekData.map(async item => {
             // 组合数据
             const song = item.song;
-            rankId++;
             return {
-                message: [
-                    segment.text(
-                        `No.${rankId} ${song?.id}: ${song?.name}-${song?.ar?.[0].name}-${song?.al?.name}`,
-                    ),
-                    segment.image(song?.al?.picUrl),
-                ],
+                message: segment.json(await this.musicPack(song)),
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
-            };
+            }
         });
-        await e.reply(await Bot.makeForwardMsg(rank));
+        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(rank))
+        await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
     async netease(e) {
@@ -294,6 +284,51 @@ export class neteasepro extends plugin {
                 }
             }, 3000);
         });
+    }
+
+    // 包装分享小程序数据
+    async musicPack(song) {
+        const title = song.name;
+        const singer = song.ar?.[0]?.name;
+        const jumpUrl = `https://y.music.163.com/m/song?id=${song.id}`;
+        const preview = song.al?.picUrl;
+        const musicUrl = `https://music.163.com/song/media/outer/url?id=${song.id}`;
+        return {
+            "app": "com.tencent.structmsg",
+            "desc": "音乐",
+            "view": "music",
+            "ver": "0.0.0.1",
+            "prompt": "[分享]" + title + '-' + singer,
+            "meta": {
+                "music": {
+                    "app_type": 1,
+                    "appid": 100495085,
+                    "desc": singer,
+                    "jumpUrl": jumpUrl,
+                    "musicUrl": musicUrl,
+                    "preview": preview,
+                    "sourceMsgId": "0",
+                    "source_icon": "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
+                    "source_url": "",
+                    "tag": "网易云音乐",
+                    "title": title,
+                }
+            },
+            "config": {
+                "type": "normal",
+                "forward": true,
+                "ctime": Date.now(),
+            }
+        };
+    }
+
+    async musicForwardPack(forwardMsg, forwardMsgName="R插件消息") {
+        forwardMsg.data = forwardMsg.data
+            .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
+            .replace(/\n/g, '')
+            .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+            .replace(/___+/, `<title color="#777777" size="26">${forwardMsgName}</title>`);
+        return forwardMsg
     }
 
     /**
