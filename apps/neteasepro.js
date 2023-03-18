@@ -292,7 +292,7 @@ export class neteasepro extends plugin {
         const singer = song.ar?.[0]?.name;
         const jumpUrl = `https://y.music.163.com/m/song?id=${song.id}`;
         const preview = song.al?.picUrl;
-        const musicUrl = `https://music.163.com/song/media/outer/url?id=${song.id}`;
+        const musicUrl = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
         return {
             "app": "com.tencent.structmsg",
             "desc": "音乐",
