@@ -126,9 +126,9 @@ export class neteasepro extends plugin {
         const uid = userInfo.uid;
         // 获取听歌排行榜
         const userRecord = await getUserRecord(uid);
-        e.reply(" 😘亲，这是你的听歌排行榜");
+        e.reply(" 😘亲，这是你的听歌排行榜Top10");
         //  由于数据过大，取前10
-        const rank = userRecord.weekData.map(async item => {
+        const rank = userRecord.weekData.slice(0, 10).map(async item => {
             // 组合数据
             const song = item.song;
             return {
