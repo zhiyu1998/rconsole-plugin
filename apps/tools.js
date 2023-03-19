@@ -1,7 +1,7 @@
 // 主库
 import fetch from "node-fetch";
 import fs from "node:fs";
-import { Gfs, segment } from "oicq";
+import { segment } from "oicq";
 // 其他库
 import md5 from "md5";
 import axios from "axios";
@@ -65,6 +65,10 @@ export class tools extends plugin {
                     fnc: "clearTrash",
                     permission: "master",
                 },
+                {
+                    reg: '^#波点音乐(.*)',
+                    fnc: 'bodianMusic'
+                }
             ],
         });
         // http://api.tuwei.space/girl
@@ -638,6 +642,48 @@ export class tools extends plugin {
         }
     }
 
+    async bodianMusic(e) {
+        const msg = e.msg.replace("#波点音乐").trim()
+        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`
+        // 获取列表
+        const thisMethod = this;
+        await axios.get(API).then(resp => {
+            /**
+             * "songName": "山海",
+             * "artist": "草东没有派对",
+             * "coverUrl": "https://img3.kuwo.cn/wmvpic/324/78/55/3196258119.jpg",
+             * "highUrl": "http://other.player.nf03.sycdn.kuwo.cn/f7451ba7f02256b6b5d5ae8a74336502/64172260/resource/m2/55/56/3401786858.mp4?from=bodian",
+             * "lowUrl": "http://other.player.nf03.sycdn.kuwo.cn/47e753a5f8350140716e439f1c87dc1f/64172260/resource/m3/50/96/2318372432.mp4?from=bodian",
+             * "shortLowUrl": null
+             */
+            e.reply("请选择一个要播放的视频：\n" + resp.data);
+            thisMethod.setContext("bodianMusicContext");
+        })
+        return true;
+    }
+
+    /**
+     * @link bodianMusic 波点音乐上下文
+     * @returns {Promise<void>}
+     */
+    async bodianMusicContext() {
+        // 当前消息
+        const curMsg = this.e;
+        // 上一个消息
+        const preMsg = await this.getContext().bodianMusicContext;
+        const msg = preMsg.msg.replace("#波点音乐", "").trim();
+        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=${Number(curMsg.msg)}&max=`
+        const thisMethod = this;
+        await axios.get(API).then(async res => {
+            const {songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl} = res.data;
+            curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
+            await thisMethod.downloadVideo(lowUrl).then(path => {
+                curMsg.reply(segment.video(path + "/temp.mp4"));
+            })
+            thisMethod.finish("bodianMusicContext");
+        })
+    }
+
     /**
      * 哔哩哔哩下载
      * @param title
@@ -791,7 +837,7 @@ export class tools extends plugin {
         res.data.pipe(writer);
 
         return new Promise((resolve, reject) => {
-            writer.on("finish", resolve);
+            writer.on("finish", () => resolve(groupPath));
             writer.on("error", reject);
         });
     }

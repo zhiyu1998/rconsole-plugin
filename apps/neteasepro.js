@@ -31,16 +31,16 @@ export class neteasepro extends plugin {
             rule: [
                 {
                     /** 命令正则匹配 */
-                    reg: "#网易云登录",
+                    reg: "^#网易云登录$",
                     /** 执行方法 */
                     fnc: "neteaseCloudLogin",
                 },
                 {
-                    reg: "#网易云每日推荐",
+                    reg: "^#网易云每日推荐$",
                     fnc: "neteaseDailyRecommend",
                 },
                 {
-                    reg: "#网易云听歌排行",
+                    reg: "^#网易云听歌排行$",
                     fnc: "neteaseListenRank",
                 },
                 {

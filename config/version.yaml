@@ -2,6 +2,7 @@
   version: 1.1.0-rc0,
   data:
     [
+      新增<span class="cmd">#波点音乐</span>MV点歌,
       升级<span class="cmd">netease解析</span>全面重构！,
       适配<span class="cmd">bilibili小程序解析</span>,
       增加<span class="cmd">#搜书</span>查询,

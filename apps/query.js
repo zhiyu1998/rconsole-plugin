@@ -33,11 +33,11 @@ export class query extends plugin {
                     fnc: "cat",
                 },
                 {
-                    reg: "^#电脑软件推荐$" /** 执行方法 */,
+                    reg: "^#电脑软件推荐$",
                     fnc: "computerRecommended",
                 },
                 {
-                    reg: "^#安卓软件推荐$" /** 执行方法 */,
+                    reg: "^#安卓软件推荐$",
                     fnc: "androidRecommended",
                 },
                 {
