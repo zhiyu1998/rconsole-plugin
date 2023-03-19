@@ -680,8 +680,8 @@ export class tools extends plugin {
             await thisMethod.downloadVideo(lowUrl).then(path => {
                 curMsg.reply(segment.video(path + "/temp.mp4"));
             })
-            thisMethod.finish("bodianMusicContext");
         })
+        this.finish("bodianMusicContext");
     }
 
     /**
