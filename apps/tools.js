@@ -66,9 +66,9 @@ export class tools extends plugin {
                     permission: "master",
                 },
                 {
-                    reg: '^#波点音乐(.*)',
-                    fnc: 'bodianMusic'
-                }
+                    reg: "^#波点音乐(.*)",
+                    fnc: "bodianMusic",
+                },
             ],
         });
         // http://api.tuwei.space/girl
@@ -643,8 +643,8 @@ export class tools extends plugin {
     }
 
     async bodianMusic(e) {
-        const msg = e.msg.replace("#波点音乐").trim()
-        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`
+        const msg = e.msg.replace("#波点音乐").trim();
+        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`;
         // 获取列表
         const thisMethod = this;
         await axios.get(API).then(resp => {
@@ -658,7 +658,7 @@ export class tools extends plugin {
              */
             e.reply("请选择一个要播放的视频：\n" + resp.data);
             thisMethod.setContext("bodianMusicContext");
-        })
+        });
         return true;
     }
 
@@ -672,15 +672,23 @@ export class tools extends plugin {
         // 上一个消息
         const preMsg = await this.getContext().bodianMusicContext;
         const msg = preMsg.msg.replace("#波点音乐", "").trim();
-        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=${Number(curMsg.msg)}&max=`
+        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=${Number(
+            curMsg.msg,
+        )}&max=`;
         const thisMethod = this;
-        await axios.get(API).then(async res => {
-            const {songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl} = res.data;
-            curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
-            await thisMethod.downloadVideo(lowUrl).then(path => {
-                curMsg.reply(segment.video(path + "/temp.mp4"));
-            })
-        })
+        axios.get(API).then(async res => {
+            try {
+                const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
+                curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
+                await thisMethod.downloadVideo(lowUrl).then(path => {
+                    curMsg.reply(segment.video(path + "/temp.mp4"));
+                });
+            } catch (err) {
+                curMsg.reply("发生网络错误，请重新发送！");
+            } finally {
+                thisMethod.finish("bodianMusicContext");
+            }
+        });
         this.finish("bodianMusicContext");
     }
 
