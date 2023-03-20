@@ -426,7 +426,10 @@ export class query extends plugin {
             if (!_.isUndefined(zHelper) && zHelper.length > 0) {
                 await e.reply(await Bot.makeForwardMsg(zHelper));
                 await e.reply(
-                    "请选择一个你想要的ID、来源，例如：11918807 superlib（只回复11918807默认zlibrary）书源若不对应则回复无效链接",
+                    "请选择一个你想要的ID、来源，例如：\n" +
+                    "11918807 superlib\n" +
+                    "只回复11918807 默认zlibrary\n" +
+                    "书源若不对应则回复无效链接，数字字母之间空格",
                 );
                 thisBookMethod.setContext("searchBookContext");
             }
