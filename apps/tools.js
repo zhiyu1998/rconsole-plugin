@@ -396,24 +396,17 @@ export class tools extends plugin {
     async wiki(e) {
         const key = e.msg.replace(/#|百科|wiki/g, "").trim();
         const url = `https://xiaoapi.cn/API/bk.php?m=json&type=sg&msg=${encodeURI(key)}`;
-        // const url2 = 'https://api.jikipedia.com/go/auto_complete'
-        Promise.all([
-            // axios.post(url2, {
-            //     headers: {
-            //         "User-Agent":
-            //             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            //         "Content-Type": "application/json",
-            //     },
-            //     timeout: 10000,
-            //     "phrase": key,
-            // })
-            //     .then(resp => {
-            //         const data = resp.data.data
-            //         if (_.isEmpty(data)) {
-            //             return data;
-            //         }
-            //         return data[0].entities[0];
-            //     }),
+        const bdUrl = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${encodeURI(key)}`;
+        const bkRes = await Promise.all([
+            axios.get(bdUrl, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+                timeout: 10000,
+            }).then(resp => {
+                return resp.data;
+            }),
             axios
                 .get(url, {
                     headers: {
@@ -425,16 +418,21 @@ export class tools extends plugin {
                 .then(resp => {
                     return resp.data;
                 }),
-        ]).then(res => {
-            const data = res[0];
-            // const data2 = res[0]
-            const template = `
-                      解释：${_.get(data, "msg")}\n
-                      详情：${_.get(data, "more")}\n
-                    `;
+        ]).then(async res => {
+            return res.map(item => {
+                return {
+                    message: `
+                      解释：${_.get(item, "msg")}\n
+                      详情：${_.get(item, "more")}\n
+                    `,
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }
+            })
             // 小鸡解释：${ _.get(data2, 'content') }
-            e.reply(template);
+
         });
+        await e.reply(await Bot.makeForwardMsg(bkRes));
         return true;
     }
 
