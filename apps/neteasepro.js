@@ -1,7 +1,7 @@
 import plugin from "../../../lib/plugins/plugin.js";
 import axios from "axios";
 import fs from "node:fs";
-import {segment} from "oicq";
+import { segment } from "oicq";
 import {
     checkMusic,
     getCookies,
@@ -13,9 +13,10 @@ import {
     getSongDetail,
     getUserRecord,
 } from "../utils/netease.js";
-import {ha12store, store2ha1} from "../utils/encrypt.js";
+import { ha12store, store2ha1 } from "../utils/encrypt.js";
 import fetch from "node-fetch";
 import _ from "lodash";
+import { mkdirsSync } from "../utils/file.js";
 
 export class neteasepro extends plugin {
     constructor() {
@@ -112,7 +113,7 @@ export class neteasepro extends plugin {
                 user_id: e.user_id,
             };
         });
-        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(combineMsg))
+        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(combineMsg));
         await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
@@ -135,9 +136,9 @@ export class neteasepro extends plugin {
                 message: segment.json(await this.musicPack(song)),
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
-            }
+            };
         });
-        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(rank))
+        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(rank));
         await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
@@ -294,41 +295,44 @@ export class neteasepro extends plugin {
         const preview = song.al?.picUrl;
         const musicUrl = `https://music.163.com/song/media/outer/url?id=${song.id}.mp3`;
         return {
-            "app": "com.tencent.structmsg",
-            "desc": "音乐",
-            "view": "music",
-            "ver": "0.0.0.1",
-            "prompt": "[分享]" + title + '-' + singer,
-            "meta": {
-                "music": {
-                    "app_type": 1,
-                    "appid": 100495085,
-                    "desc": singer,
-                    "jumpUrl": jumpUrl,
-                    "musicUrl": musicUrl,
-                    "preview": preview,
-                    "sourceMsgId": "0",
-                    "source_icon": "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
-                    "source_url": "",
-                    "tag": "网易云音乐",
-                    "title": title,
-                }
+            app: "com.tencent.structmsg",
+            desc: "音乐",
+            view: "music",
+            ver: "0.0.0.1",
+            prompt: "[分享]" + title + "-" + singer,
+            meta: {
+                music: {
+                    app_type: 1,
+                    appid: 100495085,
+                    desc: singer,
+                    jumpUrl: jumpUrl,
+                    musicUrl: musicUrl,
+                    preview: preview,
+                    sourceMsgId: "0",
+                    source_icon: "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
+                    source_url: "",
+                    tag: "网易云音乐",
+                    title: title,
+                },
             },
-            "config": {
-                "type": "normal",
-                "forward": true,
-                "ctime": Date.now(),
-            }
+            config: {
+                type: "normal",
+                forward: true,
+                ctime: Date.now(),
+            },
         };
     }
 
-    async musicForwardPack(forwardMsg, forwardMsgName="R插件消息") {
+    async musicForwardPack(forwardMsg, forwardMsgName = "R插件消息") {
         forwardMsg.data = forwardMsg.data
-            .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
-            .replace(/\n/g, '')
-            .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+            .replace(
+                '<?xml version="1.0" encoding="utf-8"?>',
+                '<?xml version="1.0" encoding="utf-8" ?>',
+            )
+            .replace(/\n/g, "")
+            .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, "___")
             .replace(/___+/, `<title color="#777777" size="26">${forwardMsgName}</title>`);
-        return forwardMsg
+        return forwardMsg;
     }
 
     /**
@@ -346,7 +350,18 @@ export class neteasepro extends plugin {
             responseType: "stream",
             redirect: redirect,
         }).then(res => {
-            const path = `./data/rcmp4/${this.e.group_id || this.e.user_id}/temp.mp3`;
+            let path = `./data/rcmp4/${this.e.group_id || this.e.user_id}`;
+            // 如果没有目录就创建一个
+            if (!fs.existsSync(path)) {
+                mkdirsSync(path);
+            }
+            // 补充保存文件名
+            path += "/temp.mp3";
+            if (fs.existsSync(path)) {
+                console.log(`视频已存在`);
+                fs.unlinkSync(path);
+            }
+            // 开始下载
             const fileStream = fs.createWriteStream(path);
             res.body.pipe(fileStream);
             return new Promise((resolve, reject) => {

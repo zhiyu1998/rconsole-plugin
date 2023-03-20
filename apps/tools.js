@@ -540,13 +540,13 @@ export class tools extends plugin {
             e.msg,
         )[0];
         let id;
-        if (msgUrl.includes('xhslink')) {
+        if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {
-                redirect: 'follow',
+                redirect: "follow",
             }).then(resp => {
-                const uri = decodeURIComponent(resp.url)
+                const uri = decodeURIComponent(resp.url);
                 id = /explore\/(\w+)/.exec(uri)[1];
-            })
+            });
         } else {
             id = /explore\/(\w+)/.exec(msgUrl)[1];
         }
@@ -554,28 +554,29 @@ export class tools extends plugin {
         // 获取信息
         fetch(`https://www.xiaohongshu.com/discovery/item/${id}`, {
             headers: {
-                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/110.0.0.0",
-                "cookie": Buffer.from(XHS_CK, 'base64').toString('utf-8')
-            }
+                "user-agent":
+                    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/110.0.0.0",
+                cookie: Buffer.from(XHS_CK, "base64").toString("utf-8"),
+            },
         }).then(async resp => {
             const xhsHtml = await resp.text();
-            const reg = /window.__INITIAL_STATE__=(.*?)<\/script>/
-            const resJson = xhsHtml.match(reg)[0]
+            const reg = /window.__INITIAL_STATE__=(.*?)<\/script>/;
+            const resJson = xhsHtml.match(reg)[0];
             const res = JSON.parse(resJson.match(reg)[1]);
-            const noteData = res.noteData.data.noteData
-            const { title, desc, type } = noteData
-            e.reply(`识别：小红书, ${title}\n${desc}`)
-            let imgPromise = []
-            if (type === 'video') {
+            const noteData = res.noteData.data.noteData;
+            const { title, desc, type } = noteData;
+            e.reply(`识别：小红书, ${title}\n${desc}`);
+            let imgPromise = [];
+            if (type === "video") {
                 const url = noteData.video.url;
                 this.downloadVideo(url).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
-                })
+                });
                 return true;
-            } else if (type === 'normal') {
-                noteData.imageList.map (async (item, index) => {
-                    imgPromise.push(this.downloadImg(item.url, downloadPath, index.toString()))
-                })
+            } else if (type === "normal") {
+                noteData.imageList.map(async (item, index) => {
+                    imgPromise.push(this.downloadImg(item.url, downloadPath, index.toString()));
+                });
             }
             let path = [];
             const images = await Promise.all(imgPromise).then(paths => {
@@ -593,7 +594,7 @@ export class tools extends plugin {
             path.forEach(item => {
                 fs.unlinkSync(item);
             });
-        })
+        });
         return true;
     }
 
@@ -643,15 +644,18 @@ export class tools extends plugin {
         const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`;
         // 获取列表
         const thisMethod = this;
-        await axios.get(API, {
-            headers: {
-                "HOST": "xiaobai.klizi.cn",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            }
-        }).then(resp => {
-            e.reply("请选择一个要播放的视频：\n" + resp.data);
-            thisMethod.setContext("bodianMusicContext");
-        });
+        await axios
+            .get(API, {
+                headers: {
+                    HOST: "xiaobai.klizi.cn",
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+            })
+            .then(resp => {
+                e.reply("请选择一个要播放的视频：\n" + resp.data);
+                thisMethod.setContext("bodianMusicContext");
+            });
         return true;
     }
 
@@ -669,31 +673,34 @@ export class tools extends plugin {
             curMsg.msg,
         )}&max=`;
         const thisMethod = this;
-        axios.get(API, {
-            headers: {
-                "HOST": "xiaobai.klizi.cn",
-                "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            }
-        }).then(async res => {
-            // 如果没有，直接返回
-            if (res.data.lowUrl === null || res.data.highUrl === null) {
-                return;
-            }
-            // 捕获一些未知错误
-            try {
-                // 波点音乐信息
-                const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
-                curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
-                // 下载 && 发送
-                await thisMethod.downloadVideo(lowUrl).then(path => {
-                    curMsg.reply(segment.video(path + "/temp.mp4"));
-                });
-            } catch (err) {
-                curMsg.reply("发生网络错误，请重新发送！");
-            } finally {
-                thisMethod.finish("bodianMusicContext");
-            }
-        });
+        axios
+            .get(API, {
+                headers: {
+                    HOST: "xiaobai.klizi.cn",
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+            })
+            .then(async res => {
+                // 如果没有，直接返回
+                if (res.data.lowUrl === null || res.data.highUrl === null) {
+                    return;
+                }
+                // 捕获一些未知错误
+                try {
+                    // 波点音乐信息
+                    const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
+                    curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
+                    // 下载 && 发送
+                    await thisMethod.downloadVideo(lowUrl).then(path => {
+                        curMsg.reply(segment.video(path + "/temp.mp4"));
+                    });
+                } catch (err) {
+                    curMsg.reply("发生网络错误，请重新发送！");
+                } finally {
+                    thisMethod.finish("bodianMusicContext");
+                }
+            });
         this.finish("bodianMusicContext");
     }
 
@@ -742,7 +749,7 @@ export class tools extends plugin {
      * @param fileName
      * @returns {Promise<unknown>}
      */
-    async downloadImg(img, dir, fileName='') {
+    async downloadImg(img, dir, fileName = "") {
         if (fileName === "") {
             fileName = img.split("/").pop();
         }

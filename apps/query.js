@@ -173,7 +173,6 @@ export class query extends plugin {
                 .then(resp => resp.json())
                 .catch(err => logger.error(err)),
         ];
-        console.log(res);
         // 时间复杂度(n^2) 待优化
         const msg = res.map(async recommend => {
             return recommend.data.list.map(element => {
