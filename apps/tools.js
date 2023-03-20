@@ -25,7 +25,7 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: "^(翻|transl)(.) (.*)$",
+                    reg: "^(翻|trans)(.) (.*)$",
                     fnc: "trans",
                 },
                 {
@@ -45,7 +45,7 @@ export class tools extends plugin {
                     fnc: "wiki",
                 },
                 {
-                    reg: "(.*)(twitter.com)",
+                    reg: "(twitter.com)",
                     fnc: "twitter",
                 },
                 {
@@ -53,7 +53,7 @@ export class tools extends plugin {
                     fnc: "acfun",
                 },
                 {
-                    reg: "(.*)(xhslink.com|xiaohongshu.com)",
+                    reg: "(xhslink.com|xiaohongshu.com)",
                     fnc: "redbook",
                 },
                 {
