@@ -647,15 +647,12 @@ export class tools extends plugin {
         const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`;
         // 获取列表
         const thisMethod = this;
-        await axios.get(API).then(resp => {
-            /**
-             * "songName": "山海",
-             * "artist": "草东没有派对",
-             * "coverUrl": "https://img3.kuwo.cn/wmvpic/324/78/55/3196258119.jpg",
-             * "highUrl": "http://other.player.nf03.sycdn.kuwo.cn/f7451ba7f02256b6b5d5ae8a74336502/64172260/resource/m2/55/56/3401786858.mp4?from=bodian",
-             * "lowUrl": "http://other.player.nf03.sycdn.kuwo.cn/47e753a5f8350140716e439f1c87dc1f/64172260/resource/m3/50/96/2318372432.mp4?from=bodian",
-             * "shortLowUrl": null
-             */
+        await axios.get(API, {
+            headers: {
+                "HOST": "xiaobai.klizi.cn",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            }
+        }).then(resp => {
             e.reply("请选择一个要播放的视频：\n" + resp.data);
             thisMethod.setContext("bodianMusicContext");
         });
@@ -676,10 +673,22 @@ export class tools extends plugin {
             curMsg.msg,
         )}&max=`;
         const thisMethod = this;
-        axios.get(API).then(async res => {
+        axios.get(API, {
+            headers: {
+                "HOST": "xiaobai.klizi.cn",
+                "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            }
+        }).then(async res => {
+            // 如果没有，直接返回
+            if (res.data.lowUrl === null || res.data.highUrl === null) {
+                return;
+            }
+            // 捕获一些未知错误
             try {
+                // 波点音乐信息
                 const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
                 curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
+                // 下载 && 发送
                 await thisMethod.downloadVideo(lowUrl).then(path => {
                     curMsg.reply(segment.video(path + "/temp.mp4"));
                 });
