@@ -6,9 +6,6 @@
     - icon: cat
       title: "#cat 开始吸猫"
       desc: 猫咪图捕捉
-    - icon: hot
-      title: "#评分 xxx"
-      desc: 电影评分
     - icon: computer
       title: "#推荐软件"
       desc: 推荐PC、Android软件

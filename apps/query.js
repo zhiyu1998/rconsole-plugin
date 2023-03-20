@@ -25,10 +25,6 @@ export class query extends plugin {
                     fnc: "doctor",
                 },
                 {
-                    reg: "^#评分(.*)",
-                    fnc: "videoScore",
-                },
-                {
                     reg: "^#(cat)$",
                     fnc: "cat",
                 },
@@ -96,47 +92,6 @@ export class query extends plugin {
         }
         /** 最后回复消息 */
         return !!this.reply(await Bot.makeForwardMsg(msg));
-    }
-
-    async videoScore(e) {
-        let keyword = e.msg.replace("#评分", "").trim();
-        const api = `https://movie.douban.com/j/subject_suggest?q=${encodeURI(keyword)}`;
-
-        let movieId = 30433417;
-        fetch(api, {
-            Headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                "Content-Type": "application/json",
-            },
-        })
-            .then(resp => resp.json())
-            .then(resp => {
-                if (resp.length === 0 || resp === "") {
-                    e.reply("没找到！");
-                    return true;
-                }
-                movieId = resp[0].id;
-                const doubanApi = `https://movie.querydata.org/api?id=${movieId}`;
-                fetch(doubanApi, {
-                    Headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                        "Content-Type": "application/json",
-                    },
-                })
-                    .then(resp => resp.json())
-                    .then(resp => {
-                        if (resp.length === 0 || resp === "") {
-                            e.reply("没找到！");
-                            return true;
-                        }
-                        e.reply(
-                            `识别：${resp.data[0].name}\n烂番茄评分：${resp.imdbRating}\n豆瓣评分：${resp.doubanRating}\n评分：${resp.imdbRating}`,
-                        );
-                    });
-            });
-        return true;
     }
 
     async cat(e) {
