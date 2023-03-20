@@ -12,7 +12,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, TEN_THOUSAND } from "../utils/constant.js";
+import { transMap, douyinTypeMap, TEN_THOUSAND, XHS_CK } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 
@@ -535,69 +535,65 @@ export class tools extends plugin {
 
     // 小红书解析
     async redbook(e) {
+        // 解析短号
         const msgUrl = /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
             e.msg,
         )[0];
-        const url = `https://dlpanda.com/zh-CN/xhs?url=${msgUrl}`;
-
-        await axios
-            .get(url, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    "Content-Type": "application/json",
-                    "Accept-Encoding": "gzip,deflate,compress",
-                },
-                timeout: 10000,
-                proxy: false,
+        let id;
+        if (msgUrl.includes('xhslink')) {
+            await fetch(msgUrl, {
+                redirect: 'follow',
+            }).then(resp => {
+                const uri = decodeURIComponent(resp.url)
+                id = /explore\/(\w+)/.exec(uri)[1];
             })
-            .then(async resp => {
-                const reg = /<img(.*)src="\/\/ci\.xiaohongshu\.com(.*?)"/g;
-
-                const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
-                // 创建文件夹（如果没有过这个群）
-                if (!fs.existsSync(downloadPath)) {
-                    mkdirsSync(downloadPath);
-                }
-                const res = resp.data.match(reg);
-                const imagesPath = res.map(item => {
-                    const addr = `https:${item.split('"')[3]}`;
-                    return axios
-                        .get(addr, {
-                            headers: {
-                                "User-Agent":
-                                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                            },
-                            responseType: "stream",
-                        })
-                        .then(resp => {
-                            const filepath = `${downloadPath}/${/com\/(.*)\?/.exec(addr)[1]}.jpg`;
-                            const writer = fs.createWriteStream(filepath);
-                            resp.data.pipe(writer);
-                            return new Promise((resolve, reject) => {
-                                writer.on("finish", () => resolve(filepath));
-                                writer.on("error", reject);
-                            });
-                        });
-                });
-                let path = [];
-                const images = await Promise.all(imagesPath).then(paths => {
-                    return paths.map(item => {
-                        path.push(item);
-                        return {
-                            message: segment.image(fs.readFileSync(item)),
-                            nickname: e.sender.card || e.user_id,
-                            user_id: e.user_id,
-                        };
-                    });
-                });
-                await this.reply(await Bot.makeForwardMsg(images));
-                // 清理文件
-                path.forEach(item => {
-                    fs.unlinkSync(item);
+        } else {
+            id = /explore\/(\w+)/.exec(msgUrl)[1];
+        }
+        const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        // 获取信息
+        fetch(`https://www.xiaohongshu.com/discovery/item/${id}`, {
+            headers: {
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/110.0.0.0",
+                "cookie": Buffer.from(XHS_CK, 'base64').toString('utf-8')
+            }
+        }).then(async resp => {
+            const xhsHtml = await resp.text();
+            const reg = /window.__INITIAL_STATE__=(.*?)<\/script>/
+            const resJson = xhsHtml.match(reg)[0]
+            const res = JSON.parse(resJson.match(reg)[1]);
+            const noteData = res.noteData.data.noteData
+            const { title, desc, type } = noteData
+            e.reply(`识别：小红书, ${title}\n${desc}`)
+            let imgPromise = []
+            if (type === 'video') {
+                const url = noteData.video.url;
+                this.downloadVideo(url).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                })
+                return true;
+            } else if (type === 'normal') {
+                noteData.imageList.map (async (item, index) => {
+                    imgPromise.push(this.downloadImg(item.url, downloadPath, index.toString()))
+                })
+            }
+            let path = [];
+            const images = await Promise.all(imgPromise).then(paths => {
+                return paths.map(item => {
+                    path.push(item);
+                    return {
+                        message: segment.image(fs.readFileSync(item)),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
                 });
             });
-
+            await this.reply(await Bot.makeForwardMsg(images));
+            // 清理文件
+            path.forEach(item => {
+                fs.unlinkSync(item);
+            });
+        })
         return true;
     }
 
@@ -743,11 +739,14 @@ export class tools extends plugin {
      * 下载一张网络图片(自动以url的最后一个为名字)
      * @param img
      * @param dir
+     * @param fileName
      * @returns {Promise<unknown>}
      */
-    async downloadImg(img, dir) {
-        const filename = img.split("/").pop();
-        const filepath = `${dir}/${filename}`;
+    async downloadImg(img, dir, fileName='') {
+        if (fileName === "") {
+            fileName = img.split("/").pop();
+        }
+        const filepath = `${dir}/${fileName}`;
         const writer = fs.createWriteStream(filepath);
         return axios
             .get(img, {
