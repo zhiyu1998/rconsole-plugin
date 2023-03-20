@@ -33,16 +33,8 @@ export class query extends plugin {
                     fnc: "cat",
                 },
                 {
-                    reg: "^#电脑软件推荐$",
-                    fnc: "computerRecommended",
-                },
-                {
-                    reg: "^#安卓软件推荐$",
-                    fnc: "androidRecommended",
-                },
-                {
-                    reg: "^#(热搜)(.*)$",
-                    fnc: "hotSearch",
+                    reg: "^#推荐软件$",
+                    fnc: "softwareRecommended",
                 },
                 {
                     reg: "^#买家秀$",
@@ -168,100 +160,37 @@ export class query extends plugin {
         return !!(await this.reply(await Bot.makeForwardMsg(images)));
     }
 
-    async computerRecommended(e) {
-        let url = "https://www.ghxi.com/ghapi?type=query&n=pc";
-        /** 调用接口获取数据 */
-        let res = await fetch(url).catch(err => logger.error(err));
-
-        /** 接口结果，json字符串转对象 */
-        res = await res.json();
-        let msg = [];
-        res.data.list.forEach(element => {
-            const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
-            msg.push({
-                message: { type: "text", text: `${template}` },
-                nickname: Bot.nickname,
-                user_id: Bot.user_id,
+    async softwareRecommended(e) {
+        // 接口
+        const pcUrl = "https://www.ghxi.com/ghapi?type=query&n=pc";
+        const andUrl = "https://www.ghxi.com/ghapi?type=query&n=and";
+        // 一起请求
+        const res = [
+            await fetch(pcUrl)
+                .then(resp => resp.json())
+                .catch(err => logger.error(err)),
+            await fetch(andUrl)
+                .then(resp => resp.json())
+                .catch(err => logger.error(err)),
+        ];
+        console.log(res);
+        // 时间复杂度(n^2) 待优化
+        const msg = res.map(async recommend => {
+            return recommend.data.list.map(element => {
+                const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
+                return {
+                    message: { type: "text", text: template },
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
             });
         });
-        /** 最后回复消息 */
-        return !!this.reply(await Bot.makeForwardMsg(msg));
-    }
-
-    async androidRecommended(e) {
-        let url = "https://www.ghxi.com/ghapi?type=query&n=and";
-        let res = await fetch(url).catch(err => logger.error(err));
-        res = await res.json();
-        let msg = [];
-        res.data.list.forEach(element => {
-            const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
-            msg.push({
-                message: { type: "text", text: `${template}` },
-                nickname: Bot.nickname,
-                user_id: Bot.user_id,
+        await Promise.all(msg).then(res => {
+            res.forEach(async item => {
+                e.reply(await Bot.makeForwardMsg(item));
             });
         });
-        return !!this.reply(await Bot.makeForwardMsg(msg));
-    }
-
-    async hotSearch(e) {
-        let keyword = e.msg.replace(/#|热搜/g, "").trim();
-        let url = "https://api.vvhan.com/api/hotlist?type=";
-        switch (keyword) {
-            case "知乎":
-                url += "zhihuHot";
-                break;
-            case "百度":
-                url += "baiduRD";
-                break;
-            case "哔哩哔哩":
-                url += "bili";
-                break;
-            case "贴吧":
-                url += "baiduRY";
-                break;
-            case "微博":
-                url += "wbHot";
-                break;
-            case "抖音":
-                url += "douyinHot";
-                break;
-            default:
-                url += "bili";
-                break;
-        }
-        let sendTemplate = {
-            nickname: this.e.sender.card || this.e.user_id,
-            user_id: this.e.user_id,
-        };
-        let msg = [];
-        await fetch(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                "Content-Type": "application/json",
-            },
-        })
-            .then(resp => resp.json())
-            .then(resp => {
-                for (let element of resp.data) {
-                    if (_.isUndefined(element)) {
-                        continue;
-                    }
-                    const template = `
-                      标题：${_.isNull(element.title) ? "暂无" : element.title}\n
-                      简介：${_.isNull(element.desc) ? "暂无" : element.desc}\n
-                      热度：${_.isNull(element.hot) ? "暂无" : element.hot}\n
-                      访问详情：${_.isNull(element.url) ? "暂无" : element.url}\n
-                    `;
-                    msg.push({
-                        message: { type: "text", text: `${template}` },
-                        ...sendTemplate,
-                    });
-                }
-            })
-            .catch(err => logger.error(err));
-        return !!this.reply(await Bot.makeForwardMsg(msg));
+        return true;
     }
 
     async buyerShow(e) {
@@ -427,9 +356,9 @@ export class query extends plugin {
                 await e.reply(await Bot.makeForwardMsg(zHelper));
                 await e.reply(
                     "请选择一个你想要的ID、来源，例如：\n" +
-                    "11918807 superlib\n" +
-                    "只回复11918807 默认zlibrary\n" +
-                    "书源若不对应则回复无效链接，数字字母之间空格",
+                        "11918807 superlib\n" +
+                        "只回复11918807 默认zlibrary\n" +
+                        "书源若不对应则回复无效链接，数字字母之间空格",
                 );
                 thisBookMethod.setContext("searchBookContext");
             }
