@@ -21,7 +21,7 @@ export class query extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: "^#*医药查询 (.*)$",
+                    reg: "^#医药查询(.*)$",
                     fnc: "doctor",
                 },
                 {
@@ -61,7 +61,7 @@ export class query extends plugin {
     }
 
     async doctor(e) {
-        let keyword = e.msg.split(" ")[1];
+        let keyword = e.msg.replace("#医药查询", "").trim();
         const url = `https://api2.dayi.org.cn/api/search2?keyword=${keyword}&pageNo=1&pageSize=10`;
         let res = await fetch(url)
             .then(resp => resp.json())
