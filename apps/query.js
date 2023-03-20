@@ -25,7 +25,7 @@ export class query extends plugin {
                     fnc: "doctor",
                 },
                 {
-                    reg: "^#*评分 (.*)",
+                    reg: "^#评分(.*)",
                     fnc: "videoScore",
                 },
                 {
@@ -99,7 +99,7 @@ export class query extends plugin {
     }
 
     async videoScore(e) {
-        let keyword = e.msg.split(" ")[1];
+        let keyword = e.msg.replace("#评分", "").trim();
         const api = `https://movie.douban.com/j/subject_suggest?q=${encodeURI(keyword)}`;
 
         let movieId = 30433417;
