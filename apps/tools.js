@@ -3,7 +3,6 @@ import fetch from "node-fetch";
 import fs from "node:fs";
 import { segment } from "oicq";
 // 其他库
-import md5 from "md5";
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
@@ -15,6 +14,7 @@ import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../ut
 import { transMap, douyinTypeMap, TEN_THOUSAND, XHS_CK } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
+import Translate from "../utils/transStrategy.js";
 
 export class tools extends plugin {
     constructor() {
@@ -81,10 +81,6 @@ export class tools extends plugin {
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
         this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
-        // console.log(this.myProxy)
-        // 加载百度翻译配置
-        this.translateAppId = this.toolsConfig.translateAppId;
-        this.translateSecret = this.toolsConfig.translateSecret;
         // 加载twitter配置
         this.bearerToken = this.toolsConfig.bearerToken;
     }
@@ -101,19 +97,26 @@ export class tools extends plugin {
             return;
         }
         const place = msg.replace(language[0], "").trim();
-        // let url = /[\u4E00-\u9FFF]+/g.test(place)
-        // let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[language[1]] }&appid=APP ID&salt=自定义&sign=${ md5("APP ID" + place + "自定义" + "密钥") }&q=${ place }`;
-        let url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${
-            transMap[language[1]]
-        }&appid=${this.translateAppId}&salt=rconsole&sign=${md5(
-            this.translateAppId + place + "rconsole" + this.translateSecret,
-        )}&q=${place}`;
-        // console.log(url)
-        await fetch(url)
-            .then(resp => resp.json())
-            .then(text => text.trans_result)
-            .then(res => this.reply(`${res[0].dst}`, true))
-            .catch(err => logger.error(err));
+        const translateEngine = new Translate({
+            translateAppId: this.toolsConfig.translateAppId,
+            translateSecret: this.toolsConfig.translateSecret,
+            proxy: this.myProxy
+        });
+        // 如果没有百度那就Google
+        let translateResult;
+        if (_.isEmpty(this.toolsConfig.translateAppId) || _.isEmpty(this.toolsConfig.translateSecret)) {
+            try {
+                translateResult = await translateEngine.google(place, language[1]);
+            } catch (err) {
+                console.err("谷歌翻译失败，", err);
+            }
+            // 腾讯交互式进行补充
+            translateResult += "\n\n🐧翻译：" + await translateEngine.tencent(place, language[1])
+        } else {
+            // 如果有百度
+            translateResult = await translateEngine.baidu(place, language[1]);
+        }
+        e.reply(translateResult, true);
         return true;
     }
 
