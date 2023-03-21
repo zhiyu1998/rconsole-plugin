@@ -107,7 +107,7 @@ export class tools extends plugin {
         if (_.isEmpty(this.toolsConfig.translateAppId) || _.isEmpty(this.toolsConfig.translateSecret)) {
             try {
                 // 咕咕翻译
-                translateResult = await translateEngine.google(place, language[1]);
+                translateResult = "📝咕咕翻译：" + await translateEngine.google(place, language[1]);
             } catch (err) {
                 logger.error("咕咕翻译失败");
             } finally {

@@ -8,7 +8,7 @@ import _ from "lodash";
 import axios from "axios";
 import fs from "node:fs";
 // 常量
-import { CAT_LIMIT } from "../utils/constant.js";
+import {CAT_LIMIT, HOT_SEARCH_ACTIONS, TEN_THOUSAND} from "../utils/constant.js";
 // 书库
 import { getZHelper, getYiBook, getBookDetail } from "../utils/books.js";
 
@@ -27,6 +27,10 @@ export class query extends plugin {
                 {
                     reg: "^#(cat)$",
                     fnc: "cat",
+                },
+                {
+                    reg: "^#热搜(.*)",
+                    fnc: "hotSearch",
                 },
                 {
                     reg: "^#推荐软件$",
@@ -104,7 +108,7 @@ export class query extends plugin {
                 .then(data => data.json())
                 .then(json => json.map(item => item.url))),
         ];
-        e.reply("涩图也不看了,就看猫是吧, 探索中...");
+        e.reply("涩图也不看了,就看猫是吧");
         reqRes.forEach(item => {
             images.push({
                 message: segment.image(item),
@@ -113,6 +117,29 @@ export class query extends plugin {
             });
         });
         return !!(await this.reply(await Bot.makeForwardMsg(images)));
+    }
+
+    async hotSearch(e) {
+        const platform = e.msg.replace('#热搜', "").trim();
+        const apiAddr = HOT_SEARCH_ACTIONS?.[platform]
+        if (_.isEmpty(apiAddr)) {
+            e.reply('暂时无法查询该平台的热搜');
+            return true;
+        }
+        const hots = await fetch(apiAddr).then(async res => {
+            const resJson = JSON.parse(await res.text())?.data;
+            return resJson.map((item, index) => {
+                const {name, hot, url} = item
+                const template = `${index+1}. 标题：${name}\n热度：${_.isNaN(hot) ? Number(hot/TEN_THOUSAND).toFixed(1)+"万" : '暂无'}\n链接：${url}`
+                return {
+                    message: { type: "text", text: template },
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id
+                }
+            })
+        });
+        e.reply(await Bot.makeForwardMsg(hots))
+        return true;
     }
 
     async softwareRecommended(e) {
