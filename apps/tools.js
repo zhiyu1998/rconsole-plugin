@@ -15,6 +15,7 @@ import { transMap, douyinTypeMap, TEN_THOUSAND, XHS_CK } from "../utils/constant
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/transStrategy.js";
+import { getXB } from "../utils/x-bogus.js";
 
 export class tools extends plugin {
     constructor() {
@@ -130,98 +131,64 @@ export class tools extends plugin {
 
         await this.douyinRequest(douUrl).then(async res => {
             const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
-            // 且行且珍惜，下面是已经过期的两个抖音api，获取难度越来越大
+            // 以下是更新了很多次的抖音API历史，且用且珍惜
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
-
-            fetch("https://ttwid.bytedance.com/ttwid/union/register/", {
-                method: "POST",
-                mode: "cors",
-                credentials: "include",
-                body: JSON.stringify({
-                    region: "cn",
-                    aid: 1768,
-                    needFid: false,
-                    service: "www.ixigua.com",
-                    migrate_info: {
-                        ticket: "",
-                        source: "node",
-                    },
-                    cbUrlProtocol: "https",
-                    union: true,
-                }),
-            }).then(resp => {
-                const ttwid = resp.headers.get("set-cookie");
-                const odin_tt =
-                    "a09d8eb0d95b7b9adb4b6fc6591918bfb996096967a7aa4305bd81b5150a8199d2e29ed21883cdd7709c5beaa2be3baa";
-                const passport_csrf_token = "2f142a9bb5db1f81f249d6fc997fe4a1";
-                const headers = {
-                    "user-agent":
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
-                    referer: "https://www.douyin.com/",
-                    Cookie: `ttwid=${ttwid};odin_tt=${odin_tt};passport_csrf_token=${passport_csrf_token}`,
-                };
-                const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
-                const params = `msToken=${generateRandomStr(
-                    107,
-                )}&aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
-                // xg参数
-                axios
-                    .post(`http://47.115.200.238/xg/path?url=${params.replaceAll("&", "%26")}`, {
-                        headers: {
-                            "user-agent":
-                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36",
-                            referer: "https://www.douyin.com/",
-                            cookie: "",
-                        },
-                    })
-                    .then(resp => {
-                        const param = resp.data.result[0].paramsencode;
-                        const resDyApi = `${dyApi}${param}`;
-                        axios
-                            .get(resDyApi, {
-                                headers,
-                            })
-                            .then(async resp => {
-                                const item = resp.data.aweme_detail;
-                                e.reply(`识别：抖音, ${item.desc}`);
-                                const urlTypeCode = item.aweme_type;
-                                const urlType = douyinTypeMap[urlTypeCode];
-                                if (urlType === "video") {
-                                    const url_2 = item.video.play_addr.url_list[2];
-                                    this.downloadVideo(url_2, false, headers).then(video => {
-                                        e.reply(
-                                            segment.video(
-                                                `${this.defaultPath}${
-                                                    this.e.group_id || this.e.user_id
-                                                }/temp.mp4`,
-                                            ),
-                                        );
-                                    });
-                                } else if (urlType === "image") {
-                                    // 无水印图片列表
-                                    let no_watermark_image_list = [];
-                                    // 有水印图片列表
-                                    // let watermark_image_list = [];
-                                    for (let i of item.images) {
-                                        // 无水印图片列表
-                                        no_watermark_image_list.push({
-                                            message: segment.image(i.url_list[0]),
-                                            nickname: this.e.sender.card || this.e.user_id,
-                                            user_id: this.e.user_id,
-                                        });
-                                        // 有水印图片列表
-                                        // watermark_image_list.push(i.download_url_list[0]);
-                                        // e.reply(segment.image(i.url_list[0]));
-                                    }
-                                    // console.log(no_watermark_image_list)
-                                    await this.reply(
-                                        await Bot.makeForwardMsg(no_watermark_image_list),
-                                    );
-                                }
+            // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
+            const headers = {
+                'accept-encoding': 'gzip, deflate, br',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+                'referer': 'https://www.douyin.com/',
+                'cookie': "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
+            }
+            const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
+            const params = `msToken=${generateRandomStr(107)}&device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079`;
+            // xg参数
+            const xbParam = getXB(params.replaceAll("&", "%26"));
+            // const param = resp.data.result[0].paramsencode;
+            const resDyApi = `${dyApi}${params}&X-Bogus=${xbParam}`;
+            axios
+                .get(resDyApi, {
+                    headers,
+                })
+                .then(async resp => {
+                    const item = resp.data.aweme_detail;
+                    e.reply(`识别：抖音, ${item.desc}`);
+                    const urlTypeCode = item.aweme_type;
+                    const urlType = douyinTypeMap[urlTypeCode];
+                    if (urlType === "video") {
+                        const url_2 = item.video.play_addr.url_list[2];
+                        this.downloadVideo(url_2, false, headers).then(_ => {
+                            e.reply(
+                                segment.video(
+                                    `${this.defaultPath}${
+                                        this.e.group_id || this.e.user_id
+                                    }/temp.mp4`,
+                                ),
+                            );
+                        });
+                    } else if (urlType === "image") {
+                        // 无水印图片列表
+                        let no_watermark_image_list = [];
+                        // 有水印图片列表
+                        // let watermark_image_list = [];
+                        for (let i of item.images) {
+                            // 无水印图片列表
+                            no_watermark_image_list.push({
+                                message: segment.image(i.url_list[0]),
+                                nickname: this.e.sender.card || this.e.user_id,
+                                user_id: this.e.user_id,
                             });
-                    });
-            });
+                            // 有水印图片列表
+                            // watermark_image_list.push(i.download_url_list[0]);
+                            // e.reply(segment.image(i.url_list[0]));
+                        }
+                        // console.log(no_watermark_image_list)
+                        await this.reply(
+                            await Bot.makeForwardMsg(no_watermark_image_list),
+                        );
+                    }
+                });
         });
         return true;
     }
