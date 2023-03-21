@@ -1,11 +1,11 @@
 - {
-  version: 1.1.0-rc0,
+  version: 1.1.0-rc1,
   data:
     [
+      重构<span class="cmd">翻译</span>功能,
       新增<span class="cmd">#波点音乐</span>MV点歌,
       升级<span class="cmd">netease解析</span>全面重构！,
       适配<span class="cmd">bilibili小程序解析</span>,
-      增加<span class="cmd">#搜书</span>查询,
       适配<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
