@@ -92,7 +92,7 @@ export class tools extends plugin {
         const language = languageReg.exec(msg);
         if (!transMap.hasOwnProperty(language[1])) {
             e.reply(
-                "输入格式有误！例子：翻中 China's policy has been consistent, but Japan chooses a path of mistrust, decoupling and military expansion",
+                "输入格式有误或暂不支持该语言！\n例子：翻中 China's policy has been consistent, but Japan chooses a path of mistrust, decoupling and military expansion",
             );
             return;
         }
@@ -109,7 +109,9 @@ export class tools extends plugin {
                 // 咕咕翻译
                 translateResult = await translateEngine.google(place, language[1]);
             } catch (err) {
-                console.err("咕咕翻译失败，", err);
+                logger.error("咕咕翻译失败");
+            } finally {
+                translateResult = ""
             }
             // 腾讯交互式进行补充
             translateResult += "\n\n🐧翻译：" + await translateEngine.tencent(place, language[1])
@@ -117,7 +119,7 @@ export class tools extends plugin {
             // 如果有百度
             translateResult = await translateEngine.baidu(place, language[1]);
         }
-        e.reply(translateResult, true);
+        e.reply(translateResult.trim(), true);
         return true;
     }
 
@@ -385,12 +387,12 @@ export class tools extends plugin {
                         e.reply(segment.video(`${path}temp.mp4`));
                     })
                     .catch(err => {
-                        console.log(err);
+                        logger.error(err);
                         e.reply("解析失败，请重试一下");
                     });
             })
             .catch(err => {
-                console.log(err);
+                logger.error(err);
                 e.reply("解析失败，请重试一下");
             });
         return true;
@@ -541,7 +543,6 @@ export class tools extends plugin {
         let msgUrl = /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
             e.msg,
         )?.[0] || /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(e.message[0].data)?.[0];
-        console.log(msgUrl)
         let id;
         if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {
@@ -637,7 +638,7 @@ export class tools extends plugin {
             });
             await e.reply(`清理完成！`);
         } catch (err) {
-            console.log(err);
+            logger.log(err);
             e.reply("清理失败，重试或者自动清理即可");
         }
     }
@@ -721,7 +722,7 @@ export class tools extends plugin {
                 title + "-video.m4s",
                 _.throttle(
                     value =>
-                        console.log("download-progress", {
+                        logger.mark("download-progress", {
                             type: "video",
                             data: value,
                         }),
@@ -733,7 +734,7 @@ export class tools extends plugin {
                 title + "-audio.m4s",
                 _.throttle(
                     value =>
-                        console.log("download-progress", {
+                        logger.mark("download-progress", {
                             type: "audio",
                             data: value,
                         }),
@@ -843,7 +844,7 @@ export class tools extends plugin {
         const target = `${groupPath}/temp.mp4`;
         // 待优化
         if (fs.existsSync(target)) {
-            console.log(`视频已存在`);
+            logger.mark(`视频已存在`);
             fs.unlinkSync(target);
         }
         let res;
@@ -871,7 +872,7 @@ export class tools extends plugin {
             });
         }
 
-        console.log(`开始下载: ${url}`);
+        logger.mark(`开始下载: ${url}`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
 

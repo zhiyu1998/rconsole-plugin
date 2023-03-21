@@ -3,7 +3,8 @@
  *
  * @type {{英: string, 日: string, 文: string, 中: string}}
  */
-export const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en", 俄: "ru" };
+export const transMap = { 中: "zh", 日: "jp", 文: "wyw", 英: "en", 俄: "ru", 韩: "kr" };
+export const transMap2 = { 中: "zh", 日: "ja", 韩: "ko", 英: "en", 俄: "ru" };
 
 /**
  * 以下为抖音/TikTok类型代码

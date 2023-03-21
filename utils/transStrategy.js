@@ -1,4 +1,4 @@
-import {transMap} from "./constant.js";
+import {transMap, transMap2} from "./constant.js";
 import md5 from "md5";
 import fetch from "node-fetch";
 import HttpProxyAgent from "https-proxy-agent";
@@ -21,6 +21,7 @@ export default class Translate {
          */
         proxy: ""
     }
+
     constructor(config) {
         this.config = config;
     }
@@ -51,7 +52,7 @@ export default class Translate {
      * @returns {Promise<string>}
      */
     async google(query, targetLanguage) {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=${transMap[targetLanguage]}&q=${query}`;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=auto&tl=${transMap2[targetLanguage]}&q=${query}`;
         return fetch(url, {
             method: "GET",
             headers: {
@@ -83,7 +84,7 @@ export default class Translate {
                     "fn": "text_analysis",
                     "client_key": "browser-firefox-111.0.0-Mac OS-d35fca23-eb48-45ba-9913-114f1177b02b-1679376552800"
                 },
-                "text": "s",
+                "text": query,
                 "type": "plain",
                 "normalize": {
                     "merge_broken_line": false
@@ -118,7 +119,7 @@ export default class Translate {
                     ]
                 },
                 "target": {
-                    "lang": transMap[targetLanguage]
+                    "lang": transMap2[targetLanguage]
                 }
             })
         }).then(async resp => {
