@@ -471,7 +471,7 @@ export class tools extends plugin {
                 for (let item of resp.includes.media) {
                     if (item.type === "photo") {
                         // 图片
-                        task.push(this.downloadImg(item.url, downloadPath));
+                        task.push(this.downloadImg(item.url, downloadPath, "", true));
                     } else if (item.type === "video") {
                         // 视频
                         await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
@@ -538,19 +538,20 @@ export class tools extends plugin {
     // 小红书解析
     async redbook(e) {
         // 解析短号
-        const msgUrl = /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
+        let msgUrl = /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
             e.msg,
-        )[0];
+        )?.[0] || /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(e.message[0].data)?.[0];
+        console.log(msgUrl)
         let id;
         if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {
                 redirect: "follow",
             }).then(resp => {
                 const uri = decodeURIComponent(resp.url);
-                id = /explore\/(\w+)/.exec(uri)[1];
+                id = /explore\/(\w+)/.exec(uri)?.[1];
             });
         } else {
-            id = /explore\/(\w+)/.exec(msgUrl)[1];
+            id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
         }
         const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
         // 获取信息
@@ -749,29 +750,42 @@ export class tools extends plugin {
      * @param img
      * @param dir
      * @param fileName
+     * @param isProxy
      * @returns {Promise<unknown>}
      */
-    async downloadImg(img, dir, fileName = "") {
+    async downloadImg(img, dir, fileName = "", isProxy = false) {
         if (fileName === "") {
             fileName = img.split("/").pop();
         }
         const filepath = `${dir}/${fileName}`;
         const writer = fs.createWriteStream(filepath);
-        return axios
-            .get(img, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-                responseType: "stream",
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-                httpsAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-            })
-            .then(res => {
+        let req;
+        if (isProxy) {
+            req = axios
+                .get(img, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    responseType: "stream",
+                    httpAgent: tunnel.httpOverHttp({
+                        proxy: { host: this.proxyAddr, port: this.proxyPort },
+                    }),
+                    httpsAgent: tunnel.httpOverHttp({
+                        proxy: { host: this.proxyAddr, port: this.proxyPort },
+                    }),
+                })
+        } else {
+            req = axios
+                .get(img, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    responseType: "stream",
+                })
+        }
+        return req.then(res => {
                 res.data.pipe(writer);
                 return new Promise((resolve, reject) => {
                     writer.on("finish", () => {
