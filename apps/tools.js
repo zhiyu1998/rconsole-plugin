@@ -106,9 +106,10 @@ export class tools extends plugin {
         let translateResult;
         if (_.isEmpty(this.toolsConfig.translateAppId) || _.isEmpty(this.toolsConfig.translateSecret)) {
             try {
+                // 咕咕翻译
                 translateResult = await translateEngine.google(place, language[1]);
             } catch (err) {
-                console.err("谷歌翻译失败，", err);
+                console.err("咕咕翻译失败，", err);
             }
             // 腾讯交互式进行补充
             translateResult += "\n\n🐧翻译：" + await translateEngine.tencent(place, language[1])
