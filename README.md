@@ -92,6 +92,7 @@ sudo apt-get install ffmpeg
 
 |       昵称        | 赞助   |
 |:---------------:|------|
+|      为爱发巅       | 1杯瑞幸    |
 |       丘丘莹       | 5    |
 |    Allweknow    | 1杯瑞幸 |
 |      MNJv       | 5    |
