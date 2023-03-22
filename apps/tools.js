@@ -657,22 +657,18 @@ export class tools extends plugin {
                 if (res.data.lowUrl === null || res.data.highUrl === null) {
                     return;
                 }
-                // 捕获一些未知错误
-                try {
-                    // 波点音乐信息
-                    const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
-                    curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
-                    // 下载 && 发送
-                    await thisMethod.downloadVideo(lowUrl).then(path => {
-                        curMsg.reply(segment.video(path + "/temp.mp4"));
-                    });
-                } catch (err) {
-                    curMsg.reply("发生网络错误，请重新发送！");
-                } finally {
-                    thisMethod.finish("bodianMusicContext");
-                }
+                // 波点音乐信息
+                const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
+                curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
+                // 下载 && 发送
+                await thisMethod.downloadVideo(lowUrl).then(path => {
+                    curMsg.reply(segment.video(path + "/temp.mp4"));
+                });
+            })
+            .catch(err => {
+                curMsg.reply("发生网络错误，请重新发送！");
+                thisMethod.finish("bodianMusicContext");
             });
-        this.finish("bodianMusicContext");
     }
 
     /**
