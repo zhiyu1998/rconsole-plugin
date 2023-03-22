@@ -29,10 +29,6 @@ export class query extends plugin {
                     fnc: "cat",
                 },
                 {
-                    reg: "^#热搜(.*)",
-                    fnc: "hotSearch",
-                },
-                {
                     reg: "^#推荐软件$",
                     fnc: "softwareRecommended",
                 },
@@ -117,29 +113,6 @@ export class query extends plugin {
             });
         });
         return !!(await this.reply(await Bot.makeForwardMsg(images)));
-    }
-
-    async hotSearch(e) {
-        const platform = e.msg.replace('#热搜', "").trim();
-        const apiAddr = HOT_SEARCH_ACTIONS?.[platform]
-        if (_.isEmpty(apiAddr)) {
-            e.reply('暂时无法查询该平台的热搜');
-            return true;
-        }
-        const hots = await fetch(apiAddr).then(async res => {
-            const resJson = JSON.parse(await res.text())?.data;
-            return resJson.map((item, index) => {
-                const {name, hot, url} = item
-                const template = `${index+1}. 标题：${name}\n热度：${_.isNaN(hot) ? Number(hot/TEN_THOUSAND).toFixed(1)+"万" : '暂无'}\n链接：${url}`
-                return {
-                    message: { type: "text", text: template },
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id
-                }
-            })
-        });
-        e.reply(await Bot.makeForwardMsg(hots))
-        return true;
     }
 
     async softwareRecommended(e) {
