@@ -14,7 +14,7 @@ import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../ut
 import { transMap, douyinTypeMap, TEN_THOUSAND, XHS_CK } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
-import Translate from "../utils/transStrategy.js";
+import Translate from "../utils/trans-strategy.js";
 import { getXB } from "../utils/x-bogus.js";
 
 export class tools extends plugin {
