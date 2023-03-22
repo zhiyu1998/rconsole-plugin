@@ -53,6 +53,9 @@
     - icon: bodian
       title: "#波点音乐"
       desc: 波点云音乐点MV
+    - icon: ins
+      title: "Instagram"
+      desc: 解析Instagram
 - group: 其他指令
   list:
     - icon: update
