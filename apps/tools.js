@@ -6,7 +6,6 @@ import { segment } from "oicq";
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
-import { TwitterApi } from "twitter-api-v2";
 import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
@@ -56,6 +55,10 @@ export class tools extends plugin {
                 {
                     reg: "(xhslink.com|xiaohongshu.com)",
                     fnc: "redbook",
+                },
+                {
+                    reg: "(instagram.com)",
+                    fnc: "instagram",
                 },
                 {
                     reg: "(doi.org)",
@@ -135,60 +138,84 @@ export class tools extends plugin {
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
             // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
             // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
-            const headers = {
-                'accept-encoding': 'gzip, deflate, br',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-                'referer': 'https://www.douyin.com/',
-                'cookie': "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
-            }
-            const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
-            const params = `msToken=${generateRandomStr(107)}&device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079`;
-            // xg参数
-            const xbParam = getXB(params.replaceAll("&", "%26"));
-            // const param = resp.data.result[0].paramsencode;
-            const resDyApi = `${dyApi}${params}&X-Bogus=${xbParam}`;
-            axios
-                .get(resDyApi, {
-                    headers,
-                })
-                .then(async resp => {
-                    const item = resp.data.aweme_detail;
-                    e.reply(`识别：抖音, ${item.desc}`);
-                    const urlTypeCode = item.aweme_type;
-                    const urlType = douyinTypeMap[urlTypeCode];
-                    if (urlType === "video") {
-                        const url_2 = item.video.play_addr.url_list[2];
-                        this.downloadVideo(url_2, false, headers).then(_ => {
-                            e.reply(
-                                segment.video(
-                                    `${this.defaultPath}${
-                                        this.e.group_id || this.e.user_id
-                                    }/temp.mp4`,
-                                ),
-                            );
-                        });
-                    } else if (urlType === "image") {
-                        // 无水印图片列表
-                        let no_watermark_image_list = [];
-                        // 有水印图片列表
-                        // let watermark_image_list = [];
-                        for (let i of item.images) {
-                            // 无水印图片列表
-                            no_watermark_image_list.push({
-                                message: segment.image(i.url_list[0]),
-                                nickname: this.e.sender.card || this.e.user_id,
-                                user_id: this.e.user_id,
-                            });
-                            // 有水印图片列表
-                            // watermark_image_list.push(i.download_url_list[0]);
-                            // e.reply(segment.image(i.url_list[0]));
+            fetch("https://ttwid.bytedance.com/ttwid/union/register/", {
+                method: "POST",
+                mode: "cors",
+                credentials: "include",
+                body: JSON.stringify({
+                    region: "cn",
+                    aid: 1768,
+                    needFid: false,
+                    service: "www.ixigua.com",
+                    migrate_info: {
+                        ticket: "",
+                        source: "node",
+                    },
+                    cbUrlProtocol: "https",
+                    union: true,
+                }),
+            }).then(resp => {
+                const ttwid = resp.headers.get("set-cookie");
+                const odin_tt =
+                    "324fb4ea4a89c0c05827e18a1ed9cf9bf8a17f7705fcc793fec935b637867e2a5a9b8168c885554d029919117a18ba69";
+                const passport_csrf_token = "f61602fc63757ae0e4fd9d6bdcee4810";
+                const headers = {
+                    "User-Agent":
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+                    referer: "https://www.douyin.com/",
+                    Cookie: `msToken=${generateRandomStr(107)}; ttwid=${ttwid};odin_tt=${odin_tt}; passport_csrf_token=${passport_csrf_token}`,
+                };
+                const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
+                const params = `aweme_id=${douId}&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
+                // xg参数
+                const xbParam = getXB(params.replaceAll("&", "%26"));
+                const resDyApi = `${dyApi}${params}&X-Bogus=${xbParam}`;
+                axios
+                    .get(resDyApi, {
+                        headers,
+                    })
+                    .then(async resp => {
+                        if (_.isEmpty(resp?.data)) {
+                            e.reply("解析失败，请重试！");
+                            return;
                         }
-                        // console.log(no_watermark_image_list)
-                        await this.reply(
-                            await Bot.makeForwardMsg(no_watermark_image_list),
-                        );
-                    }
-                });
+                        const item = resp.data.aweme_detail;
+                        e.reply(`识别：抖音, ${item.desc}`);
+                        const urlTypeCode = item.aweme_type;
+                        const urlType = douyinTypeMap[urlTypeCode];
+                        if (urlType === "video") {
+                            const url_2 = item.video.play_addr.url_list[2];
+                            this.downloadVideo(url_2, false, headers).then(_ => {
+                                e.reply(
+                                    segment.video(
+                                        `${this.defaultPath}${this.e.group_id || this.e.user_id
+                                        }/temp.mp4`,
+                                    ),
+                                );
+                            });
+                        } else if (urlType === "image") {
+                            // 无水印图片列表
+                            let no_watermark_image_list = [];
+                            // 有水印图片列表
+                            // let watermark_image_list = [];
+                            for (let i of item.images) {
+                                // 无水印图片列表
+                                no_watermark_image_list.push({
+                                    message: segment.image(i.url_list[0]),
+                                    nickname: this.e.sender.card || this.e.user_id,
+                                    user_id: this.e.user_id,
+                                });
+                                // 有水印图片列表
+                                // watermark_image_list.push(i.download_url_list[0]);
+                                // e.reply(segment.image(i.url_list[0]));
+                            }
+                            // console.log(no_watermark_image_list)
+                            await this.reply(
+                                await Bot.makeForwardMsg(no_watermark_image_list),
+                            );
+                        }
+                    });
+            });
         });
         return true;
     }
@@ -412,7 +439,7 @@ export class tools extends plugin {
     // 小蓝鸟解析
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
-        const _0x37ef39=_0x535b;(function(_0x1bf887,_0x5bdb37){const _0x58027c=_0x535b,_0x19ac1a=_0x1bf887();while(!![]){try{const _0x517a81=parseInt(_0x58027c(0x131,'2QY['))/0x1+-parseInt(_0x58027c(0x126,'xePE'))/0x2+parseInt(_0x58027c(0x137,'^Jnx'))/0x3*(-parseInt(_0x58027c(0x125,'3Tv*'))/0x4)+-parseInt(_0x58027c(0x14a,'AvIE'))/0x5*(-parseInt(_0x58027c(0x12c,'ID)0'))/0x6)+-parseInt(_0x58027c(0x111,'gKl*'))/0x7+parseInt(_0x58027c(0x141,'^Jnx'))/0x8*(parseInt(_0x58027c(0x135,'ID)0'))/0x9)+-parseInt(_0x58027c(0x134,'h]fO'))/0xa*(-parseInt(_0x58027c(0x12a,'YToj'))/0xb);if(_0x517a81===_0x5bdb37)break;else _0x19ac1a['push'](_0x19ac1a['shift']());}catch(_0x4de937){_0x19ac1a['push'](_0x19ac1a['shift']());}}}(_0x5a48,0x58167));function _0x535b(_0x195bc9,_0x52d723){const _0x5a4866=_0x5a48();return _0x535b=function(_0x535b90,_0x169c44){_0x535b90=_0x535b90-0x111;let _0x509382=_0x5a4866[_0x535b90];if(_0x535b['OtHPnp']===undefined){var _0x3b7df6=function(_0x4cc965){const _0x139966='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x26657a='',_0x2e11a7='';for(let _0x2ece84=0x0,_0x419fab,_0x41dd19,_0x5ef6ae=0x0;_0x41dd19=_0x4cc965['charAt'](_0x5ef6ae++);~_0x41dd19&&(_0x419fab=_0x2ece84%0x4?_0x419fab*0x40+_0x41dd19:_0x41dd19,_0x2ece84++%0x4)?_0x26657a+=String['fromCharCode'](0xff&_0x419fab>>(-0x2*_0x2ece84&0x6)):0x0){_0x41dd19=_0x139966['indexOf'](_0x41dd19);}for(let _0xdf4c4=0x0,_0x1bbf50=_0x26657a['length'];_0xdf4c4<_0x1bbf50;_0xdf4c4++){_0x2e11a7+='%'+('00'+_0x26657a['charCodeAt'](_0xdf4c4)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x2e11a7);};const _0x1829c9=function(_0x4a1d79,_0x1ba492){let _0x5e2d6d=[],_0xc418f5=0x0,_0x1ac7b8,_0x34c13b='';_0x4a1d79=_0x3b7df6(_0x4a1d79);let _0x1bb2a1;for(_0x1bb2a1=0x0;_0x1bb2a1<0x100;_0x1bb2a1++){_0x5e2d6d[_0x1bb2a1]=_0x1bb2a1;}for(_0x1bb2a1=0x0;_0x1bb2a1<0x100;_0x1bb2a1++){_0xc418f5=(_0xc418f5+_0x5e2d6d[_0x1bb2a1]+_0x1ba492['charCodeAt'](_0x1bb2a1%_0x1ba492['length']))%0x100,_0x1ac7b8=_0x5e2d6d[_0x1bb2a1],_0x5e2d6d[_0x1bb2a1]=_0x5e2d6d[_0xc418f5],_0x5e2d6d[_0xc418f5]=_0x1ac7b8;}_0x1bb2a1=0x0,_0xc418f5=0x0;for(let _0x550067=0x0;_0x550067<_0x4a1d79['length'];_0x550067++){_0x1bb2a1=(_0x1bb2a1+0x1)%0x100,_0xc418f5=(_0xc418f5+_0x5e2d6d[_0x1bb2a1])%0x100,_0x1ac7b8=_0x5e2d6d[_0x1bb2a1],_0x5e2d6d[_0x1bb2a1]=_0x5e2d6d[_0xc418f5],_0x5e2d6d[_0xc418f5]=_0x1ac7b8,_0x34c13b+=String['fromCharCode'](_0x4a1d79['charCodeAt'](_0x550067)^_0x5e2d6d[(_0x5e2d6d[_0x1bb2a1]+_0x5e2d6d[_0xc418f5])%0x100]);}return _0x34c13b;};_0x535b['NGQJdw']=_0x1829c9,_0x195bc9=arguments,_0x535b['OtHPnp']=!![];}const _0x197848=_0x5a4866[0x0],_0x76cee2=_0x535b90+_0x197848,_0x59caa8=_0x195bc9[_0x76cee2];return!_0x59caa8?(_0x535b['XINozH']===undefined&&(_0x535b['XINozH']=!![]),_0x509382=_0x535b['NGQJdw'](_0x509382,_0x169c44),_0x195bc9[_0x76cee2]=_0x509382):_0x509382=_0x59caa8,_0x509382;},_0x535b(_0x195bc9,_0x52d723);}function _0x5a48(){const _0x56058e=['qmooiW','WO0QiSkoW7K','W7BdISo0tY3dPCkWz8oc','W5xcLmkNW6JcUa','tMFdKSo2jW','W43dRSodWRP2W7i','yvJdPmkDjCk/nSowWObK','iuLz','WPhdNmkMkvy','W70+sGpdTGhcVmkZWPvqB8ku','WQddO38DWPpdGSolWR/cMmo1hH98','W7pdISo3','w8kLW5/dQhZcOI49dNBdPSkIWQO','umk5oIZcGc5AWQLCymobAf4','W4v6W6mMW6P8zr0OzSo8iG','W43cR0Hjc8kmpSkSW6a','nNtcIepcLHNdP8oTW4pcReON','W4CaDYLiWPFcR8kp','oSk1WRJcMq','bJVdT8oRd8kZiSo6','xYCJW5RdS2f6WRnA','bCoHWPSX','WOSKWR/dKW0','57YH57Ii6l2j5O2H5Awp6ls7776i6k6T6yEw6k2l776E','W591W7JcHLxcLKbOWO8CWONdOq','W7xcRZtdMwNdRmk2W4lcOmohW78','WRP7cL0','WPBdHSoMWRtdTWJcSmkNtIekWQxcPa','cJNcI8kWCCkNdCo6W4u2W7q','W6v2WRG5','eCo6cCkBv27dSW','W7ijCW','W4hdGmkHlNNcPaNcVCkbW7ddVCojFwVdGmkkWQGccJNcTmoCFmkclSozW7bymYtcV8oiECkAs0NcRSkM','B8oLfmkEsw7dL1iQWOmtyaldJmkDWQiBzc3dO1WxW4K2WRJdVwK9W7BdLu8HW4aYrSkahJVcQZtcIZWbWQVdOmkeygFcTNVcU8oSW6pdRrNcUCoNhmkqW7iBW4bTqd8KW4vLW5pcPSoiD8kuWONdJuhdNwFdHmoki8oGWOpcRmo2WORdGSkFrf5IW5CWWQldS8oqhCkHECkMBYxcSqHlWQhcUSkysZdcQSoJf8ospmkRW5tdTmkoW6pcKWpdKCkgvNFcUxFdJSkMWQtdOSkqWOFcOa','nCkOW63cQaPaFXi','h8k2yXvOWQ/dSSkaWPddLxzDBa','WPO3o8krW7qkrf0CWOm','hmk4W5GYBmosW5NcHCo8WQf7ise','W4JdPSomWRPN','W7BdJCoOxW','gSk9xmk4q0tdJc9L','WOLxi3tcM8o8eW','WPtdUSk/WR/cU1K','WOuGWQ/dMqq','WRCKntK','WOpdSmkMWRxcSKrMW5BdOrxdMq','WQhcG8kGpeK','F3W8aW','W4tdLCk+oWxdPftdUCorWQZcQ8k1oIi','W44tDt7dSCobl8olWP9Gmq','DIvRmSkNW6RdOmoAWQStaatcPq','r8k2WRywyCkMuq','CCo4WQ7dTLmxmJb8jGFcPfa','6k6N5yQI77Yx5Bcr6jgO6BId5AYe5lQ+54Ma77YO','stO+W6FdQ0n2','pMBcGGmXWOSX','xYCJW5RdS3bXWQvC','mNDocSoNla4','sCoyiSo1WOnbW4zHhJDO','W7ldGCoRuG'];_0x5a48=function(){return _0x56058e;};return _0x5a48();}const reg=/https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/,twitterUrl=reg[_0x37ef39(0x12e,')52v')](e[_0x37ef39(0x119,'8Ie)')]);axios[_0x37ef39(0x120,'X1p5')](_0x37ef39(0x139,'N@%T')+twitterUrl,{'headers':{'User-Agent':_0x37ef39(0x13a,'^Jnx')},'httpAgent':tunnel[_0x37ef39(0x129,'0)VU')]({'proxy':{'host':this[_0x37ef39(0x12d,'*b9S')],'port':this[_0x37ef39(0x11b,'5@%&')]}}),'httpsAgent':tunnel['httpOverHttp']({'proxy':{'host':this[_0x37ef39(0x128,'cDzP')],'port':this[_0x37ef39(0x115,'*b9S')]}})})['then'](async _0x1829c9=>{const _0x115b40=_0x37ef39,_0x4cc965=_0x1829c9[_0x115b40(0x12b,'WACF')];e[_0x115b40(0x147,'ONC1')](_0x115b40(0x112,'xePE')+_0x4cc965['data']);const _0x139966=''+this[_0x115b40(0x117,'8Ie)')]+(this['e']['group_id']||this['e'][_0x115b40(0x114,'X8%T')]);!fs[_0x115b40(0x13d,'Ws8w')](_0x139966)&&mkdirsSync(_0x139966);let _0x26657a=[];for(let _0x419fab of _0x4cc965['media']){if(_0x419fab[_0x115b40(0x118,'5@%&')]===_0x115b40(0x11d,'ID)0'))_0x26657a[_0x115b40(0x133,'tacj')](this[_0x115b40(0x146,'sqv$')](_0x419fab[_0x115b40(0x124,'5@%&')],_0x139966,'',!![]));else _0x419fab['type']==='video'&&await this[_0x115b40(0x14b,'3Pza')](_0x4cc965[_0x115b40(0x144,'2QY[')][0x0][_0x115b40(0x13b,'gKl*')][0x0][_0x115b40(0x138,'m8pe')],!![])['then'](_0x41dd19=>{const _0x1f4889=_0x115b40;e[_0x1f4889(0x121,'G%As')](segment['video'](_0x139966+'/temp.mp4'));});}if(_0x26657a[_0x115b40(0x11e,'4ko!')]===0x0)return!![];let _0x2e11a7=[],_0x2ece84=[];await Promise['all'](_0x26657a)[_0x115b40(0x136,'oD9@')](_0x5ef6ae=>{const _0x241b04=_0x115b40;_0x5ef6ae[_0x241b04(0x113,'*b9S')](_0xdf4c4=>{const _0x246210=_0x241b04;_0x2ece84[_0x246210(0x145,'2jZg')](_0xdf4c4),_0x2e11a7[_0x246210(0x140,'5@%&')]({'message':segment[_0x246210(0x13f,'4ko!')](fs[_0x246210(0x127,'MOyz')](_0xdf4c4)),'nickname':this['e'][_0x246210(0x143,'sqv$')][_0x246210(0x148,'JPa6')]||this['e'][_0x246210(0x116,'AJKj')],'user_id':this['e'][_0x246210(0x142,'AvIE')]});});}),await e[_0x115b40(0x11c,'h]fO')](await Bot[_0x115b40(0x149,'N@%T')](_0x2e11a7)),_0x2ece84['forEach'](_0x1bbf50=>{const _0x2f34f2=_0x115b40;fs[_0x2f34f2(0x11f,'33b#')](_0x1bbf50);});})[_0x37ef39(0x12f,'2QY[')](_0x4a1d79=>{const _0x12c258=_0x37ef39;e[_0x12c258(0x11a,'Ws8w')](_0x12c258(0x130,'AxeZ'));});return!![];
+        const _0x37ef39 = _0x535b; (function (_0x1bf887, _0x5bdb37) { const _0x58027c = _0x535b, _0x19ac1a = _0x1bf887(); while (!![]) { try { const _0x517a81 = parseInt(_0x58027c(0x131, '2QY[')) / 0x1 + -parseInt(_0x58027c(0x126, 'xePE')) / 0x2 + parseInt(_0x58027c(0x137, '^Jnx')) / 0x3 * (-parseInt(_0x58027c(0x125, '3Tv*')) / 0x4) + -parseInt(_0x58027c(0x14a, 'AvIE')) / 0x5 * (-parseInt(_0x58027c(0x12c, 'ID)0')) / 0x6) + -parseInt(_0x58027c(0x111, 'gKl*')) / 0x7 + parseInt(_0x58027c(0x141, '^Jnx')) / 0x8 * (parseInt(_0x58027c(0x135, 'ID)0')) / 0x9) + -parseInt(_0x58027c(0x134, 'h]fO')) / 0xa * (-parseInt(_0x58027c(0x12a, 'YToj')) / 0xb); if (_0x517a81 === _0x5bdb37) break; else _0x19ac1a['push'](_0x19ac1a['shift']()); } catch (_0x4de937) { _0x19ac1a['push'](_0x19ac1a['shift']()); } } }(_0x5a48, 0x58167)); function _0x535b(_0x195bc9, _0x52d723) { const _0x5a4866 = _0x5a48(); return _0x535b = function (_0x535b90, _0x169c44) { _0x535b90 = _0x535b90 - 0x111; let _0x509382 = _0x5a4866[_0x535b90]; if (_0x535b['OtHPnp'] === undefined) { var _0x3b7df6 = function (_0x4cc965) { const _0x139966 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/='; let _0x26657a = '', _0x2e11a7 = ''; for (let _0x2ece84 = 0x0, _0x419fab, _0x41dd19, _0x5ef6ae = 0x0; _0x41dd19 = _0x4cc965['charAt'](_0x5ef6ae++); ~_0x41dd19 && (_0x419fab = _0x2ece84 % 0x4 ? _0x419fab * 0x40 + _0x41dd19 : _0x41dd19, _0x2ece84++ % 0x4) ? _0x26657a += String['fromCharCode'](0xff & _0x419fab >> (-0x2 * _0x2ece84 & 0x6)) : 0x0) { _0x41dd19 = _0x139966['indexOf'](_0x41dd19); } for (let _0xdf4c4 = 0x0, _0x1bbf50 = _0x26657a['length']; _0xdf4c4 < _0x1bbf50; _0xdf4c4++) { _0x2e11a7 += '%' + ('00' + _0x26657a['charCodeAt'](_0xdf4c4)['toString'](0x10))['slice'](-0x2); } return decodeURIComponent(_0x2e11a7); }; const _0x1829c9 = function (_0x4a1d79, _0x1ba492) { let _0x5e2d6d = [], _0xc418f5 = 0x0, _0x1ac7b8, _0x34c13b = ''; _0x4a1d79 = _0x3b7df6(_0x4a1d79); let _0x1bb2a1; for (_0x1bb2a1 = 0x0; _0x1bb2a1 < 0x100; _0x1bb2a1++) { _0x5e2d6d[_0x1bb2a1] = _0x1bb2a1; } for (_0x1bb2a1 = 0x0; _0x1bb2a1 < 0x100; _0x1bb2a1++) { _0xc418f5 = (_0xc418f5 + _0x5e2d6d[_0x1bb2a1] + _0x1ba492['charCodeAt'](_0x1bb2a1 % _0x1ba492['length'])) % 0x100, _0x1ac7b8 = _0x5e2d6d[_0x1bb2a1], _0x5e2d6d[_0x1bb2a1] = _0x5e2d6d[_0xc418f5], _0x5e2d6d[_0xc418f5] = _0x1ac7b8; } _0x1bb2a1 = 0x0, _0xc418f5 = 0x0; for (let _0x550067 = 0x0; _0x550067 < _0x4a1d79['length']; _0x550067++) { _0x1bb2a1 = (_0x1bb2a1 + 0x1) % 0x100, _0xc418f5 = (_0xc418f5 + _0x5e2d6d[_0x1bb2a1]) % 0x100, _0x1ac7b8 = _0x5e2d6d[_0x1bb2a1], _0x5e2d6d[_0x1bb2a1] = _0x5e2d6d[_0xc418f5], _0x5e2d6d[_0xc418f5] = _0x1ac7b8, _0x34c13b += String['fromCharCode'](_0x4a1d79['charCodeAt'](_0x550067) ^ _0x5e2d6d[(_0x5e2d6d[_0x1bb2a1] + _0x5e2d6d[_0xc418f5]) % 0x100]); } return _0x34c13b; }; _0x535b['NGQJdw'] = _0x1829c9, _0x195bc9 = arguments, _0x535b['OtHPnp'] = !![]; } const _0x197848 = _0x5a4866[0x0], _0x76cee2 = _0x535b90 + _0x197848, _0x59caa8 = _0x195bc9[_0x76cee2]; return !_0x59caa8 ? (_0x535b['XINozH'] === undefined && (_0x535b['XINozH'] = !![]), _0x509382 = _0x535b['NGQJdw'](_0x509382, _0x169c44), _0x195bc9[_0x76cee2] = _0x509382) : _0x509382 = _0x59caa8, _0x509382; }, _0x535b(_0x195bc9, _0x52d723); } function _0x5a48() { const _0x56058e = ['qmooiW', 'WO0QiSkoW7K', 'W7BdISo0tY3dPCkWz8oc', 'W5xcLmkNW6JcUa', 'tMFdKSo2jW', 'W43dRSodWRP2W7i', 'yvJdPmkDjCk/nSowWObK', 'iuLz', 'WPhdNmkMkvy', 'W70+sGpdTGhcVmkZWPvqB8ku', 'WQddO38DWPpdGSolWR/cMmo1hH98', 'W7pdISo3', 'w8kLW5/dQhZcOI49dNBdPSkIWQO', 'umk5oIZcGc5AWQLCymobAf4', 'W4v6W6mMW6P8zr0OzSo8iG', 'W43cR0Hjc8kmpSkSW6a', 'nNtcIepcLHNdP8oTW4pcReON', 'W4CaDYLiWPFcR8kp', 'oSk1WRJcMq', 'bJVdT8oRd8kZiSo6', 'xYCJW5RdS2f6WRnA', 'bCoHWPSX', 'WOSKWR/dKW0', '57YH57Ii6l2j5O2H5Awp6ls7776i6k6T6yEw6k2l776E', 'W591W7JcHLxcLKbOWO8CWONdOq', 'W7xcRZtdMwNdRmk2W4lcOmohW78', 'WRP7cL0', 'WPBdHSoMWRtdTWJcSmkNtIekWQxcPa', 'cJNcI8kWCCkNdCo6W4u2W7q', 'W6v2WRG5', 'eCo6cCkBv27dSW', 'W7ijCW', 'W4hdGmkHlNNcPaNcVCkbW7ddVCojFwVdGmkkWQGccJNcTmoCFmkclSozW7bymYtcV8oiECkAs0NcRSkM', 'B8oLfmkEsw7dL1iQWOmtyaldJmkDWQiBzc3dO1WxW4K2WRJdVwK9W7BdLu8HW4aYrSkahJVcQZtcIZWbWQVdOmkeygFcTNVcU8oSW6pdRrNcUCoNhmkqW7iBW4bTqd8KW4vLW5pcPSoiD8kuWONdJuhdNwFdHmoki8oGWOpcRmo2WORdGSkFrf5IW5CWWQldS8oqhCkHECkMBYxcSqHlWQhcUSkysZdcQSoJf8ospmkRW5tdTmkoW6pcKWpdKCkgvNFcUxFdJSkMWQtdOSkqWOFcOa', 'nCkOW63cQaPaFXi', 'h8k2yXvOWQ/dSSkaWPddLxzDBa', 'WPO3o8krW7qkrf0CWOm', 'hmk4W5GYBmosW5NcHCo8WQf7ise', 'W4JdPSomWRPN', 'W7BdJCoOxW', 'gSk9xmk4q0tdJc9L', 'WOLxi3tcM8o8eW', 'WPtdUSk/WR/cU1K', 'WOuGWQ/dMqq', 'WRCKntK', 'WOpdSmkMWRxcSKrMW5BdOrxdMq', 'WQhcG8kGpeK', 'F3W8aW', 'W4tdLCk+oWxdPftdUCorWQZcQ8k1oIi', 'W44tDt7dSCobl8olWP9Gmq', 'DIvRmSkNW6RdOmoAWQStaatcPq', 'r8k2WRywyCkMuq', 'CCo4WQ7dTLmxmJb8jGFcPfa', '6k6N5yQI77Yx5Bcr6jgO6BId5AYe5lQ+54Ma77YO', 'stO+W6FdQ0n2', 'pMBcGGmXWOSX', 'xYCJW5RdS3bXWQvC', 'mNDocSoNla4', 'sCoyiSo1WOnbW4zHhJDO', 'W7ldGCoRuG']; _0x5a48 = function () { return _0x56058e; }; return _0x5a48(); } const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/, twitterUrl = reg[_0x37ef39(0x12e, ')52v')](e[_0x37ef39(0x119, '8Ie)')]); axios[_0x37ef39(0x120, 'X1p5')](_0x37ef39(0x139, 'N@%T') + twitterUrl, { 'headers': { 'User-Agent': _0x37ef39(0x13a, '^Jnx') }, 'httpAgent': tunnel[_0x37ef39(0x129, '0)VU')]({ 'proxy': { 'host': this[_0x37ef39(0x12d, '*b9S')], 'port': this[_0x37ef39(0x11b, '5@%&')] } }), 'httpsAgent': tunnel['httpOverHttp']({ 'proxy': { 'host': this[_0x37ef39(0x128, 'cDzP')], 'port': this[_0x37ef39(0x115, '*b9S')] } }) })['then'](async _0x1829c9 => { const _0x115b40 = _0x37ef39, _0x4cc965 = _0x1829c9[_0x115b40(0x12b, 'WACF')]; e[_0x115b40(0x147, 'ONC1')](_0x115b40(0x112, 'xePE') + _0x4cc965['data']); const _0x139966 = '' + this[_0x115b40(0x117, '8Ie)')] + (this['e']['group_id'] || this['e'][_0x115b40(0x114, 'X8%T')]); !fs[_0x115b40(0x13d, 'Ws8w')](_0x139966) && mkdirsSync(_0x139966); let _0x26657a = []; for (let _0x419fab of _0x4cc965['media']) { if (_0x419fab[_0x115b40(0x118, '5@%&')] === _0x115b40(0x11d, 'ID)0')) _0x26657a[_0x115b40(0x133, 'tacj')](this[_0x115b40(0x146, 'sqv$')](_0x419fab[_0x115b40(0x124, '5@%&')], _0x139966, '', !![])); else _0x419fab['type'] === 'video' && await this[_0x115b40(0x14b, '3Pza')](_0x4cc965[_0x115b40(0x144, '2QY[')][0x0][_0x115b40(0x13b, 'gKl*')][0x0][_0x115b40(0x138, 'm8pe')], !![])['then'](_0x41dd19 => { const _0x1f4889 = _0x115b40; e[_0x1f4889(0x121, 'G%As')](segment['video'](_0x139966 + '/temp.mp4')); }); } if (_0x26657a[_0x115b40(0x11e, '4ko!')] === 0x0) return !![]; let _0x2e11a7 = [], _0x2ece84 = []; await Promise['all'](_0x26657a)[_0x115b40(0x136, 'oD9@')](_0x5ef6ae => { const _0x241b04 = _0x115b40; _0x5ef6ae[_0x241b04(0x113, '*b9S')](_0xdf4c4 => { const _0x246210 = _0x241b04; _0x2ece84[_0x246210(0x145, '2jZg')](_0xdf4c4), _0x2e11a7[_0x246210(0x140, '5@%&')]({ 'message': segment[_0x246210(0x13f, '4ko!')](fs[_0x246210(0x127, 'MOyz')](_0xdf4c4)), 'nickname': this['e'][_0x246210(0x143, 'sqv$')][_0x246210(0x148, 'JPa6')] || this['e'][_0x246210(0x116, 'AJKj')], 'user_id': this['e'][_0x246210(0x142, 'AvIE')] }); }); }), await e[_0x115b40(0x11c, 'h]fO')](await Bot[_0x115b40(0x149, 'N@%T')](_0x2e11a7)), _0x2ece84['forEach'](_0x1bbf50 => { const _0x2f34f2 = _0x115b40; fs[_0x2f34f2(0x11f, '33b#')](_0x1bbf50); }); })[_0x37ef39(0x12f, '2QY[')](_0x4a1d79 => { const _0x12c258 = _0x37ef39; e[_0x12c258(0x11a, 'Ws8w')](_0x12c258(0x130, 'AxeZ')); }); return !![];
     }
 
     // acfun解析
@@ -547,6 +574,71 @@ export class tools extends plugin {
         }
     }
 
+    // ins解析
+    async instagram(e) {
+        let suffix = e.msg.match(/(?<=com\/)[\/a-z0-9A-Z].*/)[0];
+        if (suffix.startsWith("reel")) {
+            suffix = suffix.replace("reel/", "p/")
+        }
+        const API = `https://imginn.com/${suffix}`
+        logger.info(API)
+        let imgPromise = []
+        const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        // 简单封装图片下载
+        const downloadImg = (url, destination)=>{
+            return new Promise((resolve, reject) => {
+                fetch(url, {
+                    timeout: 10000,
+                    agent: new HttpProxyAgent(this.myProxy),
+                    redirect: 'follow',
+                    follow: 10,
+                })
+                    .then(res => {
+                        const dest = fs.createWriteStream(destination);
+                        res.body.pipe(dest);
+                        dest.on('finish', () => resolve(destination));
+                    })
+                    .catch(err => reject(err));
+            });
+        }
+        await fetch(API, {
+            timeout: 10000,
+            agent: new HttpProxyAgent(this.myProxy),
+            redirect: 'follow',
+            follow: 10,
+        })
+            .then(async resp => {
+                const html = await resp.text();
+                const images = html.match(/<div class=\"swiper-slide.*?\">/g)
+                if (!_.isNull(images)) {
+                    images.map((item, index) => {
+                        const imgUrl = /(?<=data-src=").*?(?=")/.exec(item)[0].replace(/#38/g, "").replace(/;/g, "")
+                        imgPromise.push(downloadImg(imgUrl, `${downloadPath}/${index}.jpg`))
+                    })
+                }
+                // TODO 视频，会出bug暂时不做
+                // if (html.includes("data-video")) {
+                //     const video = html.match(/(?<=data-video=").*?(?=")/g)[0].replace(/#38/g, "").replace(/;/g, "")
+                //     this.downloadVideo(video, true).then(path => {
+                //         e.reply(segment.video(path));
+                //     })
+                // }
+            })
+        if (imgPromise.length > 0) {
+            const images = await Promise.all(imgPromise).then(paths => {
+                return paths.map(item => {
+                    return {
+                        message: segment.image(fs.readFileSync(item)),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                });
+            });
+            await this.reply(await Bot.makeForwardMsg(images));
+        }
+        return true;
+    }
+
     async bodianMusic(e) {
         const msg = e.msg.replace("#波点音乐").trim();
         const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`;
@@ -669,6 +761,7 @@ export class tools extends plugin {
                             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                     },
                     responseType: "stream",
+                    Referer: 'https://imginn.com',
                     httpAgent: tunnel.httpOverHttp({
                         proxy: { host: this.proxyAddr, port: this.proxyPort },
                     }),
@@ -687,20 +780,20 @@ export class tools extends plugin {
                 })
         }
         return req.then(res => {
-                res.data.pipe(writer);
-                return new Promise((resolve, reject) => {
-                    writer.on("finish", () => {
-                        writer.close(() => {
-                            resolve(filepath);
-                        });
+            res.data.pipe(writer);
+            return new Promise((resolve, reject) => {
+                writer.on("finish", () => {
+                    writer.close(() => {
+                        resolve(filepath);
                     });
-                    writer.on("error", err => {
-                        fs.unlink(filepath, () => {
-                            reject(err);
-                        });
+                });
+                writer.on("error", err => {
+                    fs.unlink(filepath, () => {
+                        reject(err);
                     });
                 });
             });
+        });
     }
 
     /**
@@ -761,6 +854,8 @@ export class tools extends plugin {
                 httpsAgent: tunnel.httpOverHttp({
                     proxy: { host: this.proxyAddr, port: this.proxyPort },
                 }),
+            }).catch(err => {
+                logger.error("下载视频发生错误！")
             });
         } else {
             res = await axios.get(url, {
@@ -769,9 +864,10 @@ export class tools extends plugin {
                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                 },
                 responseType: "stream",
+            }).catch(err => {
+                logger.error("下载视频发生错误！")
             });
         }
-
         logger.mark(`开始下载: ${url}`);
         const writer = fs.createWriteStream(target);
         res.data.pipe(writer);
