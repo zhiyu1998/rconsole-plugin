@@ -605,7 +605,7 @@ export class tools extends plugin {
             });
             await e.reply(`清理完成！`);
         } catch (err) {
-            logger.log(err);
+            logger.error(err);
             e.reply("清理失败，重试或者自动清理即可");
         }
     }
