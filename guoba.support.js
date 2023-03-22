@@ -65,16 +65,6 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "tools.bearerToken",
-                    label: "推特Bearer Token",
-                    bottomHelpMessage: "使用推特解析需要的token（需要申请）",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入Bearer Token",
-                    },
-                },
-                {
                     field: "tools.defaultPath",
                     label: "视频暂存位置",
                     bottomHelpMessage:
