@@ -885,12 +885,7 @@ export class tools extends plugin {
                     .catch(err => reject(err));
             });
         };
-        await fetch(API, {
-            timeout: 10000,
-            agent: new HttpProxyAgent(this.myProxy),
-            redirect: "follow",
-            follow: 10,
-        }).then(async resp => {
+        await fetch(API).then(async resp => {
             const html = await resp.text();
             const images = html.match(/<div class=\"swiper-slide.*?\">/g);
             if (!_.isNull(images)) {
