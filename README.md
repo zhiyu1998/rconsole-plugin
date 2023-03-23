@@ -15,17 +15,15 @@ apps -- 业务核心
 
 config -- 配置文件
 
-img -- readme图片
+img -- README图片
 
 model -- 核心文件[建议不动]
 
 resource -- 资源文件
 
-test -- 爬虫文件[python]
-
 utils -- 工具类
 
-index -- 主入口
+
 
 ## 🧏 ‍使用实例
 ![help](./img/example.png)
@@ -59,7 +57,22 @@ sudo apt-get install ffmpeg
 4. 【可选】小程序解析仅适配了[Yoimiya/Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
 
 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
-![小程序解析](./img/example6.png)
+<img src="./img/example6.png" alt="小程序解析" style="zoom:50%;" />
+
+5. 【可选】对哔哩哔哩解析进行总结：需要填写openaiApiKey和哔哩哔哩的SESSDATA
+
+<img src="./img/example7.png" alt="小程序解析" style="zoom:50%;" />
+
+> 哔哩哔哩的SESSDATA？
+>
+> 进入网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到tools.yaml or 锅巴
+
+> 如何获取openaiApiKey？
+>
+> 1. 要有一个openai的账号（https://chat.openai.com/）
+> 2. 获取api-key参考（https://chatgpt.cn.obiscr.com/blog/posts/2023/How-to-get-api-key/）
+
+注：以上条件缺一不可（**SESSDATA+OpenAiApiKey+魔法**），不然无法触发
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
@@ -71,6 +84,18 @@ sudo apt-get install ffmpeg
 `proxyPort: '7890' # 魔法端口`
 ## 📦 业务
 ![help](./img/help.jpg)
+
+## 📝 计划功能
+- [ ] YouTube解析（这个可能要🕊一久）
+- [x] Instagram解析
+  - [ ] 单张图片解析
+  - [ ] 视频解析
+- [ ] 哔哩哔哩总结
+- [ ] 精简工具功能冗余代码
+- [ ] 自由修改插件优先级
+- [ ] ...
+
+
 
 ## 🔗 链接
 

@@ -75,6 +75,28 @@ export function supportGuoba() {
                         placeholder: "请输入视频暂存位置",
                     },
                 },
+                {
+                    field: "tools.biliSessData",
+                    label: "哔哩哔哩SESSDATA",
+                    bottomHelpMessage:
+                        "如何获取具体参考我的文档说明：https://gitee.com/kyrzy0416/rconsole-plugin",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入哔哩哔哩SESSDATA",
+                    },
+                },
+                {
+                    field: "tools.openaiApiKey",
+                    label: "OpenAI的API-KEY",
+                    bottomHelpMessage:
+                        "如何获取参考文章：https://chatgpt.cn.obiscr.com/blog/posts/2023/How-to-get-api-key/",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入OpenAI的API-KEY（sk.....）",
+                    },
+                },
             ],
             getConfigData() {
                 const toolsData = {

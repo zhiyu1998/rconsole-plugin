@@ -10,11 +10,14 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, TEN_THOUSAND, XHS_CK } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import { getXB } from "../utils/x-bogus.js";
+import { getVideoInfo } from "../utils/biliInfo.js";
+import { getBiliGptInputText } from "../utils/biliSummary.js";
+import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 
 export class tools extends plugin {
     constructor() {
@@ -81,12 +84,22 @@ export class tools extends plugin {
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
         // 代理接口
-        // TODO 填写服务器的内网ID和clash的端口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
         this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
-        // 加载twitter配置
-        this.bearerToken = this.toolsConfig.bearerToken;
+        // 加载哔哩哔哩配置
+        this.biliSessData = this.toolsConfig.biliSessData;
+        // 加载gpt配置
+        this.openaiApiKey = this.toolsConfig.openaiApiKey;
+        // 加载gpt客户端
+        this.chatGptClient = new ChatGPTClient(this.openaiApiKey, {
+            modelOptions: {
+                model: "gpt-3.5-turbo",
+                temperature: 0,
+            },
+            proxy: this.myProxy,
+            debug: false,
+        });
     }
 
     // 翻译插件
@@ -143,13 +156,16 @@ export class tools extends plugin {
             // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
             // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
             const headers = {
-                'accept-encoding': 'gzip, deflate, br',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-                'referer': 'https://www.douyin.com/',
-                'cookie': "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
-            }
+                "accept-encoding": "gzip, deflate, br",
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+                referer: "https://www.douyin.com/",
+                cookie: "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;",
+            };
             const dyApi = "https://www.douyin.com/aweme/v1/web/aweme/detail/?";
-            const params = `msToken=${generateRandomStr(107)}&device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079`;
+            const params = `msToken=${generateRandomStr(
+                107,
+            )}&device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079`;
             // xg参数
             const xbParam = getXB(params.replaceAll("&", "%26"));
             // const param = resp.data.result[0].paramsencode;
@@ -197,7 +213,7 @@ export class tools extends plugin {
                         // console.log(no_watermark_image_list)
                         await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
                     }
-            });
+                });
         });
         return true;
     }
@@ -291,7 +307,6 @@ export class tools extends plugin {
                 url = url.substring(0, url.indexOf("?"));
             }
             const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
-            // console.log(dynamicId)
             getDynamic(dynamicId).then(async resp => {
                 if (resp.dynamicSrc.length > 0) {
                     e.reply(`识别：哔哩哔哩动态, ${resp.dynamicDesc}`);
@@ -304,9 +319,6 @@ export class tools extends plugin {
                         });
                     });
                     await this.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
-                    // resp.dynamicSrc.forEach(item => {
-                    //     e.reply(segment.image(item));
-                    // });
                 } else {
                     e.reply(`识别：哔哩哔哩动态, 但是失败！`);
                 }
@@ -320,41 +332,8 @@ export class tools extends plugin {
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
-        (function () {
-            const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
-            const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
-            // 获取视频信息，然后发送
-            fetch(
-                videoId.startsWith("BV")
-                    ? `${baseVideoInfo}?bvid=${videoId}`
-                    : `${baseVideoInfo}?aid=${videoId}`,
-            ).then(async resp => {
-                const respJson = await resp.json();
-                const respData = respJson.data;
-                // 视频标题
-                const title = "识别：哔哩哔哩，" + respData.title + "\n";
-                // 视频图片(暂时不加入，影响性能)
-                // const videoCover = respData.pic;
-                // 视频信息
-                let { view, danmaku, reply, favorite, coin, share, like } = respData.stat;
-                // 数据处理
-                const dataProcessing = data => {
-                    return Number(data) >= TEN_THOUSAND
-                        ? (data / TEN_THOUSAND).toFixed(1) + "万"
-                        : data;
-                };
-                // 组合内容
-                const combineContent = `总播放量：${dataProcessing(
-                    view,
-                )}, 弹幕数量：${dataProcessing(danmaku)}, 回复量：${dataProcessing(
-                    reply,
-                )}, 收藏数：${dataProcessing(favorite)}, 投币：${dataProcessing(
-                    coin,
-                )}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(like)}\n`;
-                const msgCombine = [title, combineContent /*, segment.image(videoCover)*/];
-                await e.reply(msgCombine);
-            });
-        })();
+        const { title, combineContent, aid, cid } = await getVideoInfo(url);
+        e.reply([title, combineContent]);
 
         await getDownloadUrl(url)
             .then(data => {
@@ -371,6 +350,14 @@ export class tools extends plugin {
                 logger.error(err);
                 e.reply("解析失败，请重试一下");
             });
+
+        // 如果有ck 并且 有openai的key
+        if (this.biliSessData && this.openaiApiKey) {
+            const prompt = await getBiliGptInputText(title, aid, cid);
+            const response = await this.chatGptClient.sendMessage(prompt);
+            // 暂时不设计上下文
+            e.reply(response.response);
+        }
         return true;
     }
 
@@ -862,12 +849,17 @@ export class tools extends plugin {
                     .catch(err => reject(err));
             });
         };
-        await fetch(API).then(async resp => {
+        await fetch(API, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
+            },
+        }).then(async resp => {
             const html = await resp.text();
             const desc = html.match(/(?<=content=").*?(?=\")/g)?.[2];
             const images = html.match(/<div class=\"swiper-slide.*?\">/g);
             if (!_.isNull(images)) {
-                e.reply(`识别：Insta，${desc || "暂无描述"}\n`)
+                e.reply(`识别：Insta，${desc || "暂无描述"}\n`);
                 images.map((item, index) => {
                     const imgUrl = /(?<=data-src=").*?(?=")/
                         .exec(item)[0]

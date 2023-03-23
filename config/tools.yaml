@@ -4,3 +4,6 @@ proxyPort: '7890' # 魔法端口
 
 translateAppId: '' # 百度翻译APP ID
 translateSecret: '' # 百度翻译密匙
+
+biliSessData: '' # 哔哩哔哩的SESSDATA
+openaiApiKey: '' # OpenAI的API Key, sk...
