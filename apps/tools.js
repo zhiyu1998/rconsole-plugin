@@ -887,8 +887,10 @@ export class tools extends plugin {
         };
         await fetch(API).then(async resp => {
             const html = await resp.text();
+            const desc = html.match(/(?<=content=").*?(?=\")/g)?.[2];
             const images = html.match(/<div class=\"swiper-slide.*?\">/g);
             if (!_.isNull(images)) {
+                e.reply(`识别：Insta，${desc || "暂无描述"}\n`)
                 images.map((item, index) => {
                     const imgUrl = /(?<=data-src=").*?(?=")/
                         .exec(item)[0]
