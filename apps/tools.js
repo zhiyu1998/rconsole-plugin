@@ -355,7 +355,7 @@ export class tools extends plugin {
         if (this.biliSessData && this.openaiApiKey) {
             let prompt;
             try {
-                prompt = await getBiliGptInputText(title, aid, cid);
+                prompt = await getBiliGptInputText(title, aid, cid, this.biliSessData);
             } catch (err) {
                 logger.error("总结失败，可能是没有弹幕或者网络问题！");
                 return true;

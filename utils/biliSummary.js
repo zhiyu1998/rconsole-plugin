@@ -1,27 +1,27 @@
-const headers = {
-    Accept: "application/json",
-    "Content-Type": "application/json",
-    "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
-    Host: "api.bilibili.com",
-    Cookie: `SESSDATA=92ce67f8%2C1695139091%2C5151e%2A31`,
-};
-const commonConfig = {
-    method: "GET",
-    cache: "no-cache",
-    headers,
-    referrerPolicy: "no-referrer",
-};
-
 /**
  * 获取gpt提取视频信息的文字
  * @param title 视频标题
  * @param aid
  * @param cid
+ * @param biliSessData
  * @param shouldShowTimestamp 是否在每段字幕前面加入时间标识
  * @returns {Promise<string>}
  */
-export async function getBiliGptInputText(title, aid, cid, shouldShowTimestamp = false) {
+export async function getBiliGptInputText(title, aid, cid, biliSessData, shouldShowTimestamp = false) {
+    const headers = {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "User-Agent":
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+        Host: "api.bilibili.com",
+        Cookie: `SESSDATA=${biliSessData}`,
+    };
+    const commonConfig = {
+        method: "GET",
+        cache: "no-cache",
+        headers,
+        referrerPolicy: "no-referrer",
+    };
     // https://api.bilibili.com/x/player/v2?aid=438937138&cid=1066979272
     const resp = await fetch(
         `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`,
