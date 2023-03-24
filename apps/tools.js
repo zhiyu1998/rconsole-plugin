@@ -10,7 +10,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, XHS_CK } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -332,7 +332,21 @@ export class tools extends plugin {
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
-        const { title, combineContent, aid, cid } = await getVideoInfo(url);
+        const videoInfo = await getVideoInfo(url);
+        const { title, desc, dynamic, stat, aid, cid } = videoInfo
+        // 视频信息
+        let { view, danmaku, reply, favorite, coin, share, like } = stat;
+        // 数据处理
+        const dataProcessing = data => {
+            return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
+        };
+        const combineContent = `总播放量：${dataProcessing(view)}, 弹幕数量：${dataProcessing(
+            danmaku,
+        )}, 回复量：${dataProcessing(reply)}, 收藏数：${dataProcessing(
+            favorite,
+        )}, 投币：${dataProcessing(coin)}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(
+            like,
+        )}\n`;
         e.reply([title, combineContent]);
 
         await getDownloadUrl(url)
@@ -355,9 +369,9 @@ export class tools extends plugin {
         if (this.biliSessData && this.openaiApiKey) {
             let prompt;
             try {
-                prompt = await getBiliGptInputText(title, aid, cid, this.biliSessData);
+                prompt = await getBiliGptInputText({title, desc, dynamic, aid, cid}, this.biliSessData);
             } catch (err) {
-                logger.error("总结失败，可能是没有弹幕或者网络问题！");
+                logger.error("总结失败，可能是没有弹幕或者网络问题！\n", err);
                 return true;
             }
             const response = await this.chatGptClient.sendMessage(prompt);

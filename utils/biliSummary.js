@@ -1,13 +1,12 @@
+import _ from 'lodash'
 /**
  * 获取gpt提取视频信息的文字
- * @param title 视频标题
- * @param aid
- * @param cid
+ * @param videoInfo
  * @param biliSessData
  * @param shouldShowTimestamp 是否在每段字幕前面加入时间标识
  * @returns {Promise<string>}
  */
-export async function getBiliGptInputText(title, aid, cid, biliSessData, shouldShowTimestamp = false) {
+export async function getBiliGptInputText(videoInfo, biliSessData, shouldShowTimestamp = false) {
     const headers = {
         Accept: "application/json",
         "Content-Type": "application/json",
@@ -22,26 +21,32 @@ export async function getBiliGptInputText(title, aid, cid, biliSessData, shouldS
         headers,
         referrerPolicy: "no-referrer",
     };
+    const {title, desc, dynamic, aid, cid} = videoInfo
     // https://api.bilibili.com/x/player/v2?aid=438937138&cid=1066979272
     const resp = await fetch(
         `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`,
         commonConfig,
     );
     const subtitles = (await resp.json()).data.subtitle.subtitles;
-    const res = await fetch(`http:${subtitles[0]?.subtitle_url}`);
-    if (_.isUndefined(res)) {
-        throw new Error("");
+    const subtitlesUrl = subtitles?.subtitle_url?.startsWith('//')
+        ? `https:${subtitles?.subtitle_url}`
+        : subtitles?.subtitle_url
+    let inputText = "";
+    logger.mark(subtitlesUrl);
+    if (subtitlesUrl !== undefined) {
+        const res = await fetch(subtitlesUrl);
+        const subtitlesData = (await res.json()).body;
+        const subtitleTimestamp = reduceBilibiliSubtitleTimestamp(subtitlesData, shouldShowTimestamp);
+        inputText = getSmallSizeTranscripts(subtitleTimestamp, subtitleTimestamp);
+    } else {
+        inputText = `${desc} ${dynamic}`;
     }
-    const subtitlesData = (await res.json()).body;
-    const subtitleTimestamp = reduceBilibiliSubtitleTimestamp(subtitlesData, shouldShowTimestamp);
-    const inputText = getSmallSizeTranscripts(subtitleTimestamp, subtitleTimestamp);
     const videoConfig = {
         showEmoji: false,
     };
-    const userPrompt = shouldShowTimestamp
+    return shouldShowTimestamp
         ? getUserSubtitleWithTimestampPrompt(title, inputText, videoConfig)
         : getUserSubtitlePrompt(title, inputText, videoConfig);
-    return userPrompt;
 }
 
 // 以下拼接算法来自：https://github.com/JimmyLv/BibiGPT
