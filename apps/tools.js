@@ -131,8 +131,6 @@ export class tools extends plugin {
                     "📝咕咕翻译：" + (await translateEngine.google(place, language[1]));
             } catch (err) {
                 logger.error("咕咕翻译失败");
-            } finally {
-                translateResult = "";
             }
             // 腾讯交互式进行补充
             translateResult += "\n\n🐧翻译：" + (await translateEngine.tencent(place, language[1]));
@@ -342,7 +340,6 @@ export class tools extends plugin {
         };
         // 格式化数据
         const combineContent =
-             `标题：${title}\n` +
              `点赞：${dataProcessing(like,)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(favorite)} | 分享：${dataProcessing(share)}\n`+
              `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(danmaku)} | 评论：${dataProcessing(reply)}\n`+
              `简介：${desc}`;
