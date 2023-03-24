@@ -17,7 +17,7 @@ import Translate from "../utils/trans-strategy.js";
 import { getXB } from "../utils/x-bogus.js";
 import { getVideoInfo } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
-import {getBodianAudio, getBodianMv, getBodianMusicInfo} from "../utils/bodian.js";
+import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 
 export class tools extends plugin {
@@ -915,27 +915,33 @@ export class tools extends plugin {
     async bodianMusic(e) {
         // 音频例子：https://h5app.kuwo.cn/m/bodian/playMusic.html?uid=3216773&musicId=192015898&opusId=&extendType=together
         // 视频例子：https://h5app.kuwo.cn/m/bodian/play.html?uid=3216773&mvId=118987&opusId=770096&extendType=together
-        const id = /(?=musicId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("musicId=", "")
-        || /(?=mvId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("mvId=", "");
-        const {name, album, artist, albumPic120, categorys} = await getBodianMusicInfo(id)
-        e.reply([`识别：波点音乐，${name}-${album}-${artist}\n标签：${categorys.map(item=>item.name).join(" | ")}`, segment.image(albumPic120)])
+        const id =
+            /(?=musicId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("musicId=", "") ||
+            /(?=mvId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("mvId=", "");
+        const { name, album, artist, albumPic120, categorys } = await getBodianMusicInfo(id);
+        e.reply([
+            `识别：波点音乐，${name}-${album}-${artist}\n标签：${categorys
+                .map(item => item.name)
+                .join(" | ")}`,
+            segment.image(albumPic120),
+        ]);
         if (e.msg.includes("musicId")) {
-            const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
+            const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
             await getBodianAudio(id, path).then(_ => {
                 Bot.acquireGfs(e.group_id).upload(
-                    fs.readFileSync(path+"/temp.mp3"),
+                    fs.readFileSync(path + "/temp.mp3"),
                     "/",
                     `${name}-${album}-${artist}.mp3`,
                 );
-            })
+            });
         } else if (e.msg.includes("mvId")) {
             await getBodianMv(id).then(res => {
                 // 下载 && 发送
-                const { coverUrl, highUrl, lowUrl, shortLowUrl } = res
+                const { coverUrl, highUrl, lowUrl, shortLowUrl } = res;
                 this.downloadVideo(lowUrl).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
-            })
+            });
         }
         return true;
     }
