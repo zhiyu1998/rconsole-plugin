@@ -14,9 +14,8 @@ import {
     getUserRecord,
 } from "../utils/netease.js";
 import { ha12store, store2ha1 } from "../utils/encrypt.js";
-import fetch from "node-fetch";
+import { downloadMp3 } from "../utils/common.js";
 import _ from "lodash";
-import { mkdirsSync } from "../utils/file.js";
 
 export class neteasepro extends plugin {
     constructor() {
@@ -151,6 +150,7 @@ export class neteasepro extends plugin {
             musicUrlReg2.exec(message)?.[3] ||
             musicUrlReg.exec(message)?.[2] ||
             /id=(\d+)/.exec(message)[1];
+        const downloadPath = `./data/rcmp4/${this.e.group_id || this.e.user_id}`
         // 是游客
         if (!(await redis.get(await this.getRedisKey(e.user_id)))) {
             // 是小程序
@@ -171,7 +171,7 @@ export class neteasepro extends plugin {
                 e.reply(`识别：网易云音乐，${title}`);
             }
             // 下载游客歌曲
-            this.downloadMp3(`https://music.163.com/song/media/outer/url?id=${id}`, "follow")
+            downloadMp3(`https://music.163.com/song/media/outer/url?id=${id}`, downloadPath, "follow")
                 .then(path => {
                     Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${id}.mp3`);
                 })
@@ -193,7 +193,7 @@ export class neteasepro extends plugin {
             const song = res.songs[0];
             return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
         });
-        await this.downloadMp3(userDownloadUrl)
+        await downloadMp3(userDownloadUrl, downloadPath)
             .then(path => {
                 Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${title}.mp3`);
             })
@@ -214,12 +214,12 @@ export class neteasepro extends plugin {
         }
         let userData = JSON.parse(userDataJson);
         const cookie = userData?.cookie;
-        console.log(cookie);
+        logger.mark(cookie);
         // 解析cookie
         userData.cookie = await store2ha1(cookie);
         // 检查cookie是否可用
         const userInfo = await getLoginStatus(userData.cookie);
-        console.log(userData);
+        logger.mark(userData);
         if (_.isNil(userInfo.profile)) {
             e.reply("cookie已经过期，请重新#网易云登录！");
             // 删除过期的cookie
@@ -333,50 +333,6 @@ export class neteasepro extends plugin {
             .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, "___")
             .replace(/___+/, `<title color="#777777" size="26">${forwardMsgName}</title>`);
         return forwardMsg;
-    }
-
-    /**
-     * 下载mp3
-     * @param mp3Url
-     * @param redirect
-     * @returns {Promise<unknown>}
-     */
-    async downloadMp3(mp3Url, redirect = "manual") {
-        return fetch(mp3Url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            responseType: "stream",
-            redirect: redirect,
-        }).then(res => {
-            let path = `./data/rcmp4/${this.e.group_id || this.e.user_id}`;
-            // 如果没有目录就创建一个
-            if (!fs.existsSync(path)) {
-                mkdirsSync(path);
-            }
-            // 补充保存文件名
-            path += "/temp.mp3";
-            if (fs.existsSync(path)) {
-                console.log(`视频已存在`);
-                fs.unlinkSync(path);
-            }
-            // 开始下载
-            const fileStream = fs.createWriteStream(path);
-            res.body.pipe(fileStream);
-            return new Promise((resolve, reject) => {
-                fileStream.on("finish", () => {
-                    fileStream.close(() => {
-                        resolve(path);
-                    });
-                });
-                fileStream.on("error", err => {
-                    fs.unlink(path, () => {
-                        reject(err);
-                    });
-                });
-            });
-        });
     }
 
     // 获取redis的key

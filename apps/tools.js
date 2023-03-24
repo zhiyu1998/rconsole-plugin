@@ -11,7 +11,7 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
-import { getIdVideo, generateRandomStr } from "../utils/common.js";
+import { getIdVideo, generateRandomStr, downloadMp3 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import { getXB } from "../utils/x-bogus.js";
@@ -73,7 +73,7 @@ export class tools extends plugin {
                     permission: "master",
                 },
                 {
-                    reg: "^#波点音乐(.*)",
+                    reg: "(h5app.kuwo.cn)",
                     fnc: "bodianMusic",
                 },
             ],
@@ -913,65 +913,35 @@ export class tools extends plugin {
         return true;
     }
 
+    // 波点音乐解析
     async bodianMusic(e) {
-        const msg = e.msg.replace("#波点音乐").trim();
-        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=&max=`;
-        // 获取列表
-        const thisMethod = this;
+        // 例子：https://h5app.kuwo.cn/m/bodian/playMusic.html?uid=3216773&musicId=192015898&opusId=&extendType=together
+        const id = /(?=musicId).*?(?=&)/.exec(e.msg.trim())[0].replace("musicId=", "");
+        const API = `https://bd-api.kuwo.cn/api/service/music/audioUrl/${id}?format=mp3&br=320kmp3&songType=&fromList=&weListenUid=&weListenDevId=`;
+        const headers = {
+            "User-Agent": "bodian/106 CFNetwork/1399 Darwin/22.1.0",
+            "devId": `95289318-8847-43D5-8477-85296654785${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
+            "Host": "bd-api.kuwo.cn",
+            "plat": "ip",
+            "ver": "3.1.0",
+            "Cache-Control": "no-cache",
+            "channel": "appstore"
+        }
         await axios
             .get(API, {
-                headers: {
-                    HOST: "xiaobai.klizi.cn",
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
+                headers
             })
             .then(resp => {
-                e.reply("请选择一个要播放的视频：\n" + resp.data);
-                thisMethod.setContext("bodianMusicContext");
+                const respJson = resp.data;
+                const audioUrl = respJson.data.audioUrl;
+                downloadMp3(audioUrl, `${this.defaultPath}${this.e.group_id || this.e.user_id}`).then(path => {
+                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${respJson.reqId}.mp3`);
+                })
+                .catch(err => {
+                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                });
             });
         return true;
-    }
-
-    /**
-     * @link bodianMusic 波点音乐上下文
-     * @returns {Promise<void>}
-     */
-    async bodianMusicContext() {
-        // 当前消息
-        const curMsg = this.e;
-        // 上一个消息
-        const preMsg = await this.getContext().bodianMusicContext;
-        const msg = preMsg.msg.replace("#波点音乐", "").trim();
-        const API = `https://xiaobai.klizi.cn/API/music/bodian.php?msg=${msg}&n=${Number(
-            curMsg.msg,
-        )}&max=`;
-        const thisMethod = this;
-        axios
-            .get(API, {
-                headers: {
-                    HOST: "xiaobai.klizi.cn",
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-            })
-            .then(async res => {
-                // 如果没有，直接返回
-                if (res.data.lowUrl === null || res.data.highUrl === null) {
-                    return;
-                }
-                // 波点音乐信息
-                const { songName, artist, coverUrl, highUrl, lowUrl, shortLowUrl } = res.data;
-                curMsg.reply([`${songName}-${artist}\n`, segment.image(coverUrl)]);
-                // 下载 && 发送
-                await thisMethod.downloadVideo(lowUrl).then(path => {
-                    curMsg.reply(segment.video(path + "/temp.mp4"));
-                });
-            })
-            .catch(err => {
-                curMsg.reply("发生网络错误，请重新发送！");
-                thisMethod.finish("bodianMusicContext");
-            });
     }
 
     /**

@@ -2,6 +2,8 @@ import schedule from "node-schedule";
 import common from "../../../lib/common/common.js";
 import axios from "axios";
 import fs from "node:fs";
+import fetch from "node-fetch";
+import { mkdirsSync } from "./file.js";
 
 /**
  * 请求模板
@@ -118,4 +120,48 @@ function generateRandomStr(randomlength = 16){
     return random_str
 }
 
-export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr };
+/**
+ * 下载mp3
+ * @param mp3Url    MP3地址
+ * @param path      下载目录
+ * @param redirect  是否要重定向
+ * @returns {Promise<unknown>}
+ */
+async function downloadMp3(mp3Url, path, redirect = "manual") {
+    return fetch(mp3Url, {
+        headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+        },
+        responseType: "stream",
+        redirect: redirect,
+    }).then(res => {
+        // 如果没有目录就创建一个
+        if (!fs.existsSync(path)) {
+            mkdirsSync(path);
+        }
+        // 补充保存文件名
+        path += "/temp.mp3";
+        if (fs.existsSync(path)) {
+            console.log(`视频已存在`);
+            fs.unlinkSync(path);
+        }
+        // 开始下载
+        const fileStream = fs.createWriteStream(path);
+        res.body.pipe(fileStream);
+        return new Promise((resolve, reject) => {
+            fileStream.on("finish", () => {
+                fileStream.close(() => {
+                    resolve(path);
+                });
+            });
+            fileStream.on("error", err => {
+                fs.unlink(path, () => {
+                    reject(err);
+                });
+            });
+        });
+    });
+}
+
+export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr, downloadMp3 };
