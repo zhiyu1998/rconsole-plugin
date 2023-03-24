@@ -333,7 +333,7 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
-        const { title, desc, dynamic, stat, aid, cid } = videoInfo
+        const { title, desc, dynamic, stat, aid, cid } = videoInfo;
         // 视频信息
         let { view, danmaku, reply, favorite, coin, share, like } = stat;
         // 数据处理
@@ -369,7 +369,10 @@ export class tools extends plugin {
         if (this.biliSessData && this.openaiApiKey) {
             let prompt;
             try {
-                prompt = await getBiliGptInputText({title, desc, dynamic, aid, cid}, this.biliSessData);
+                prompt = await getBiliGptInputText(
+                    { title, desc, dynamic, aid, cid },
+                    this.biliSessData,
+                );
             } catch (err) {
                 logger.error("总结失败，可能是没有弹幕或者网络问题！\n", err);
                 return true;

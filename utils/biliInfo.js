@@ -1,5 +1,4 @@
 import fetch from "node-fetch";
-import { TEN_THOUSAND } from "./constant.js";
 
 async function getVideoInfo(url) {
     const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";

@@ -1,4 +1,3 @@
-import _ from 'lodash'
 /**
  * 获取gpt提取视频信息的文字
  * @param videoInfo
@@ -21,22 +20,25 @@ export async function getBiliGptInputText(videoInfo, biliSessData, shouldShowTim
         headers,
         referrerPolicy: "no-referrer",
     };
-    const {title, desc, dynamic, aid, cid} = videoInfo
+    const { title, desc, dynamic, aid, cid } = videoInfo;
     // https://api.bilibili.com/x/player/v2?aid=438937138&cid=1066979272
     const resp = await fetch(
         `https://api.bilibili.com/x/player/v2?aid=${aid}&cid=${cid}`,
         commonConfig,
     );
     const subtitles = (await resp.json()).data.subtitle.subtitles;
-    const subtitlesUrl = subtitles?.subtitle_url?.startsWith('//')
+    const subtitlesUrl = subtitles?.subtitle_url?.startsWith("//")
         ? `https:${subtitles?.subtitle_url}`
-        : subtitles?.subtitle_url
+        : subtitles?.subtitle_url;
     let inputText = "";
     logger.mark(subtitlesUrl);
     if (subtitlesUrl !== undefined) {
         const res = await fetch(subtitlesUrl);
         const subtitlesData = (await res.json()).body;
-        const subtitleTimestamp = reduceBilibiliSubtitleTimestamp(subtitlesData, shouldShowTimestamp);
+        const subtitleTimestamp = reduceBilibiliSubtitleTimestamp(
+            subtitlesData,
+            shouldShowTimestamp,
+        );
         inputText = getSmallSizeTranscripts(subtitleTimestamp, subtitleTimestamp);
     } else {
         inputText = `${desc} ${dynamic}`;
