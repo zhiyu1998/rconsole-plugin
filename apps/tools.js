@@ -347,7 +347,7 @@ export class tools extends plugin {
         )}, 投币：${dataProcessing(coin)}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(
             like,
         )}\n`;
-        e.reply([title, combineContent]);
+        e.reply([`识别：哔哩哔哩：${title}\n${desc}\n`, combineContent]);
 
         await getDownloadUrl(url)
             .then(data => {
