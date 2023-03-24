@@ -897,8 +897,10 @@ export class tools extends plugin {
             // }
         });
         if (imgPromise.length > 0) {
+            let path = []
             const images = await Promise.all(imgPromise).then(paths => {
                 return paths.map(item => {
+                    path.push(item);
                     return {
                         message: segment.image(fs.readFileSync(item)),
                         nickname: e.sender.card || e.user_id,
@@ -907,6 +909,10 @@ export class tools extends plugin {
                 });
             });
             await this.reply(await Bot.makeForwardMsg(images));
+            // 清理
+            path.forEach(item => {
+                fs.unlinkSync(item);
+            });
         }
         return true;
     }
