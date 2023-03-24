@@ -8,7 +8,7 @@ import _ from "lodash";
 import axios from "axios";
 import fs from "node:fs";
 // 常量
-import {CAT_LIMIT, HOT_SEARCH_ACTIONS, TEN_THOUSAND} from "../utils/constant.js";
+import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
 import { getZHelper, getYiBook, getBookDetail } from "../utils/books.js";
 

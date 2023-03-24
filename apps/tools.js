@@ -340,9 +340,13 @@ export class tools extends plugin {
         };
         // 格式化数据
         const combineContent =
-             `点赞：${dataProcessing(like,)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(favorite)} | 分享：${dataProcessing(share)}\n`+
-             `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(danmaku)} | 评论：${dataProcessing(reply)}\n`+
-             `简介：${desc}`;
+            `点赞：${dataProcessing(like)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(
+                favorite,
+            )} | 分享：${dataProcessing(share)}\n` +
+            `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(
+                danmaku,
+            )} | 评论：${dataProcessing(reply)}\n` +
+            `简介：${desc}`;
         e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
 
         await getDownloadUrl(url)
@@ -364,10 +368,7 @@ export class tools extends plugin {
         // 如果有ck 并且 有openai的key
         if (this.biliSessData && this.openaiApiKey) {
             try {
-                const prompt = await getBiliGptInputText(
-                    videoInfo,
-                    this.biliSessData,
-                );
+                const prompt = await getBiliGptInputText(videoInfo, this.biliSessData);
                 const response = await this.chatGptClient.sendMessage(prompt);
                 // 暂时不设计上下文
                 e.reply(response.response);
@@ -375,7 +376,6 @@ export class tools extends plugin {
                 logger.error("总结失败，可能是没有弹幕或者网络问题！\n", err);
                 return true;
             }
-
         }
         return true;
     }
@@ -917,26 +917,33 @@ export class tools extends plugin {
         const API = `https://bd-api.kuwo.cn/api/service/music/audioUrl/${id}?format=mp3&br=320kmp3&songType=&fromList=&weListenUid=&weListenDevId=`;
         const headers = {
             "User-Agent": "bodian/106 CFNetwork/1399 Darwin/22.1.0",
-            "devId": `95289318-8847-43D5-8477-85296654785${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`,
-            "Host": "bd-api.kuwo.cn",
-            "plat": "ip",
-            "ver": "3.1.0",
+            devId: `95289318-8847-43D5-8477-85296654785${String.fromCharCode(
+                65 + Math.floor(Math.random() * 26),
+            )}`,
+            Host: "bd-api.kuwo.cn",
+            plat: "ip",
+            ver: "3.1.0",
             "Cache-Control": "no-cache",
-            "channel": "appstore"
-        }
+            channel: "appstore",
+        };
         await axios
             .get(API, {
-                headers
+                headers,
             })
             .then(resp => {
                 const respJson = resp.data;
                 const audioUrl = respJson.data.audioUrl;
-                downloadMp3(audioUrl, `${this.defaultPath}${this.e.group_id || this.e.user_id}`).then(path => {
-                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${respJson.reqId}.mp3`);
-                })
-                .catch(err => {
-                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                });
+                downloadMp3(audioUrl, `${this.defaultPath}${this.e.group_id || this.e.user_id}`)
+                    .then(path => {
+                        Bot.acquireGfs(e.group_id).upload(
+                            fs.readFileSync(path),
+                            "/",
+                            `${respJson.reqId}.mp3`,
+                        );
+                    })
+                    .catch(err => {
+                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                    });
             });
         return true;
     }
