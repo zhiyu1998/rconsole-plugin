@@ -11,12 +11,13 @@ import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
-import { getIdVideo, generateRandomStr, downloadMp3 } from "../utils/common.js";
+import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import { getXB } from "../utils/x-bogus.js";
 import { getVideoInfo } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
+import {getBodianAudio, getBodianMv, getBodianMusicInfo} from "../utils/bodian.js";
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 
 export class tools extends plugin {
@@ -912,39 +913,30 @@ export class tools extends plugin {
 
     // 波点音乐解析
     async bodianMusic(e) {
-        // 例子：https://h5app.kuwo.cn/m/bodian/playMusic.html?uid=3216773&musicId=192015898&opusId=&extendType=together
-        const id = /(?=musicId).*?(?=&)/.exec(e.msg.trim())[0].replace("musicId=", "");
-        const API = `https://bd-api.kuwo.cn/api/service/music/audioUrl/${id}?format=mp3&br=320kmp3&songType=&fromList=&weListenUid=&weListenDevId=`;
-        const headers = {
-            "User-Agent": "bodian/106 CFNetwork/1399 Darwin/22.1.0",
-            devId: `95289318-8847-43D5-8477-85296654785${String.fromCharCode(
-                65 + Math.floor(Math.random() * 26),
-            )}`,
-            Host: "bd-api.kuwo.cn",
-            plat: "ip",
-            ver: "3.1.0",
-            "Cache-Control": "no-cache",
-            channel: "appstore",
-        };
-        await axios
-            .get(API, {
-                headers,
+        // 音频例子：https://h5app.kuwo.cn/m/bodian/playMusic.html?uid=3216773&musicId=192015898&opusId=&extendType=together
+        // 视频例子：https://h5app.kuwo.cn/m/bodian/play.html?uid=3216773&mvId=118987&opusId=770096&extendType=together
+        const id = /(?=musicId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("musicId=", "")
+        || /(?=mvId).*?(?=&)/.exec(e.msg.trim())?.[0].replace("mvId=", "");
+        const {name, album, artist, albumPic120, categorys} = await getBodianMusicInfo(id)
+        e.reply([`识别：波点音乐，${name}-${album}-${artist}\n标签：${categorys.map(item=>item.name).join(" | ")}`, segment.image(albumPic120)])
+        if (e.msg.includes("musicId")) {
+            const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
+            await getBodianAudio(id, path).then(_ => {
+                Bot.acquireGfs(e.group_id).upload(
+                    fs.readFileSync(path+"/temp.mp3"),
+                    "/",
+                    `${name}-${album}-${artist}.mp3`,
+                );
             })
-            .then(resp => {
-                const respJson = resp.data;
-                const audioUrl = respJson.data.audioUrl;
-                downloadMp3(audioUrl, `${this.defaultPath}${this.e.group_id || this.e.user_id}`)
-                    .then(path => {
-                        Bot.acquireGfs(e.group_id).upload(
-                            fs.readFileSync(path),
-                            "/",
-                            `${respJson.reqId}.mp3`,
-                        );
-                    })
-                    .catch(err => {
-                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                    });
-            });
+        } else if (e.msg.includes("mvId")) {
+            await getBodianMv(id).then(res => {
+                // 下载 && 发送
+                const { coverUrl, highUrl, lowUrl, shortLowUrl } = res
+                this.downloadVideo(lowUrl).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            })
+        }
         return true;
     }
 
