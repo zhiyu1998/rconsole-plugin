@@ -44,7 +44,7 @@ export async function getBiliGptInputText(videoInfo, biliSessData, shouldShowTim
         inputText = `${desc} ${dynamic}`;
     }
     const videoConfig = {
-        showEmoji: false,
+        showEmoji: true,
     };
     return shouldShowTimestamp
         ? getUserSubtitleWithTimestampPrompt(title, inputText, videoConfig)
