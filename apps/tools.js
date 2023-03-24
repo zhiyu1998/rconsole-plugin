@@ -340,14 +340,13 @@ export class tools extends plugin {
         const dataProcessing = data => {
             return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
         };
-        const combineContent = `总播放量：${dataProcessing(view)}, 弹幕数量：${dataProcessing(
-            danmaku,
-        )}, 回复量：${dataProcessing(reply)}, 收藏数：${dataProcessing(
-            favorite,
-        )}, 投币：${dataProcessing(coin)}, 分享：${dataProcessing(share)}, 点赞：${dataProcessing(
-            like,
-        )}\n`;
-        e.reply([`识别：哔哩哔哩：${title}\n${desc}\n`, combineContent]);
+        // 格式化数据
+        const combineContent =
+             `标题：${title}\n` +
+             `点赞：${dataProcessing(like,)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(favorite)} | 分享：${dataProcessing(share)}\n`+
+             `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(danmaku)} | 评论：${dataProcessing(reply)}\n`+
+             `简介：${desc}`;
+        e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
 
         await getDownloadUrl(url)
             .then(data => {
@@ -369,7 +368,7 @@ export class tools extends plugin {
         if (this.biliSessData && this.openaiApiKey) {
             try {
                 const prompt = await getBiliGptInputText(
-                    { title, desc, dynamic, aid, cid },
+                    videoInfo,
                     this.biliSessData,
                 );
                 const response = await this.chatGptClient.sendMessage(prompt);
