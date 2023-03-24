@@ -353,7 +353,13 @@ export class tools extends plugin {
 
         // 如果有ck 并且 有openai的key
         if (this.biliSessData && this.openaiApiKey) {
-            const prompt = await getBiliGptInputText(title, aid, cid);
+            let prompt;
+            try {
+                prompt = await getBiliGptInputText(title, aid, cid);
+            } catch (err) {
+                logger.error("总结失败，可能是没有弹幕或者网络问题！");
+                return true;
+            }
             const response = await this.chatGptClient.sendMessage(prompt);
             // 暂时不设计上下文
             e.reply(response.response);

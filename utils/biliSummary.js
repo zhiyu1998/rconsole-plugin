@@ -28,7 +28,10 @@ export async function getBiliGptInputText(title, aid, cid, shouldShowTimestamp =
         commonConfig,
     );
     const subtitles = (await resp.json()).data.subtitle.subtitles;
-    const res = await fetch(`http:${subtitles[0].subtitle_url}`);
+    const res = await fetch(`http:${subtitles[0]?.subtitle_url}`);
+    if (_.isUndefined(res)) {
+        throw new Error("");
+    }
     const subtitlesData = (await res.json()).body;
     const subtitleTimestamp = reduceBilibiliSubtitleTimestamp(subtitlesData, shouldShowTimestamp);
     const inputText = getSmallSizeTranscripts(subtitleTimestamp, subtitleTimestamp);
