@@ -52,6 +52,10 @@ export class query extends plugin {
                     reg: "^#(bookid)(.*)$$",
                     fnc: "searchBookById",
                 },
+                {
+                    reg: "^#epic",
+                    fnc: "epicGame",
+                }
             ],
         });
     }
@@ -358,6 +362,86 @@ export class query extends plugin {
         const res = await getBookDetail(curMsg, id, source);
         await this.reply(await Bot.makeForwardMsg(res));
         this.finish("searchBookContext");
+    }
+
+    // epic游戏查询：逻辑来自于https://github.com/monsterxcn/nonebot_plugin_epicfree/blob/main/nonebot_plugin_epicfree/data_source.py
+    async epicGame(e) {
+        const API = `https://store-site-backend-static-ipv4.ak.epicgames.com/freeGamesPromotions?locale=zh-CN&country=CN&allowCountries=CN`;
+        const res = await fetch(API, {
+            headers: {
+                Referer: "https://www.epicgames.com/store/zh-CN/",
+                "Content-Type": "application/json; charset=utf-8",
+                "User-Agent":
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36",
+            },
+            timeout: 10000,
+        }).then((resp) => resp.json());
+        const games = res.data.Catalog.searchStore.elements;
+// console.log(games);
+        e.reply(
+            `获取到${games.length}个游戏，${games.map((item) => item.title).join(", ")}`
+        );
+        for (const game of games) {
+            const gameName = game?.title || "未知";
+            if (game?.promotions === undefined) {
+                continue;
+            }
+            const game_promotions = game.promotions?.promotionalOffers;
+            const upcoming_promotions = game.promotions?.upcomingPromotionalOffers;
+            const originalPrice = game.price.totalPrice.fmtPrice.originalPrice;
+            const discount_price = game.price.totalPrice.fmtPrice.discountPrice;
+            if (!game_promotions && upcoming_promotions) {
+                logger.mark(`跳过即将推出免费游玩的游戏：${gameName}(${discount_price})`);
+                continue;
+            } else if (game.price.totalPrice.fmtPrice.discountPrice != "0") {
+                logger.mark(`跳过促销但不免费的游戏：${gameName}(${discount_price})`);
+                continue;
+            }
+            // 图片处理
+            let availableImgUrl = [];
+            const available = [
+                "Thumbnail",
+                "VaultOpened",
+                "DieselStoreFrontWide",
+                "OfferImageWide",
+            ];
+            for (const image of game.keyImages) {
+                if ((image.url != null) && available.includes(image.type)) {
+                    availableImgUrl.push(image.url);
+                }
+            }
+            // 处理游戏发行信息
+            let gameDev = game.seller.name;
+            let gamePub = game.seller.name;
+            for (const pair of game.customAttributes) {
+                if (pair.key === "developerName") {
+                    gameDev = pair.value;
+                } else if (pair.key === "publisherName") {
+                    gamePub = pair.value;
+                }
+            }
+            const dev_com = gameDev != gamePub ? `${gameDev} 开发、` : "";
+            const companies =
+                gamePub != "Epic Dev Test Account" ? `由 ${dev_com}${gamePub} 发行，` : "";
+            //处理游戏限免结束时间
+            const dateRfc3339 = game_promotions?.[0].promotionalOffers[0].endDate;
+            let endDate = "不明确";
+            if (dateRfc3339 !== undefined) {
+                const date = new Date(dateRfc3339);
+                const options = {
+                    timeZone: "Asia/Shanghai",
+                    month: "long",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                };
+                endDate = date
+                    .toLocaleString("zh-CN", options)
+                    .replace(/(\d{1,2})\s/, "$1日 ");
+            }
+            const resMsg = `${gameName} (${originalPrice})\n\n${game.description}\n\n游戏${companies}\n${game?.url}\n将在 ${endDate} 结束免费游玩，戳上方链接领取吧~`;
+            e.reply([resMsg, ...availableImgUrl.map(url => segment.image(url))])
+        }
     }
 
     // 删除标签
