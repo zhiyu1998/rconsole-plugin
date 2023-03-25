@@ -439,7 +439,7 @@ export class query extends plugin {
                     .toLocaleString("zh-CN", options)
                     .replace(/(\d{1,2})\s/, "$1日 ");
             }
-            const resMsg = `${gameName} (${originalPrice})\n\n${game.description}\n\n游戏${companies}\n${game?.url}\n将在 ${endDate} 结束免费游玩，戳上方链接领取吧~`;
+            const resMsg = `${gameName} (${originalPrice})\n\n${game.description}\n\n游戏${companies}\n链接：${game?.url || "暂无"}\n将在 ${endDate} 结束免费游玩，戳上方链接领取吧~`;
             e.reply([resMsg, ...availableImgUrl.map(url => segment.image(url))])
         }
     }
