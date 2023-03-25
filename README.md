@@ -39,7 +39,7 @@ utils -- 工具类
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 ``````
 
-2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）、TwitterAPI依赖
+2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）、哔哩哔哩总结(chatgpt-api)依赖
 
 
 ```shell
