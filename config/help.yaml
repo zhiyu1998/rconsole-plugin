@@ -21,6 +21,9 @@
     - icon: searchBook
       title: "#搜书/#bookid"
       desc: 基于zli的搜书功能
+    - icon: epic
+      title: "#epic"
+      desc: epic免费游戏查询
 - group: 工具类合集
   list:
     - icon: translate
