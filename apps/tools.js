@@ -10,7 +10,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND, BILI_DURATION } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -350,7 +350,7 @@ export class tools extends plugin {
             `简介：${desc}`;
         e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
 
-        await getDownloadUrl(url, duration > BILI_DURATION)
+        await getDownloadUrl(url)
             .then(data => {
                 this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
                     .then(_ => {

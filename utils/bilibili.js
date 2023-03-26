@@ -35,7 +35,7 @@ async function downloadBFile (url, fullFileName, progressCallback) {
         });
 }
 
-async function getDownloadUrl (url, isLargeVideo=false) {
+async function getDownloadUrl (url) {
     return axios
         .get(url, {
             headers: {
@@ -49,12 +49,11 @@ async function getDownloadUrl (url, isLargeVideo=false) {
                 data.match(/<script>window\.__playinfo__=({.*})<\/script><script>/)?.[1],
             );
             // 如果是大视频直接最低分辨率
-            const level = isLargeVideo ? (Math.min(info?.data?.dash?.video.length - 1, info?.data?.dash?.audio.length - 1)) : 0;
             const videoUrl =
-                info?.data?.dash?.video?.[level]?.baseUrl ?? info?.data?.dash?.video?.[level]?.backupUrl?.[0];
+                info?.data?.dash?.video?.[0]?.baseUrl ?? info?.data?.dash?.video?.[0]?.backupUrl?.[0];
 
             const audioUrl =
-                info?.data?.dash?.audio?.[level]?.baseUrl ?? info?.data?.dash?.audio?.[level]?.backupUrl?.[0];
+                info?.data?.dash?.audio?.[0]?.baseUrl ?? info?.data?.dash?.audio?.[0]?.backupUrl?.[0];
             const title = data.match(/title="(.*?)"/)?.[1]?.replaceAll?.(/\\|\/|:|\*|\?|"|<|>|\|/g, '');
 
 
@@ -92,7 +91,7 @@ async function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, sho
 
         return { outputFileName };
     } catch (err) {
-        throw err;
+        logger.error(err);
     }
 }
 
