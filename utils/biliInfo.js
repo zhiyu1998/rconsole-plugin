@@ -14,6 +14,7 @@ async function getVideoInfo(url) {
         return {
             title: respData.title,
             desc: respData.desc,
+            duration: respData.duration,
             dynamic: respJson.data.dynamic,
             stat: respData.stat,
             aid: respData.aid,

@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import axios from 'axios'
 import child_process from 'node:child_process'
+import util from "util";
 
-function downloadBFile (url, fullFileName, progressCallback) {
+async function downloadBFile (url, fullFileName, progressCallback) {
     return axios
         .get(url, {
             responseType: 'stream',
@@ -34,7 +35,7 @@ function downloadBFile (url, fullFileName, progressCallback) {
         });
 }
 
-function getDownloadUrl (url) {
+async function getDownloadUrl (url, isLargeVideo=false) {
     return axios
         .get(url, {
             headers: {
@@ -47,11 +48,15 @@ function getDownloadUrl (url) {
             const info = JSON.parse(
                 data.match(/<script>window\.__playinfo__=({.*})<\/script><script>/)?.[1],
             );
+            // 如果是大视频直接最低分辨率
+            const level = isLargeVideo ? (Math.min(info?.data?.dash?.video.length - 1, info?.data?.dash?.audio.length - 1)) : 0;
             const videoUrl =
-                info?.data?.dash?.video?.[0]?.baseUrl ?? info?.data?.dash?.video?.[0]?.backupUrl?.[0];
+                info?.data?.dash?.video?.[level]?.baseUrl ?? info?.data?.dash?.video?.[level]?.backupUrl?.[0];
+
             const audioUrl =
-                info?.data?.dash?.audio?.[0]?.baseUrl ?? info?.data?.dash?.audio?.[0]?.backupUrl?.[0];
+                info?.data?.dash?.audio?.[level]?.baseUrl ?? info?.data?.dash?.audio?.[level]?.backupUrl?.[0];
             const title = data.match(/title="(.*?)"/)?.[1]?.replaceAll?.(/\\|\/|:|\*|\?|"|<|>|\|/g, '');
+
 
             if (videoUrl && audioUrl) {
                 return { videoUrl, audioUrl, title };
@@ -61,9 +66,7 @@ function getDownloadUrl (url) {
         });
 }
 
-function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, shouldDelete = true) {
-    let cmd = 'ffmpeg';
-
+async function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, shouldDelete = true) {
     // 判断当前环境
     let env;
     if (process.platform === "win32") {
@@ -74,30 +77,26 @@ function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, shouldDel
             PATH: '/usr/local/bin:' + child_process.execSync('echo $PATH').toString(),
         };
     } else {
-        console.log("暂时不支持当前操作系统！")
+        logger.error("暂时不支持当前操作系统！")
     }
+    const execFile = util.promisify(child_process.execFile);
+    try {
+        const cmd = 'ffmpeg';
+        const args = ['-y', '-i', vFullFileName, '-i', aFullFileName, '-c', 'copy', outputFileName];
+        await execFile(cmd, args, { env });
 
-    return new Promise((resolve, reject) => {
-        child_process.exec(
-            `${ cmd } -y -i "${ vFullFileName }" -i "${ aFullFileName }" -c copy "${ outputFileName }"`,
-            { env },
-            err => {
-                if (shouldDelete) {
-                    fs.unlink(vFullFileName, f => f);
-                    fs.unlink(aFullFileName, f => f);
-                }
+        if (shouldDelete) {
+            await fs.promises.unlink(vFullFileName);
+            await fs.promises.unlink(aFullFileName);
+        }
 
-                if (err) {
-                    reject(err);
-                }
-
-                resolve({ outputFileName });
-            },
-        );
-    });
+        return { outputFileName };
+    } catch (err) {
+        throw err;
+    }
 }
 
-function getDynamic(dynamicId) {
+async function getDynamic(dynamicId) {
     const dynamicApi = `https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id=${dynamicId}`
     return axios.get(dynamicApi, {
         headers: {

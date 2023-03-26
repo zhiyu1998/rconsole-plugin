@@ -10,7 +10,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirsSync } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4, getDynamic } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND, BILI_DURATION } from "../utils/constant.js";
 import { getIdVideo, generateRandomStr } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -332,7 +332,7 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
-        const { title, desc, dynamic, stat, aid, cid } = videoInfo;
+        const { title, desc, duration, dynamic, stat, aid, cid } = videoInfo;
         // 视频信息
         let { view, danmaku, reply, favorite, coin, share, like } = stat;
         // 数据处理
@@ -341,7 +341,7 @@ export class tools extends plugin {
         };
         // 格式化数据
         const combineContent =
-            `点赞：${dataProcessing(like)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(
+            `\n点赞：${dataProcessing(like)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(
                 favorite,
             )} | 分享：${dataProcessing(share)}\n` +
             `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(
@@ -350,11 +350,11 @@ export class tools extends plugin {
             `简介：${desc}`;
         e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
 
-        await getDownloadUrl(url)
+        await getDownloadUrl(url, duration > BILI_DURATION)
             .then(data => {
                 this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
-                    .then(data => {
-                        e.reply(segment.video(`${path}temp.mp4`));
+                    .then(_ => {
+                       e.reply(segment.video(`${path}temp.mp4`));
                     })
                     .catch(err => {
                         logger.error(err);
@@ -966,8 +966,7 @@ export class tools extends plugin {
                 title + "-video.m4s",
                 _.throttle(
                     value =>
-                        logger.mark("download-progress", {
-                            type: "video",
+                        logger.mark("视频下载进度", {
                             data: value,
                         }),
                     1000,
@@ -978,15 +977,14 @@ export class tools extends plugin {
                 title + "-audio.m4s",
                 _.throttle(
                     value =>
-                        logger.mark("download-progress", {
-                            type: "audio",
+                        logger.mark("音频下载进度", {
                             data: value,
                         }),
                     1000,
                 ),
             ),
         ]).then(data => {
-            return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, title + ".mp4");
+            return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${title}.mp4`);
         });
     }
 
