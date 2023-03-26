@@ -18,7 +18,6 @@ import { getXB } from "../utils/x-bogus.js";
 import { getVideoInfo } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
 import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
-import { Converter } from "oicq/lib/message/index.js";
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 
 export class tools extends plugin {
