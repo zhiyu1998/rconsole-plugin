@@ -109,9 +109,6 @@ sudo apt-get install ffmpeg
 * [一杯凉](https://gitee.com/yibeiliang) 提供小程序解析冲突解决方案
 * [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
 
-## 来🐧与我们🤺
-[点击加入BUG快速反馈与交流群(🤺密码：R插件)](https://jq.qq.com/?_wv=1027&k=pTPaeueQ)
-
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
 感谢以下朋友的支持！（排名不分多少）
