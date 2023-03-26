@@ -143,7 +143,7 @@ async function downloadMp3(mp3Url, path, redirect = "manual") {
         // 补充保存文件名
         path += "/temp.mp3";
         if (fs.existsSync(path)) {
-            console.log(`视频已存在`);
+            console.log(`音频已存在`);
             fs.unlinkSync(path);
         }
         // 开始下载

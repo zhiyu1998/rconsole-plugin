@@ -2,7 +2,7 @@
 import fetch from "node-fetch";
 import axios from "axios";
 
-const BASE_URL = "http://cloud-music.pl-fe.cn";
+const BASE_URL = "http://127.0.0.1:3000";
 
 /**
  * 获取cookie

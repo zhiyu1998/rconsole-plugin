@@ -13,7 +13,7 @@ import {
     getSongDetail,
     getUserRecord,
     getCloud,
-    getCloudMusicDetail
+    getCloudMusicDetail,
 } from "../utils/netease.js";
 import { ha12store, store2ha1 } from "../utils/encrypt.js";
 import { downloadMp3 } from "../utils/common.js";
@@ -48,6 +48,14 @@ export class neteasepro extends plugin {
                 {
                     reg: "^#网易云云盘$",
                     fnc: "neteaseCloud",
+                },
+                {
+                    reg: "^#网易云云盘下载(.*)",
+                    fnc: "neteaseCloudDownload",
+                },
+                {
+                    reg: "^#网易云云盘(.*)",
+                    fnc: "neteaseCloudApplet",
                 },
                 {
                     reg: "music.163.com",
@@ -153,22 +161,62 @@ export class neteasepro extends plugin {
         if (realCookie === "") {
             return true;
         }
-        const cloudMusics = (await getCloud(realCookie)).map(async item => {
-            let music = await getSong(item.songId, realCookie)
-            let finalMusic;
-            if (music instanceof Array) {
-                music = music[0];
-                finalMusic = await this.cloudMusicPack(item, music.url);
-            } else {
-                finalMusic = await this.musicPack(music);
-            }
-            return {
-                message: segment.json(finalMusic),
-                nickname: e.sender.card || e.user_id,
-                user_id: e.user_id,
-            }
-        })
-        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(cloudMusics));
+        const cloudMusics = await (
+            await getCloud(realCookie)
+        ).map(item => `${item.songId}: ${item?.songName}-${item?.artists}`);
+        // 获取用户信息
+        const { profile } = await getLoginStatus(realCookie);
+        cloudMusics.unshift(`<${profile.nickname}> 的网易云云盘`);
+        e.reply(cloudMusics.join("\n"));
+        return true;
+    }
+
+    async neteaseCloudDownload(e) {
+        const id = e.msg.replace("#网易云云盘下载", "").trim();
+        const userInfo = await this.aopBefore(e);
+        const realCookie = userInfo.cookie;
+        if (realCookie === "") {
+            return true;
+        }
+        const music = (await getSong(id, realCookie))[0];
+        const item = (await getCloudMusicDetail(id, realCookie)).data[0];
+        const simpleSong = item.simpleSong;
+        e.reply([
+            segment.image(simpleSong?.al?.picUrl),
+            `识别：云盘音乐，${simpleSong?.name}-${simpleSong?.al?.name}`,
+        ]);
+        const downloadPath = `./data/rcmp4/${this.e.group_id || this.e.user_id}`;
+        await downloadMp3(music.url, downloadPath)
+            .then(path => {
+                Bot.acquireGfs(e.group_id).upload(
+                    fs.readFileSync(path),
+                    "/",
+                    `${simpleSong?.name}.mp3`,
+                );
+            })
+            .catch(err => {
+                console.error(`下载音乐失败，错误信息为: ${err.message}`);
+            });
+        return true;
+    }
+
+    async neteaseCloudApplet(e) {
+        const id = e.msg.replace("#网易云云盘", "").trim();
+        logger.mark(id);
+        const userInfo = await this.aopBefore(e);
+        const realCookie = userInfo.cookie;
+        if (realCookie === "") {
+            return true;
+        }
+        const music = (await getSong(id, realCookie))[0];
+        const item = (await getCloudMusicDetail(id, realCookie)).data[0];
+        logger.mark(music, item);
+        const appletMusic = {
+            message: segment.json(await this.cloudMusicPack(item, music.url)),
+            nickname: e.sender.card || e.user_id,
+            user_id: e.user_id,
+        };
+        let forwardMsg = await Bot.makeForwardMsg(appletMusic);
         await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
@@ -181,7 +229,7 @@ export class neteasepro extends plugin {
             musicUrlReg2.exec(message)?.[3] ||
             musicUrlReg.exec(message)?.[2] ||
             /id=(\d+)/.exec(message)[1];
-        const downloadPath = `./data/rcmp4/${this.e.group_id || this.e.user_id}`
+        const downloadPath = `./data/rcmp4/${this.e.group_id || this.e.user_id}`;
         // 是游客
         if (!(await redis.get(await this.getRedisKey(e.user_id)))) {
             // 是小程序
@@ -202,7 +250,11 @@ export class neteasepro extends plugin {
                 e.reply(`识别：网易云音乐，${title}`);
             }
             // 下载游客歌曲
-            downloadMp3(`https://music.163.com/song/media/outer/url?id=${id}`, downloadPath, "follow")
+            downloadMp3(
+                `https://music.163.com/song/media/outer/url?id=${id}`,
+                downloadPath,
+                "follow",
+            )
                 .then(path => {
                     Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), "/", `${id}.mp3`);
                 })
@@ -345,7 +397,7 @@ export class neteasepro extends plugin {
                 forward: true,
                 ctime: Date.now(),
             },
-        }
+        };
     }
 
     // 包装分享小程序数据
