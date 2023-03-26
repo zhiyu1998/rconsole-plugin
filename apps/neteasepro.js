@@ -12,6 +12,8 @@ import {
     getSong,
     getSongDetail,
     getUserRecord,
+    getCloud,
+    getCloudMusicDetail
 } from "../utils/netease.js";
 import { ha12store, store2ha1 } from "../utils/encrypt.js";
 import { downloadMp3 } from "../utils/common.js";
@@ -42,6 +44,10 @@ export class neteasepro extends plugin {
                 {
                     reg: "^#网易云听歌排行$",
                     fnc: "neteaseListenRank",
+                },
+                {
+                    reg: "^#网易云云盘$",
+                    fnc: "neteaseCloud",
                 },
                 {
                     reg: "music.163.com",
@@ -138,6 +144,31 @@ export class neteasepro extends plugin {
             };
         });
         let forwardMsg = await Bot.makeForwardMsg(await Promise.all(rank));
+        await e.reply(await this.musicForwardPack(forwardMsg));
+    }
+
+    async neteaseCloud(e) {
+        const userInfo = await this.aopBefore(e);
+        const realCookie = userInfo.cookie;
+        if (realCookie === "") {
+            return true;
+        }
+        const cloudMusics = (await getCloud(realCookie)).map(async item => {
+            let music = await getSong(item.songId, realCookie)
+            let finalMusic;
+            if (music instanceof Array) {
+                music = music[0];
+                finalMusic = await this.cloudMusicPack(item, music.url);
+            } else {
+                finalMusic = await this.musicPack(music);
+            }
+            return {
+                message: segment.json(finalMusic),
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }
+        })
+        let forwardMsg = await Bot.makeForwardMsg(await Promise.all(cloudMusics));
         await e.reply(await this.musicForwardPack(forwardMsg));
     }
 
@@ -285,6 +316,36 @@ export class neteasepro extends plugin {
                 }
             }, 3000);
         });
+    }
+
+    async cloudMusicPack(item, url) {
+        return {
+            app: "com.tencent.structmsg",
+            desc: "音乐",
+            view: "music",
+            ver: "0.0.0.1",
+            prompt: "[分享]" + item.songName + "-" + item.album,
+            meta: {
+                music: {
+                    app_type: 1,
+                    appid: 100495085,
+                    desc: item.artist,
+                    jumpUrl: `https://y.music.163.com/m/song?id=${item.songId}`,
+                    musicUrl: url,
+                    preview: "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
+                    sourceMsgId: "0",
+                    source_icon: "https://i.gtimg.cn/open/app_icon/00/49/50/85/100495085_100_m.png",
+                    source_url: "",
+                    tag: "网易云音乐",
+                    title: item.fileName,
+                },
+            },
+            config: {
+                type: "normal",
+                forward: true,
+                ctime: Date.now(),
+            },
+        }
     }
 
     // 包装分享小程序数据

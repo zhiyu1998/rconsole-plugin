@@ -2,7 +2,7 @@
 import fetch from "node-fetch";
 import axios from "axios";
 
-const BASE_URL = "http://cloud-music.pl-fe.cn";
+const BASE_URL = "http://127.0.0.1:3000";
 
 /**
  * 获取cookie
@@ -124,6 +124,30 @@ async function getSongDetail(ids) {
     });
 }
 
+async function getCloud(cookie) {
+    return axios({
+        url: `${BASE_URL}/user/cloud?timestamp=${Date.now()}`,
+        method: "get",
+        data: {
+            cookie,
+        },
+    }).then(resp => {
+        return resp.data.data;
+    });
+}
+
+async function getCloudMusicDetail(id, cookie) {
+    return axios({
+        url: `${BASE_URL}/user/cloud/detail?id=${id}&timestamp=${Date.now()}`,
+        method: "get",
+        data: {
+            cookie,
+        },
+    }).then(resp => {
+        return resp.data;
+    });
+}
+
 export {
     getCookies,
     getLoginStatus,
@@ -133,5 +157,7 @@ export {
     getUserRecord,
     checkMusic,
     getSong,
-    getSongDetail
+    getSongDetail,
+    getCloud,
+    getCloudMusicDetail
 };
