@@ -19,6 +19,7 @@ import { getVideoInfo } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
 import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
 import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
+import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 
 export class tools extends plugin {
     constructor() {
@@ -298,7 +299,11 @@ export class tools extends plugin {
         } else if (url.includes("www.bilibili.com")) {
             url = urlRex.exec(url)[0];
         }
-
+        // av处理
+        const matched = url.match(/(av|AV)(\w+)/);
+        if (matched) {
+            url = url.replace(matched[0], av2BV(Number(matched[2])));
+        }
         // 动态
         if (url.includes("t.bilibili.com")) {
             // 去除多余参数
@@ -819,7 +824,7 @@ export class tools extends plugin {
         const newWaitList = waitList.map(item => {
             return item + flag;
         });
-        await Promise.race(newWaitList).then(resp => {
+        await Promise.any(newWaitList).then(resp => {
             e.reply(resp);
         });
     }
