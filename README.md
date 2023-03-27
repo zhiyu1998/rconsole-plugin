@@ -89,6 +89,7 @@ sudo apt-get install ffmpeg
 ## 📦 扩展业务
 [点击体验R插件的补集（自定义回复、GPT Bing二合一回复）](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set)
 ![help](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set/raw/master/img/example.jpg)
+![help](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set/raw/master/img/gpt2.png)
 
 ## 📝 计划功能
 - [ ] YouTube解析（这个可能要🕊一久）
