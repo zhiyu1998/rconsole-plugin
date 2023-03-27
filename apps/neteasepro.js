@@ -163,11 +163,17 @@ export class neteasepro extends plugin {
         }
         const cloudMusics = await (
             await getCloud(realCookie)
-        ).map(item => `${item.songId}: ${item?.songName}-${item?.artists}`);
+        ).map(item => {
+            return {
+                message: `${item.songId}: ${item?.songName??"暂无歌曲信息"}-${item?.artist??"暂无歌手信息"}`,
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }
+        });
         // 获取用户信息
         const { profile } = await getLoginStatus(realCookie);
-        cloudMusics.unshift(`<${profile.nickname}> 的网易云云盘`);
-        e.reply(cloudMusics.join("\n"));
+        e.reply(`<${profile.nickname}> 的网易云云盘`);
+        e.reply(await Bot.makeForwardMsg(cloudMusics));
         return true;
     }
 
@@ -210,7 +216,6 @@ export class neteasepro extends plugin {
         }
         const music = (await getSong(id, realCookie))[0];
         const item = (await getCloudMusicDetail(id, realCookie)).data[0];
-        logger.mark(music, item);
         const appletMusic = {
             message: segment.json(await this.cloudMusicPack(item, music.url)),
             nickname: e.sender.card || e.user_id,
