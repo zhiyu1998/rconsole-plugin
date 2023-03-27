@@ -155,14 +155,18 @@ export class tools extends plugin {
             // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
             // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
             const headers = {
-                'accept-encoding': 'gzip, deflate, br',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-                'referer': 'https://www.douyin.com/',
-                'cookie': "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;"
+                "accept-encoding": "gzip, deflate, br",
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+                referer: "https://www.douyin.com/",
+                cookie: "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;",
             };
-            const dyApi = `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079&msToken=abL8SeUTPa9-EToD8qfC7toScSADxpg6yLh2dbNcpWHzE0bT04txM_4UwquIcRvkRb9IU8sifwgM1Kwf1Lsld81o9Irt2_yNyUbbQPSUO8EfVlZJ_78FckDFnwVBVUVK`
+            const dyApi = `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079&msToken=abL8SeUTPa9-EToD8qfC7toScSADxpg6yLh2dbNcpWHzE0bT04txM_4UwquIcRvkRb9IU8sifwgM1Kwf1Lsld81o9Irt2_yNyUbbQPSUO8EfVlZJ_78FckDFnwVBVUVK`;
             // xg参数
-            const xbParam = xBogus.sign(new URLSearchParams(new URL(dyApi).search).toString(), headers["User-Agent"]);
+            const xbParam = xBogus.sign(
+                new URLSearchParams(new URL(dyApi).search).toString(),
+                headers["User-Agent"],
+            );
             // const param = resp.data.result[0].paramsencode;
             const resDyApi = `${dyApi}&X-Bogus=${xbParam}`;
             axios
@@ -179,23 +183,16 @@ export class tools extends plugin {
                     const urlTypeCode = item.aweme_type;
                     const urlType = douyinTypeMap[urlTypeCode];
                     if (urlType === "video") {
-                        const resUrl = item.video.play_addr_h264.url_list[0]
-                        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp.mp4`
-                        axios({
-                            resUrl,
-                            method: "GET",
-                            responseType: "stream",
-                            proxy: false
-                        })
-                            .then((response) => {
-                                const writer = fs.createWriteStream(path);
-                                response.data.pipe(writer);
-                            })
-                            .then(res => {
-                                e.reply(segment.video(
-                                    path
-                                ))
-                            })
+                        const resUrl = item.video.play_addr_h264.url_list[0].replace(
+                            "http",
+                            "https",
+                        );
+                        const path = `${this.defaultPath}${
+                            this.e.group_id || this.e.user_id
+                        }/temp.mp4`;
+                        await this.downloadVideo(resUrl).then(() => {
+                            e.reply(segment.video(path));
+                        });
                     } else if (urlType === "image") {
                         // 无水印图片列表
                         let no_watermark_image_list = [];
@@ -344,9 +341,9 @@ export class tools extends plugin {
         };
         // 格式化数据
         const combineContent =
-            `\n点赞：${dataProcessing(like)} | 硬币：${dataProcessing(coin)} | 收藏：${dataProcessing(
-                favorite,
-            )} | 分享：${dataProcessing(share)}\n` +
+            `\n点赞：${dataProcessing(like)} | 硬币：${dataProcessing(
+                coin,
+            )} | 收藏：${dataProcessing(favorite)} | 分享：${dataProcessing(share)}\n` +
             `总播放量：${dataProcessing(view)} | 弹幕数量：${dataProcessing(
                 danmaku,
             )} | 评论：${dataProcessing(reply)}\n` +
@@ -357,7 +354,7 @@ export class tools extends plugin {
             .then(data => {
                 this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
                     .then(_ => {
-                       e.reply(segment.video(`${path}temp.mp4`));
+                        e.reply(segment.video(`${path}temp.mp4`));
                     })
                     .catch(err => {
                         logger.error(err);
@@ -900,7 +897,7 @@ export class tools extends plugin {
             // }
         });
         if (imgPromise.length > 0) {
-            let path = []
+            let path = [];
             const images = await Promise.all(imgPromise).then(paths => {
                 return paths.map(item => {
                     path.push(item);
