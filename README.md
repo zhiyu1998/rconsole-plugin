@@ -71,7 +71,7 @@ sudo apt-get install ffmpeg
 > 如何获取openaiApiKey？
 >
 > 1. 要有一个openai的账号（https://chat.openai.com/）
-> 2. 获取api-key参考（https://www.bilibili.com/read/cv12349604）
+> 2. 获取api-key参考（https://www.cnblogs.com/botai/p/openai_apikey.html）
 
 注：以上条件缺一不可（**SESSDATA+OpenAiApiKey+魔法**），不然无法触发
 
