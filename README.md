@@ -54,9 +54,12 @@ sudo apt-get install ffmpeg
 # 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
-4. 【可选】小程序解析仅适配了[Yoimiya/Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
+4. 【可选】小程序解析适配了：
+* 原版的衍变：[Yoimiya / Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
+* 如果你不用原神选择：[听语惊花 / Yunzai-Bot-lite](https://gitee.com/Nwflower/yunzai-bot-lite)
 
-如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
+> 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
+
 <img src="./img/example6.png" alt="小程序解析" style="zoom:50%;" />
 
 5. 【可选】对哔哩哔哩解析进行总结：需要填写openaiApiKey和哔哩哔哩的SESSDATA
@@ -106,6 +109,7 @@ sudo apt-get install ffmpeg
 ## 🔗 链接
 
 - [云崽](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
+- [云崽轻量级](https://gitee.com/Nwflower/yunzai-bot-lite)
 - [插件库](https://gitee.com/Hikari666/Yunzai-Bot-plugins-index)
 
 ## 🙏 贡献
