@@ -1,8 +1,9 @@
 <p align="center">
   <a href="https://gitee.com/kyrzy0416/rconsole-plugin">
-    <img width="200" src="./img/logo.png">
+    <img width="200" src="./img/logo.webp">
   </a>
 </p>
+
 
 <div align="center">
     <h1>R-plugin</h1>
@@ -26,11 +27,11 @@ utils -- 工具类
 
 
 ## 🧏 ‍使用实例
-![help](./img/example.png)
-![help](./img/example2.png)
-![help](./img/example3.png)
-![help](./img/example4.png)
-![help](./img/example5.png)
+![help](./img/example.webp)
+![help](./img/example2.webp)
+![help](./img/example3.webp)
+![help](./img/example4.webp)
+![help](./img/example5.webp)
 
 ## 📔 使用说明
 
@@ -60,11 +61,11 @@ sudo apt-get install ffmpeg
 
 > 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
 
-<img src="./img/example6.png" alt="小程序解析" style="zoom:50%;" />
+<img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
 
 5. 【可选】对哔哩哔哩解析进行总结：需要填写openaiApiKey和哔哩哔哩的SESSDATA
 
-<img src="./img/example7.png" alt="小程序解析" style="zoom:50%;" />
+<img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
 > 哔哩哔哩的SESSDATA？
 >
@@ -87,7 +88,7 @@ sudo apt-get install ffmpeg
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '7890' # 魔法端口`
 ## 📦 业务
-![help](./img/help.jpg)
+![help](./img/help.webp)
 
 ## 📦 扩展业务
 [点击体验R插件的补集（自定义回复、GPT Bing二合一回复）](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set)
