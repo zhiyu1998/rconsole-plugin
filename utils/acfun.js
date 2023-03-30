@@ -150,7 +150,7 @@ async function mergeAcFileToMp4(tsNames, FullFileName, outputFileName, shouldDel
         await execFile(cmd, args, { env });
 
         if (shouldDelete) {
-            await fs.promises.unlink(FullFileName);
+            fs.unlink(FullFileName, f => f);
         }
 
         return { outputFileName };
