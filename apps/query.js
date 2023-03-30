@@ -299,6 +299,10 @@ export class query extends plugin {
     // 搜书
     async searchBook(e) {
         let keyword = e.msg.replace(/#|搜书/g, "").trim();
+        if (_.isEmpty(keyword)) {
+            e.reply(`请输入书名，例如：#搜书 非暴力沟通`);
+            return true;
+        }
         const thisBookMethod = this;
         // 主要数据来源
         await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]).then(async allRes => {
@@ -323,6 +327,11 @@ export class query extends plugin {
     // 通过id搜书
     async searchBookById(e) {
         let keyword = e.msg.replace(/#bookid/, "").trim();
+        if (_.isEmpty(keyword)) {
+            e.reply(`请输入书名，例如：#搜书 12`);
+            return true;
+        }
+
         let id, source;
         if (keyword.includes(" ")) {
             [id, source] = keyword.split(" ");
