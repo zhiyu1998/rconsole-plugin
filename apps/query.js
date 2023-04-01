@@ -25,7 +25,7 @@ export class query extends plugin {
                     fnc: "doctor",
                 },
                 {
-                    reg: "^#(cat)$",
+                    reg: "^#cat$",
                     fnc: "cat",
                 },
                 {
