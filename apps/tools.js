@@ -115,8 +115,8 @@ export class tools extends plugin {
             );
             return;
         }
-        const place = msg.slice(1 + language[1].length).replaceAll("\n", " ")
-        logger.info(place)
+        const place = msg.slice(1 + language[1].length).replaceAll("\n", " ");
+        logger.info(place);
         const translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
             translateSecret: this.toolsConfig.translateSecret,
@@ -347,7 +347,7 @@ export class tools extends plugin {
 
         // 创建文件，如果不存在
         const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
-        await mkdirIfNotExists(path)
+        await mkdirIfNotExists(path);
         // 下载文件
         getDownloadUrl(url)
             .then(data => {
@@ -428,280 +428,283 @@ export class tools extends plugin {
     // 小蓝鸟解析
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
-        const _0x180069 = _0x54cc;
-        (function (_0xf84710, _0x4e489f) {
-            const _0x3170f8 = _0x54cc,
-                _0x36838f = _0xf84710();
+        const _0x2b294a = _0x2a30;
+        (function (_0x3b889f, _0xb2fbcd) {
+            const _0x2c003c = _0x2a30,
+                _0x486e9d = _0x3b889f();
             while (!![]) {
                 try {
-                    const _0x455b8b =
-                        (-parseInt(_0x3170f8(0x174, "b1&m")) / 0x1) *
-                            (parseInt(_0x3170f8(0x177, "9$z!")) / 0x2) +
-                        parseInt(_0x3170f8(0x176, "lPAJ")) / 0x3 +
-                        (-parseInt(_0x3170f8(0x14b, "KpGK")) / 0x4) *
-                            (-parseInt(_0x3170f8(0x145, "nSIq")) / 0x5) +
-                        (parseInt(_0x3170f8(0x17b, "3KBu")) / 0x6) *
-                            (parseInt(_0x3170f8(0x15b, "U27t")) / 0x7) +
-                        -parseInt(_0x3170f8(0x141, "uXVk")) / 0x8 +
-                        parseInt(_0x3170f8(0x168, "b6!e")) / 0x9 +
-                        (parseInt(_0x3170f8(0x149, "i&sQ")) / 0xa) *
-                            (parseInt(_0x3170f8(0x16f, "v4T)")) / 0xb);
-                    if (_0x455b8b === _0x4e489f) break;
-                    else _0x36838f["push"](_0x36838f["shift"]());
-                } catch (_0xc0571) {
-                    _0x36838f["push"](_0x36838f["shift"]());
+                    const _0x238c8c =
+                        (parseInt(_0x2c003c(0x196, "St*P")) / 0x1) *
+                            (-parseInt(_0x2c003c(0x189, "$#GN")) / 0x2) +
+                        (-parseInt(_0x2c003c(0x188, "n58F")) / 0x3) *
+                            (-parseInt(_0x2c003c(0x1a3, "WOCh")) / 0x4) +
+                        (-parseInt(_0x2c003c(0x18d, "i(e%")) / 0x5) *
+                            (-parseInt(_0x2c003c(0x19e, "b0CJ")) / 0x6) +
+                        parseInt(_0x2c003c(0x18c, "i(e%")) / 0x7 +
+                        (-parseInt(_0x2c003c(0x185, "a1WE")) / 0x8) *
+                            (-parseInt(_0x2c003c(0x17f, "sNWj")) / 0x9) +
+                        (parseInt(_0x2c003c(0x1a8, "(HXB")) / 0xa) *
+                            (-parseInt(_0x2c003c(0x179, "sNWj")) / 0xb) +
+                        -parseInt(_0x2c003c(0x175, "WNyv")) / 0xc;
+                    if (_0x238c8c === _0xb2fbcd) break;
+                    else _0x486e9d["push"](_0x486e9d["shift"]());
+                } catch (_0x3f707b) {
+                    _0x486e9d["push"](_0x486e9d["shift"]());
                 }
             }
-        })(_0x5b50, 0xe1a7b);
-        function _0x5b50() {
-            const _0x540237 = [
-                "6k2N5yIM772I5Bo+6jo86BID5A+a5lU/54QM772r",
-                "uWVcM3jgWQhcRSo6CaZcMLqS",
-                "W4tcSSkcxaxdRCoaE8ktCq",
-                "WP7cVHdcKa",
-                "yCkcW4Lc",
-                "xSoQW6NdMq",
-                "z37dSZjJBHqZmSopW44",
-                "gSoYFmoZ",
-                "W6KnW50OdMf9iW",
-                "fX7dNCkzW7e",
-                "WQ0BmsNdUCooW4XRwq",
-                "W642rc8i",
-                "WPlcMmogimkX",
-                "qLddOsZdMWae",
-                "W4PdWQ7cOa",
-                "WQKzmKZcH8kXWQrkFSoWWRruCW",
-                "WPa/sSobfttdOmoQWQauW67cKa",
-                "eqldISku",
-                "bxVdSa/dJa",
-                "rwpcQwWF",
-                "W499WOpcNmkJucRdG8oO",
-                "h2RdTbpdUIyqemo5bCkvW70",
-                "W7RdQHvxfNBdThf0e8oPWQtdVwy",
-                "e3bIW58Qh8ocp8kk",
-                "W6eDwc8B",
-                "WP0SW4NcNW",
-                "sCk9kCodW75QWPWbqG",
-                "WRxcUdxcNf7cS8olWOH2WQdcQa",
-                "d8krW4hdMa5TfvG",
-                "aZT3WO55",
-                "nIRcPwSKmGemi8ooW5z7",
-                "W67dNCod",
-                "WPWqW63dT8o9W5/dL8oyW6dcHd8",
-                "hIZcGCou",
-                "WPZcUdJcM17cSmolW4mkW6pdV1L8wXzDW7pcHCkfW51xWQxdJh7cI17cLSoUAsfEwCk5hLedzmk4W4X8WP3dUmoEhINdMSk1D8olnvbBmKxcJSkrhan2WO5WWO/dVvtcIcJdQCo1BJVdOCkHW6lcOKtdL8kDeCoehgxdNfZdJCoHW7emiSomFSordmoByJ1cwSkVdx1ofCoyW7dcQSk1BConW7ShimoEp8o1W43dQNBdLf3cOHfftSo5iSoChSo2xafRW6jqFs4",
-                "ht3dSdTkWOBcMmofW6XTWO5pWQBcGq",
-                "WQb3BCoxcdZdQc0",
-                "bhbIW5iJaCoppW",
-                "xdiaWQjPmSkLWR3cNCkT",
-                "bXLDW7bMWOS",
-                "xtG0FW",
-                "ehhcU8oQySolW400mehcN8o9W4bbWQzOWQqLBSogmSo/W6DvmefxsXDExCoFiSkVW4DxjCkeW5q",
-                "WPZcVXhcM1i",
-                "W6TeBG7dKa",
-                "WPm+W5W",
-                "WQf/W7u",
-                "fuNdItiTW77dVG",
-                "WQrZB8osea",
-                "wwhdH8khvW8JFeWWfCkd",
-                "tSogW6VdVHHC",
-                "WQpcRvKxAtdcOJf5fCoTWP4",
-                "W7O8rGyqeSo8",
-                "wsuIEq",
-                "bHLxW75Z",
-                "gshcPX4MWOdcTMGggYL/W5m",
-                "WRtdM8oknmk7WQeLnfq",
-                "gItcRe9SW6tdQvif",
-                "C2NdUITVqWqhiq",
-                "W7RdG8od",
-                "dvVdHYu0W7JdQmoOFa/cUh8RWR0",
+        })(_0x2d2e, 0x9d183);
+        function _0x2d2e() {
+            const _0x358dbc = [
+                "cSk4W4JcRuu",
+                "wX7cJGxdPCoKW5hcQmkJWPpcGCo3W6tdHSo1vGqdW5BdG37dKLNdTCoJgwnQlWrnWQjZW4/dPbb7W7BcNa",
+                "f8oJWOBcJq",
+                "W4euW4ldMa",
+                "k8kJWRhdHW",
+                "retdVXfAW4VcNWpcGHS",
+                "W4RcTmklaxZdJG",
+                "57YY57Mg6lYO5O2n5Aw26lAl772H6k2l6ys/6kYR7760",
+                "bqddMW",
+                "W5qCW5tdMqq",
+                "WOhcRSkCtG",
+                "p8oWq8o9W7rtW6SFfW",
+                "WRG9W7DE",
+                "WOZcPZ3dG2XGWQy",
+                "aCoAW7JdPwLKjZvcW50",
+                "WPlcUIH5WOGTeWVcQG",
+                "WOldMGfhENL7W7JcVuRcI3Gr",
+                "jCozxdPUsCk9WOq",
+                "qmoNW5xdTw5dhG",
+                "WR1Fe8oU",
+                "WR5XACkhu8kRW67cG2ldGSkEFGuW",
+                "W5hcPCkrfvBdII8VWPydxcC",
+                "WPlcVtrP",
+                "EhDbW51XzNNdOMSAW5hcHxW",
+                "WRmQWPipi8oyzNjxF2e",
+                "bsy4WQFdPxhdPCofpG",
+                "WOBcQtnG",
+                "zSkXWOPrfM7cPW",
+                "W6yHmmosjSoWWQJcK2ddT8klsIu",
+                "hqhdKa",
+                "bcOkWOqRpcJcUrjYWONdQJOxWPnYWOmqW5SGW6XBpZ3dVH4lmWBdNtBdS0SXW77cKSkjW6eMkmoma8ozqs/cUCk4kmkLrSkmkmk0sZ4SWQOOtSoalHRcLmkHW6VcRqf/WRiHi1OmbmosWOLWW67dPqLcW7HBkIBdNgW4WPiNiZ0NtSoFo8oTWORdSSooFZlcIXZdPmkDWQBdJCosWRy4W6i/lSkSWPddUIhdLmkTAmkdWORcSSkqeSkXW7vfWQe7EIldR0C",
+                "gSkzW4FcPSktWROUrXFdQe9VW6W",
+                "WOG7jflcSu7cKa",
+                "hSoVW7DRsbH8WQVcGWSB",
+                "vw0EWRLUWRVdUJVdLdPKu8o5eq",
+                "WRTsbSoSWRu",
+                "seFcGCkLnWqA",
+                "gahdK8odzGtcPd3cOW",
+                "eu1OWOhdNCkipCkG",
+                "xSkYW6VcNuTZoa",
+                "z8olWQZdQ8k3e8kxdG",
+                "W6r2W5DqFCkonNnhvwxdKCkR",
+                "WRibWRJcS8o6",
+                "u8koW63cVu1ohq",
+                "gHbMWRhdPCk9hq",
+                "WRRcIHnyka",
+                "iCkgWPT8W5hdUmooWPVdL1i",
+                "wCkSD1ldOG",
+                "WOVdO8kSde7dUcuF",
+                "W4BcMLW",
+                "hSo4nq7cQmkztSoCbmkjd8ozoa",
+                "W5JcVCkj",
+                "f8kOW5/cRa",
+                "WORdOSoxvcVcHxS4WOCWsZiE",
+                "WP7cLZVcKd/dJ3BdPgiw",
+                "as1kW60",
+                "tXPpWO/dVSkK",
+                "w0dcJmkolghdSYpcLmoHW7jTrW",
+                "xexcI8knl23dVHNcOmoXW5vWuW",
+                "mmooqYnN",
+                "WQrseSoPWQ0",
+                "BSkpkSkZ",
             ];
-            _0x5b50 = function () {
-                return _0x540237;
+            _0x2d2e = function () {
+                return _0x358dbc;
             };
-            return _0x5b50();
+            return _0x2d2e();
         }
-        function _0x54cc(_0xa954c6, _0x4697c1) {
-            const _0x5b5056 = _0x5b50();
+        const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/,
+            twitterUrl = reg[_0x2b294a(0x18a, "WNyv")](e[_0x2b294a(0x199, "i(e%")]);
+        function _0x2a30(_0x530974, _0x1c7c1a) {
+            const _0x2d2e9c = _0x2d2e();
             return (
-                (_0x54cc = function (_0x54cc91, _0x5d07c6) {
-                    _0x54cc91 = _0x54cc91 - 0x141;
-                    let _0xd8738b = _0x5b5056[_0x54cc91];
-                    if (_0x54cc["AkjwnM"] === undefined) {
-                        var _0x1556b2 = function (_0x1ab606) {
-                            const _0x39ed8f =
+                (_0x2a30 = function (_0x2a30ca, _0x37fd16) {
+                    _0x2a30ca = _0x2a30ca - 0x16d;
+                    let _0x21253e = _0x2d2e9c[_0x2a30ca];
+                    if (_0x2a30["ogixyo"] === undefined) {
+                        var _0x52d638 = function (_0x446b97) {
+                            const _0xa7d17e =
                                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=";
-                            let _0x451078 = "",
-                                _0x1dd94e = "";
+                            let _0xafdb9d = "",
+                                _0x3b71e4 = "";
                             for (
-                                let _0x7e58e1 = 0x0, _0x30fa9c, _0x19bb3e, _0x32582b = 0x0;
-                                (_0x19bb3e = _0x1ab606["charAt"](_0x32582b++));
-                                ~_0x19bb3e &&
-                                ((_0x30fa9c =
-                                    _0x7e58e1 % 0x4 ? _0x30fa9c * 0x40 + _0x19bb3e : _0x19bb3e),
-                                _0x7e58e1++ % 0x4)
-                                    ? (_0x451078 += String["fromCharCode"](
-                                          0xff & (_0x30fa9c >> ((-0x2 * _0x7e58e1) & 0x6)),
+                                let _0x183d7d = 0x0, _0x5223de, _0x246cab, _0x4cff3f = 0x0;
+                                (_0x246cab = _0x446b97["charAt"](_0x4cff3f++));
+                                ~_0x246cab &&
+                                ((_0x5223de =
+                                    _0x183d7d % 0x4 ? _0x5223de * 0x40 + _0x246cab : _0x246cab),
+                                _0x183d7d++ % 0x4)
+                                    ? (_0xafdb9d += String["fromCharCode"](
+                                          0xff & (_0x5223de >> ((-0x2 * _0x183d7d) & 0x6)),
                                       ))
                                     : 0x0
                             ) {
-                                _0x19bb3e = _0x39ed8f["indexOf"](_0x19bb3e);
+                                _0x246cab = _0xa7d17e["indexOf"](_0x246cab);
                             }
                             for (
-                                let _0x5a5fac = 0x0, _0x2e7cc4 = _0x451078["length"];
-                                _0x5a5fac < _0x2e7cc4;
-                                _0x5a5fac++
+                                let _0x22c263 = 0x0, _0x35c45b = _0xafdb9d["length"];
+                                _0x22c263 < _0x35c45b;
+                                _0x22c263++
                             ) {
-                                _0x1dd94e +=
+                                _0x3b71e4 +=
                                     "%" +
-                                    ("00" + _0x451078["charCodeAt"](_0x5a5fac)["toString"](0x10))[
+                                    ("00" + _0xafdb9d["charCodeAt"](_0x22c263)["toString"](0x10))[
                                         "slice"
                                     ](-0x2);
                             }
-                            return decodeURIComponent(_0x1dd94e);
+                            return decodeURIComponent(_0x3b71e4);
                         };
-                        const _0x22b4b3 = function (_0x40dadb, _0x57584e) {
-                            let _0x27d19f = [],
-                                _0x457f9f = 0x0,
-                                _0x435c6f,
-                                _0x46ae20 = "";
-                            _0x40dadb = _0x1556b2(_0x40dadb);
-                            let _0x3324f1;
-                            for (_0x3324f1 = 0x0; _0x3324f1 < 0x100; _0x3324f1++) {
-                                _0x27d19f[_0x3324f1] = _0x3324f1;
+                        const _0x19042c = function (_0x1a0949, _0x39973a) {
+                            let _0x13bd90 = [],
+                                _0x58b48b = 0x0,
+                                _0x52565c,
+                                _0x412ec8 = "";
+                            _0x1a0949 = _0x52d638(_0x1a0949);
+                            let _0x4766c1;
+                            for (_0x4766c1 = 0x0; _0x4766c1 < 0x100; _0x4766c1++) {
+                                _0x13bd90[_0x4766c1] = _0x4766c1;
                             }
-                            for (_0x3324f1 = 0x0; _0x3324f1 < 0x100; _0x3324f1++) {
-                                (_0x457f9f =
-                                    (_0x457f9f +
-                                        _0x27d19f[_0x3324f1] +
-                                        _0x57584e["charCodeAt"](_0x3324f1 % _0x57584e["length"])) %
+                            for (_0x4766c1 = 0x0; _0x4766c1 < 0x100; _0x4766c1++) {
+                                (_0x58b48b =
+                                    (_0x58b48b +
+                                        _0x13bd90[_0x4766c1] +
+                                        _0x39973a["charCodeAt"](_0x4766c1 % _0x39973a["length"])) %
                                     0x100),
-                                    (_0x435c6f = _0x27d19f[_0x3324f1]),
-                                    (_0x27d19f[_0x3324f1] = _0x27d19f[_0x457f9f]),
-                                    (_0x27d19f[_0x457f9f] = _0x435c6f);
+                                    (_0x52565c = _0x13bd90[_0x4766c1]),
+                                    (_0x13bd90[_0x4766c1] = _0x13bd90[_0x58b48b]),
+                                    (_0x13bd90[_0x58b48b] = _0x52565c);
                             }
-                            (_0x3324f1 = 0x0), (_0x457f9f = 0x0);
+                            (_0x4766c1 = 0x0), (_0x58b48b = 0x0);
                             for (
-                                let _0x38c7bb = 0x0;
-                                _0x38c7bb < _0x40dadb["length"];
-                                _0x38c7bb++
+                                let _0x26b7be = 0x0;
+                                _0x26b7be < _0x1a0949["length"];
+                                _0x26b7be++
                             ) {
-                                (_0x3324f1 = (_0x3324f1 + 0x1) % 0x100),
-                                    (_0x457f9f = (_0x457f9f + _0x27d19f[_0x3324f1]) % 0x100),
-                                    (_0x435c6f = _0x27d19f[_0x3324f1]),
-                                    (_0x27d19f[_0x3324f1] = _0x27d19f[_0x457f9f]),
-                                    (_0x27d19f[_0x457f9f] = _0x435c6f),
-                                    (_0x46ae20 += String["fromCharCode"](
-                                        _0x40dadb["charCodeAt"](_0x38c7bb) ^
-                                            _0x27d19f[
-                                                (_0x27d19f[_0x3324f1] + _0x27d19f[_0x457f9f]) %
+                                (_0x4766c1 = (_0x4766c1 + 0x1) % 0x100),
+                                    (_0x58b48b = (_0x58b48b + _0x13bd90[_0x4766c1]) % 0x100),
+                                    (_0x52565c = _0x13bd90[_0x4766c1]),
+                                    (_0x13bd90[_0x4766c1] = _0x13bd90[_0x58b48b]),
+                                    (_0x13bd90[_0x58b48b] = _0x52565c),
+                                    (_0x412ec8 += String["fromCharCode"](
+                                        _0x1a0949["charCodeAt"](_0x26b7be) ^
+                                            _0x13bd90[
+                                                (_0x13bd90[_0x4766c1] + _0x13bd90[_0x58b48b]) %
                                                     0x100
                                             ],
                                     ));
                             }
-                            return _0x46ae20;
+                            return _0x412ec8;
                         };
-                        (_0x54cc["pcTZCQ"] = _0x22b4b3),
-                            (_0xa954c6 = arguments),
-                            (_0x54cc["AkjwnM"] = !![]);
+                        (_0x2a30["JRXdPT"] = _0x19042c),
+                            (_0x530974 = arguments),
+                            (_0x2a30["ogixyo"] = !![]);
                     }
-                    const _0x5bec32 = _0x5b5056[0x0],
-                        _0x56d75f = _0x54cc91 + _0x5bec32,
-                        _0x3a2859 = _0xa954c6[_0x56d75f];
+                    const _0x3c9225 = _0x2d2e9c[0x0],
+                        _0x23feb1 = _0x2a30ca + _0x3c9225,
+                        _0x2be496 = _0x530974[_0x23feb1];
                     return (
-                        !_0x3a2859
-                            ? (_0x54cc["LLHmlx"] === undefined && (_0x54cc["LLHmlx"] = !![]),
-                              (_0xd8738b = _0x54cc["pcTZCQ"](_0xd8738b, _0x5d07c6)),
-                              (_0xa954c6[_0x56d75f] = _0xd8738b))
-                            : (_0xd8738b = _0x3a2859),
-                        _0xd8738b
+                        !_0x2be496
+                            ? (_0x2a30["wKJatu"] === undefined && (_0x2a30["wKJatu"] = !![]),
+                              (_0x21253e = _0x2a30["JRXdPT"](_0x21253e, _0x37fd16)),
+                              (_0x530974[_0x23feb1] = _0x21253e))
+                            : (_0x21253e = _0x2be496),
+                        _0x21253e
                     );
                 }),
-                _0x54cc(_0xa954c6, _0x4697c1)
+                _0x2a30(_0x530974, _0x1c7c1a)
             );
         }
-        const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/,
-            twitterUrl = reg[_0x180069(0x16e, "nSIq")](e[_0x180069(0x157, "3KBu")]);
-        axios["get"](_0x180069(0x154, "WR7y") + twitterUrl, {
-            headers: { "User-Agent": _0x180069(0x14d, "Te7#") },
-            httpAgent: tunnel[_0x180069(0x17c, "b1&m")]({
-                proxy: { host: this[_0x180069(0x142, "IDD2")], port: this["proxyPort"] },
+        axios["get"](_0x2b294a(0x192, "8xd3") + twitterUrl, {
+            headers: { "User-Agent": _0x2b294a(0x171, "(HXB") },
+            httpAgent: tunnel[_0x2b294a(0x1a6, "n58F")]({
+                proxy: { host: this["proxyAddr"], port: this[_0x2b294a(0x1a0, "#E4x")] },
             }),
-            httpsAgent: tunnel[_0x180069(0x15d, "uXVk")]({
-                proxy: { host: this[_0x180069(0x164, "i&sQ")], port: this["proxyPort"] },
+            httpsAgent: tunnel["httpOverHttp"]({
+                proxy: {
+                    host: this[_0x2b294a(0x19c, "8AxH")],
+                    port: this[_0x2b294a(0x178, "i(e%")],
+                },
             }),
         })
-            [_0x180069(0x15f, "!UxN")](async _0x22b4b3 => {
-                const _0x4b65cb = _0x180069,
-                    _0x1ab606 = _0x22b4b3["data"];
-                e[_0x4b65cb(0x15a, "Qh^5")](
-                    _0x4b65cb(0x167, "9$z!") + _0x1ab606[_0x4b65cb(0x175, "KpGK")],
+            [_0x2b294a(0x1a4, "ljiK")](async _0x19042c => {
+                const _0x466f71 = _0x2b294a,
+                    _0x446b97 = _0x19042c[_0x466f71(0x16d, "#E4x")];
+                e[_0x466f71(0x182, "a1WE")](
+                    "识别：小蓝鸟学习版，" + _0x446b97[_0x466f71(0x19d, "sFkZ")],
                 );
-                const _0x39ed8f =
+                const _0xa7d17e =
                     "" +
-                    this[_0x4b65cb(0x16d, "i&sQ")] +
-                    (this["e"][_0x4b65cb(0x150, "IDD2")] || this["e"]["user_id"]);
-                !fs[_0x4b65cb(0x169, "PIkh")](_0x39ed8f) && mkdirsSync(_0x39ed8f);
-                let _0x451078 = [];
-                for (let _0x30fa9c of _0x1ab606[_0x4b65cb(0x148, "]M5l")]) {
-                    if (_0x30fa9c[_0x4b65cb(0x16c, "rmIo")] === _0x4b65cb(0x156, "lPAJ"))
-                        _0x451078[_0x4b65cb(0x153, "!UxN")](
-                            this[_0x4b65cb(0x146, "Te7#")](
-                                _0x30fa9c[_0x4b65cb(0x158, "HY4H")],
-                                _0x39ed8f,
+                    this[_0x466f71(0x174, "e^@[")] +
+                    (this["e"][_0x466f71(0x1a2, "ZG#8")] || this["e"]["user_id"]);
+                await mkdirIfNotExists(_0xa7d17e);
+                let _0xafdb9d = [];
+                for (let _0x5223de of _0x446b97[_0x466f71(0x18f, "ljiK")]) {
+                    if (_0x5223de[_0x466f71(0x193, "PrCv")] === "photo")
+                        _0xafdb9d[_0x466f71(0x187, "l3ea")](
+                            this[_0x466f71(0x1a9, "8Z)x")](
+                                _0x5223de[_0x466f71(0x170, "i(e%")],
+                                _0xa7d17e,
                                 "",
                                 !![],
                             ),
                         );
                     else
-                        _0x30fa9c[_0x4b65cb(0x14c, "U27t")] === _0x4b65cb(0x170, "n0n!") &&
-                            (await this["downloadVideo"](
-                                _0x1ab606[_0x4b65cb(0x160, "%@ww")][0x0][
-                                    _0x4b65cb(0x14f, "Qh^5")
-                                ][0x0][_0x4b65cb(0x14a, "&I&8")],
+                        _0x5223de["type"] === _0x466f71(0x19a, "S%SI") &&
+                            (await this[_0x466f71(0x172, "xitm")](
+                                _0x446b97[_0x466f71(0x191, "l3ea")][0x0][
+                                    _0x466f71(0x17b, "4T^f")
+                                ][0x0][_0x466f71(0x184, "l1yR")],
                                 !![],
-                            )[_0x4b65cb(0x16b, "mMKR")](_0x19bb3e => {
-                                const _0x19d8a1 = _0x4b65cb;
-                                e[_0x19d8a1(0x143, "sqjU")](
-                                    segment[_0x19d8a1(0x155, "vy)O")](
-                                        _0x39ed8f + _0x19d8a1(0x162, "&I&8"),
-                                    ),
+                            )[_0x466f71(0x190, "7^hS")](_0x246cab => {
+                                const _0x18d3e3 = _0x466f71;
+                                e[_0x18d3e3(0x17d, "lxBO")](
+                                    segment["video"](_0xa7d17e + _0x18d3e3(0x1aa, "Qdr[")),
                                 );
                             }));
                 }
-                if (_0x451078[_0x4b65cb(0x152, "%@ww")] === 0x0) return !![];
-                let _0x1dd94e = [],
-                    _0x7e58e1 = [];
-                await Promise[_0x4b65cb(0x165, "&I&8")](_0x451078)[_0x4b65cb(0x16a, "vy)O")](
-                    _0x32582b => {
-                        const _0x4cd625 = _0x4b65cb;
-                        _0x32582b[_0x4cd625(0x15e, "3SGr")](_0x5a5fac => {
-                            const _0x588b38 = _0x4cd625;
-                            _0x7e58e1[_0x588b38(0x178, "n0n!")](_0x5a5fac),
-                                _0x1dd94e["push"]({
-                                    message: segment[_0x588b38(0x17a, "Vm^B")](
-                                        fs["readFileSync"](_0x5a5fac),
+                if (_0xafdb9d[_0x466f71(0x18b, "sNWj")] === 0x0) return !![];
+                let _0x3b71e4 = [],
+                    _0x183d7d = [];
+                await Promise[_0x466f71(0x186, "n58F")](_0xafdb9d)[_0x466f71(0x19b, "Wshq")](
+                    _0x4cff3f => {
+                        _0x4cff3f["forEach"](_0x22c263 => {
+                            const _0x49694d = _0x2a30;
+                            _0x183d7d[_0x49694d(0x195, "q#t*")](_0x22c263),
+                                _0x3b71e4[_0x49694d(0x1a7, "#E4x")]({
+                                    message: segment[_0x49694d(0x180, "XTb0")](
+                                        fs["readFileSync"](_0x22c263),
                                     ),
                                     nickname:
-                                        this["e"][_0x588b38(0x15c, "a&HU")][
-                                            _0x588b38(0x144, "3KBu")
-                                        ] || this["e"][_0x588b38(0x159, "b6!e")],
-                                    user_id: this["e"]["user_id"],
+                                        this["e"][_0x49694d(0x197, "n58F")][
+                                            _0x49694d(0x194, "S%SI")
+                                        ] || this["e"][_0x49694d(0x177, "3o)K")],
+                                    user_id: this["e"][_0x49694d(0x173, "3Kft")],
                                 });
                         });
                     },
                 ),
-                    await e[_0x4b65cb(0x172, "3SGr")](
-                        await Bot[_0x4b65cb(0x166, "b6!e")](_0x1dd94e),
+                    await e[_0x466f71(0x176, "ljiK")](
+                        await Bot[_0x466f71(0x1a5, "k90U")](_0x3b71e4),
                     ),
-                    _0x7e58e1["forEach"](_0x2e7cc4 => {
-                        const _0x9477bf = _0x4b65cb;
-                        fs[_0x9477bf(0x151, "*%iC")](_0x2e7cc4);
+                    _0x183d7d["forEach"](_0x35c45b => {
+                        const _0x4bccf3 = _0x466f71;
+                        fs[_0x4bccf3(0x19f, "WOCh")](_0x35c45b);
                     });
             })
-            [_0x180069(0x173, "YOLi")](_0x40dadb => {
-                const _0x4aa3ca = _0x180069;
-                e[_0x4aa3ca(0x179, "b1&m")]("网络连接失败，请重试！");
+            ["catch"](_0x1a0949 => {
+                const _0x5b9cf4 = _0x2b294a;
+                e[_0x5b9cf4(0x18e, "ZG#8")](_0x5b9cf4(0x198, "PrCv"));
             });
         return !![];
     }
@@ -780,14 +783,16 @@ export class tools extends plugin {
                 });
             }
             const paths = await Promise.all(imgPromise);
-            const imagesData = await Promise.all(paths.map(async (item) => {
-                const fileContent = await fs.promises.readFile(item);
-                return {
-                    message: segment.image(fileContent),
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                };
-            }));
+            const imagesData = await Promise.all(
+                paths.map(async item => {
+                    const fileContent = await fs.promises.readFile(item);
+                    return {
+                        message: segment.image(fileContent),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                }),
+            );
 
             // Reply with forward message
             e.reply(await Bot.makeForwardMsg(imagesData));
@@ -1007,7 +1012,6 @@ export class tools extends plugin {
         };
 
         if (isProxy) {
-            axiosConfig.Referer = "https://imginn.com";
             axiosConfig.httpAgent = tunnel.httpOverHttp({
                 proxy: { host: this.proxyAddr, port: this.proxyPort },
             });
