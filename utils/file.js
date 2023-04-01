@@ -1,48 +1,37 @@
 import fs from "node:fs";
-import path from "path";
 
-// 同步递归创建文件夹
-function mkdirsSync (dirname) {
-    if (fs.existsSync(dirname)) {
-        return true;
-    } else {
-        if (mkdirsSync(path.dirname(dirname))) {
-            fs.mkdirSync(dirname);
-            return true;
+/**
+ * 检查文件是否存在并且删除
+ * @param file
+ * @returns {Promise<void>}
+ */
+async function checkAndRemoveFile(file) {
+    try {
+        await fs.promises.access(file);
+        await fs.promises.unlink(file);
+        logger.mark('视频已存在');
+    } catch (err) {
+        if (err.code !== 'ENOENT') {
+            throw err;
         }
     }
 }
 
-// 递归创建目录 异步方法
-function mkdirs (dirname, callback) {
-    fs.exists(dirname, function (exists) {
-        if (exists) {
-            callback();
-        } else {
-            // console.log(path.dirname(dirname));
-            mkdirs(path.dirname(dirname), function () {
-                fs.mkdir(dirname, callback);
-            });
-        }
-    });
-}
-
 /**
- * 删除文件夹下所有问价及将文件夹下所有文件清空
- * @param {*} path
+ * 创建文件夹，如果不存在
+ * @param dir
+ * @returns {Promise<void>}
  */
-function emptyDir(path) {
-    const files = fs.readdirSync(path);
-    files.forEach(file => {
-        const filePath = `${path}/${file}`;
-        const stats = fs.statSync(filePath);
-        if (stats.isDirectory()) {
-            emptyDir(filePath);
+async function mkdirIfNotExists(dir) {
+    try {
+        await fs.promises.access(dir);
+    } catch (err) {
+        if (err.code === 'ENOENT') {
+            await fs.promises.mkdir(dir, { recursive: true });
         } else {
-            fs.unlinkSync(filePath);
-            console.log(`删除${file}文件成功`);
+            throw err;
         }
-    });
+    }
 }
 
-export { mkdirs, mkdirsSync, emptyDir }
+export { checkAndRemoveFile, mkdirIfNotExists }

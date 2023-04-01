@@ -3,7 +3,7 @@ import common from "../../../lib/common/common.js";
 import axios from "axios";
 import fs from "node:fs";
 import fetch from "node-fetch";
-import { mkdirsSync } from "./file.js";
+import { mkdirIfNotExists } from "./file.js";
 
 /**
  * 请求模板
@@ -135,11 +135,10 @@ async function downloadMp3(mp3Url, path, redirect = "manual") {
         },
         responseType: "stream",
         redirect: redirect,
-    }).then(res => {
+    }).then(async res => {
         // 如果没有目录就创建一个
-        if (!fs.existsSync(path)) {
-            mkdirsSync(path);
-        }
+        await mkdirIfNotExists(path)
+
         // 补充保存文件名
         path += "/temp.mp3";
         if (fs.existsSync(path)) {

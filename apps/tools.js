@@ -7,7 +7,7 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
-import { mkdirsSync } from "../utils/file.js";
+import { mkdirIfNotExists, checkAndRemoveFile } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
@@ -30,7 +30,7 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: "^(翻|trans)(.) (.*)$",
+                    reg: "^(翻|trans)(.*)$",
                     fnc: "trans",
                 },
                 {
@@ -109,13 +109,14 @@ export class tools extends plugin {
         const languageReg = /翻(.)/g;
         const msg = e.msg.trim();
         const language = languageReg.exec(msg);
-        if (!transMap.hasOwnProperty(language[1])) {
+        if (!(language[1] in transMap)) {
             e.reply(
                 "输入格式有误或暂不支持该语言！\n例子：翻中 China's policy has been consistent, but Japan chooses a path of mistrust, decoupling and military expansion",
             );
             return;
         }
-        const place = msg.replace(language[0], "").trim();
+        const place = msg.slice(1 + language[1].length).replaceAll("\n", " ")
+        logger.info(place)
         const translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
             translateSecret: this.toolsConfig.translateSecret,
@@ -127,15 +128,8 @@ export class tools extends plugin {
             _.isEmpty(this.toolsConfig.translateAppId) ||
             _.isEmpty(this.toolsConfig.translateSecret)
         ) {
-            try {
-                // 咕咕翻译
-                translateResult =
-                    "📝咕咕翻译：" + (await translateEngine.google(place, language[1]));
-            } catch (err) {
-                logger.error("咕咕翻译失败");
-            }
             // 腾讯交互式进行补充
-            translateResult += "\n\n🐧翻译：" + (await translateEngine.tencent(place, language[1]));
+            translateResult = await translateEngine.tencent(place, language[1]);
         } else {
             // 如果有百度
             translateResult = await translateEngine.baidu(place, language[1]);
@@ -330,10 +324,6 @@ export class tools extends plugin {
             return true;
         }
 
-        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
-        if (!fs.existsSync(path)) {
-            mkdirsSync(path);
-        }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
@@ -355,6 +345,10 @@ export class tools extends plugin {
             `简介：${desc}`;
         e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
 
+        // 创建文件，如果不存在
+        const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
+        await mkdirIfNotExists(path)
+        // 下载文件
         getDownloadUrl(url)
             .then(data => {
                 this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
@@ -715,9 +709,7 @@ export class tools extends plugin {
     // acfun解析
     async acfun(e) {
         const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/temp/`;
-        if (!fs.existsSync(path)) {
-            mkdirsSync(path);
-        }
+        await mkdirIfNotExists(path);
 
         let inputMsg = e.msg;
         // 适配手机分享：https://m.acfun.cn/v/?ac=32838812&sid=d2b0991bd6ad9c09
@@ -787,22 +779,21 @@ export class tools extends plugin {
                     imgPromise.push(this.downloadImg(item.url, downloadPath, index.toString()));
                 });
             }
-            let path = [];
-            const images = await Promise.all(imgPromise).then(paths => {
-                return paths.map(item => {
-                    path.push(item);
-                    return {
-                        message: segment.image(fs.readFileSync(item)),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    };
-                });
-            });
-            await this.reply(await Bot.makeForwardMsg(images));
-            // 清理文件
-            path.forEach(item => {
-                fs.unlinkSync(item);
-            });
+            const paths = await Promise.all(imgPromise);
+            const imagesData = await Promise.all(paths.map(async (item) => {
+                const fileContent = await fs.promises.readFile(item);
+                return {
+                    message: segment.image(fileContent),
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            }));
+
+            // Reply with forward message
+            e.reply(await Bot.makeForwardMsg(imagesData));
+
+            // Clean up files
+            await Promise.all(paths.map(item => fs.promises.unlink(item)));
         });
         return true;
     }
@@ -833,18 +824,17 @@ export class tools extends plugin {
     async clearTrash(e) {
         const directory = "./data/";
         try {
-            fs.readdir(directory, (err, files) => {
-                for (const file of files) {
-                    // 如果文件名符合规则，执行删除操作
-                    if (/^[0-9a-f]{32}$/.test(file)) {
-                        fs.unlinkSync(directory + file);
-                    }
+            const files = await fs.promises.readdir(directory);
+            for (const file of files) {
+                // 如果文件名符合规则，执行删除操作
+                if (/^[0-9a-f]{32}$/.test(file)) {
+                    await fs.promises.unlink(directory + file);
                 }
-            });
-            await e.reply(`清理完成！`);
+            }
+            e.reply(`清理完成！`);
         } catch (err) {
             logger.error(err);
-            e.reply("清理失败，重试或者自动清理即可");
+            await e.reply("清理失败，重试或者手动清理即可");
         }
     }
 
@@ -1008,33 +998,27 @@ export class tools extends plugin {
         }
         const filepath = `${dir}/${fileName}`;
         const writer = fs.createWriteStream(filepath);
-        let req;
+        const axiosConfig = {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+            responseType: "stream",
+        };
+
         if (isProxy) {
-            req = axios.get(img, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-                responseType: "stream",
-                Referer: "https://imginn.com",
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-                httpsAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
+            axiosConfig.Referer = "https://imginn.com";
+            axiosConfig.httpAgent = tunnel.httpOverHttp({
+                proxy: { host: this.proxyAddr, port: this.proxyPort },
             });
-        } else {
-            req = axios.get(img, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-                responseType: "stream",
+            axiosConfig.httpsAgent = tunnel.httpOverHttp({
+                proxy: { host: this.proxyAddr, port: this.proxyPort },
             });
         }
-        return req.then(res => {
+        try {
+            const res = await axios.get(img, axiosConfig);
             res.data.pipe(writer);
+
             return new Promise((resolve, reject) => {
                 writer.on("finish", () => {
                     writer.close(() => {
@@ -1047,7 +1031,9 @@ export class tools extends plugin {
                     });
                 });
             });
-        });
+        } catch (err) {
+            logger.error("图片下载失败");
+        }
     }
 
     /**
@@ -1063,17 +1049,21 @@ export class tools extends plugin {
             },
             timeout: 10000,
         };
-        return new Promise((resolve, reject) => {
-            axios
-                .head(url, params)
-                .then(resp => {
-                    const location = resp.request.res.responseUrl;
-                    resolve(location);
-                })
-                .catch(err => {
-                    reject(err);
-                });
-        });
+        try {
+            const resp = await axios.head(url, params);
+            const location = resp.request.res.responseUrl;
+            return location;
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+    // 提取视频下载位置
+    getGroupPathAndTarget() {
+        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        const target = `${groupPath}/temp.mp4`;
+        return { groupPath, target };
     }
 
     /**
@@ -1084,55 +1074,39 @@ export class tools extends plugin {
      * @returns {Promise<unknown>}
      */
     async downloadVideo(url, isProxy = false, headers = null) {
-        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
-        if (!fs.existsSync(groupPath)) {
-            mkdirsSync(groupPath);
-        }
-        const target = `${groupPath}/temp.mp4`;
-        // 待优化
-        if (fs.existsSync(target)) {
-            logger.mark(`视频已存在`);
-            fs.unlinkSync(target);
-        }
-        let res;
-        if (isProxy) {
-            res = await axios
-                .get(url, {
-                    headers: headers || {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                    responseType: "stream",
-                    httpAgent: tunnel.httpOverHttp({
-                        proxy: { host: this.proxyAddr, port: this.proxyPort },
-                    }),
-                    httpsAgent: tunnel.httpOverHttp({
-                        proxy: { host: this.proxyAddr, port: this.proxyPort },
-                    }),
-                })
-                .catch(err => {
-                    logger.error("下载视频发生错误！");
-                });
-        } else {
-            res = await axios
-                .get(url, {
-                    headers: headers || {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                    responseType: "stream",
-                })
-                .catch(err => {
-                    logger.error("下载视频发生错误！");
-                });
-        }
-        logger.mark(`开始下载: ${url}`);
-        const writer = fs.createWriteStream(target);
-        res.data.pipe(writer);
+        const { groupPath, target } = this.getGroupPathAndTarget.call(this);
 
-        return new Promise((resolve, reject) => {
-            writer.on("finish", () => resolve(groupPath));
-            writer.on("error", reject);
-        });
+        await mkdirIfNotExists(groupPath);
+
+        const userAgent =
+            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
+        const axiosConfig = {
+            headers: headers || { "User-Agent": userAgent },
+            responseType: "stream",
+            ...(isProxy && {
+                httpAgent: tunnel.httpOverHttp({
+                    proxy: { host: this.proxyAddr, port: this.proxyPort },
+                }),
+                httpsAgent: tunnel.httpOverHttp({
+                    proxy: { host: this.proxyAddr, port: this.proxyPort },
+                }),
+            }),
+        };
+
+        try {
+            await checkAndRemoveFile(target);
+
+            const res = await axios.get(url, axiosConfig);
+            logger.mark(`开始下载: ${url}`);
+            const writer = fs.createWriteStream(target);
+            res.data.pipe(writer);
+
+            return new Promise((resolve, reject) => {
+                writer.on("finish", () => resolve(groupPath));
+                writer.on("error", reject);
+            });
+        } catch (err) {
+            logger.error("下载视频发生错误！");
+        }
     }
 }
