@@ -176,7 +176,7 @@ export class query extends plugin {
                 },
             )
             .then(resp => {
-                // console.log(resp.data);
+                // logger.info(resp.data);
                 return resp.data.result.uri.replace("index.html", "m.html");
             })
             .then(async uri => {
@@ -254,7 +254,7 @@ export class query extends plugin {
                                 e.reply(segment.image(fs.readFileSync(filePath)));
                                 fs.unlinkSync(filePath, err => {
                                     if (err) throw err;
-                                    console.error("删除青年大学习文件失败");
+                                    logger.error("删除青年大学习文件失败");
                                 });
                             });
                     });
