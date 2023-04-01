@@ -37,7 +37,7 @@ export class query extends plugin {
                     fnc: "buyerShow",
                 },
                 {
-                    reg: "^#(累了)$",
+                    reg: "^#累了$",
                     fnc: "cospro",
                 },
                 {
@@ -45,11 +45,11 @@ export class query extends plugin {
                     fnc: "youthLearning",
                 },
                 {
-                    reg: "^#(搜书)(.*)$$",
+                    reg: "^#搜书(.*)$$",
                     fnc: "searchBook",
                 },
                 {
-                    reg: "^#(bookid)(.*)$$",
+                    reg: "^#bookid(.*)$$",
                     fnc: "searchBookById",
                 }
             ],
@@ -57,122 +57,109 @@ export class query extends plugin {
     }
 
     async doctor(e) {
-        let keyword = e.msg.replace("#医药查询", "").trim();
+        const keyword = e.msg.replace("#医药查询", "").trim();
         const url = `https://api2.dayi.org.cn/api/search2?keyword=${keyword}&pageNo=1&pageSize=10`;
-        let res = await fetch(url)
-            .then(resp => resp.json())
-            .then(resp => resp.list);
-        let msg = [];
-        for (const element of res) {
-            const title = this.removeTag(element.title);
-            const template = `
-        ${title}\n
-        标签：${element.secondTitle}\n
-        介绍：${element.introduction}
-      `;
-            // 如果完全匹配，直接响应页面
-            if (title === keyword) {
-                const browser = await puppeteer.browserInit();
-                const page = await browser.newPage();
-                await page.goto(`https://www.dayi.org.cn/drug/${element.id}`);
-                let buff = await page.screenshot({
-                    fullPage: true,
-                    type: "jpeg",
-                    omitBackground: false,
-                    quality: 90,
-                });
-                browser.close();
-                await e.reply(segment.image(buff));
-            }
-            msg.push({
-                message: { type: "text", text: `${template}` },
-                nickname: Bot.nickname,
-                user_id: Bot.user_id,
+        try {
+            const res = await fetch(url).then(resp => resp.json()).then(resp => resp.list);
+            const promises = res.map(async element => {
+                const title = this.removeTag(element.title);
+                const template = `${title}\n标签：${element.secondTitle}\n介绍：${element.introduction}`;
+
+                if (title === keyword) {
+                    const browser = await puppeteer.browserInit();
+                    const page = await browser.newPage();
+                    await page.goto(`https://www.dayi.org.cn/drug/${element.id}`);
+                    const buff = await page.screenshot({
+                        fullPage: true,
+                        type: "jpeg",
+                        omitBackground: false,
+                        quality: 90,
+                    });
+                    await e.reply(segment.image(buff));
+                    browser.close();
+                }
+
+                return {
+                    message: {
+                        type: "text",
+                        text: template
+                    },
+                    nickname: Bot.nickname,
+                    user_id: Bot.user_id
+                };
             });
+            const msg = await Promise.all(promises);
+            e.reply(await Bot.makeForwardMsg(msg))
+        } catch (err) {
+            logger.error(err);
         }
-        /** 最后回复消息 */
-        return !!this.reply(await Bot.makeForwardMsg(msg));
+        return true;
     }
 
     async cat(e) {
-        let images = [];
-        let reqRes = [
-            ...(await fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data =>
-                data.json(),
-            )),
-            ...(await fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`)
-                .then(data => data.json())
-                .then(json => json.map(item => item.url))),
-        ];
+        const [shibes, cats] = await Promise.allSettled([
+            fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data => data.json()),
+            fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`).then(data => data.json()),
+        ]);
+
+        const shibeUrls = shibes.status === "fulfilled" ? shibes.value : [];
+        const catUrls = cats.status === "fulfilled" ? cats.value.map(item => item.url) : [];
+        const reqRes = [...shibeUrls, ...catUrls];
+
         e.reply("涩图也不看了,就看猫是吧");
-        reqRes.forEach(item => {
-            images.push({
-                message: segment.image(item),
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            });
-        });
-        return !!(await this.reply(await Bot.makeForwardMsg(images)));
+
+        const images = reqRes.map(item => ({
+            message: segment.image(item),
+            nickname: this.e.sender.card || this.e.user_id,
+            user_id: this.e.user_id,
+        }));
+        e.reply(await Bot.makeForwardMsg(images));
+        return true;
     }
 
     async softwareRecommended(e) {
         // 接口
-        const pcUrl = "https://www.ghxi.com/ghapi?type=query&n=pc";
-        const andUrl = "https://www.ghxi.com/ghapi?type=query&n=and";
-        // 一起请求
-        const res = [
-            await fetch(pcUrl)
-                .then(resp => resp.json())
-                .catch(err => logger.error(err)),
-            await fetch(andUrl)
-                .then(resp => resp.json())
-                .catch(err => logger.error(err)),
+        const urls = [
+            "https://www.ghxi.com/ghapi?type=query&n=pc",
+            "https://www.ghxi.com/ghapi?type=query&n=and"
         ];
-        // 时间复杂度(n^2) 待优化
-        const msg = res.map(async recommend => {
-            return recommend.data.list.map(element => {
+        // 一起请求
+        const promises = urls.map(url =>
+            fetch(url)
+                .then(resp => resp.json())
+                .catch(err => logger.error(err))
+        );
+        const results = await Promise.allSettled(promises);
+        const msg = results
+            .filter(result => result.status === 'fulfilled') // 只保留已解决的 Promise
+            .flatMap(result => result.value.data.list.map(element => {
                 const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
                 return {
                     message: { type: "text", text: template },
                     nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
+                    user_id: e.user_id
                 };
-            });
-        });
-        await Promise.all(msg).then(res => {
-            res.forEach(async item => {
-                e.reply(await Bot.makeForwardMsg(item));
-            });
-        });
+            }));
+
+        // 异步操作
+        e.reply(await Bot.makeForwardMsg(msg));
+
         return true;
     }
 
     async buyerShow(e) {
-        // http://3650000.xyz/api/?type=img
-        // https://api.vvhan.com/api/tao
-        // https://api.uomg.com/api/rand.img3?format=json
-        // const randomIndex = Math.floor(Math.random() * urls.length);
-        // const randomElement = urls.splice(randomIndex, 1)[0];
-        const p1 = new Promise((resolve, reject) => {
-            fetch("https://api.vvhan.com/api/tao")
-                .then(resp => {
-                    return resolve(resp.url);
-                })
-                .catch(err => reject(err));
-        });
-        const p2 = new Promise((resolve, reject) => {
-            fetch("https://api.uomg.com/api/rand.img3?format=json")
-                .then(resp => resp.json())
-                .then(resp => {
-                    return resolve(resp.imgurl);
-                })
-                .catch(err => reject(err));
-        });
-        Promise.all([p1, p2]).then(res => {
-            res.forEach(item => {
-                e.reply(segment.image(item));
-            });
-        });
+        const p1 = fetch("https://api.vvhan.com/api/tao").then(resp => resp.url);
+        const p2 = fetch("https://api.uomg.com/api/rand.img3?format=json")
+            .then(resp => resp.json())
+            .then(resp => resp.imgurl);
+
+        const results = await Promise.allSettled([p1, p2]);
+        const images = results.filter(result => result.status === "fulfilled").map(result => result.value);
+
+        for (const img of images) {
+            e.reply(segment.image(img));
+        }
+
         return true;
     }
 
@@ -276,24 +263,23 @@ export class query extends plugin {
     }
 
     async cospro(e) {
+        let [res1, res2] = (await Promise.allSettled([
+            fetch("https://imgapi.cn/cos2.php?return=jsonpro").then(resp => resp.json()),
+            fetch("https://imgapi.cn/cos.php?return=jsonpro").then(resp => resp.json())
+        ]))
+            .filter(result => result.status === "fulfilled").map(result => result.value);
         let req = [
-            ...(await fetch("https://imgapi.cn/cos2.php?return=jsonpro")
-                .then(resp => resp.json())
-                .then(json => json.imgurls)),
-            ...(await fetch("https://imgapi.cn/cos.php?return=jsonpro")
-                .then(resp => resp.json())
-                .then(json => json.imgurls)),
+            ...res1.imgurls,
+            ...res2.imgurls
         ];
         e.reply("哪天克火掉一定是在这个群里面...");
-        let images = [];
-        req.forEach(item => {
-            images.push({
-                message: segment.image(encodeURI(item)),
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            });
-        });
-        return !!(await this.reply(await Bot.makeForwardMsg(images)));
+        let images = req.map(item => ({
+            message: segment.image(encodeURI(item)),
+            nickname: this.e.sender.card || this.e.user_id,
+            user_id: this.e.user_id,
+        }));
+        e.reply(await Bot.makeForwardMsg(images))
+        return true;
     }
 
     // 搜书
