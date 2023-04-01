@@ -285,30 +285,34 @@ export class query extends plugin {
     // 搜书
     async searchBook(e) {
         let keyword = e.msg.replace(/#|搜书/g, "").trim();
-        if (_.isEmpty(keyword)) {
-            e.reply(`请输入书名，例如：#搜书 非暴力沟通`);
+        if (!keyword) {
+            e.reply("请输入书名，例如：#搜书 非暴力沟通");
             return true;
         }
-        const thisBookMethod = this;
-        // 主要数据来源
-        await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]).then(async allRes => {
-            const [zHelper, yiBook] = allRes;
-            if (!_.isUndefined(yiBook) && yiBook.length > 0) {
-                await e.reply(await Bot.makeForwardMsg(yiBook));
+
+        const replyMessage = async (msg) => {
+            if (msg && msg.length > 0) {
+                await e.reply(await Bot.makeForwardMsg(msg));
             }
-            if (!_.isUndefined(zHelper) && zHelper.length > 0) {
-                await e.reply(await Bot.makeForwardMsg(zHelper));
-                await e.reply(
-                    "请选择一个你想要的ID、来源，例如：\n" +
-                        "11918807 superlib\n" +
-                        "只回复11918807 默认zlibrary\n" +
-                        "书源若不对应则回复无效链接，数字字母之间空格",
-                );
-                thisBookMethod.setContext("searchBookContext");
-            }
-        });
+        };
+
+        const [zHelper, yiBook] = await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]);
+
+        await replyMessage(yiBook);
+
+        if (zHelper && zHelper.length > 0) {
+            await replyMessage(zHelper);
+            const replyText = "请选择一个你想要的ID、来源，例如：\n" +
+                "11918807 superlib\n" +
+                "只回复11918807 默认zlibrary\n" +
+                "书源若不对应则回复无效链接，数字字母之间空格";
+            await e.reply(replyText);
+            this.setContext("searchBookContext");
+        }
+
         return true;
     }
+
 
     // 通过id搜书
     async searchBookById(e) {
