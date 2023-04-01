@@ -1,7 +1,6 @@
 import plugin from "../../../lib/plugins/plugin.js";
 import axios from "axios";
 import fs from "node:fs";
-import { segment } from "oicq";
 import {
     checkMusic,
     getCookies,

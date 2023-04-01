@@ -1,5 +1,4 @@
 // 主库
-import { segment } from "oicq";
 import fetch from "node-fetch";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";

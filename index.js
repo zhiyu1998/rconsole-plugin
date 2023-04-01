@@ -1,5 +1,8 @@
 import fs from "node:fs";
 import RConfig from "./model/index.js";
+if (!global.segment) {
+    global.segment = (await import("oicq")).segment
+}
 
 const versionData = RConfig.getConfig("version");
 

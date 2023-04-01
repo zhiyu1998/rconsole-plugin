@@ -1,7 +1,6 @@
 // 主库
 import fetch from "node-fetch";
 import fs from "node:fs";
-import { segment } from "oicq";
 // 其他库
 import axios from "axios";
 import _ from "lodash";
