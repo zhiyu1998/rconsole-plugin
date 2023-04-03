@@ -50,6 +50,10 @@ export class query extends plugin {
                 {
                     reg: "^#bookid(.*)$$",
                     fnc: "searchBookById",
+                },
+                {
+                    reg: "^#竹白(.*)",
+                    fnc: "zhubaiSearch",
                 }
             ],
         });
@@ -356,6 +360,37 @@ export class query extends plugin {
         const res = await getBookDetail(curMsg, id, source);
         await this.reply(await Bot.makeForwardMsg(res));
         this.finish("searchBookContext");
+    }
+
+    // 竹白百科
+    async zhubaiSearch(e) {
+        const keyword = e.msg.replace("#竹白", "").trim();
+        if (keyword === "") {
+            e.reply("请输入想了解的内容，例如：#竹白 javascript");
+            return true;
+        }
+        await axios.post("https://open.zhubai.wiki/a/zb/s/ep/", {
+            "content": 1,
+            "keyword": keyword
+        }, {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            }
+        }).then(async resp => {
+            const res = resp.data.data;
+            const content = await res.map(item => {
+                const {pn, pa, zn, lu, pu, pq, aa, hl } = item;
+                const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl.join("\n").replace(/<\/?font[^>]*>/g, '')}`
+                return {
+                    message: [segment.image(aa), template],
+                    nickname: this.e.sender.card || this.e.user_id,
+                    user_id: this.e.user_id,
+                }
+            })
+            e.reply(await Bot.makeForwardMsg(content));
+        })
+        return true;
     }
 
     // 删除标签

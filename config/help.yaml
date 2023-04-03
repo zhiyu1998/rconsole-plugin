@@ -21,6 +21,9 @@
     - icon: searchBook
       title: "#搜书/#bookid"
       desc: 基于zli的搜书功能
+    - icon: zhubai
+      title: "#竹白"
+      desc: 基于竹白百科的搜索
 - group: 工具类合集
   list:
     - icon: translate
