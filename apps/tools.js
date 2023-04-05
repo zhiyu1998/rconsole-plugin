@@ -280,7 +280,7 @@ export class tools extends plugin {
 
     // bilibi解析
     async bili(e) {
-        const urlRex = /(http:|https:)\/\/www.bilibili.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         // 短号处理
@@ -292,6 +292,9 @@ export class tools extends plugin {
         } else if (url.includes("www.bilibili.com")) {
             url = urlRex.exec(url)[0];
         }
+        // 补充https
+        url = url.startsWith("https://") ? url : "https://" + url;
+        logger.info(url)
         // av处理
         const matched = url.match(/(av|AV)(\w+)/);
         if (matched) {
