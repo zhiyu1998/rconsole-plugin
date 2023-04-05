@@ -294,7 +294,6 @@ export class tools extends plugin {
         }
         // 补充https
         url = url.startsWith("https://") ? url : "https://" + url;
-        logger.info(url)
         // av处理
         const matched = url.match(/(av|AV)(\w+)/);
         if (matched) {
