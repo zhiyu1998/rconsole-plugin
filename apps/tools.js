@@ -177,7 +177,7 @@ export class tools extends plugin {
                     const urlTypeCode = item.aweme_type;
                     const urlType = douyinTypeMap[urlTypeCode];
                     if (urlType === "video") {
-                        const resUrl = item.video.play_addr_h264.url_list[0].replace(
+                        const resUrl = item.video.play_addr.url_list[0].replace(
                             "http",
                             "https",
                         );
