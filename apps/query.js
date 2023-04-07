@@ -9,7 +9,7 @@ import fs from "node:fs";
 // 常量
 import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
-import { getZHelper, getYiBook, getBookDetail } from "../utils/books.js";
+import { getZHelper, getYiBook, getBookDetail, getZBook } from "../utils/books.js";
 
 export class query extends plugin {
     constructor() {
@@ -299,11 +299,12 @@ export class query extends plugin {
             }
         };
 
-        const [zHelper, yiBook] = await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]);
+        const [/*zHelper, yiBook, */zBook] = await Promise.all([/*getZHelper(e, keyword), getYiBook(e, keyword), */getZBook(e, keyword)]);
 
-        await replyMessage(yiBook);
+        // replyMessage(yiBook);
+        replyMessage(zBook);
 
-        if (zHelper && zHelper.length > 0) {
+        /*if (zHelper && zHelper.length > 0) {
             await replyMessage(zHelper);
             const replyText = "请选择一个你想要的ID、来源，例如：\n" +
                 "11918807 superlib\n" +
@@ -311,7 +312,7 @@ export class query extends plugin {
                 "书源若不对应则回复无效链接，数字字母之间空格";
             await e.reply(replyText);
             this.setContext("searchBookContext");
-        }
+        }*/
 
         return true;
     }

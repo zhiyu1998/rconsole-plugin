@@ -1,4 +1,5 @@
 import axios from "axios";
+import HttpProxyAgent from "https-proxy-agent";
 
 /**
  * 获取ZHelper的数据
@@ -158,4 +159,124 @@ async function getBookDetail(e, id, source) {
         });
 }
 
-export { getYiBook, getZHelper, getBookDetail };
+/**
+ * ZBook的下载网址
+ * @type {string[]}
+ */
+const zBookDownloadUrl = [
+    "https://cloudflare-ipfs.com/ipfs/",
+    "https://dweb.link/ipfs/",
+    "https://ipfs.io/ipfs/",
+    "https://gateway.pinata.cloud/ipfs/",
+    "https://ipfs.best-practice.se/ipfs/",
+    "https://ipfs.joaoleitao.org/ipfs/",
+];
+
+/**
+ * 获取ZBook的数据
+ * @returns {Promise<void>}
+ */
+async function getZBook(e, keyword) {
+    const sendTemplate = {
+        nickname: e.sender.card || this.e.user_id,
+        user_id: e.user_id,
+    };
+    return axios
+        .get(`https://zbook.lol/search?title=${encodeURIComponent(keyword)}&limit=100`)
+        .then(resp => {
+            return resp.data.books.map(item => {
+                const {
+                    id,
+                    title,
+                    author,
+                    publisher,
+                    extension,
+                    filesize,
+                    language,
+                    year,
+                    pages,
+                    isbn,
+                    ipfs_cid,
+                    cover,
+                } = item;
+                const bookDownloadUrls = zBookDownloadUrl.map(
+                    url =>
+                        `${url}${ipfs_cid}?filename=${encodeURIComponent(
+                            title,
+                        )}_[${language}]${author}.${extension}`,
+                );
+                // const { url, speed } = await findFastestUrl(bookDownloadUrls);
+                return {
+                    message: {
+                        type: "text",
+                        text:
+                            `${id}: <${title}>\n` +
+                            `作者：${author}\n` +
+                            `书籍类型：${extension}\n` +
+                            `出版年月：${year}\n` +
+                            `语言：${language}\n` +
+                            `页数：${pages}\n` +
+                            `ISBN：${isbn || "暂无"}\n` +
+                            `出版社：${publisher}\n` +
+                            `文件大小：${(Number(filesize) / 1024 / 1024).toFixed(2)}MB\n\n` +
+                            // `竞速下载：最快链接-${url}, 预计下载速度：${speed}\n` +
+                            `其他下载直链：${bookDownloadUrls.join("\n")}`,
+                    },
+                    ...sendTemplate,
+                };
+            });
+        });
+}
+
+async function measureDownloadSpeed(url) {
+    const startTime = performance.now();
+    const response = await fetch(url, {
+        headers: {
+            "User-Agent":
+                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+        },
+        agent: new HttpProxyAgent("http://127.0.0.1:7890"),
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error fetching ${url}: ${response.status}`);
+    }
+
+    const contentLength = response.headers.get("content-length") || 0;
+
+    // Instead of using response.buffer(), we will use response.body to read data
+    const data = [];
+    for await (const chunk of response.body) {
+        data.push(chunk);
+    }
+    const buffer = Buffer.concat(data);
+
+    const endTime = performance.now();
+    const duration = (endTime - startTime) / 1000; // in seconds
+    const speed = contentLength / 1024 / duration; // in KB/s
+
+    return {
+        url,
+        speed,
+    };
+}
+
+/**
+ * 链接竞速，暂时不做，浪费网页流量，保护接口
+ * @param urls
+ * @returns {Promise<unknown extends (object & {then(onfulfilled: infer F): any}) ? (F extends ((value: infer V, ...args: any) => any) ? Awaited<V> : never) : unknown>}
+ */
+async function findFastestUrl(urls) {
+    const promises = urls.map(url =>
+        measureDownloadSpeed(url).catch(error => {
+            console.error(error);
+            return { url, speed: 0 };
+        }),
+    );
+
+    const results = await Promise.all(promises);
+    results.sort((a, b) => b.speed - a.speed);
+    return results[0];
+}
+
+export { getYiBook, getZHelper, getBookDetail, getZBook };
