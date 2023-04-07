@@ -87,14 +87,14 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "tools.openaiApiKey",
-                    label: "OpenAI的API-KEY",
+                    field: "tools.openaiAccessToken",
+                    label: "OpenAI的AccessToken",
                     bottomHelpMessage:
-                        "如何获取参考文章：https://chatgpt.cn.obiscr.com/blog/posts/2023/How-to-get-api-key/",
+                        "ey....，先登录：https://chat.openai.com/，再复制里面的accessToken：https://chat.openai.com/api/auth/session",
                     component: "Input",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入OpenAI的API-KEY（sk.....）",
+                        placeholder: "请输入OpenAI的AccessToken（ey.....）",
                     },
                 },
             ],

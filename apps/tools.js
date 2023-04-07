@@ -17,7 +17,7 @@ import * as xBogus from "../utils/x-bogus.cjs";
 import { getVideoInfo, getDynamic } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
 import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
-import { ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
+import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 
 export class tools extends plugin {
@@ -91,16 +91,13 @@ export class tools extends plugin {
         // 加载哔哩哔哩配置
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载gpt配置
-        this.openaiApiKey = this.toolsConfig.openaiApiKey;
+        this.openaiAccessToken = this.toolsConfig.openaiAccessToken;
         // 加载gpt客户端
-        this.chatGptClient = new ChatGPTClient(this.openaiApiKey, {
-            modelOptions: {
-                model: "gpt-3.5-turbo",
-                temperature: 0,
-            },
-            proxy: this.myProxy,
-            debug: false,
-        });
+        this.chatGptClient = new ChatGPTBrowserClient({
+            reverseProxyUrl: "https://bypass.churchless.tech/api/conversation",
+            accessToken: this.openaiAccessToken,
+            model: "gpt-3.5-turbo",
+        })
     }
 
     // 翻译插件
@@ -367,7 +364,7 @@ export class tools extends plugin {
             });
 
         // 如果有ck 并且 有openai的key
-        if (this.biliSessData && this.openaiApiKey) {
+        if (this.biliSessData && this.openaiAccessToken) {
             try {
                 const prompt = await getBiliGptInputText(videoInfo, this.biliSessData);
                 const response = await this.chatGptClient.sendMessage(prompt);
