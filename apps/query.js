@@ -311,7 +311,7 @@ export class query extends plugin {
 
         // const [zHelper, yiBook] = await Promise.all([getZHelper(e, keyword), getYiBook(e, keyword)]);
         // replyMessage(yiBook);
-        const zBook = getZBook(e, safeKeyword);
+        const zBook = await getZBook(e, safeKeyword);
         await replyMessage(zBook);
 
         /*if (zHelper && zHelper.length > 0) {
