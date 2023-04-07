@@ -63,7 +63,7 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
 
-5. 【可选】对哔哩哔哩解析进行总结：需要填写openaiApiKey和哔哩哔哩的SESSDATA
+5. 【可选】对哔哩哔哩解析进行总结：需要填写accessToken和哔哩哔哩的SESSDATA
 
 <img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
@@ -74,8 +74,8 @@ sudo apt-get install ffmpeg
 
 > 如何获取openaiApiKey？
 >
-> 1. 要有一个openai的账号（https://chat.openai.com/）
-> 2. 获取api-key参考（https://www.cnblogs.com/botai/p/openai_apikey.html）
+> 1. 登陆你的openai账号：https://chat.openai.com/
+> 2. 获取accessToken：https://chat.openai.com/api/auth/session
 
 注：以上条件缺一不可（**SESSDATA+OpenAiApiKey+魔法**），不然无法触发
 
