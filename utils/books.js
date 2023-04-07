@@ -182,7 +182,7 @@ async function getZBook(e, keyword) {
         user_id: e.user_id,
     };
     return axios
-        .get(`https://zbook.lol/search?title=${encodeURIComponent(keyword)}&limit=100`)
+        .get(`https://zbook.lol/search?title=${encodeURIComponent(keyword)}&limit=20`)
         .then(resp => {
             return resp.data.books.map(item => {
                 const {
