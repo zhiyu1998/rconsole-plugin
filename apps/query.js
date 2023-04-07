@@ -9,7 +9,7 @@ import fs from "node:fs";
 // 常量
 import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
-import { getZHelper, getYiBook, getBookDetail, getZBook } from "../utils/books.js";
+import { getYiBook, getZBook } from "../utils/books.js";
 
 export class query extends plugin {
     constructor() {
@@ -299,68 +299,13 @@ export class query extends plugin {
             }
         };
 
-        const [/*zHelper, yiBook, */zBook] = await Promise.all([/*getZHelper(e, keyword), getYiBook(e, keyword), */getZBook(e, keyword)]);
-
-        // replyMessage(yiBook);
-        replyMessage(zBook);
-
-        /*if (zHelper && zHelper.length > 0) {
-            await replyMessage(zHelper);
-            const replyText = "请选择一个你想要的ID、来源，例如：\n" +
-                "11918807 superlib\n" +
-                "只回复11918807 默认zlibrary\n" +
-                "书源若不对应则回复无效链接，数字字母之间空格";
-            await e.reply(replyText);
-            this.setContext("searchBookContext");
-        }*/
-
+        // 集成易书、zBook
+        const bookList = await Promise.allSettled([getYiBook(e, keyword), getZBook(e, keyword)]);
+        bookList.filter(one => one.status === "fulfilled")
+            .map(item => {
+                replyMessage(item.value)
+            })
         return true;
-    }
-
-
-    // 通过id搜书
-    async searchBookById(e) {
-        let keyword = e.msg.replace(/#bookid/, "").trim();
-        if (_.isEmpty(keyword)) {
-            e.reply(`请输入书名，例如：#搜书 12`);
-            return true;
-        }
-
-        let id, source;
-        if (keyword.includes(" ")) {
-            [id, source] = keyword.split(" ");
-        } else {
-            id = /\d+/.exec(keyword)[0];
-            source = "";
-        }
-        const res = await getBookDetail(e, id, source);
-        await this.reply(await Bot.makeForwardMsg(res));
-    }
-
-    /**
-     * @link searchBook 的上下文
-     * @returns {Promise<void>}
-     */
-    async searchBookContext() {
-        // 当前消息
-        const curMsg = this.e;
-        // 上一个消息
-        // const preMsg = this.getContext();
-        if (!curMsg.msg) {
-            this.e.reply("请回复id和来源！");
-            return;
-        }
-        // 获取id和来源
-        let id, source;
-        if (curMsg.msg.includes(" ")) {
-            [id, source] = curMsg.msg.split(" ");
-        } else {
-            id = /\d+/.exec(curMsg.msg)[0];
-            source = "";
-        }
-        const res = await getBookDetail(curMsg, id, source);
-        await this.reply(await Bot.makeForwardMsg(res));
-        this.finish("searchBookContext");
     }
 
     // 竹白百科
