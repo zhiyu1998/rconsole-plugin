@@ -200,10 +200,12 @@ async function getZBook(e, keyword) {
                     cover,
                 } = item;
                 const bookDownloadUrls = zBookDownloadUrl.map(
-                    url =>
-                        `${url}${ipfs_cid}?filename=${encodeURIComponent(
-                            title,
-                        )}_[${language}]${author}.${extension}`,
+                    url => {
+                        const filename = `${title}_[${language}]${author}`
+                        return `${url}${ipfs_cid}?filename=${encodeURIComponent(
+                            filename
+                        )}.${extension}`
+                    }
                 );
                 // const { url, speed } = await findFastestUrl(bookDownloadUrls);
                 return {
