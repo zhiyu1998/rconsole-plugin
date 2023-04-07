@@ -2,7 +2,6 @@
 import fetch from "node-fetch";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
-import _ from "lodash";
 // http库
 import axios from "axios";
 import fs from "node:fs";
