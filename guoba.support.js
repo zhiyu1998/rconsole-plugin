@@ -87,6 +87,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.biliDuration",
+                    label: "哔哩哔哩的视频最大限制时长",
+                    bottomHelpMessage:
+                        "超过时长无法解析，保护服务器性能",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入哔哩哔哩的视频最大限制时长（默认15分钟）",
+                    },
+                },
+                {
                     field: "tools.openaiAccessToken",
                     label: "OpenAI的AccessToken",
                     bottomHelpMessage:

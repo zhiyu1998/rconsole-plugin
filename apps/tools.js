@@ -90,6 +90,8 @@ export class tools extends plugin {
         this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
         // 加载哔哩哔哩配置
         this.biliSessData = this.toolsConfig.biliSessData;
+        // 加载哔哩哔哩的限制时长
+        this.biliDuration = this.toolsConfig.biliDuration;
         // 加载gpt配置
         this.openaiAccessToken = this.toolsConfig.openaiAccessToken;
         // 加载gpt客户端
@@ -326,6 +328,11 @@ export class tools extends plugin {
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
         const { title, desc, duration, dynamic, stat, aid, cid } = videoInfo;
+        // 限制时长
+        if (duration > this.biliDuration) {
+            e.reply(`当前视频时长约：${(duration / 60).toFixed(0)}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`);
+            return true;
+        }
         // 视频信息
         let { view, danmaku, reply, favorite, coin, share, like } = stat;
         // 数据处理
