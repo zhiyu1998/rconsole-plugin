@@ -340,7 +340,7 @@ export class tools extends plugin {
         // 限制时长 & 考虑分页视频情况
         const query = querystring.parse(url);
         const curPage = query?.p || 0;
-        const curDuration = pages?.[curPage].duration || duration;
+        const curDuration = pages?.[curPage]?.duration || duration;
         const isLimitDuration = curDuration > this.biliDuration
         // 格式化数据
         const combineContent =
