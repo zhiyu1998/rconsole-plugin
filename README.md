@@ -67,7 +67,6 @@ sudo apt-get install ffmpeg
 - 需要填写accessToken
 - 及哔哩哔哩的SESSDATA
 
-<img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
 6. 【可选】增加视频的时长限制（默认15分钟(60 * 15 = 900)）：
 - 在config/tools.yaml里设置`biliDuration`
