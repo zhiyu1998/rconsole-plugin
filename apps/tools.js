@@ -353,10 +353,17 @@ export class tools extends plugin {
             `简介：${desc}`;
         let biliInfo = [`识别：哔哩哔哩：${title}`, combineContent]
         if (isLimitDuration) {
+            // 加入图片
             biliInfo.unshift(segment.image(pic))
+            // 限制视频解析
             const durationInMinutes = (pages?.[curPage].duration / 60).toFixed(0);
             biliInfo.push(`\n-----------------------限制说明-----------------------\n当前视频时长约：${durationInMinutes}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`)
             e.reply(biliInfo);
+            // 总结
+            const summary = await this.getBiliSummary(videoInfo);
+            if (summary !== "") {
+                e.reply(summary)
+            }
             return true;
         } else {
             e.reply(biliInfo);
@@ -381,18 +388,10 @@ export class tools extends plugin {
                 logger.error(err);
                 e.reply("解析失败，请重试一下");
             });
-
-        // 如果有ck 并且 有openai的key
-        if (this.biliSessData && this.openaiAccessToken) {
-            try {
-                const prompt = await getBiliGptInputText(videoInfo, this.biliSessData);
-                const response = await this.chatGptClient.sendMessage(prompt);
-                // 暂时不设计上下文
-                e.reply(response.response);
-            } catch (err) {
-                logger.error("总结失败，可能是没有弹幕或者网络问题！\n", err);
-                return true;
-            }
+        // 总结
+        const summary = await this.getBiliSummary(videoInfo);
+        if (summary !== "") {
+            e.reply(summary)
         }
         return true;
     }
@@ -1007,6 +1006,28 @@ export class tools extends plugin {
     }
 
     /**
+     * 哔哩哔哩总结
+     * @returns Promise{string}
+     * @param videoInfo
+     */
+    async getBiliSummary(videoInfo) {
+        if (this.biliSessData && this.openaiAccessToken) {
+            try {
+                const prompt = await getBiliGptInputText(videoInfo, this.biliSessData);
+
+                const response = await this.chatGptClient.sendMessage(prompt);
+                // 暂时不设计上下文
+                return response.response
+            } catch (err) {
+                logger.error("总结失败，可能是没有弹幕或者网络问题！\n", err);
+                return ""
+            }
+        } else {
+            return ""
+        }
+    }
+
+    /**
      * 下载一张网络图片(自动以url的最后一个为名字)
      * @param img
      * @param dir
@@ -1080,7 +1101,10 @@ export class tools extends plugin {
         }
     }
 
-    // 提取视频下载位置
+    /**
+     * 提取视频下载位置
+     * @returns {{groupPath: string, target: string}}
+     */
     getGroupPathAndTarget() {
         const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
         const target = `${groupPath}/temp.mp4`;
