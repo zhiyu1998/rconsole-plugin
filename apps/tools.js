@@ -361,9 +361,7 @@ export class tools extends plugin {
             e.reply(biliInfo);
             // 总结
             const summary = await this.getBiliSummary(videoInfo);
-            if (summary !== "") {
-                e.reply(summary)
-            }
+            summary && e.reply(summary);
             return true;
         } else {
             e.reply(biliInfo);
@@ -390,9 +388,7 @@ export class tools extends plugin {
             });
         // 总结
         const summary = await this.getBiliSummary(videoInfo);
-        if (summary !== "") {
-            e.reply(summary)
-        }
+        summary && e.reply(summary);
         return true;
     }
 
