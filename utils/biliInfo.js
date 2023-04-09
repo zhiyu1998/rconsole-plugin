@@ -17,6 +17,7 @@ async function getVideoInfo(url) {
                 stat: respData.stat,
                 aid: respData.aid,
                 cid: respData.pages?.[0].cid,
+                pages: respData?.pages,
         };
     });
 }

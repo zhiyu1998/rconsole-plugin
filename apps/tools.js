@@ -19,6 +19,7 @@ import { getBiliGptInputText } from "../utils/biliSummary.js";
 import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
 import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
+import querystring from "querystring";
 
 export class tools extends plugin {
     constructor() {
@@ -285,7 +286,9 @@ export class tools extends plugin {
         // 短号处理
         if (url.includes("b23.tv")) {
             const bShortUrl = bShortRex.exec(url)[0];
-            await fetch(bShortUrl).then(resp => {
+            await fetch(bShortUrl, {
+                method: "HEAD"
+            }).then(resp => {
                 url = resp.url;
             });
         } else if (url.includes("www.bilibili.com")) {
@@ -327,10 +330,13 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
-        const { title, desc, duration, dynamic, stat, aid, cid } = videoInfo;
-        // 限制时长
-        if (duration > this.biliDuration) {
-            e.reply(`当前视频时长约：${(duration / 60).toFixed(0)}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`);
+        const { title, desc, duration, dynamic, stat, aid, cid, pages } = videoInfo;
+        // 限制时长 & 考虑分页视频情况
+        const query = querystring.parse(url);
+        const curPage = query?.p || 0;
+        const curDuration = pages?.[curPage].duration || duration;
+        if (curDuration > this.biliDuration) {
+            e.reply(`当前视频时长约：${(pages?.[curPage].duration / 60).toFixed(0)}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`);
             return true;
         }
         // 视频信息
