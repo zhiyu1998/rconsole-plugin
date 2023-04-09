@@ -180,7 +180,7 @@ export class tools extends plugin {
                 curMsg.reply(prompt);
             });
         } catch (err) {
-            curMsg.reply("OCR失败")
+            curMsg.reply(" ❌OCR失败，或者存在多账号竞争回答问题！");
         } finally {
             this.finish("ocr2anythingContext")
         }
