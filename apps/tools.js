@@ -162,7 +162,6 @@ export class tools extends plugin {
                 const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
                 const wordList = ocrRst.wordslist;
                 let prompt = wordList.map(item => item.words);
-                logger.info(prompt)
                 if (this.openaiAccessToken) {
                     prompt = "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]." + prompt.join(" ")
                     const response = await this.chatGptClient.sendMessage(prompt);
