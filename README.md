@@ -72,7 +72,7 @@ sudo apt-get install ffmpeg
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
 
-> 如何获取accessToken？
+> 如何获取？
 >
 > 1. 登陆你的openai账号：https://chat.openai.com/
 > 2. 获取accessToken：https://chat.openai.com/api/auth/session
