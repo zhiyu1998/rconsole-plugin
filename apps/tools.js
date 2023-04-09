@@ -156,11 +156,6 @@ export class tools extends plugin {
     async ocr2anythingContext() {
         // 当前消息
         const curMsg = this.e;
-        // 安全性检测
-        if (curMsg.img) {
-            curMsg.reply("请发送图片！")
-            return;
-        }
         // 上一个消息
         const preMsg = this.getContext().ocr2anythingContext;
         try {
