@@ -34,7 +34,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "^#ocr$",
+                    reg: "^#(ocr|OCR)(解决|解释|优化)?$",
                     fnc: "ocr2anything",
                 },
                 {
@@ -156,19 +156,25 @@ export class tools extends plugin {
     async ocr2anythingContext() {
         // 当前消息
         const curMsg = this.e;
+        // 安全性检测
+        if (curMsg.img) {
+            curMsg.reply("请发送图片！")
+            return;
+        }
+        // 上一个消息
+        const preMsg = this.getContext().ocr2anythingContext;
         try {
             const defaultPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
             await this.downloadImg(curMsg.img, defaultPath, "temp.jpg").then(async _ => {
                 const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
                 const wordList = ocrRst.wordslist;
-                let prompt = wordList.map(item => item.words);
+                let prompt = wordList.map(item => item.words).join(" ");
                 if (this.openaiAccessToken) {
-                    prompt = "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]." + prompt.join(" ")
+                    const func = preMsg.msg.replace("#ocr", "").trim();
+                    prompt = await this.ocrStrategy(func) + prompt;
                     const response = await this.chatGptClient.sendMessage(prompt);
                     // 暂时不设计上下文
                     prompt = response.response;
-                } else {
-                    prompt = prompt.join("\n")
                 }
                 curMsg.reply(prompt);
             });
@@ -178,6 +184,24 @@ export class tools extends plugin {
             this.finish("ocr2anythingContext")
         }
         this.finish("ocr2anythingContext")
+    }
+
+    /**
+     * 图像识别调教
+     * @Link{ocr2anything} 的调教方法
+     * @return Promise{string}
+     **/
+    async ocrStrategy(keyword) {
+        switch (keyword) {
+            case "解决":
+               return "You are now a programmer, the following is an error, please tell me how to solve this error in Chinese. "
+            case "解释":
+                return "You are now a programming language expert, please tell me what the following code is doing in Chinese. "
+            case "优化":
+                return "You are now a Clean Code expert, I have the following code, please rewrite it in a cleaner and more concise way to make it easier for my colleagues to maintain the code. Also, delineation of why you want to refactor like this, so that I can add the description of the refactoring method to the Pull Request. Attach code "
+            default:
+                return "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]."
+        }
     }
 
     // 抖音解析
@@ -1079,6 +1103,7 @@ export class tools extends plugin {
             fileName = img.split("/").pop();
         }
         const filepath = `${dir}/${fileName}`;
+        await mkdirIfNotExists(dir)
         const writer = fs.createWriteStream(filepath);
         const axiosConfig = {
             headers: {
