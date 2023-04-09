@@ -22,10 +22,6 @@ import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 
 export class tools extends plugin {
-    // 构造关键字，防止超出预期的问题
-    static existsTransKey = Object.keys(transMap).join("|");
-    static existsPromptKey = Object.keys(PROMPT_MAP).join("|").slice(0, -1);
-
     constructor() {
         super({
             name: "R插件工具和学习类",
@@ -34,11 +30,11 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: `^(翻|trans)[${tools.existsTransKey}]`,
+                    reg: `^(翻|trans)[${tools.Constants.existsTransKey}]`,
                     fnc: "trans",
                 },
                 {
-                    reg: `^#(ocr|OCR)(${tools.existsPromptKey})?$`,
+                    reg: `^#(ocr|OCR)(${tools.Constants.existsPromptKey})?$`,
                     fnc: "ocr2anything",
                 },
                 {
@@ -1201,4 +1197,13 @@ export class tools extends plugin {
             logger.error("下载视频发生错误！");
         }
     }
+
+    /**
+     * 构造安全的命令
+     * @type {{existsPromptKey: string, existsTransKey: string}}
+     */
+    static Constants = {
+        existsTransKey: Object.keys(transMap).join("|"),
+        existsPromptKey: Object.keys(PROMPT_MAP).join("|").slice(0, -1),
+    };
 }
