@@ -88,7 +88,7 @@ sudo apt-get install ffmpeg
 
 > **翻译、优化外文**
 > eg. #ocr翻译
-> ![help](./img/example8.webp)
+> ![help](./img/example9.webp)
 
 ##  🐤 Q&A
 哔哩哔哩的SESSDATA？
