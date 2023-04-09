@@ -34,6 +34,10 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
+                    reg: "^#ocr$",
+                    fnc: "ocr2anything",
+                },
+                {
                     reg: "(v.douyin.com)",
                     fnc: "douyin",
                 },
@@ -135,6 +139,46 @@ export class tools extends plugin {
         }
         e.reply(translateResult.trim(), true);
         return true;
+    }
+
+    // 图像识别文字
+    async ocr2anything(e) {
+        e.reply(" 👀请发送图片")
+        this.setContext("ocr2anythingContext");
+        return true;
+    }
+
+    /**
+     * 图像识别文字核心
+     * @link{ocr2anythingContext} 的上下文
+     * @return Promise{void}
+     **/
+    async ocr2anythingContext() {
+        // 当前消息
+        const curMsg = this.e;
+        try {
+            const defaultPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
+            await this.downloadImg(curMsg.img, defaultPath, "temp.jpg").then(async _ => {
+                const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
+                const wordList = ocrRst.wordslist;
+                let prompt = wordList.map(item => item.words);
+                logger.info(prompt)
+                if (this.openaiAccessToken) {
+                    prompt = "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]." + prompt.join(" ")
+                    const response = await this.chatGptClient.sendMessage(prompt);
+                    // 暂时不设计上下文
+                    prompt = response.response;
+                } else {
+                    prompt = prompt.join("\n")
+                }
+                curMsg.reply(prompt);
+            });
+        } catch (err) {
+            curMsg.reply("OCR失败")
+        } finally {
+            this.finish("ocr2anythingContext")
+        }
+        this.finish("ocr2anythingContext")
     }
 
     // 抖音解析

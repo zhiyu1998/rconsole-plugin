@@ -64,3 +64,6 @@
     - icon: update
       title: "#R插件更新"
       desc: "进行更新R插件"
+    - icon: computer
+      title: "【实验指令】#ocr"
+      desc: "基于gpt的识图总结"
