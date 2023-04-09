@@ -63,26 +63,21 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
 
-5. 【可选】对哔哩哔哩解析进行总结：
-- 需要填写accessToken
-- 及哔哩哔哩的SESSDATA
+5. 【可选】对哔哩哔哩解析进行总结：需要填写accessToken和哔哩哔哩的SESSDATA
 
+<img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
-6. 【可选】增加视频的时长限制（默认15分钟(60 * 15 = 900)）：
-- 在config/tools.yaml里设置`biliDuration`
-- 锅巴设置
-
-哔哩哔哩的SESSDATA？
+> 哔哩哔哩的SESSDATA？
 >
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
 
-获取accessToken？
+> 如何获取openaiApiKey？
 >
 > 1. 登陆你的openai账号：https://chat.openai.com/
 > 2. 获取accessToken：https://chat.openai.com/api/auth/session
 
-> 注：以上条件缺一不可（**SESSDATA+获取accessToken**），不然无法触发
+注：以上条件缺一不可（**SESSDATA+OpenAiApiKey+魔法**），不然无法触发
 
 ##  🤺 R插件交流群
 重新开放TG交流氛围群（群内不解答任何问题，只提供交流环境）  
@@ -111,6 +106,7 @@ sudo apt-get install ffmpeg
   - [ ] 视频解析
 - [x] 哔哩哔哩总结
 - [ ] 精简工具功能冗余代码
+- [ ] 自由修改插件优先级
 - [ ] ...
 
 
@@ -152,7 +148,7 @@ sudo apt-get install ffmpeg
 |[小白白](https://gitee.com/little_White01) | 后端开发         |
 
 ## 🚀 后记
-* 文件借鉴了很多插件，精简个人认为可以精简的内容。 
-* 素材来源于网络，仅供交流学习使用 
-* 严禁用于任何商业用途和非法行为 
+* 文件借鉴了很多插件，精简个人认为可以精简的内容。
+* 素材来源于网络，仅供交流学习使用
+* 严禁用于任何商业用途和非法行为
 * 如果对你有帮助辛苦给个star，这是对我最大的鼓励
