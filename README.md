@@ -73,9 +73,6 @@ sudo apt-get install ffmpeg
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
-7. 【🧪实验性(不稳定) & 可选】基于gpt的ocr
-- 需要accessToken
-
 ##  🐤 Q&A
 哔哩哔哩的SESSDATA？
 >
