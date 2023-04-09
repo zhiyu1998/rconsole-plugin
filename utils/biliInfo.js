@@ -11,6 +11,7 @@ async function getVideoInfo(url) {
             const respData = respJson.data;
             return {
                 title: respData.title,
+                pic: respData.pic,
                 desc: respData.desc,
                 duration: respData.duration,
                 dynamic: respJson.data.dynamic,

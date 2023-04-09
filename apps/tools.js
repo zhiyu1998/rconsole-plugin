@@ -330,21 +330,18 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
-        const { title, desc, duration, dynamic, stat, aid, cid, pages } = videoInfo;
-        // 限制时长 & 考虑分页视频情况
-        const query = querystring.parse(url);
-        const curPage = query?.p || 0;
-        const curDuration = pages?.[curPage].duration || duration;
-        if (curDuration > this.biliDuration) {
-            e.reply(`当前视频时长约：${(pages?.[curPage].duration / 60).toFixed(0)}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`);
-            return true;
-        }
+        const { title, pic, desc, duration, dynamic, stat, aid, cid, pages } = videoInfo;
         // 视频信息
         let { view, danmaku, reply, favorite, coin, share, like } = stat;
         // 数据处理
         const dataProcessing = data => {
             return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
         };
+        // 限制时长 & 考虑分页视频情况
+        const query = querystring.parse(url);
+        const curPage = query?.p || 0;
+        const curDuration = pages?.[curPage].duration || duration;
+        const isLimitDuration = curDuration > this.biliDuration
         // 格式化数据
         const combineContent =
             `\n点赞：${dataProcessing(like)} | 硬币：${dataProcessing(
@@ -354,7 +351,16 @@ export class tools extends plugin {
                 danmaku,
             )} | 评论：${dataProcessing(reply)}\n` +
             `简介：${desc}`;
-        e.reply([`识别：哔哩哔哩：${title}`, combineContent]);
+        let biliInfo = [`识别：哔哩哔哩：${title}`, combineContent]
+        if (isLimitDuration) {
+            biliInfo.unshift(segment.image(pic))
+            const durationInMinutes = (pages?.[curPage].duration / 60).toFixed(0);
+            biliInfo.push(`\n-----------------------限制说明-----------------------\n当前视频时长约：${durationInMinutes}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`)
+            e.reply(biliInfo);
+            return true;
+        } else {
+            e.reply(biliInfo);
+        }
 
         // 创建文件，如果不存在
         const path = `${this.defaultPath}${this.e.group_id || this.e.user_id}/`;
