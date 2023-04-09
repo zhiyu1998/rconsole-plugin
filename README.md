@@ -63,7 +63,7 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
 
-5. 【可选】对哔哩哔哩解析进行总结：需要填写`accessToken`和哔哩哔哩的`SESSDATA`
+5. 【可选】对哔哩哔哩解析进行总结：需要填写`ey...`和哔哩哔哩的`SESSDATA`
 
 <img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
@@ -76,12 +76,12 @@ sudo apt-get install ffmpeg
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
 
-> 如何获取accessToken？
+> 如何获取ey？
 >
 > 1. 登陆你的openai账号：https://chat.openai.com/
-> 2. 获取accessToken：https://chat.openai.com/api/auth/session
+> 2. 获取ey：https://chat.openai.com/api/auth/session
 
-注：以上条件缺一不可（**SESSDATA+accessToken**），不然无法触发
+注：以上条件缺一不可（**SESSDATA+ey**），不然无法触发
 
 ##  🤺 R插件交流群
 重新开放TG交流氛围群（群内不解答任何问题，只提供交流环境）  
