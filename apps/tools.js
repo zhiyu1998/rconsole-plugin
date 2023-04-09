@@ -9,7 +9,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirIfNotExists, checkAndRemoveFile } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND, PROMPT_MAP } from "../utils/constant.js";
 import { getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -21,6 +21,10 @@ import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 
+// 构造关键字，防止超出预期的问题
+const existsTransKey = Object.keys(transMap).join("|");
+const existsPromptKey = Object.keys(PROMPT_MAP).join("|").slice(0, -1);
+
 export class tools extends plugin {
     constructor() {
         super({
@@ -30,11 +34,11 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: "^(翻|trans)(.*)$",
+                    reg: `^(翻|trans)[${existsTransKey}]`,
                     fnc: "trans",
                 },
                 {
-                    reg: "^#(ocr|OCR)(解决|解释|优化|翻译)?$",
+                    reg: `^#(ocr|OCR)(${existsPromptKey})?$`,
                     fnc: "ocr2anything",
                 },
                 {
@@ -84,7 +88,6 @@ export class tools extends plugin {
                 },
             ],
         });
-        // http://api.tuwei.space/girl
         // 配置文件
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
@@ -109,7 +112,7 @@ export class tools extends plugin {
 
     // 翻译插件
     async trans(e) {
-        const languageReg = /翻(.)/g;
+        const languageReg = /翻(.)/s;
         const msg = e.msg.trim();
         const language = languageReg.exec(msg);
         if (!(language[1] in transMap)) {
@@ -161,14 +164,17 @@ export class tools extends plugin {
         try {
             const defaultPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
             await this.downloadImg(curMsg.img, defaultPath, "temp.jpg").then(async _ => {
+                // OCR
                 const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
                 const wordList = ocrRst.wordslist;
+                // OCR结果
                 let prompt = wordList.map(item => item.words).join(" ");
                 if (this.openaiAccessToken) {
+                    // 构造输入
                     const func = preMsg.msg.replace("#ocr", "").trim();
-                    prompt = await this.ocrStrategy(func) + prompt;
+                    prompt = PROMPT_MAP[func] + prompt;
+                    // 得到结果
                     const response = await this.chatGptClient.sendMessage(prompt);
-                    // 暂时不设计上下文
                     prompt = response.response;
                 }
                 curMsg.reply(prompt);
@@ -179,26 +185,6 @@ export class tools extends plugin {
             this.finish("ocr2anythingContext")
         }
         this.finish("ocr2anythingContext")
-    }
-
-    /**
-     * 图像识别调教
-     * @Link{ocr2anything} 的调教方法
-     * @return Promise{string}
-     **/
-    async ocrStrategy(keyword) {
-        switch (keyword) {
-            case "解决":
-               return "You are now a programmer, the following is an error, please tell me how to solve this error in Chinese. "
-            case "解释":
-                return "You are now a programming language expert, please tell me what the following code is doing in Chinese. "
-            case "优化":
-                return "You are now a Clean Code expert, I have the following code, please rewrite it in a cleaner and more concise way to make it easier for my colleagues to maintain the code. Also, delineation of why you want to refactor like this, so that I can add the description of the refactoring method to the Pull Request. Attach code "
-            case "翻译":
-                return "I want you to act as an Chinese translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements, then result of Chinese translation and nothing else, do not write explanations. My first sentence is "
-            default:
-                return "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]."
-        }
     }
 
     // 抖音解析

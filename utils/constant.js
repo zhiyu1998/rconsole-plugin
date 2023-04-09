@@ -34,6 +34,14 @@ export const douyinTypeMap = {
     150: "image",
 };
 
+export const PROMPT_MAP = {
+    "解决": "You are now a programmer, the following is an error, please tell me how to solve this error in Chinese. ",
+    "解释": "You are now a programming language expert, please tell me what the following code is doing in Chinese. ",
+    "优化": "You are now a Clean Code expert, I have the following code, please rewrite it in a cleaner and more concise way to make it easier for my colleagues to maintain the code. Also, delineation of why you want to refactor like this, so that I can add the description of the refactoring method to the Pull Request. Attach code ",
+    "翻译": "I want you to act as an Chinese translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements, then result of Chinese translation and nothing else, do not write explanations. My first sentence is ",
+    "": "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]."
+}
+
 export const TEN_THOUSAND = 10000;
 
 export const CAT_LIMIT = 10;
