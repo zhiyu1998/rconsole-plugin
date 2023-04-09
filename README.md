@@ -73,7 +73,7 @@ sudo apt-get install ffmpeg
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
-##  🐤 Q&A
+## 🤟 问答
 哔哩哔哩的SESSDATA？
 >
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
