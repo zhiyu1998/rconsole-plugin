@@ -9,6 +9,8 @@ import fs from "node:fs";
 import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
 import { getZHelper, getBookDetail, getYiBook, getZBook } from "../utils/books.js";
+// 工具类
+import _ from "lodash";
 
 export class query extends plugin {
     constructor() {
