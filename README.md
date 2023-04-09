@@ -67,8 +67,8 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
-6. 【可选】增加视频的时长限制（默认15分钟）：
-- 在config/tools.yaml里设置`openaiAccessToken`
+6. 【可选】增加视频的时长限制（默认15分钟(60 * 15 = 900)）：
+- 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
 > 哔哩哔哩的SESSDATA？
