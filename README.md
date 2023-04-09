@@ -78,14 +78,17 @@ sudo apt-get install ffmpeg
 
 > **总结文章**
 > eg. #ocr
-> ![help](./img/example8.webp)
 
 > **代码解释**
 > eg. #ocr解释
-> ![help](./img/example9.webp)
+> ![help](./img/example8.webp)
 
 > **代码优化**
 > eg. #ocr优化
+
+> **翻译、优化外文**
+> eg. #ocr翻译
+> ![help](./img/example8.webp)
 
 ##  🐤 Q&A
 哔哩哔哩的SESSDATA？

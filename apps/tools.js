@@ -34,7 +34,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "^#(ocr|OCR)(解决|解释|优化)?$",
+                    reg: "^#(ocr|OCR)(解决|解释|优化|翻译)?$",
                     fnc: "ocr2anything",
                 },
                 {
@@ -194,6 +194,8 @@ export class tools extends plugin {
                 return "You are now a programming language expert, please tell me what the following code is doing in Chinese. "
             case "优化":
                 return "You are now a Clean Code expert, I have the following code, please rewrite it in a cleaner and more concise way to make it easier for my colleagues to maintain the code. Also, delineation of why you want to refactor like this, so that I can add the description of the refactoring method to the Pull Request. Attach code "
+            case "翻译":
+                return "I want you to act as an Chinese translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements, then result of Chinese translation and nothing else, do not write explanations. My first sentence is "
             default:
                 return "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]."
         }
