@@ -21,11 +21,11 @@ import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 
-// 构造关键字，防止超出预期的问题
-const existsTransKey = Object.keys(transMap).join("|");
-const existsPromptKey = Object.keys(PROMPT_MAP).join("|").slice(0, -1);
-
 export class tools extends plugin {
+    // 构造关键字，防止超出预期的问题
+    static existsTransKey = Object.keys(transMap).join("|");
+    static existsPromptKey = Object.keys(PROMPT_MAP).join("|").slice(0, -1);
+
     constructor() {
         super({
             name: "R插件工具和学习类",
@@ -34,11 +34,11 @@ export class tools extends plugin {
             priority: 500,
             rule: [
                 {
-                    reg: `^(翻|trans)[${existsTransKey}]`,
+                    reg: `^(翻|trans)[${tools.existsTransKey}]`,
                     fnc: "trans",
                 },
                 {
-                    reg: `^#(ocr|OCR)(${existsPromptKey})?$`,
+                    reg: `^#(ocr|OCR)(${tools.existsPromptKey})?$`,
                     fnc: "ocr2anything",
                 },
                 {
