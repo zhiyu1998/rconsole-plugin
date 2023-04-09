@@ -63,7 +63,9 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
 
-5. 【可选】对哔哩哔哩解析进行总结：需要填写accessToken和哔哩哔哩的SESSDATA
+5. 【可选】对哔哩哔哩解析进行总结：
+- 需要填写accessToken
+- 及哔哩哔哩的SESSDATA
 
 <img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
 
@@ -73,7 +75,17 @@ sudo apt-get install ffmpeg
 
 7. 【🧪实验性(不稳定) & 可选】基于gpt的ocr总结
 - 需要accessToken
-  ![help](./img/example8.webp)
+
+**总结文章**
+eg. #ocr
+![help](./img/example8.webp)
+
+**代码解释**
+eg. #ocr解释
+![help](./img/example9.webp)
+
+**代码优化**
+eg. #ocr优化
 
 > 哔哩哔哩的SESSDATA？
 >
