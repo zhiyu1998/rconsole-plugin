@@ -78,7 +78,6 @@ sudo apt-get install ffmpeg
 
 > **总结文章**
 > eg. #ocr
-> ![help](./img/example9.webp)
 
 > **代码解释**
 > eg. #ocr解释
@@ -89,7 +88,6 @@ sudo apt-get install ffmpeg
 
 > **翻译、优化外文**
 > eg. #ocr翻译
-> ![help](./img/example10.webp)
 
 ##  🐤 Q&A
 哔哩哔哩的SESSDATA？
