@@ -71,6 +71,10 @@ sudo apt-get install ffmpeg
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
+7. 【🧪实验性(不稳定) & 可选】基于gpt的ocr总结
+- 需要accessToken
+  ![help](./img/example8.webp)
+
 > 哔哩哔哩的SESSDATA？
 >
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
