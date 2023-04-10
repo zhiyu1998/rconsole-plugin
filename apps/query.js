@@ -309,23 +309,28 @@ export class query extends plugin {
         };
 
         // 集成易书、zBook
-        const bookList = await Promise.allSettled([getYiBook(e, keyword), getZBook(e, keyword)]);
-        bookList
-            .filter(one => one.status === "fulfilled")
-            .map(item => {
-                replyMessage(item.value);
-            });
+        try {
+            const bookList = await Promise.allSettled([getYiBook(e, keyword), getZBook(e, keyword)]);
+            bookList
+                .filter(one => one.status === "fulfilled")
+                .map(item => {
+                    replyMessage(item.value);
+                });
 
-        const zHelper = await getZHelper(e, keyword);
-        if (zHelper && zHelper.length > 0) {
-            await replyMessage(zHelper);
-            const replyText =
-                "请选择一个你想要的ID、来源，例如：\n" +
-                "11918807 superlib\n" +
-                "只回复11918807 默认zlibrary\n" +
-                "书源若不对应则回复无效链接，数字字母之间空格";
-            await e.reply(replyText);
-            this.setContext("searchBookContext");
+            const zHelper = await getZHelper(e, keyword);
+            if (zHelper && zHelper.length > 0) {
+                await replyMessage(zHelper);
+                const replyText =
+                    "请选择一个你想要的ID、来源，例如：\n" +
+                    "11918807 superlib\n" +
+                    "只回复11918807 默认zlibrary\n" +
+                    "书源若不对应则回复无效链接，数字字母之间空格";
+                await e.reply(replyText);
+                this.setContext("searchBookContext");
+            }
+        } catch (err) {
+            logger.error(err);
+            e.reply("搜书正在施工🚧");
         }
         return true;
     }
@@ -345,8 +350,14 @@ export class query extends plugin {
             id = /\d+/.exec(keyword)[0];
             source = "";
         }
-        const res = await getBookDetail(e, id, source);
-        await this.reply(await Bot.makeForwardMsg(res));
+        try {
+            const res = await getBookDetail(e, id, source);
+            await this.reply(await Bot.makeForwardMsg(res));
+        } catch (err) {
+            logger.error(err);
+            e.reply("搜书正在施工🚧");
+        }
+        return true;
     }
 
     /**
