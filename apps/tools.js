@@ -793,17 +793,18 @@ export class tools extends plugin {
 
     // 小红书解析
     async redbook(e) {
-        // 解析短号
+        // 正则说明：匹配手机链接、匹配小程序、匹配PC链接
         let msgUrl =
-            /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
-                e.msg,
-            )?.[0]
+        /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
+            e.msg,
+        )?.[0]
             || /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(
                 e.message[0].data,
             )?.[0]
             || /(http:|https:)\/\/www\.xiaohongshu\.com\/explore\/(\w+)/.exec(
                 e.msg,
             )?.[0]
+        // 解析短号
         let id;
         if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {

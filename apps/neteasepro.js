@@ -247,7 +247,7 @@ export class neteasepro extends plugin {
                 // 非小程序
                 const title = await getSongDetail(id).then(res => {
                     const song = res.songs?.[0];
-                    return song.length > 0
+                    return song?.length > 0
                         ? `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "")
                         : "暂无信息";
                 });
