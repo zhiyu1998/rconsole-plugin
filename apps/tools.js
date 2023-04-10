@@ -797,10 +797,13 @@ export class tools extends plugin {
         let msgUrl =
             /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
                 e.msg,
-            )?.[0] ||
-            /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(
+            )?.[0]
+            || /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(
                 e.message[0].data,
-            )?.[0];
+            )?.[0]
+            || /(http:|https:)\/\/www\.xiaohongshu\.com\/explore\/(\w+)/.exec(
+                e.msg,
+            )?.[0]
         let id;
         if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {
