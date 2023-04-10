@@ -4,7 +4,7 @@ import axios from "axios";
 /**
  * 获取易书下载的来源
  * @param keyword 书名
- * @returns {Promise<void>}
+ * @returns {Promise<Array>}
  */
 async function getYiBook(e, keyword) {
     const sendTemplate = {
@@ -73,7 +73,7 @@ const zBookDownloadUrl = [
 
 /**
  * 获取ZBook的数据
- * @returns {Promise<void>}
+ * @returns {Promise<Array>}
  */
 async function getZBook(e, keyword) {
     const sendTemplate = {
@@ -129,8 +129,9 @@ async function getZBook(e, keyword) {
 
 /**
  * 获取ZHelper的数据
+ * @param e
  * @param keyword
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<Array>}
  */
 async function getZHelper(e, keyword) {
     const sendTemplate = {

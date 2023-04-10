@@ -302,35 +302,31 @@ export class query extends plugin {
             return true;
         }
 
-        const replyMessage = async msg => {
-            if (msg && msg.length > 0) {
-                await e.reply(await Bot.makeForwardMsg(msg));
-            }
-        };
-
         // 集成易书、zBook
         try {
-            const bookList = await Promise.allSettled([getYiBook(e, keyword), getZBook(e, keyword)]);
-            bookList
-                .filter(one => one.status === "fulfilled")
-                .map(item => {
-                    replyMessage(item.value);
+            const bookList = await Promise.allSettled([
+                getYiBook(e, keyword),
+                getZBook(e, keyword),
+            ]);
+            // 压缩直链结果
+            const combineRet = bookList
+                .filter(item => item.status === "fulfilled" && item.value && item.value.length > 0)
+                .flatMap(item => {
+                    return item.value.flat();
                 });
-
+            await e.reply(await Bot.makeForwardMsg(combineRet));
+            // ZHelper 特殊处理
             const zHelper = await getZHelper(e, keyword);
-            if (zHelper && zHelper.length > 0) {
-                await replyMessage(zHelper);
-                const replyText =
-                    "请选择一个你想要的ID、来源，例如：\n" +
-                    "11918807 superlib\n" +
-                    "只回复11918807 默认zlibrary\n" +
-                    "书源若不对应则回复无效链接，数字字母之间空格";
-                await e.reply(replyText);
-                this.setContext("searchBookContext");
-            }
+            zHelper.unshift({
+                message: "⚠️⚠️请输入#bookid选择一个你想要的ID、来源，例如：11918807 superlib\n只回复11918807 默认zlibrary⚠️⚠️",
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            })
+            zHelper.length > 1 &&
+                e.reply(await Bot.makeForwardMsg(zHelper));
         } catch (err) {
             logger.error(err);
-            e.reply("搜书正在施工🚧");
+            e.reply("部分搜书正在施工🚧");
         }
         return true;
     }
@@ -358,32 +354,6 @@ export class query extends plugin {
             e.reply("搜书正在施工🚧");
         }
         return true;
-    }
-
-    /**
-     * @link searchBook 的上下文
-     * @returns {Promise<void>}
-     */
-    async searchBookContext() {
-        // 当前消息
-        const curMsg = this.e;
-        // 上一个消息
-        // const preMsg = this.getContext();
-        if (!curMsg.msg) {
-            this.e.reply("请回复id和来源！");
-            return;
-        }
-        // 获取id和来源
-        let id, source;
-        if (curMsg.msg.includes(" ")) {
-            [id, source] = curMsg.msg.split(" ");
-        } else {
-            id = /\d+/.exec(curMsg.msg)[0];
-            source = "";
-        }
-        const res = await getBookDetail(curMsg, id, source);
-        await this.reply(await Bot.makeForwardMsg(res));
-        this.finish("searchBookContext");
     }
 
     // 竹白百科
