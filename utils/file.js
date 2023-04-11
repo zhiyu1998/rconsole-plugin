@@ -57,7 +57,6 @@ async function deleteFolderRecursive(folderPath) {
         });
 
         await Promise.allSettled(actions);
-        await fs.promises.rmdir(folderPath);
         return files.length;
     } catch (error) {
         logger.error(error);
