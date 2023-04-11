@@ -51,7 +51,7 @@ export default class TokenBucket {
             this.capacity = newCapacity;
             this.tokens = newCapacity;
         } else {
-            throw new Error('New capacity cannot be less than current tokens');
+            throw new Error('分配少于当前的容量！');
         }
     }
 }
