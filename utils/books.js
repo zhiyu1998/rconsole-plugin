@@ -178,7 +178,7 @@ async function getZHelper(e, keyword) {
  * @param e
  * @param id
  * @param source
- * @returns {Promise<AxiosResponse<any>>}
+ * @returns {Promise<Array>}
  */
 async function getBookDetail(e, id, source) {
     return axios
@@ -215,8 +215,8 @@ async function getBookDetail(e, id, source) {
             const cleverPass = `https://rapidupload.1kbtool.com/${reqUrl}`;
             const cleverPass2 = `https://rulite.1kbtool.com/${reqUrl}`;
             return [
-                `Libgen：${Libgen}`,
-                `ipfs：${ipfs}`,
+                // `Libgen：${Libgen}`,
+                // `ipfs：${ipfs}`,
                 `秒传：${cleverPass}`,
                 `秒传Lite：${cleverPass2}`,
             ].map(item => {

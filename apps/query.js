@@ -344,7 +344,7 @@ export class query extends plugin {
     async searchBookById(e) {
         let keyword = e.msg.replace(/#bookid/, "").trim();
         if (_.isEmpty(keyword)) {
-            e.reply(`请输入书名，例如：#搜书 12`);
+            e.reply(`请输入书名，例如：#bookid 13366067`);
             return true;
         }
 
@@ -357,7 +357,7 @@ export class query extends plugin {
         }
         try {
             const res = await getBookDetail(e, id, source);
-            await this.reply(await Bot.makeForwardMsg(res));
+            e.reply(await Bot.makeForwardMsg(res));
         } catch (err) {
             logger.error(err);
             e.reply("搜书正在施工🚧");
