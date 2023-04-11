@@ -903,7 +903,7 @@ export class tools extends plugin {
             const rTempFileLen = await deleteFolderRecursive(this.toolsConfig.defaultPath)
             e.reply(
                 `数据统计：\n`+
-                `- 当前清理了${dataDirectory}下垃总计：${dataClearFileLen} 个垃圾文件\n`+
+                `- 当前清理了${dataDirectory}下总计：${dataClearFileLen} 个垃圾文件\n`+
                 `- 当前清理了${ this.toolsConfig.defaultPath}下文件夹：${rTempFileLen} 个群的所有临时文件`
             );
         } catch (err) {
