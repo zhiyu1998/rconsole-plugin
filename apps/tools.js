@@ -163,16 +163,16 @@ export class tools extends plugin {
                 const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
                 const wordList = ocrRst.wordslist;
                 // OCR结果
-                let prompt = wordList.map(item => item.words).join(" ");
+                let OCRInfo = wordList.map(item => item.words).join(" ");
                 if (this.openaiAccessToken) {
                     // 构造输入
                     const func = preMsg.msg.replace("#ocr", "").trim();
-                    prompt = PROMPT_MAP[func] + prompt;
+                    const prompt = PROMPT_MAP[func] + OCRInfo;
                     // 得到结果
                     const response = await this.chatGptClient.sendMessage(prompt);
-                    prompt = response.response;
+                    OCRInfo = `${OCRInfo}\n-----------------\n${response.response}`;
                 }
-                curMsg.reply(prompt);
+                curMsg.reply(OCRInfo);
             });
         } catch (err) {
             curMsg.reply(" ❌OCR失败，或者存在多账号竞争回答问题！");
