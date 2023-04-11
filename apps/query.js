@@ -11,6 +11,7 @@ import { CAT_LIMIT } from "../utils/constant.js";
 import { getZHelper, getBookDetail, getYiBook, getZBook } from "../utils/books.js";
 // 工具类
 import _ from "lodash";
+import TokenBucket from '../utils/token-bucket.js'
 
 export class query extends plugin {
     constructor() {
@@ -55,6 +56,10 @@ export class query extends plugin {
                 {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
+                },
+                {
+                    reg: "^#测试",
+                    fnc: "test1",
                 },
             ],
         });
@@ -303,40 +308,43 @@ export class query extends plugin {
         }
 
         // 集成易书、zBook
-        try {
-            const bookList = await Promise.allSettled([
-                getYiBook(e, keyword),
-                getZBook(e, keyword),
-            ]);
-            // 压缩直链结果
-            const combineRet = bookList
-                .filter(item => item.status === "fulfilled" && item.value && item.value.length > 0)
-                .flatMap(item => {
-                    return item.value.flat();
-                });
-            await e.reply(await Bot.makeForwardMsg(combineRet));
-            // ZHelper 特殊处理
-            const zHelper = await getZHelper(e, keyword);
-            zHelper.unshift({
-                message: "回复格式如下\n" +
-                    "#bookid➕id➕来源\n" +
-                    "\n" +
-                    "示例⬇️\n" +
-                    "#bookid 13366067 superlib \n" +
-                    "\n" +
-                    "注意‼️\n" +
-                    "1⃣️数字字母之间空格\n" +
-                    "2⃣️id就是每条介绍最前面那串短数字不是isbn号\n" +
-                    "3⃣️注意看书籍来源，只回复#bookid ➕id 默认来源zlibrary ",
-                nickname: e.sender.card || e.user_id,
-                user_id: e.user_id,
-            })
-            zHelper.length > 1 &&
+        const searchBookFunc = async () => {
+            try {
+                const bookList = await Promise.allSettled([
+                    getYiBook(e, keyword),
+                    getZBook(e, keyword),
+                ]);
+                // 压缩直链结果
+                const combineRet = bookList
+                    .filter(item => item.status === "fulfilled" && item.value && item.value.length > 0)
+                    .flatMap(item => {
+                        return item.value.flat();
+                    });
+                await e.reply(await Bot.makeForwardMsg(combineRet));
+                // ZHelper 特殊处理
+                const zHelper = await getZHelper(e, keyword);
+                zHelper.unshift({
+                    message: "回复格式如下\n" +
+                        "#bookid➕id➕来源\n" +
+                        "\n" +
+                        "示例⬇️\n" +
+                        "#bookid 13366067 superlib \n" +
+                        "\n" +
+                        "注意‼️\n" +
+                        "1⃣️数字字母之间空格\n" +
+                        "2⃣️id就是每条介绍最前面那串短数字不是isbn号\n" +
+                        "3⃣️注意看书籍来源，只回复#bookid ➕id 默认来源zlibrary ",
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                })
+                zHelper.length > 1 &&
                 e.reply(await Bot.makeForwardMsg(zHelper));
-        } catch (err) {
-            logger.error(err);
-            e.reply("部分搜书正在施工🚧");
+            } catch (err) {
+                logger.error(err);
+                e.reply("部分搜书正在施工🚧");
+            }
         }
+        await this.limitUserUse(e, searchBookFunc);
         return true;
     }
 
@@ -355,13 +363,15 @@ export class query extends plugin {
             id = /\d+/.exec(keyword)[0];
             source = "";
         }
-        try {
-            const res = await getBookDetail(e, id, source);
-            e.reply(await Bot.makeForwardMsg(res));
-        } catch (err) {
-            logger.error(err);
-            e.reply("搜书正在施工🚧");
-        }
+        await this.limitUserUse(e, async () => {
+            try {
+                const res = await getBookDetail(e, id, source);
+                e.reply(await Bot.makeForwardMsg(res));
+            } catch (err) {
+                logger.error(err);
+                e.reply("搜书正在施工🚧");
+            }
+        })
         return true;
     }
 
@@ -404,9 +414,29 @@ export class query extends plugin {
         return true;
     }
 
+    /**
+     * 限制用户调用（默认1分钟1次）
+     * @param e
+     * @param func
+     * @return {Promise<void>}
+     */
+    async limitUserUse(e, func) {
+        if (query.#tokenBucket.consume(e.user_id, 1)) {
+            await func();
+        } else {
+            e.reply(`🙅‍${e.nickname}你已经被限流，请稍后再试！`, true);
+        }
+    }
+
     // 删除标签
     removeTag(title) {
         const titleRex = /<[^>]+>/g;
         return title.replace(titleRex, "");
     }
+
+    /**
+     * 令牌桶 拿来限流
+     * @type {TokenBucket}
+     */
+    static #tokenBucket = new TokenBucket(1, 1);
 }
