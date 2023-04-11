@@ -318,7 +318,16 @@ export class query extends plugin {
             // ZHelper 特殊处理
             const zHelper = await getZHelper(e, keyword);
             zHelper.unshift({
-                message: "⚠️⚠️请输入#bookid选择一个你想要的ID、来源，例如：11918807 superlib\n只回复11918807 默认zlibrary⚠️⚠️",
+                message: "回复格式如下\n" +
+                    "#bookid➕id➕来源\n" +
+                    "\n" +
+                    "示例⬇️\n" +
+                    "#bookid 13366067 superlib \n" +
+                    "\n" +
+                    "注意‼️\n" +
+                    "1⃣️数字字母之间空格\n" +
+                    "2⃣️id就是每条介绍最前面那串短数字不是isbn号\n" +
+                    "3⃣️注意看书籍来源，只回复#bookid ➕id 默认来源zlibrary ",
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
             })
