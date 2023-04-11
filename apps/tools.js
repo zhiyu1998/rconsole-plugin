@@ -117,8 +117,7 @@ export class tools extends plugin {
             );
             return;
         }
-        const place = msg.slice(1 + language[1].length).replaceAll("\n", " ");
-        logger.info(place);
+        const place = msg.slice(1 + language[1].length)
         const translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
             translateSecret: this.toolsConfig.translateSecret,
@@ -889,16 +888,25 @@ export class tools extends plugin {
 
     // 清理垃圾文件
     async clearTrash(e) {
-        const directory = "./data/";
+        const dataDirectory = "./data/";
+        const tempDirectory = this.toolsConfig.defaultPath;
         try {
-            const files = await fs.promises.readdir(directory);
+            const files = await fs.promises.readdir(dataDirectory);
             for (const file of files) {
                 // 如果文件名符合规则，执行删除操作
                 if (/^[0-9a-f]{32}$/.test(file)) {
-                    await fs.promises.unlink(directory + file);
+                    await fs.promises.unlink(dataDirectory + file);
                 }
             }
-            e.reply(`清理完成！`);
+            const tempFiles = await fs.promises.readdir(tempDirectory);
+            for (let file of tempDirectory) {
+                dataDirectory
+            }
+            e.reply(
+                `数据统计：\n`+
+                `当前清理了data下垃圾文件总计：${files.length}\n`+
+                ``
+            );
         } catch (err) {
             logger.error(err);
             await e.reply("清理失败，重试或者手动清理即可");
