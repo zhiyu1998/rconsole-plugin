@@ -43,20 +43,20 @@ async function mkdirIfNotExists(dir) {
 async function deleteFolderRecursive(folderPath) {
     try {
         const files = await fs.promises.readdir(folderPath);
-        const filePromises = files.map(async (file) => {
+        const actions = files.map(async (file) => {
             const curPath = path.join(folderPath, file);
-            const stat = await fs.promises.lstat(curPath);
 
+            const stat = await fs.promises.lstat(curPath);
             if (stat.isDirectory()) {
                 // recurse
-                await deleteFolderRecursive(curPath);
+                return deleteFolderRecursive(curPath);
             } else {
                 // delete file
-                await fs.promises.unlink(curPath);
+                return fs.promises.unlink(curPath);
             }
         });
 
-        await Promise.all(filePromises);
+        await Promise.allSettled(actions);
         await fs.promises.rmdir(folderPath);
         return files.length;
     } catch (error) {
