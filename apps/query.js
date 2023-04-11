@@ -320,7 +320,7 @@ export class query extends plugin {
                     .flatMap(item => {
                         return item.value.flat();
                     });
-                await e.reply(await Bot.makeForwardMsg(combineRet));
+                combineRet.length > 0 && await e.reply(await Bot.makeForwardMsg(combineRet));
                 // ZHelper 特殊处理
                 const zHelper = await getZHelper(e, keyword);
                 zHelper.unshift({

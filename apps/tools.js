@@ -402,7 +402,7 @@ export class tools extends plugin {
             // 加入图片
             biliInfo.unshift(segment.image(pic))
             // 限制视频解析
-            const durationInMinutes = (pages?.[curPage].duration / 60).toFixed(0);
+            const durationInMinutes = (curDuration / 60).toFixed(0);
             biliInfo.push(`\n-----------------------限制说明-----------------------\n当前视频时长约：${durationInMinutes}分钟，\n大于管理员设置的最大时长 ${this.biliDuration / 60} 分钟！`)
             e.reply(biliInfo);
             // 总结
