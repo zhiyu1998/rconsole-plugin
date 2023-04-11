@@ -6,7 +6,7 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
-import { mkdirIfNotExists, checkAndRemoveFile } from "../utils/file.js";
+import { mkdirIfNotExists, checkAndRemoveFile, deleteFolderRecursive } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND, PROMPT_MAP } from "../utils/constant.js";
@@ -889,23 +889,22 @@ export class tools extends plugin {
     // 清理垃圾文件
     async clearTrash(e) {
         const dataDirectory = "./data/";
-        const tempDirectory = this.toolsConfig.defaultPath;
+
         try {
             const files = await fs.promises.readdir(dataDirectory);
+            let dataClearFileLen = 0;
             for (const file of files) {
                 // 如果文件名符合规则，执行删除操作
                 if (/^[0-9a-f]{32}$/.test(file)) {
                     await fs.promises.unlink(dataDirectory + file);
+                    dataClearFileLen++;
                 }
             }
-            const tempFiles = await fs.promises.readdir(tempDirectory);
-            for (let file of tempDirectory) {
-                dataDirectory
-            }
+            const rTempFileLen = await deleteFolderRecursive(this.toolsConfig.defaultPath)
             e.reply(
                 `数据统计：\n`+
-                `当前清理了data下垃圾文件总计：${files.length}\n`+
-                ``
+                `- 当前清理了${dataDirectory}下垃总计：${dataClearFileLen} 个垃圾文件\n`+
+                `- 当前清理了${ this.toolsConfig.defaultPath}下文件夹：${rTempFileLen} 个群的所有临时文件`
             );
         } catch (err) {
             logger.error(err);

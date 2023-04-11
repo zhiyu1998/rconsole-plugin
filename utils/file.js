@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import path from "path";
 
 /**
  * 检查文件是否存在并且删除
@@ -34,4 +35,34 @@ async function mkdirIfNotExists(dir) {
     }
 }
 
-export { checkAndRemoveFile, mkdirIfNotExists }
+/**
+ * 删除文件夹下所有文件
+ * @returns {Promise<number>}
+ * @param folderPath
+ */
+async function deleteFolderRecursive(folderPath) {
+    try {
+        const files = await fs.promises.readdir(folderPath);
+        const filePromises = files.map(async (file) => {
+            const curPath = path.join(folderPath, file);
+            const stat = await fs.promises.lstat(curPath);
+
+            if (stat.isDirectory()) {
+                // recurse
+                await deleteFolderRecursive(curPath);
+            } else {
+                // delete file
+                await fs.promises.unlink(curPath);
+            }
+        });
+
+        await Promise.all(filePromises);
+        await fs.promises.rmdir(folderPath);
+        return files.length;
+    } catch (error) {
+        logger.error(error);
+        return 0;
+    }
+}
+
+export { checkAndRemoveFile, mkdirIfNotExists, deleteFolderRecursive }
