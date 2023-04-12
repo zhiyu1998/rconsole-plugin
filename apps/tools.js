@@ -27,7 +27,7 @@ export class tools extends plugin {
             name: "R插件工具和学习类",
             dsc: "R插件工具相关指令",
             event: "message.group",
-            priority: 500,
+            priority: 300,
             rule: [
                 {
                     reg: `^(翻|trans)[${tools.Constants.existsTransKey}]`,

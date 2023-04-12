@@ -8,6 +8,26 @@ export default class TokenBucket {
     }
 
     /**
+     * 消耗令牌-一个桶
+     * @param count
+     * @return {boolean}
+     */
+    consumeSingle(count = 1) {
+        const now = new Date().getTime();
+        const elapsed = now - this.lastTime;
+        const addedTokens = elapsed * (this.rate / 1000 / 60); // 修改为每分钟生成的令牌数量
+        this.tokens = Math.min(this.tokens + addedTokens, this.capacity);
+        this.lastTime = now;
+
+        if (count <= this.tokens) {
+            this.tokens -= count;
+            return true; // 返回 true 表示请求被处理
+        } else {
+            return false; // 返回 false 表示请求被限流
+        }
+    }
+
+    /**
      * 消耗令牌
      * @param id     用户id
      * @param count  请求次数
