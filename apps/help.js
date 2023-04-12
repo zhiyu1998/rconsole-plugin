@@ -20,22 +20,27 @@ export class help extends plugin {
 
     async help() {
         let data = await Help.get(this.e);
-        if (!data) return;
+        if (!data) {
+            return;
+        }
         let img = await this.cache(data);
         await this.reply(img);
     }
 
     async cache(data) {
-        let helpData = {
-            md5: "",
-            img: "",
-        };
         let tmp = md5(JSON.stringify(data));
-        if (helpData.md5 === tmp) return helpData.img;
+        if (help.helpData.md5 === tmp) {
+            return help.helpData.img;
+        }
 
-        helpData.img = await puppeteer.screenshot("help", data);
-        helpData.md5 = tmp;
+        help.helpData.img = await puppeteer.screenshot("help", data);
+        help.helpData.md5 = tmp;
 
-        return helpData.img;
+        return help.helpData.img;
     }
+
+    static helpData = {
+        md5: "",
+        img: "",
+    };
 }
