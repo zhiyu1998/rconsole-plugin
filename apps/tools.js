@@ -160,7 +160,7 @@ export class tools extends plugin {
             const defaultPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
             await this.downloadImg(curMsg.img, defaultPath, "temp.jpg").then(async _ => {
                 // OCR
-                const ocrRst = await Bot.imageOcr(`${defaultPath}/temp.jpg`);
+                const ocrRst = await Bot.imageOcr(fs.readFileSync(`${defaultPath}/temp.jpg`));
                 const wordList = ocrRst.wordslist;
                 // OCR结果
                 let OCRInfo = wordList.map(item => item.words).join(" ");
@@ -176,6 +176,7 @@ export class tools extends plugin {
             });
         } catch (err) {
             curMsg.reply(" ❌OCR失败，或者存在多账号竞争回答问题！");
+            logger.error(err);
         } finally {
             this.finish("ocr2anythingContext")
         }
