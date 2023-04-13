@@ -327,8 +327,8 @@ export class tools extends plugin {
 
     // bilibi解析
     async bili(e) {
-        await this.limitUserUse(e, async () => {
-            await this.biliCore(e);
+        await this.limitUserUse(e, () => {
+            this.biliCore(e);
         });
     }
     async biliCore(e) {
@@ -1217,7 +1217,7 @@ export class tools extends plugin {
     }
 
     /**
-     * 限制用户调用（默认1分钟1次）
+     * 限制用户调用
      * @param e
      * @param func
      * @return {Promise<void>}
@@ -1226,7 +1226,7 @@ export class tools extends plugin {
         if (tools.#tokenBucket.consume(e.user_id, 1)) {
             await func();
         } else {
-            logger.warn(`解析被限制使用`, true);
+            logger.warn(`解析被限制使用`);
         }
     }
 
