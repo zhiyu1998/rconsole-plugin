@@ -1,10 +1,32 @@
 export default class TokenBucket {
-    constructor(rate, capacity) {
-        this.rate = rate / 60; // 修改为每分钟生成的令牌数量
-        this.capacity = capacity;
-        this.tokens = capacity;
+    constructor(rate, capacity, interval = 1, isMinute = false) {
+        this.interval = interval; // 生成令牌的时间间隔
+        this.rate = isMinute ? rate / 60 : rate; // 修改为每分钟生成的令牌数量
+        this.capacity = capacity; // 令牌容量
+        this.tokens = capacity; // 令牌容量
         this.tokens = new Map(); // 使用 Map 存储每个用户的令牌桶
-        this.lastTime = new Date().getTime();
+        this.lastTime = new Date().getTime(); // 上次使用时间
+
+        /**
+         * 核心算法
+         * @param tokens
+         * @param capacity
+         * @param rate
+         * @param lastTime
+         * @param interval
+         * @param isMinute
+         * @return {{lastTime: number, tokens: number}}
+         */
+         this.updateTokens = (tokens, capacity, rate, lastTime, interval) => {
+            // 计算从上次请求到现在经过的时间
+            const now = new Date().getTime();
+            const elapsed = now - lastTime;
+            // 根据时间计算出新生成的令牌数量
+            const addedTokens = elapsed * (rate / interval / 1000); // 修改为每分钟生成的令牌数量
+            tokens = Math.min(tokens + addedTokens, capacity);
+            lastTime = now;
+            return { tokens, lastTime };
+        }
     }
 
     /**
@@ -13,12 +35,11 @@ export default class TokenBucket {
      * @return {boolean}
      */
     consumeSingle(count = 1) {
-        const now = new Date().getTime();
-        const elapsed = now - this.lastTime;
-        const addedTokens = elapsed * (this.rate / 1000 / 60); // 修改为每分钟生成的令牌数量
-        this.tokens = Math.min(this.tokens + addedTokens, this.capacity);
-        this.lastTime = now;
+        const { tokens, lastTime } = this.updateTokens(this.tokens, this.capacity, this.rate, this.lastTime, this.interval);
+        // 更新令牌桶中的令牌数量
+        this.tokens = tokens;
 
+        // 判断请求是否能够被处理（即令牌桶中是否有足够的令牌）
         if (count <= this.tokens) {
             this.tokens -= count;
             return true; // 返回 true 表示请求被处理
@@ -34,28 +55,14 @@ export default class TokenBucket {
      * @return {boolean}
      */
     consume(id, count = 1) {
-        const now = new Date().getTime();
-        const elapsed = now - this.lastTime;
-        const addedTokens = elapsed * (this.rate / 1000);
-        this.lastTime = now;
+        const { tokens: userTokens, lastTime: userLastTime } = this.tokens.get(id) || { tokens: this.capacity, lastTime: new Date().getTime() };
+        const { tokens, lastTime } = this.updateTokens(userTokens, this.capacity, this.rate, userLastTime, this.interval);
+        // 更新令牌桶中的令牌数量
+        this.tokens.set(id, { tokens, lastTime });
 
-        // 获取用户的令牌桶，如果不存在则创建一个新的令牌桶
-        let userTokens = this.tokens.get(id);
-        if (!userTokens) {
-            userTokens = { tokens: this.capacity, lastTime: now };
-            this.tokens.set(id, userTokens);
-        }
-
-        // 更新用户的令牌桶中的令牌数量
-        userTokens.tokens = Math.min(
-            userTokens.tokens + addedTokens,
-            this.capacity
-        );
-        userTokens.lastTime = now;
-
-        // 判断是否有足够的令牌
-        if (count <= userTokens.tokens) {
-            userTokens.tokens -= count;
+        // 判断请求是否能够被处理（即令牌桶中是否有足够的令牌）
+        if (count <= tokens) {
+            this.tokens.set(id, { tokens: tokens - count, lastTime });
             return true;
         } else {
             return false;

@@ -57,10 +57,6 @@ export class query extends plugin {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
                 },
-                {
-                    reg: "^#测试",
-                    fnc: "test1",
-                },
             ],
         });
     }
@@ -438,5 +434,5 @@ export class query extends plugin {
      * 令牌桶 拿来限流
      * @type {TokenBucket}
      */
-    static #tokenBucket = new TokenBucket(1, 1);
+    static #tokenBucket = new TokenBucket(1, 1, 60);
 }

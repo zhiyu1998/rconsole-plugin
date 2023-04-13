@@ -20,6 +20,7 @@ import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian
 import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
+import TokenBucket from "../utils/token-bucket.js";
 
 export class tools extends plugin {
     constructor() {
@@ -326,6 +327,11 @@ export class tools extends plugin {
 
     // bilibi解析
     async bili(e) {
+        await this.limitUserUse(e, async () => {
+            await this.biliCore(e);
+        });
+    }
+    async biliCore(e) {
         const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
@@ -1211,6 +1217,20 @@ export class tools extends plugin {
     }
 
     /**
+     * 限制用户调用（默认1分钟1次）
+     * @param e
+     * @param func
+     * @return {Promise<void>}
+     */
+    async limitUserUse(e, func) {
+        if (tools.#tokenBucket.consume(e.user_id, 1)) {
+            await func();
+        } else {
+            logger.warn(`解析被限制使用`, true);
+        }
+    }
+
+    /**
      * 构造安全的命令
      * @type {{existsPromptKey: string, existsTransKey: string}}
      */
@@ -1218,4 +1238,10 @@ export class tools extends plugin {
         existsTransKey: Object.keys(transMap).join("|"),
         existsPromptKey: Object.keys(PROMPT_MAP).join("|").slice(0, -1),
     };
+
+    /**
+     * 构造令牌桶，防止解析致使服务器宕机（默认限制5s调用一次）
+     * @type {TokenBucket}
+     */
+    static #tokenBucket = new TokenBucket(1, 1, 5);
 }
