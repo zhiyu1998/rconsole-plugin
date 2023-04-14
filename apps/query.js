@@ -394,16 +394,18 @@ export class query extends plugin {
             )
             .then(async resp => {
                 const res = resp.data.data;
-                const content = await res.map(item => {
-                    const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
-                    const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl
-                        .join("\n")
-                        .replace(/<\/?font[^>]*>/g, "")}`;
-                    return {
-                        message: [segment.image(aa), template],
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
+                const content = res
+                    .sort((a, b) => b.luSort - a.luSort)
+                    .map(item => {
+                        const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
+                        const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl
+                            .join("\n")
+                            .replace(/<\/?font[^>]*>/g, "")}`;
+                        return {
+                            message: [segment.image(aa), template],
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        };
                 });
                 e.reply(await Bot.makeForwardMsg(content));
             });
