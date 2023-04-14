@@ -1,10 +1,10 @@
 // 主库
 import fetch from "node-fetch";
+import fs from "node:fs";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
-import fs from "node:fs";
 // 常量
 import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
@@ -46,11 +46,11 @@ export class query extends plugin {
                     fnc: "youthLearning",
                 },
                 {
-                    reg: "^#搜书(.*)$$",
+                    reg: "^#搜书(.*)$",
                     fnc: "searchBook",
                 },
                 {
-                    reg: "^#bookid(.*)$$",
+                    reg: "^#bookid(.*)$",
                     fnc: "searchBookById",
                 },
                 {
