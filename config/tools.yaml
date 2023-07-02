@@ -6,6 +6,8 @@ translateAppId: '' # 百度翻译APP ID
 translateSecret: '' # 百度翻译密匙
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
-biliDuration: 900 # 哔哩哔哩限制的最大视频时长（默认15分钟），单位：秒
+biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
 
 openaiAccessToken: '' # 通过获取：https://chat.openai.com/api/auth/session
+openaiApiKey: '' # sk...
+openaiModel: 'gpt-3.5-turbo' # 目前gpt-3.5-turbo效果比较好，廉价，适合群友

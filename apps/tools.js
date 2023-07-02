@@ -9,7 +9,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { mkdirIfNotExists, checkAndRemoveFile, deleteFolderRecursive } from "../utils/file.js";
 import { downloadBFile, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
-import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND, PROMPT_MAP } from "../utils/constant.js";
+import { transMap, douyinTypeMap, XHS_CK, TEN_THOUSAND } from "../utils/constant.js";
 import { getIdVideo } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -17,7 +17,7 @@ import * as xBogus from "../utils/x-bogus.cjs";
 import { getVideoInfo, getDynamic } from "../utils/biliInfo.js";
 import { getBiliGptInputText } from "../utils/biliSummary.js";
 import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
-import { ChatGPTBrowserClient } from "@waylaidwanderer/chatgpt-api";
+import { ChatGPTBrowserClient, ChatGPTClient } from "@waylaidwanderer/chatgpt-api";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 import TokenBucket from "../utils/token-bucket.js";
@@ -33,10 +33,6 @@ export class tools extends plugin {
                 {
                     reg: `^(翻|trans)[${tools.Constants.existsTransKey}]`,
                     fnc: "trans",
-                },
-                {
-                    reg: `^#(ocr|OCR)(${tools.Constants.existsPromptKey})?$`,
-                    fnc: "ocr2anything",
                 },
                 {
                     reg: "(v.douyin.com)",
@@ -97,13 +93,22 @@ export class tools extends plugin {
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
         this.biliDuration = this.toolsConfig.biliDuration;
-        // 加载gpt配置
+        // 加载gpt配置：accessToken、apiKey、模型
         this.openaiAccessToken = this.toolsConfig.openaiAccessToken;
-        // 加载gpt客户端
-        this.chatGptClient = new ChatGPTBrowserClient({
+        this.openaiApiKey = this.toolsConfig.openaiApiKey;
+        this.openaiModel = this.toolsConfig.openaiModel;
+        // 加载gpt客户端（默认加载sk，如果填了AccessToken就用AccessToken）
+        this.chatGptClient = this.openaiAccessToken === '' ? new ChatGPTClient(this.openaiApiKey, {
+            modelOptions: {
+                model: this.openaiModel,
+                temperature: 0,
+            },
+            proxy: this.myProxy,
+            debug: false,
+        }) : new ChatGPTBrowserClient({
             reverseProxyUrl: "https://bypass.churchless.tech/api/conversation",
             accessToken: this.openaiAccessToken,
-            model: "gpt-3.5-turbo",
+            model: this.openaiModel,
         })
     }
 
@@ -138,50 +143,6 @@ export class tools extends plugin {
         }
         e.reply(translateResult.trim(), true);
         return true;
-    }
-
-    // 图像识别文字
-    async ocr2anything(e) {
-        e.reply(" 👀请发送图片")
-        this.setContext("ocr2anythingContext");
-        return true;
-    }
-
-    /**
-     * 图像识别文字核心
-     * @link{ocr2anythingContext} 的上下文
-     * @return Promise{void}
-     **/
-    async ocr2anythingContext() {
-        // 当前消息
-        const curMsg = this.e;
-        // 上一个消息
-        const preMsg = this.getContext().ocr2anythingContext;
-        try {
-            const defaultPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`
-            await this.downloadImg(curMsg.img, defaultPath, "temp.jpg").then(async _ => {
-                // OCR
-                const ocrRst = await Bot.imageOcr(fs.readFileSync(`${defaultPath}/temp.jpg`));
-                const wordList = ocrRst.wordslist;
-                // OCR结果
-                let OCRInfo = wordList.map(item => item.words).join(" ");
-                if (this.openaiAccessToken) {
-                    // 构造输入
-                    const func = preMsg.msg.replace("#ocr", "").trim();
-                    const prompt = PROMPT_MAP[func] + OCRInfo;
-                    // 得到结果
-                    const response = await this.chatGptClient.sendMessage(prompt);
-                    OCRInfo = `${OCRInfo}\n-----------------\n${response.response}`;
-                }
-                curMsg.reply(OCRInfo);
-            });
-        } catch (err) {
-            curMsg.reply(" ❌OCR失败，或者存在多账号竞争回答问题！");
-            logger.error(err);
-        } finally {
-            this.finish("ocr2anythingContext")
-        }
-        this.finish("ocr2anythingContext")
     }
 
     // 抖音解析
@@ -1236,7 +1197,6 @@ export class tools extends plugin {
      */
     static Constants = {
         existsTransKey: Object.keys(transMap).join("|"),
-        existsPromptKey: Object.keys(PROMPT_MAP).join("|").slice(0, -1),
     };
 
     /**

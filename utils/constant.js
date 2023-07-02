@@ -34,17 +34,6 @@ export const douyinTypeMap = {
     150: "image",
 };
 
-export const PROMPT_MAP = {
-    "解决": "You are now a programmer, the following is an error, please tell me how to solve this error in Chinese. ",
-    "解释": "You are now a programming language expert, please tell me what the following code is doing in Chinese. ",
-    "优化": "You are now a Clean Code expert. I have the following code. Please rewrite it in a cleaner and simpler way to make it easier for my colleagues to maintain the code. Also, explain in Chinese why you want to refactor like this, so I can add the refactor method description to the Pull Request. Attach code ",
-    "翻译": "I want you to act as an Chinese translator, spelling corrector and improver. I will speak to you in any language and you will detect the language, translate it and answer in the corrected and improved version of my text, in English. I want you to replace my simplified A0-level words and sentences with more beautiful and elegant, upper level English words and sentences. Keep the meaning same, but make them more literary. I want you to only reply the correction, the improvements, then result of Chinese translation and nothing else, do not write explanations. My first sentence is ",
-    "面试": "For the following interview questions, please provide in Chinese what you think is correct and common, and ask some common interview questions? ",
-    "百科": "I want you to act as a Wikipedia page. I will give you the name of a topic, and you will provide a summary in Chinese of that topic in the format of a Wikipedia page. Your summary should be informative and factual, covering the most important aspects of the topic. Start your summary with an introductory paragraph that gives an overview of the topic. My first topic is ",
-    "单词": "Below is an English article. You will extract key words from the article and convert English words into full explanations including Chinese translations, English definitions and an example sentence, in the format of [Key Words] - [Chinese Translation] - [English Interpretation]. Please check that all information is accurate and keep your answers concise without any additional feedback: ",
-    "": "Summarize the key points of this article in Chinese and in a list of points. Choose an appropriate emoji for each bullet point. Each bullet point format is [emoji] - [text]."
-}
-
 export const TEN_THOUSAND = 10000;
 
 export const CAT_LIMIT = 10;

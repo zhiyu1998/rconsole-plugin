@@ -8,7 +8,7 @@ import axios from "axios";
 // 常量
 import { CAT_LIMIT } from "../utils/constant.js";
 // 书库
-import { getZHelper, getBookDetail, getYiBook, getZBook } from "../utils/books.js";
+import { getZHelper, getYiBook, getZBook } from "../utils/books.js";
 // 工具类
 import _ from "lodash";
 import TokenBucket from '../utils/token-bucket.js'
@@ -48,10 +48,6 @@ export class query extends plugin {
                 {
                     reg: "^#搜书(.*)$",
                     fnc: "searchBook",
-                },
-                {
-                    reg: "^#bookid(.*)$",
-                    fnc: "searchBookById",
                 },
                 {
                     reg: "^#竹白(.*)",
@@ -319,20 +315,6 @@ export class query extends plugin {
                 combineRet.length > 0 && await e.reply(await Bot.makeForwardMsg(combineRet));
                 // ZHelper 特殊处理
                 const zHelper = await getZHelper(e, keyword);
-                zHelper.unshift({
-                    message: "回复格式如下\n" +
-                        "#bookid➕id➕来源\n" +
-                        "\n" +
-                        "示例⬇️\n" +
-                        "#bookid 13366067 superlib \n" +
-                        "\n" +
-                        "注意‼️\n" +
-                        "1⃣️数字字母之间空格\n" +
-                        "2⃣️id就是每条介绍最前面那串短数字不是isbn号\n" +
-                        "3⃣️注意看书籍来源，只回复#bookid ➕id 默认来源zlibrary ",
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                })
                 zHelper.length > 1 &&
                 e.reply(await Bot.makeForwardMsg(zHelper));
             } catch (err) {
@@ -341,33 +323,6 @@ export class query extends plugin {
             }
         }
         await this.limitUserUse(e, searchBookFunc);
-        return true;
-    }
-
-    // 通过id搜书
-    async searchBookById(e) {
-        let keyword = e.msg.replace(/#bookid/, "").trim();
-        if (_.isEmpty(keyword)) {
-            e.reply(`请输入书名，例如：#bookid 13366067`);
-            return true;
-        }
-
-        let id, source;
-        if (keyword.includes(" ")) {
-            [id, source] = keyword.split(" ");
-        } else {
-            id = /\d+/.exec(keyword)[0];
-            source = "";
-        }
-        await this.limitUserUse(e, async () => {
-            try {
-                const res = await getBookDetail(e, id, source);
-                e.reply(await Bot.makeForwardMsg(res));
-            } catch (err) {
-                logger.error(err);
-                e.reply("搜书正在施工🚧");
-            }
-        })
         return true;
     }
 
