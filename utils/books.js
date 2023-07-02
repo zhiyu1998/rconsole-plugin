@@ -182,16 +182,14 @@ async function getZHelper(e, keyword) {
         const annaDataPromises = resp[1].value.data.data.slice(0, LIMIT).map(async (item)  => {
             const { author, cover, extension, id, link, publisher, sizestring, source, title } = item;
             // 固定一个模板
-            let resBooks = `<${title}>\n` +
-                    `作者：${author}\n` +
-                    `书籍类型：${extension}\n` +
+            let resBooks = `<${title}> 作者：${author} 书籍类型：${extension}\n` +
                     `来源：${source}\n` +
                     `出版社：${publisher}\n` +
                     `文件大小：${sizestring}`;
             // 发送一个需要下载链接的请求
             const downloadLink = await getDownloadLink(id);
 
-            resBooks += downloadLink;
+            resBooks += `\n${downloadLink}`;
             return {
                 message: {
                     type: "text",
@@ -225,7 +223,7 @@ async function getDownloadLink(id) {
     const { download_link } = resp.data;
 
     const links = download_link.slice(0, 2).map((item, index) => {
-        return `直链 #${index}: ${item?.url}\n`
+        return `直链 #${index + 1}: ${encodeURIComponent(item?.url)}\n\n`
     })
 
     return `\n${links}`;
