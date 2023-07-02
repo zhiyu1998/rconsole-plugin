@@ -223,7 +223,7 @@ async function getDownloadLink(id) {
     const { download_link } = resp.data;
 
     const links = download_link.slice(0, 2).map((item, index) => {
-        return `直链 #${index + 1}: ${encodeURIComponent(item?.url)}\n\n`
+        return `直链 #${index + 1}: ${item?.url}\n\n`
     })
 
     return `\n${links}`;
