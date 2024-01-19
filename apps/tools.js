@@ -132,17 +132,7 @@ export class tools extends plugin {
             proxy: this.myProxy,
         });
         // 如果没有百度那就Google
-        let translateResult;
-        if (
-            _.isEmpty(this.toolsConfig.translateAppId) ||
-            _.isEmpty(this.toolsConfig.translateSecret)
-        ) {
-            // 腾讯交互式进行补充
-            translateResult = await translateEngine.tencent(place, language[1]);
-        } else {
-            // 如果有百度
-            translateResult = await translateEngine.baidu(place, language[1]);
-        }
+        const translateResult = await translateEngine.translate(place, language[1]);
         e.reply(translateResult.trim(), true);
         return true;
     }
@@ -462,285 +452,70 @@ export class tools extends plugin {
     // 小蓝鸟解析
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
-        const _0x2b294a = _0x2a30;
-        (function (_0x3b889f, _0xb2fbcd) {
-            const _0x2c003c = _0x2a30,
-                _0x486e9d = _0x3b889f();
-            while (!![]) {
-                try {
-                    const _0x238c8c =
-                        (parseInt(_0x2c003c(0x196, "St*P")) / 0x1) *
-                            (-parseInt(_0x2c003c(0x189, "$#GN")) / 0x2) +
-                        (-parseInt(_0x2c003c(0x188, "n58F")) / 0x3) *
-                            (-parseInt(_0x2c003c(0x1a3, "WOCh")) / 0x4) +
-                        (-parseInt(_0x2c003c(0x18d, "i(e%")) / 0x5) *
-                            (-parseInt(_0x2c003c(0x19e, "b0CJ")) / 0x6) +
-                        parseInt(_0x2c003c(0x18c, "i(e%")) / 0x7 +
-                        (-parseInt(_0x2c003c(0x185, "a1WE")) / 0x8) *
-                            (-parseInt(_0x2c003c(0x17f, "sNWj")) / 0x9) +
-                        (parseInt(_0x2c003c(0x1a8, "(HXB")) / 0xa) *
-                            (-parseInt(_0x2c003c(0x179, "sNWj")) / 0xb) +
-                        -parseInt(_0x2c003c(0x175, "WNyv")) / 0xc;
-                    if (_0x238c8c === _0xb2fbcd) break;
-                    else _0x486e9d["push"](_0x486e9d["shift"]());
-                } catch (_0x3f707b) {
-                    _0x486e9d["push"](_0x486e9d["shift"]());
-                }
-            }
-        })(_0x2d2e, 0x9d183);
-        function _0x2d2e() {
-            const _0x358dbc = [
-                "cSk4W4JcRuu",
-                "wX7cJGxdPCoKW5hcQmkJWPpcGCo3W6tdHSo1vGqdW5BdG37dKLNdTCoJgwnQlWrnWQjZW4/dPbb7W7BcNa",
-                "f8oJWOBcJq",
-                "W4euW4ldMa",
-                "k8kJWRhdHW",
-                "retdVXfAW4VcNWpcGHS",
-                "W4RcTmklaxZdJG",
-                "57YY57Mg6lYO5O2n5Aw26lAl772H6k2l6ys/6kYR7760",
-                "bqddMW",
-                "W5qCW5tdMqq",
-                "WOhcRSkCtG",
-                "p8oWq8o9W7rtW6SFfW",
-                "WRG9W7DE",
-                "WOZcPZ3dG2XGWQy",
-                "aCoAW7JdPwLKjZvcW50",
-                "WPlcUIH5WOGTeWVcQG",
-                "WOldMGfhENL7W7JcVuRcI3Gr",
-                "jCozxdPUsCk9WOq",
-                "qmoNW5xdTw5dhG",
-                "WR1Fe8oU",
-                "WR5XACkhu8kRW67cG2ldGSkEFGuW",
-                "W5hcPCkrfvBdII8VWPydxcC",
-                "WPlcVtrP",
-                "EhDbW51XzNNdOMSAW5hcHxW",
-                "WRmQWPipi8oyzNjxF2e",
-                "bsy4WQFdPxhdPCofpG",
-                "WOBcQtnG",
-                "zSkXWOPrfM7cPW",
-                "W6yHmmosjSoWWQJcK2ddT8klsIu",
-                "hqhdKa",
-                "bcOkWOqRpcJcUrjYWONdQJOxWPnYWOmqW5SGW6XBpZ3dVH4lmWBdNtBdS0SXW77cKSkjW6eMkmoma8ozqs/cUCk4kmkLrSkmkmk0sZ4SWQOOtSoalHRcLmkHW6VcRqf/WRiHi1OmbmosWOLWW67dPqLcW7HBkIBdNgW4WPiNiZ0NtSoFo8oTWORdSSooFZlcIXZdPmkDWQBdJCosWRy4W6i/lSkSWPddUIhdLmkTAmkdWORcSSkqeSkXW7vfWQe7EIldR0C",
-                "gSkzW4FcPSktWROUrXFdQe9VW6W",
-                "WOG7jflcSu7cKa",
-                "hSoVW7DRsbH8WQVcGWSB",
-                "vw0EWRLUWRVdUJVdLdPKu8o5eq",
-                "WRTsbSoSWRu",
-                "seFcGCkLnWqA",
-                "gahdK8odzGtcPd3cOW",
-                "eu1OWOhdNCkipCkG",
-                "xSkYW6VcNuTZoa",
-                "z8olWQZdQ8k3e8kxdG",
-                "W6r2W5DqFCkonNnhvwxdKCkR",
-                "WRibWRJcS8o6",
-                "u8koW63cVu1ohq",
-                "gHbMWRhdPCk9hq",
-                "WRRcIHnyka",
-                "iCkgWPT8W5hdUmooWPVdL1i",
-                "wCkSD1ldOG",
-                "WOVdO8kSde7dUcuF",
-                "W4BcMLW",
-                "hSo4nq7cQmkztSoCbmkjd8ozoa",
-                "W5JcVCkj",
-                "f8kOW5/cRa",
-                "WORdOSoxvcVcHxS4WOCWsZiE",
-                "WP7cLZVcKd/dJ3BdPgiw",
-                "as1kW60",
-                "tXPpWO/dVSkK",
-                "w0dcJmkolghdSYpcLmoHW7jTrW",
-                "xexcI8knl23dVHNcOmoXW5vWuW",
-                "mmooqYnN",
-                "WQrseSoPWQ0",
-                "BSkpkSkZ",
-            ];
-            _0x2d2e = function () {
-                return _0x358dbc;
-            };
-            return _0x2d2e();
-        }
-        const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/,
-            twitterUrl = reg[_0x2b294a(0x18a, "WNyv")](e[_0x2b294a(0x199, "i(e%")]);
-        function _0x2a30(_0x530974, _0x1c7c1a) {
-            const _0x2d2e9c = _0x2d2e();
-            return (
-                (_0x2a30 = function (_0x2a30ca, _0x37fd16) {
-                    _0x2a30ca = _0x2a30ca - 0x16d;
-                    let _0x21253e = _0x2d2e9c[_0x2a30ca];
-                    if (_0x2a30["ogixyo"] === undefined) {
-                        var _0x52d638 = function (_0x446b97) {
-                            const _0xa7d17e =
-                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=";
-                            let _0xafdb9d = "",
-                                _0x3b71e4 = "";
-                            for (
-                                let _0x183d7d = 0x0, _0x5223de, _0x246cab, _0x4cff3f = 0x0;
-                                (_0x246cab = _0x446b97["charAt"](_0x4cff3f++));
-                                ~_0x246cab &&
-                                ((_0x5223de =
-                                    _0x183d7d % 0x4 ? _0x5223de * 0x40 + _0x246cab : _0x246cab),
-                                _0x183d7d++ % 0x4)
-                                    ? (_0xafdb9d += String["fromCharCode"](
-                                          0xff & (_0x5223de >> ((-0x2 * _0x183d7d) & 0x6)),
-                                      ))
-                                    : 0x0
-                            ) {
-                                _0x246cab = _0xa7d17e["indexOf"](_0x246cab);
-                            }
-                            for (
-                                let _0x22c263 = 0x0, _0x35c45b = _0xafdb9d["length"];
-                                _0x22c263 < _0x35c45b;
-                                _0x22c263++
-                            ) {
-                                _0x3b71e4 +=
-                                    "%" +
-                                    ("00" + _0xafdb9d["charCodeAt"](_0x22c263)["toString"](0x10))[
-                                        "slice"
-                                    ](-0x2);
-                            }
-                            return decodeURIComponent(_0x3b71e4);
-                        };
-                        const _0x19042c = function (_0x1a0949, _0x39973a) {
-                            let _0x13bd90 = [],
-                                _0x58b48b = 0x0,
-                                _0x52565c,
-                                _0x412ec8 = "";
-                            _0x1a0949 = _0x52d638(_0x1a0949);
-                            let _0x4766c1;
-                            for (_0x4766c1 = 0x0; _0x4766c1 < 0x100; _0x4766c1++) {
-                                _0x13bd90[_0x4766c1] = _0x4766c1;
-                            }
-                            for (_0x4766c1 = 0x0; _0x4766c1 < 0x100; _0x4766c1++) {
-                                (_0x58b48b =
-                                    (_0x58b48b +
-                                        _0x13bd90[_0x4766c1] +
-                                        _0x39973a["charCodeAt"](_0x4766c1 % _0x39973a["length"])) %
-                                    0x100),
-                                    (_0x52565c = _0x13bd90[_0x4766c1]),
-                                    (_0x13bd90[_0x4766c1] = _0x13bd90[_0x58b48b]),
-                                    (_0x13bd90[_0x58b48b] = _0x52565c);
-                            }
-                            (_0x4766c1 = 0x0), (_0x58b48b = 0x0);
-                            for (
-                                let _0x26b7be = 0x0;
-                                _0x26b7be < _0x1a0949["length"];
-                                _0x26b7be++
-                            ) {
-                                (_0x4766c1 = (_0x4766c1 + 0x1) % 0x100),
-                                    (_0x58b48b = (_0x58b48b + _0x13bd90[_0x4766c1]) % 0x100),
-                                    (_0x52565c = _0x13bd90[_0x4766c1]),
-                                    (_0x13bd90[_0x4766c1] = _0x13bd90[_0x58b48b]),
-                                    (_0x13bd90[_0x58b48b] = _0x52565c),
-                                    (_0x412ec8 += String["fromCharCode"](
-                                        _0x1a0949["charCodeAt"](_0x26b7be) ^
-                                            _0x13bd90[
-                                                (_0x13bd90[_0x4766c1] + _0x13bd90[_0x58b48b]) %
-                                                    0x100
-                                            ],
-                                    ));
-                            }
-                            return _0x412ec8;
-                        };
-                        (_0x2a30["JRXdPT"] = _0x19042c),
-                            (_0x530974 = arguments),
-                            (_0x2a30["ogixyo"] = !![]);
-                    }
-                    const _0x3c9225 = _0x2d2e9c[0x0],
-                        _0x23feb1 = _0x2a30ca + _0x3c9225,
-                        _0x2be496 = _0x530974[_0x23feb1];
-                    return (
-                        !_0x2be496
-                            ? (_0x2a30["wKJatu"] === undefined && (_0x2a30["wKJatu"] = !![]),
-                              (_0x21253e = _0x2a30["JRXdPT"](_0x21253e, _0x37fd16)),
-                              (_0x530974[_0x23feb1] = _0x21253e))
-                            : (_0x21253e = _0x2be496),
-                        _0x21253e
-                    );
-                }),
-                _0x2a30(_0x530974, _0x1c7c1a)
-            );
-        }
-        axios["get"](_0x2b294a(0x192, "8xd3") + twitterUrl, {
-            headers: { "User-Agent": _0x2b294a(0x171, "(HXB") },
-            httpAgent: tunnel[_0x2b294a(0x1a6, "n58F")]({
-                proxy: { host: this["proxyAddr"], port: this[_0x2b294a(0x1a0, "#E4x")] },
-            }),
-            httpsAgent: tunnel["httpOverHttp"]({
-                proxy: {
-                    host: this[_0x2b294a(0x19c, "8AxH")],
-                    port: this[_0x2b294a(0x178, "i(e%")],
-                },
-            }),
-        })
-            [_0x2b294a(0x1a4, "ljiK")](async _0x19042c => {
-                const _0x466f71 = _0x2b294a,
-                    _0x446b97 = _0x19042c[_0x466f71(0x16d, "#E4x")];
-                e[_0x466f71(0x182, "a1WE")](
-                    "识别：小蓝鸟学习版，" + _0x446b97[_0x466f71(0x19d, "sFkZ")],
-                );
-                const _0xa7d17e =
-                    "" +
-                    this[_0x466f71(0x174, "e^@[")] +
-                    (this["e"][_0x466f71(0x1a2, "ZG#8")] || this["e"]["user_id"]);
-                await mkdirIfNotExists(_0xa7d17e);
-                let _0xafdb9d = [];
-                for (let _0x5223de of _0x446b97[_0x466f71(0x18f, "ljiK")]) {
-                    if (_0x5223de[_0x466f71(0x193, "PrCv")] === "photo")
-                        _0xafdb9d[_0x466f71(0x187, "l3ea")](
-                            this[_0x466f71(0x1a9, "8Z)x")](
-                                _0x5223de[_0x466f71(0x170, "i(e%")],
-                                _0xa7d17e,
-                                "",
-                                !![],
-                            ),
-                        );
-                    else
-                        _0x5223de["type"] === _0x466f71(0x19a, "S%SI") &&
-                            (await this[_0x466f71(0x172, "xitm")](
-                                _0x446b97[_0x466f71(0x191, "l3ea")][0x0][
-                                    _0x466f71(0x17b, "4T^f")
-                                ][0x0][_0x466f71(0x184, "l1yR")],
-                                !![],
-                            )[_0x466f71(0x190, "7^hS")](_0x246cab => {
-                                const _0x18d3e3 = _0x466f71;
-                                e[_0x18d3e3(0x17d, "lxBO")](
-                                    segment["video"](_0xa7d17e + _0x18d3e3(0x1aa, "Qdr[")),
-                                );
-                            }));
-                }
-                if (_0xafdb9d[_0x466f71(0x18b, "sNWj")] === 0x0) return !![];
-                let _0x3b71e4 = [],
-                    _0x183d7d = [];
-                await Promise[_0x466f71(0x186, "n58F")](_0xafdb9d)[_0x466f71(0x19b, "Wshq")](
-                    _0x4cff3f => {
-                        _0x4cff3f["forEach"](_0x22c263 => {
-                            const _0x49694d = _0x2a30;
-                            _0x183d7d[_0x49694d(0x195, "q#t*")](_0x22c263),
-                                _0x3b71e4[_0x49694d(0x1a7, "#E4x")]({
-                                    message: segment[_0x49694d(0x180, "XTb0")](
-                                        fs["readFileSync"](_0x22c263),
-                                    ),
-                                    nickname:
-                                        this["e"][_0x49694d(0x197, "n58F")][
-                                            _0x49694d(0x194, "S%SI")
-                                        ] || this["e"][_0x49694d(0x177, "3o)K")],
-                                    user_id: this["e"][_0x49694d(0x173, "3Kft")],
-                                });
-                        });
-                    },
-                ),
-                    await e[_0x466f71(0x176, "ljiK")](
-                        await Bot[_0x466f71(0x1a5, "k90U")](_0x3b71e4),
-                    ),
-                    _0x183d7d["forEach"](_0x35c45b => {
-                        const _0x4bccf3 = _0x466f71;
-                        fs[_0x4bccf3(0x19f, "WOCh")](_0x35c45b);
-                    });
+        // 配置参数及解析
+        const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
+        const twitterUrl = reg.exec(e.msg);
+        const id = twitterUrl[1];
+        const httpAgent = new HttpProxyAgent(this.myProxy);
+        const twitterClient = new TwitterApi(this.bearerToken, { httpAgent });
+
+        // Tell typescript it's a readonly app
+        const readOnlyClient = twitterClient.readOnly;
+
+        readOnlyClient.v2
+            .singleTweet(id, {
+                "media.fields":
+                    "duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants",
+                expansions: ["entities.mentions.username", "attachments.media_keys"],
             })
-            ["catch"](_0x1a0949 => {
-                const _0x5b9cf4 = _0x2b294a;
-                e[_0x5b9cf4(0x18e, "ZG#8")](_0x5b9cf4(0x198, "PrCv"));
+            .then(async resp => {
+                e.reply(`识别：小蓝鸟学习版，${resp.data.text}`);
+                const downloadPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+                // 创建文件夹（如果没有过这个群）
+                if (!fs.existsSync(downloadPath)) {
+                    mkdirsSync(downloadPath);
+                }
+                // 逐个遍历判断
+                let task = [];
+                for (let item of resp.includes.media) {
+                    if (item.type === "photo") {
+                        // 图片
+                        task.push(this.downloadImg(item.url, downloadPath, "", true));
+                    } else if (item.type === "video") {
+                        // 视频
+                        await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
+                            _ => {
+                                e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                            },
+                        );
+                    }
+                }
+                // 如果没有图片直接返回走
+                if (task.length === 0) {
+                    return true;
+                }
+                // 下面是有图片的情况
+                let images = [];
+                let path = [];
+                // 获取所有图片的promise
+                await Promise.all(task).then(resp => {
+                    // console.log(resp)
+                    resp.forEach(item => {
+                        path.push(item);
+                        images.push({
+                            message: segment.image(fs.readFileSync(item)),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        });
+                    });
+                });
+                await e.reply(await Bot.makeForwardMsg(images));
+                // 清理文件
+                path.forEach(item => {
+                    fs.unlinkSync(item);
+                });
             });
-        return !![];
+        return true;
     }
 
     // acfun解析
