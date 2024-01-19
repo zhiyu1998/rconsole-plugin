@@ -108,6 +108,17 @@ export function supportGuoba() {
                         placeholder: "请输入OpenAI的AccessToken（ey.....）",
                     },
                 },
+                {
+                    field: "tools.douyinCookie",
+                    label: "抖音的Cookie",
+                    bottomHelpMessage:
+                        "登陆https://www.douyin.com/ - F12 - 自己替换一下odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入抖音的Cookie",
+                    },
+                },
             ],
             getConfigData() {
                 const toolsData = {

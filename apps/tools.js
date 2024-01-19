@@ -93,6 +93,8 @@ export class tools extends plugin {
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
         this.biliDuration = this.toolsConfig.biliDuration;
+        // 加载抖音Cookie
+        this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载gpt配置：accessToken、apiKey、模型
         this.openaiAccessToken = this.toolsConfig.openaiAccessToken;
         this.openaiApiKey = this.toolsConfig.openaiApiKey;
@@ -151,6 +153,11 @@ export class tools extends plugin {
         const douUrl = urlRex.exec(e.msg.trim())[0];
 
         await this.douyinRequest(douUrl).then(async res => {
+            // 当前版本需要填入cookie
+            if (_.isEmpty(this.douyinCookie)) {
+                e.reply("检测到没有Cookie，无法解析抖音");
+                return;
+            }
             const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
             // 以下是更新了很多次的抖音API历史，且用且珍惜
             // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
@@ -160,10 +167,10 @@ export class tools extends plugin {
                 "accept-encoding": "gzip, deflate, br",
                 "User-Agent":
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-                referer: "https://www.douyin.com/",
-                cookie: "s_v_web_id=verify_leytkxgn_kvO5kOmO_SdMs_4t1o_B5ml_BUqtWM1mP6BF;",
+                Referer: "https://www.douyin.com/",
+                cookie: this.douyinCookie,
             };
-            const dyApi = `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=110.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7158288523463362079&msToken=abL8SeUTPa9-EToD8qfC7toScSADxpg6yLh2dbNcpWHzE0bT04txM_4UwquIcRvkRb9IU8sifwgM1Kwf1Lsld81o9Irt2_yNyUbbQPSUO8EfVlZJ_78FckDFnwVBVUVK`;
+            const dyApi = `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${douId}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=118.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7284189800734082615&msToken=B1N9FM825TkvFbayDsDvZxM8r5suLrsfQbC93TciS0O9Iii8iJpAPd__FM2rpLUJi5xtMencSXLeNn8xmOS9q7bP0CUsrt9oVTL08YXLPRzZm0dHKLc9PGRlyEk=`;
             // xg参数
             const xbParam = xBogus.sign(
                 new URLSearchParams(new URL(dyApi).search).toString(),
@@ -171,6 +178,7 @@ export class tools extends plugin {
             );
             // const param = resp.data.result[0].paramsencode;
             const resDyApi = `${dyApi}&X-Bogus=${xbParam}`;
+            headers['Referer'] = `https://www.douyin.com/video/${douId}`
             axios
                 .get(resDyApi, {
                     headers,
@@ -180,6 +188,7 @@ export class tools extends plugin {
                         e.reply("解析失败，请重试！");
                         return;
                     }
+                    console.log(resp.data)
                     const item = resp.data.aweme_detail;
                     e.reply(`识别：抖音, ${item.desc}`);
                     const urlTypeCode = item.aweme_type;

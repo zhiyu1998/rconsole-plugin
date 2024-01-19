@@ -38,7 +38,7 @@ utils -- 工具类
 1.【必要】下载插件
 ```shell
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
-``````
+```
 
 2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）、哔哩哔哩总结(chatgpt-api)依赖
 
@@ -56,8 +56,9 @@ sudo apt-get install ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 4. 【可选】小程序解析适配了：
-* 原版的衍变：[Yoimiya / Yunzai-Bot](https://gitee.com/yoimiya-kokomi/Yunzai-Bot)
-* 如果你不用原神选择：[听语惊花 / Yunzai-Bot-lite](https://gitee.com/Nwflower/yunzai-bot-lite)
+* 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
+* TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
+* 听语惊花：[听语惊花 / Yunzai-Bot-lite](https://gitee.com/Nwflower/yunzai-bot-lite)
 
 > 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
 
@@ -71,22 +72,13 @@ sudo apt-get install ffmpeg
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
-7. 【可选】基于文字识别的拓展功能
-> 代码解释：
-> <img src="./img/example8.webp" alt="小程序解析" style="zoom:50%;" />
-> 英文翻译和优化：
-> <img src="./img/example9.webp" alt="小程序解析" style="zoom:50%;" />
-> 总结：
-> <img src="./img/example10.webp" alt="小程序解析" style="zoom:50%;" />
-
 ##  🐤 Q&A
 > 哔哩哔哩的SESSDATA？
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
 
 ##  🤺 R插件交流群
-重新开放TG交流氛围群（群内不解答任何问题，只提供交流环境）  
-[点击进群](https://t.me/+ZsZMNE8OI7E3MDdl)
+马上开放
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
@@ -96,21 +88,28 @@ sudo apt-get install ffmpeg
 > (非必要不更改)更改魔法在`config/tools.yaml` 或 [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)的配置位置：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '7890' # 魔法端口`
+
+## douyin_cookie问题
+由于douyin的解析变化莫测，现版本需要填入自己的cookkie，具体步骤如下：
+1. 打开`https://www.douyin.com/` 扫码登入自己的账号
+2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
+3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
+> odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
+
+3. 如果是`Cookie-Editor`就直接到插件复制到`tools.yaml - douyinCookie`，或者锅巴
+
 ## 📦 业务
 ![help](./img/help.webp)
 
-## 📦 扩展业务
-[点击体验R插件的补集（自定义回复、GPT Bing二合一回复）](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set)
-![help](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set/raw/master/img/example.jpg)
-![help](https://gitee.com/kyrzy0416/rconsole-plugin-complementary-set/raw/master/img/gpt2.png)
-
 ## 📝 计划功能
 - [ ] YouTube解析（这个可能要🕊一久）
-- [x] Instagram解析
+- [ ] Instagram解析修复
   - [ ] 单张图片解析
   - [ ] 视频解析
 - [x] 哔哩哔哩总结
-- [ ] 精简工具功能冗余代码
+- [ ] xhs解析去水印
+- [ ] 快手解析
+- [ ] 西瓜视频解析
 - [ ] ...
 
 
@@ -142,14 +141,6 @@ sudo apt-get install ffmpeg
 | 左轮（ps. 我导师，泪目！） | 1杯瑞幸 |
 |     mitsuha     | 1杯瑞幸 |
 |    [Kr] 5s¹     | 1杯瑞幸 |
-
-##  👩‍👩‍👧‍👧 开发团队
-| Nickname                                                     | Contribution |
-| :----------------------------------------------------------: |--------------|
-|[易曦翰](https://gitee.com/yixihan) | 后端开发         |
-|[zhiyu](https://gitee.com/kyrzy0416) | 后端开发         |
-|[Diviner](https://gitee.com/divinerJJ) | 前端开发         |
-|[小白白](https://gitee.com/little_White01) | 后端开发         |
 
 ## 🚀 后记
 * 文件借鉴了很多插件，精简个人认为可以精简的内容。
