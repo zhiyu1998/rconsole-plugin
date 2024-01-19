@@ -79,6 +79,10 @@ export class tools extends plugin {
                     reg: "(h5app.kuwo.cn)",
                     fnc: "bodianMusic",
                 },
+                {
+                    reg: "(kuaishou.com)",
+                    fnc: "kuaishou",
+                },
             ],
         });
         // 配置文件
@@ -772,6 +776,15 @@ export class tools extends plugin {
             });
         }
         return true;
+    }
+
+    /**
+     * 快手解析
+     * @param e
+     * @return {Promise<void>}
+     */
+    async kuaishou(e) {
+
     }
 
     /**

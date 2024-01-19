@@ -75,7 +75,9 @@ sudo apt-get install ffmpeg
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
 
 ##  🤺 R插件交流群
-马上开放
+扫码不行就：575663150
+
+![575663150](./img/qq.jpg)
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
