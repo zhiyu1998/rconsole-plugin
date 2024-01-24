@@ -18,7 +18,7 @@ config -- 配置文件
 
 img -- README图片
 
-model -- 核心文件[建议不动]
+model -- 核心文件
 
 resource -- 资源文件
 
@@ -59,11 +59,11 @@ sudo apt-get install ffmpeg
 > 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
 > [#I7KQVY](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY)
 
-<img src="./img/example6.webp" alt="小程序解析" style="zoom:50%;" />
+<img src="./img/example6.webp" alt="小程序解析" width="50%" height="50%" />
 
 5. 【可选】对哔哩哔哩解析进行总结：需要填写accessToken和哔哩哔哩的SESSDATA
 
-<img src="./img/example7.webp" alt="小程序解析" style="zoom:50%;" />
+<img src="./img/example7.webp" alt="小程序解析" width="50%" height="50%" />
 
 6. 【可选】增加视频的时长限制（默认15分钟(60 * 15 = 900)）：
 - 在config/tools.yaml里设置`biliDuration`
@@ -77,7 +77,7 @@ sudo apt-get install ffmpeg
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
-![575663150](./img/qq.jpg)
+<img src="./img/qq.jpg" width="30%" height="30%">
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
@@ -115,8 +115,8 @@ sudo apt-get install ffmpeg
   - [ ] 视频解析
 - [x] 哔哩哔哩总结
 - [ ] xhs解析去水印
-- [ ] 快手解析
-- [ ] 西瓜视频解析
+- [x] kuai_shou解析
+- [ ] xi_gua视频解析
 - [ ] ...
 
 
