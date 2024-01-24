@@ -89,13 +89,21 @@ sudo apt-get install ffmpeg
 `proxyPort: '7890' # 魔法端口`
 
 ## 🎵 douyin_cookie问题
-由于douyin的解析变化莫测，现版本需要填入自己的cookkie，具体步骤如下：
+由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
 3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
 > odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
 
 3. 如果是`Cookie-Editor`就直接到插件复制到`tools.yaml - douyinCookie`，或者锅巴
+
+具体图示，找以下这几个：
+- odin_tt
+- sessionid_ss
+- ttwid
+- passport_csrf_token
+- msToken
+![douyin_cookie](./img/douyin_cookie.webp)
 
 ## 📦 业务
 ![help](./img/help.webp)
