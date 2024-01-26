@@ -61,7 +61,7 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example6.webp" alt="小程序解析" width="50%" height="50%" />
 
-5. 【可选】对哔哩哔哩解析进行总结：需要填写accessToken和哔哩哔哩的SESSDATA
+5. 【可选】对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA
 
 <img src="./img/example7.webp" alt="小程序解析" width="50%" height="50%" />
 
@@ -70,9 +70,27 @@ sudo apt-get install ffmpeg
 - 锅巴设置
 
 ##  🐤 Q&A
+### bilibili问题
 > 哔哩哔哩的SESSDATA？
 > 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
 > [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
+
+### 🎵 douyin问题
+由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
+1. 打开`https://www.douyin.com/` 扫码登入自己的账号
+2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
+3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
+> odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
+
+3. 如果是`Cookie-Editor`就直接到插件复制到`tools.yaml - douyinCookie`，或者锅巴
+
+具体图示，找以下这几个：
+- odin_tt
+- sessionid_ss
+- ttwid
+- passport_csrf_token
+- msToken
+  ![douyin_cookie](./img/douyin_cookie.webp)
 
 ##  🤺 R插件交流群
 扫码不行就：575663150
@@ -88,22 +106,10 @@ sudo apt-get install ffmpeg
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '7890' # 魔法端口`
 
-## 🎵 douyin_cookie问题
-由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
-1. 打开`https://www.douyin.com/` 扫码登入自己的账号
-2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
-3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
-> odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
+> 海外服务器示例：  
+`proxyAddr: '127.0.0.1' # 魔法地址`  
+`proxyPort: '80' # 魔法端口`
 
-3. 如果是`Cookie-Editor`就直接到插件复制到`tools.yaml - douyinCookie`，或者锅巴
-
-具体图示，找以下这几个：
-- odin_tt
-- sessionid_ss
-- ttwid
-- passport_csrf_token
-- msToken
-![douyin_cookie](./img/douyin_cookie.webp)
 
 ## 📦 业务
 ![help](./img/help.webp)

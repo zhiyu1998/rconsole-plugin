@@ -65,6 +65,33 @@ async function getDownloadUrl (url) {
         });
 }
 
+async function getAudioUrl (url) {
+    return axios
+        .get(url, {
+            headers: {
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+                referer: 'https://www.bilibili.com',
+            },
+        })
+        .then(({ data }) => {
+            const info = JSON.parse(
+                data.match(/<script>window\.__playinfo__=({.*})<\/script><script>/)?.[1],
+            );
+            // 获取音频
+            const audioUrl =
+                info?.data?.dash?.audio?.[0]?.baseUrl ?? info?.data?.dash?.audio?.[0]?.backupUrl?.[0];
+            const title = data.match(/title="(.*?)"/)?.[1]?.replaceAll?.(/\\|\/|:|\*|\?|"|<|>|\|/g, '');
+
+
+            if (audioUrl) {
+                return { audioUrl, title };
+            }
+
+            return Promise.reject('获取下载地址失败');
+        });
+}
+
 async function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, shouldDelete = true) {
     // 判断当前环境
     let env;
@@ -95,4 +122,4 @@ async function mergeFileToMp4 (vFullFileName, aFullFileName, outputFileName, sho
     }
 }
 
-export { downloadBFile, getDownloadUrl, mergeFileToMp4 }
+export { downloadBFile, getDownloadUrl, getAudioUrl, mergeFileToMp4 }

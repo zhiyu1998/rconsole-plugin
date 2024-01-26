@@ -6,7 +6,7 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
 // 常量
-import { CAT_LIMIT } from "../utils/constant.js";
+import { CAT_LIMIT } from "../constants/constant.js";
 // 书库
 import { getZHelper, getYiBook, getZBook } from "../utils/books.js";
 // 工具类

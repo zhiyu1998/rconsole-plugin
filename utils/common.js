@@ -4,6 +4,7 @@ import axios from "axios";
 import fs from "node:fs";
 import fetch from "node-fetch";
 import { mkdirIfNotExists } from "./file.js";
+import {TEN_THOUSAND} from "../constants/constant.js";
 
 /**
  * 请求模板
@@ -163,4 +164,41 @@ async function downloadMp3(mp3Url, path, redirect = "manual") {
     });
 }
 
-export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr, downloadMp3 };
+/**
+ * 千位数的数据处理
+ * @param data
+ * @return {string|*}
+ */
+const dataProcessing = data => {
+    return Number(data) >= TEN_THOUSAND ? (data / TEN_THOUSAND).toFixed(1) + "万" : data;
+};
+
+/**
+ * 哔哩哔哩解析的数据处理
+ * @param data
+ * @return {string}
+ */
+function formatBiliInfo(data) {
+    return Object.keys(data).map(key => `${key}：${dataProcessing(data[key])}`).join(' | ');
+}
+
+/**
+ * 数字转换成具体时间
+ * @param seconds
+ * @return {string}
+ */
+function secondsToTime(seconds) {
+    const pad = (num, size) => num.toString().padStart(size, '0');
+
+    let hours = Math.floor(seconds / 3600);
+    let minutes = Math.floor((seconds % 3600) / 60);
+    let secs = seconds % 60;
+
+    // 如果你只需要分钟和秒钟，你可以返回下面这行：
+    // return `${pad(minutes, 2)}:${pad(secs, 2)}`;
+
+    // 完整的 HH:MM:SS 格式
+    return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(secs, 2)}`;
+}
+
+export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr, downloadMp3, dataProcessing, formatBiliInfo, secondsToTime };

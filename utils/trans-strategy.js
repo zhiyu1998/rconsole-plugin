@@ -1,4 +1,4 @@
-import {transMap, tencentTransMap, googleTransMap} from "./constant.js";
+import {transMap, tencentTransMap, googleTransMap} from "../constants/constant.js";
 import md5 from "md5";
 import fetch from "node-fetch";
 import HttpProxyAgent from "https-proxy-agent";

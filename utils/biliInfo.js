@@ -1,11 +1,12 @@
 import fetch from "node-fetch";
 import axios from "axios";
+import { BILI_VIDEO_INFO } from "../constants/bili.js";
 
 async function getVideoInfo(url) {
-    const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
+    // const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
     // 获取视频信息，然后发送
-    return fetch(`${baseVideoInfo}?bvid=${videoId}`)
+    return fetch(`${BILI_VIDEO_INFO}?bvid=${videoId}`)
         .then(async resp => {
             const respJson = await resp.json();
             const respData = respJson.data;
@@ -16,8 +17,10 @@ async function getVideoInfo(url) {
                 duration: respData.duration,
                 dynamic: respJson.data.dynamic,
                 stat: respData.stat,
+                bvid: respData.bvid,
                 aid: respData.aid,
                 cid: respData.pages?.[0].cid,
+                owner: respData.owner,
                 pages: respData?.pages,
         };
     });

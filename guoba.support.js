@@ -79,7 +79,7 @@ export function supportGuoba() {
                     field: "tools.biliSessData",
                     label: "哔哩哔哩SESSDATA",
                     bottomHelpMessage:
-                        "如何获取具体参考我的文档说明：https://gitee.com/kyrzy0416/rconsole-plugin",
+                        "如何获取具体参考我的文档说明：https://gitee.com/kyrzy0416/rconsole-plugin#Q&A",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -95,17 +95,6 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入哔哩哔哩的视频最大限制时长（默认15分钟）",
-                    },
-                },
-                {
-                    field: "tools.openaiAccessToken",
-                    label: "OpenAI的AccessToken",
-                    bottomHelpMessage:
-                        "ey....，先登录：https://chat.openai.com/，再复制里面的accessToken：https://chat.openai.com/api/auth/session",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入OpenAI的AccessToken（ey.....）",
                     },
                 },
                 {
