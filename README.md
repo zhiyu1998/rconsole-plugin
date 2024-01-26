@@ -90,7 +90,8 @@ sudo apt-get install ffmpeg
 - ttwid
 - passport_csrf_token
 - msToken
-  ![douyin_cookie](./img/douyin_cookie.webp)
+
+<img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
 ##  🤺 R插件交流群
 扫码不行就：575663150
