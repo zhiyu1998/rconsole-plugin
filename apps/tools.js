@@ -15,7 +15,7 @@ import {
     XHS_CK,
     RESTRICTION_DESCRIPTION,
 } from "../constants/constant.js";
-import { dataProcessing, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
+import { formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
@@ -345,16 +345,16 @@ export class tools extends plugin {
             biliInfo.unshift(segment.image(pic))
             // 限制视频解析
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            biliInfo.push(`${RESTRICTION_DESCRIPTION}\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
-            e.reply(biliInfo);
+            biliInfo.push(`${ RESTRICTION_DESCRIPTION }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
             // 总结
             const summary = await this.getBiliSummary(bvid, cid, owner.mid);
-            summary && e.reply(summary);
+            summary && biliInfo.push(`\n${ summary }`);
+            e.reply(biliInfo);
             return true;
         } else {
             // 总结
             const summary = await this.getBiliSummary(bvid, cid, owner.mid);
-            summary && biliInfo.push(`\n${summary}`)
+            summary && biliInfo.push(`\n${ summary }`);
             //
             e.reply(biliInfo);
         }
@@ -441,7 +441,7 @@ export class tools extends plugin {
                 let resReply = "";
                 // 总体总结
                 if (summary) {
-                    resReply = `摘要：${ summary }\n`
+                    resReply = `\n摘要：${ summary }\n`
                 }
                 // 分段总结
                 if (outline) {
@@ -983,7 +983,7 @@ export class tools extends plugin {
     /**
      * douyin 请求参数
      * @param url
-     * @returns {Promise<unknown>}
+     * @returns {Promise<string>}
      */
     async douyinRequest(url) {
         const params = {
@@ -1055,6 +1055,25 @@ export class tools extends plugin {
         } catch (err) {
             logger.error("下载视频发生错误！");
         }
+    }
+
+    /**
+     * 判断是否是海外服务器
+     * @return {Promise<Boolean>}
+     */
+    async isOverseasServer() {
+        const isOS = "Yz:rconsole:tools:oversea";
+        // 如果第一次使用没有值就设置
+        if (!(await redis.exists(isOS))) {
+            await redis.set(
+                JSON.stringify({
+                    os: false,
+                }),
+            );
+            return true;
+        }
+        // 如果有就取出来
+        return JSON.parse(redis.get(isOS)).os;
     }
 
     /**
