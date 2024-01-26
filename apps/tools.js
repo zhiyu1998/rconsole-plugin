@@ -5,7 +5,7 @@ import fs from "node:fs";
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
-import HttpProxyAgent from "https-proxy-agent";
+import HttpProxyAgent, { HttpsProxyAgent} from "https-proxy-agent";
 import { mkdirIfNotExists, checkAndRemoveFile, deleteFolderRecursive } from "../utils/file.js";
 import { downloadBFile, getAudioUrl, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
@@ -245,26 +245,21 @@ export class tools extends plugin {
         tiktokVideoId = tiktokVideoId.replace(/\//g, "");
         // API链接
         const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${ tiktokVideoId }`;
-
-        await axios
-            .get(API_URL, {
+        await fetch(API_URL, {
                 headers: {
                     "User-Agent":
                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                     "Content-Type": "application/json",
                     "Accept-Encoding": "gzip,deflate,compress",
                 },
+                // redirect: "follow",
+                follow: 10,
                 timeout: 10000,
-                proxy: false,
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-                httpsAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
+                agent: new HttpsProxyAgent(this.myProxy),
             })
-            .then(resp => {
-                const data = resp.data.aweme_list[0];
+            .then(async resp => {
+                const respJson = await resp.json();
+                const data = respJson.aweme_list[0];
                 e.reply(`识别：tiktok, ${ data.desc }`);
                 this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
                     e.reply(
@@ -339,6 +334,8 @@ export class tools extends plugin {
         if (e.msg.includes("bili音乐")) {
             return await this.biliMusic(url, e, biliInfo);
         }
+        // 总结
+        const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 不提取音乐，正常处理
         if (isLimitDuration) {
             // 加入图片
@@ -346,16 +343,11 @@ export class tools extends plugin {
             // 限制视频解析
             const durationInMinutes = (curDuration / 60).toFixed(0);
             biliInfo.push(`${ RESTRICTION_DESCRIPTION }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
-            // 总结
-            const summary = await this.getBiliSummary(bvid, cid, owner.mid);
             summary && biliInfo.push(`\n${ summary }`);
             e.reply(biliInfo);
             return true;
         } else {
-            // 总结
-            const summary = await this.getBiliSummary(bvid, cid, owner.mid);
             summary && biliInfo.push(`\n${ summary }`);
-            //
             e.reply(biliInfo);
         }
 
