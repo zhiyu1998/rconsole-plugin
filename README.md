@@ -65,7 +65,7 @@ sudo apt-get install ffmpeg
 
 <img src="./img/example7.webp" alt="小程序解析" width="50%" height="50%" />
 
-6. 【可选】增加视频的时长限制（默认15分钟(60 * 15 = 900)）：
+6. 【可选】增加视频的时长限制（默认8分钟(60 * 8 = 480)）：
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
