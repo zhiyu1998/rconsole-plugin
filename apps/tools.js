@@ -297,9 +297,14 @@ export class tools extends plugin {
         // 补充https
         url = url.startsWith("https://") ? url : "https://" + url;
         // av处理
-        const matched = url.match(/(av|AV)(\w+)/);
+        const matched = url.match(/\/(AV|av)(\w+)/);
         if (matched) {
             url = url.replace(matched[0], av2BV(Number(matched[2])));
+        }
+        // 只提取音乐处理
+        if (e.msg.includes("bili音乐")) {
+            await this.biliMusic(url, e, biliInfo);
+            return true;
         }
         // 动态处理
         if (url.includes("t.bilibili.com")) {
@@ -330,10 +335,6 @@ export class tools extends plugin {
         // 格式化数据
         const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ desc }`;
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
-        // 只提取音乐处理
-        if (e.msg.includes("bili音乐")) {
-            return await this.biliMusic(url, e, biliInfo);
-        }
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 不提取音乐，正常处理
@@ -373,9 +374,8 @@ export class tools extends plugin {
         return true;
     }
 
-    async biliMusic(url, e, biliInfo) {
-        const { audioUrl, title } = await getAudioUrl(url);
-        e.reply(biliInfo)
+    async biliMusic(url, e) {
+        const { audioUrl } = await getAudioUrl(url);
         e.reply(segment.record(audioUrl))
         return true
     }
