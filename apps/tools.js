@@ -5,15 +5,14 @@ import fs from "node:fs";
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
-import HttpProxyAgent, { HttpsProxyAgent} from "https-proxy-agent";
+import HttpProxyAgent, { HttpsProxyAgent } from "https-proxy-agent";
 import { mkdirIfNotExists, checkAndRemoveFile, deleteFolderRecursive } from "../utils/file.js";
 import { downloadBFile, getAudioUrl, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
 import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
 import {
     transMap,
     douyinTypeMap,
-    XHS_CK,
-    RESTRICTION_DESCRIPTION,
+    RESTRICTION_DESCRIPTION, XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import { formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
@@ -26,6 +25,7 @@ import querystring from "querystring";
 import TokenBucket from "../utils/token-bucket.js";
 import { getWbi } from "../utils/biliWbi.js";
 import { BILI_SUMMARY } from "../constants/bili.js";
+import { XHS_VIDEO } from "../constants/xhs.js";
 
 export class tools extends plugin {
     constructor() {
@@ -65,7 +65,7 @@ export class tools extends plugin {
                 },
                 {
                     reg: "(xhslink.com|xiaohongshu.com)",
-                    fnc: "redbook",
+                    fnc: "xhs",
                 },
                 {
                     reg: "(instagram.com)",
@@ -246,17 +246,17 @@ export class tools extends plugin {
         // API链接
         const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${ tiktokVideoId }`;
         await fetch(API_URL, {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    "Content-Type": "application/json",
-                    "Accept-Encoding": "gzip,deflate,compress",
-                },
-                // redirect: "follow",
-                follow: 10,
-                timeout: 10000,
-                agent: new HttpsProxyAgent(this.myProxy),
-            })
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "Content-Type": "application/json",
+                "Accept-Encoding": "gzip,deflate,compress",
+            },
+            // redirect: "follow",
+            follow: 10,
+            timeout: 10000,
+            agent: new HttpsProxyAgent(this.myProxy),
+        })
             .then(async resp => {
                 const respJson = await resp.json();
                 const data = respJson.aweme_list[0];
@@ -593,7 +593,7 @@ export class tools extends plugin {
     }
 
     // 小红书解析
-    async redbook(e) {
+    async xhs(e) {
         // 正则说明：匹配手机链接、匹配小程序、匹配PC链接
         let msgUrl =
             /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
@@ -622,30 +622,35 @@ export class tools extends plugin {
         }
         const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
         // 获取信息
-        fetch(`https://www.xiaohongshu.com/discovery/item/${ id }`, {
-            headers: {
-                "user-agent":
-                    "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/110.0.0.0",
-                cookie: Buffer.from(XHS_CK, "base64").toString("utf-8"),
-            },
+        fetch(`https://www.xiaohongshu.com/explore/${ id }`, {
+            headers: XHS_NO_WATERMARK_HEADER,
         }).then(async resp => {
             const xhsHtml = await resp.text();
-            const reg = /window.__INITIAL_STATE__=(.*?)<\/script>/;
-            const resJson = xhsHtml.match(reg)[0];
-            const res = JSON.parse(resJson.match(reg)[1]);
-            const noteData = res.noteData.data.noteData;
+            const reg = /window\.__INITIAL_STATE__=(.*?)<\/script>/;
+            const res = xhsHtml.match(reg)[1].replace(/undefined/g, "null");
+            const resJson = JSON.parse(res);
+            const noteData = resJson.note.noteDetailMap[id].note
             const { title, desc, type } = noteData;
-            e.reply(`识别：小红书, ${ title }\n${ desc }`);
             let imgPromise = [];
             if (type === "video") {
-                const url = noteData.video.url;
-                this.downloadVideo(url).then(path => {
+                // 封面
+                const cover = noteData.imageList?.[0].urlDefault;
+                e.reply([segment.image(cover), `识别：小红书, ${ title }\n${ desc }`]);
+                // 构造xhs视频链接
+                const xhsVideoUrl = `${ XHS_VIDEO }${ noteData.video.consumer.originVideoKey.replace('pre_post\/', '') }`;
+                // 下载视频
+                this.downloadVideo(xhsVideoUrl).then(path => {
+                    if (path === undefined) {
+                        // 创建文件，如果不存在
+                        path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/`;
+                    }
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
                 return true;
             } else if (type === "normal") {
+                e.reply(`识别：小红书, ${ title }\n${ desc }`);
                 noteData.imageList.map(async (item, index) => {
-                    imgPromise.push(this.downloadImg(item.url, downloadPath, index.toString()));
+                    imgPromise.push(this.downloadImg(item.urlDefault, downloadPath, index.toString()));
                 });
             }
             const paths = await Promise.all(imgPromise);
@@ -1045,7 +1050,7 @@ export class tools extends plugin {
                 writer.on("error", reject);
             });
         } catch (err) {
-            logger.error("下载视频发生错误！");
+            logger.error(`下载视频发生错误！\ninfo:${err}`);
         }
     }
 

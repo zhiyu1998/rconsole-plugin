@@ -1,7 +1,8 @@
 - {
-  version: 1.2.2,
+  version: 1.2.3,
   data:
     [
+      新增<span class="cmd">小红书无水印下载</span>功能,
       新增<span class="cmd">哔哩哔哩官方AI总结</span>功能,
       新增<span class="cmd">哔哩哔哩音乐提取</span>功能,
       新增<span class="cmd">快手解析</span>功能,
