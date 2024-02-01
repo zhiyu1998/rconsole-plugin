@@ -302,8 +302,8 @@ export class tools extends plugin {
             url = url.replace(matched[0], av2BV(Number(matched[2])));
         }
         // 只提取音乐处理
-        if (e.msg.includes("bili音乐")) {
-            await this.biliMusic(url, e, biliInfo);
+        if (e.msg !== undefined && e.msg.includes("bili音乐")) {
+            await this.biliMusic(url, e);
             return true;
         }
         // 动态处理
