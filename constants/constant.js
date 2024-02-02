@@ -63,6 +63,6 @@ export const XHS_NO_WATERMARK_HEADER = {
  * 分割线
  * @type {string}
  */
-export const DIVIDING_LINE = "\n-----------------------{}-----------------------"
+export const DIVIDING_LINE = "\n------------------{}------------------"
 
 export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";

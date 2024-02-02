@@ -971,13 +971,12 @@ export class tools extends plugin {
         // bestVideo = Array.from(videos).sort((a, b) => a.rate - b.rate)[videos.length - 1];
 
         // 较为有性能的分辨率
-        logger.info(videos)
-        bestVideo = Array.from(videos).filter(item => item.scale.includes("720"))[0];
+        bestVideo = Array.from(videos).filter(item => item.scale.includes("720") || item.scale.includes("360"))[0];
         bestAudio = Array.from(audios).filter(item => item.format === 'm4a')[0];
-        logger.info({
-            bestVideo,
-            bestAudio
-        })
+        // logger.mark({
+        //     bestVideo,
+        //     bestAudio
+        // })
 
         // 格式化yt-dlp的请求
         const format = `${bestVideo.id}x${bestAudio.id}`
