@@ -999,7 +999,7 @@ export class tools extends plugin {
             await child_process.execSync(cmd);
             e.reply(segment.video(`${ fullpath }/${ v }.mp4`))
             // 清理文件
-            // await deleteFolderRecursive(`${ fullpath.split('\/').slice(0, -2).join('/') }`);
+            await deleteFolderRecursive(`${ fullpath.split('\/').slice(0, -2).join('/') }`);
         } catch (error) {
             logger.error(error.toString());
             e.reply("y2b下载失败");
