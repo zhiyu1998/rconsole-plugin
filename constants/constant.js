@@ -65,4 +65,8 @@ export const XHS_NO_WATERMARK_HEADER = {
  */
 export const DIVIDING_LINE = "\n------------------{}------------------"
 
+/**
+ * 保存判断机子是否是海外服务器的key
+ * @type {string}
+ */
 export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";

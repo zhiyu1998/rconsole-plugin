@@ -1,6 +1,7 @@
 // 主库
 import fetch from "node-fetch";
 import fs from "node:fs";
+import { Buffer } from 'node:buffer';
 // 其他库
 import axios from "axios";
 import _ from "lodash";
@@ -13,7 +14,8 @@ import {
     transMap,
     douyinTypeMap,
     DIVIDING_LINE,
-    XHS_NO_WATERMARK_HEADER, REDIS_YUNZAI_ISOVERSEA,
+    XHS_NO_WATERMARK_HEADER,
+    REDIS_YUNZAI_ISOVERSEA,
 } from "../constants/constant.js";
 import {containsChinese, formatBiliInfo, getIdVideo, secondsToTime} from "../utils/common.js";
 import config from "../model/index.js";
@@ -106,7 +108,7 @@ export class tools extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
-        // 代理接口
+        // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
         this.myProxy = `http://${ this.proxyAddr }:${ this.proxyPort }`;
@@ -521,12 +523,13 @@ export class tools extends plugin {
         const reg = /https?:\/\/twitter.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
-        const httpAgent = new HttpProxyAgent(this.myProxy);
-        const twitterClient = new TwitterApi(this.bearerToken, { httpAgent });
+        // 判断是否是海外服务器，默认为false
+        const isProxy = !(await this.isOverseasServer());
+        const httpAgent = new HttpsProxyAgent(this.myProxy);
+        const twitterClient = new TwitterApi(Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString(), !isProxy ?? { httpAgent });
 
         // Tell typescript it's a readonly app
         const readOnlyClient = twitterClient.readOnly;
-
         readOnlyClient.v2
             .singleTweet(id, {
                 "media.fields":
@@ -747,12 +750,14 @@ export class tools extends plugin {
         // logger.info(API);
         let imgPromise = [];
         const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+        // 判断是否是海外服务器
+        const isOversea = await this.isOverseasServer();
         // 简单封装图片下载
         const downloadImg = (url, destination) => {
             return new Promise((resolve, reject) => {
                 fetch(url, {
                     timeout: 10000,
-                    agent: new HttpProxyAgent(this.myProxy),
+                    agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
                     redirect: "follow",
                     follow: 10,
                 })
@@ -915,7 +920,7 @@ export class tools extends plugin {
         // 获取url查询参数
         const query = querystring.parse(url.split("?")[1]);
         let p = query?.p || '0';
-        let v = query?.v;
+        let v = query?.v || url.match(/shorts\/([A-Za-z0-9_-]+)/)[1];
         // 判断是否是海外服务器，默认为false
         const isProxy = !(await this.isOverseasServer());
 
@@ -924,13 +929,13 @@ export class tools extends plugin {
 
         let rs = { title: '', thumbnail: '', formats: [] };
         try {
-            let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} 2> /dev/null`
-            console.log('解析视频, 命令:', cmd);
+            let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} 2> /dev/null`
+            logger.mark('解析视频, 命令:', cmd);
             rs = child_process.execSync(cmd).toString();
             try {
                 rs = JSON.parse(rs);
             } catch (error) {
-                let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}?p=1' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} 2> /dev/null`;
+                let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}?p=1' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} 2> /dev/null`;
                 logger.mark('尝试分P, 命令:', cmd);
                 rs = child_process.execSync(cmd).toString();
                 rs = JSON.parse(rs);
@@ -986,7 +991,7 @@ export class tools extends plugin {
         // yt-dlp下载
         let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
             `yt-dlp  ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} https://youtu.be/${v} -f ${format.replace('x', '+')} ` +
-            `-o '${fullpath}/${v}.%(ext)s' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} -k --write-info-json`;
+            `-o '${fullpath}/${v}.%(ext)s' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} -k --write-info-json`;
         try {
             await child_process.execSync(cmd);
             e.reply(segment.video(`${fullpath}/${v}.mp4`))
