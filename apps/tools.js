@@ -17,7 +17,7 @@ import {
     XHS_NO_WATERMARK_HEADER,
     REDIS_YUNZAI_ISOVERSEA,
 } from "../constants/constant.js";
-import {containsChinese, formatBiliInfo, getIdVideo, secondsToTime} from "../utils/common.js";
+import { containsChinese, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
@@ -915,7 +915,7 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async y2b(e) {
-        const urlRex = /(?:https?:\/\/)?www\.youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = urlRex.exec(e.msg)[0];
         // 获取url查询参数
         const query = querystring.parse(url.split("?")[1]);
@@ -929,13 +929,13 @@ export class tools extends plugin {
 
         let rs = { title: '', thumbnail: '', formats: [] };
         try {
-            let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} 2> /dev/null`
+            let cmd = `yt-dlp --print-json --skip-download ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } '${ url }' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } 2> /dev/null`
             logger.mark('解析视频, 命令:', cmd);
             rs = child_process.execSync(cmd).toString();
             try {
                 rs = JSON.parse(rs);
             } catch (error) {
-                let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}?p=1' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} 2> /dev/null`;
+                let cmd = `yt-dlp --print-json --skip-download ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } '${ url }?p=1' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } 2> /dev/null`;
                 logger.mark('尝试分P, 命令:', cmd);
                 rs = child_process.execSync(cmd).toString();
                 rs = JSON.parse(rs);
@@ -947,13 +947,13 @@ export class tools extends plugin {
                 const transedTitle = await this.translateEngine.translate(rs.title, '中');
                 // const transedDescription = await this.translateEngine.translate(rs.description, '中');
                 e.reply(`识别：油管，
-                    ${rs.title.trim()}\n
-                    ${DIVIDING_LINE.replace("{}", "R插件翻译引擎服务")}\n
-                    ${transedTitle}\n
-                    ${rs.description}
+                    ${ rs.title.trim() }\n
+                    ${ DIVIDING_LINE.replace("{}", "R插件翻译引擎服务") }\n
+                    ${ transedTitle }\n
+                    ${ rs.description }
                 `);
             } else {
-                e.reply(`识别：油管，${rs.title}`);
+                e.reply(`识别：油管，${ rs.title }`);
             }
         } catch (error) {
             logger.error(error.toString());
@@ -984,17 +984,17 @@ export class tools extends plugin {
         // })
 
         // 格式化yt-dlp的请求
-        const format = `${bestVideo.id}x${bestAudio.id}`
+        const format = `${ bestVideo.id }x${ bestAudio.id }`
         // 下载地址格式化
-        const path = `${v}${ p ? `/p${p}` : '' }`;
-        const fullpath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/${path}`;
+        const path = `${ v }${ p ? `/p${ p }` : '' }`;
+        const fullpath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/${ path }`;
         // yt-dlp下载
         let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-            `yt-dlp  ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} https://youtu.be/${v} -f ${format.replace('x', '+')} ` +
-            `-o '${fullpath}/${v}.%(ext)s' ${isProxy ? `--proxy ${this.proxyAddr}:${this.proxyPort}` : ''} -k --write-info-json`;
+            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } https://youtu.be/${ v } -f ${ format.replace('x', '+') } ` +
+            `-o '${ fullpath }/${ v }.%(ext)s' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } -k --write-info-json`;
         try {
             await child_process.execSync(cmd);
-            e.reply(segment.video(`${fullpath}/${v}.mp4`))
+            e.reply(segment.video(`${ fullpath }/${ v }.mp4`))
             // 清理文件
             await deleteFolderRecursive(fullpath);
         } catch (error) {
@@ -1165,7 +1165,7 @@ export class tools extends plugin {
                 writer.on("error", reject);
             });
         } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${err}`);
+            logger.error(`下载视频发生错误！\ninfo:${ err }`);
         }
     }
 
@@ -1183,7 +1183,7 @@ export class tools extends plugin {
                 os: os,
             }),
         );
-        e.reply(`当前服务器：${os ? '海外服务器' : '国内服务器'}`)
+        e.reply(`当前服务器：${ os ? '海外服务器' : '国内服务器' }`)
         return true;
     }
 
