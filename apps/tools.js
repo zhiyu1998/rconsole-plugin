@@ -988,15 +988,18 @@ export class tools extends plugin {
         // 下载地址格式化
         const path = `${ v }${ p ? `/p${ p }` : '' }`;
         const fullpath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/${ path }`;
+        // 创建下载文件夹
+        await mkdirIfNotExists(fullpath);
         // yt-dlp下载
         let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } https://youtu.be/${ v } -f ${ format.replace('x', '+') } ` +
+            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } ${url} -f ${ format.replace('x', '+') } ` +
             `-o '${ fullpath }/${ v }.%(ext)s' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } -k --write-info-json`;
+        logger.info(cmd)
         try {
             await child_process.execSync(cmd);
             e.reply(segment.video(`${ fullpath }/${ v }.mp4`))
             // 清理文件
-            await deleteFolderRecursive(fullpath);
+            // await deleteFolderRecursive(`${ fullpath.split('\/').slice(0, -2).join('/') }`);
         } catch (error) {
             logger.error(error.toString());
             e.reply("y2b下载失败");
