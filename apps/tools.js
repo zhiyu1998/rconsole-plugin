@@ -12,9 +12,10 @@ import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../ut
 import {
     transMap,
     douyinTypeMap,
-    RESTRICTION_DESCRIPTION, XHS_NO_WATERMARK_HEADER,
+    DIVIDING_LINE,
+    XHS_NO_WATERMARK_HEADER, REDIS_YUNZAI_ISOVERSEA,
 } from "../constants/constant.js";
-import { formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
+import {containsChinese, formatBiliInfo, getIdVideo, secondsToTime} from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
@@ -26,6 +27,8 @@ import TokenBucket from "../utils/token-bucket.js";
 import { getWbi } from "../utils/biliWbi.js";
 import { BILI_SUMMARY } from "../constants/bili.js";
 import { XHS_VIDEO } from "../constants/xhs.js";
+import child_process from 'node:child_process'
+import { getAudio, getVideo } from "../utils/y2b.js";
 
 export class tools extends plugin {
     constructor() {
@@ -81,6 +84,11 @@ export class tools extends plugin {
                     permission: "master",
                 },
                 {
+                    reg: "^#设置海外解析$",
+                    fnc: "setOversea",
+                    permission: "master",
+                },
+                {
                     reg: "(h5app.kuwo.cn)",
                     fnc: "bodianMusic",
                 },
@@ -88,6 +96,10 @@ export class tools extends plugin {
                     reg: "(kuaishou.com)",
                     fnc: "kuaishou",
                 },
+                {
+                    reg: "(youtube.com)",
+                    fnc: "y2b"
+                }
             ],
         });
         // 配置文件
@@ -104,6 +116,12 @@ export class tools extends plugin {
         this.biliDuration = this.toolsConfig.biliDuration;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
+        // 翻译引擎
+        this.translateEngine = new Translate({
+            translateAppId: this.toolsConfig.translateAppId,
+            translateSecret: this.toolsConfig.translateSecret,
+            proxy: this.myProxy,
+        });
     }
 
     // 翻译插件
@@ -118,13 +136,8 @@ export class tools extends plugin {
             return;
         }
         const place = msg.slice(1 + language[1].length)
-        const translateEngine = new Translate({
-            translateAppId: this.toolsConfig.translateAppId,
-            translateSecret: this.toolsConfig.translateSecret,
-            proxy: this.myProxy,
-        });
         // 如果没有百度那就Google
-        const translateResult = await translateEngine.translate(place, language[1]);
+        const translateResult = await this.translateEngine.translate(place, language[1]);
         e.reply(translateResult.trim(), true);
         return true;
     }
@@ -216,6 +229,8 @@ export class tools extends plugin {
         const urlShortRex = /(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const urlShortRex2 = /(http:|https:)\/\/vm.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg.trim();
+        // 判断是否是海外服务器
+        const isOversea = await this.isOverseasServer();
         // 短号处理
         if (url.includes("vt.tiktok")) {
             const temp_url = urlShortRex.exec(url)[0];
@@ -223,7 +238,7 @@ export class tools extends plugin {
                 redirect: "follow",
                 follow: 10,
                 timeout: 10000,
-                agent: new HttpProxyAgent(this.myProxy),
+                agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
             }).then(resp => {
                 url = resp.url;
             });
@@ -234,7 +249,7 @@ export class tools extends plugin {
                 redirect: "follow",
                 follow: 10,
                 timeout: 10000,
-                agent: new HttpProxyAgent(this.myProxy),
+                agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
             }).then(resp => {
                 url = resp.url;
             });
@@ -255,13 +270,13 @@ export class tools extends plugin {
             // redirect: "follow",
             follow: 10,
             timeout: 10000,
-            agent: new HttpsProxyAgent(this.myProxy),
+            agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
         })
             .then(async resp => {
                 const respJson = await resp.json();
                 const data = respJson.aweme_list[0];
                 e.reply(`识别：tiktok, ${ data.desc }`);
-                this.downloadVideo(data.video.play_addr.url_list[0], true).then(video => {
+                this.downloadVideo(data.video.play_addr.url_list[0], !isOversea).then(video => {
                     e.reply(
                         segment.video(
                             `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`,
@@ -343,7 +358,7 @@ export class tools extends plugin {
             biliInfo.unshift(segment.image(pic))
             // 限制视频解析
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            biliInfo.push(`${ RESTRICTION_DESCRIPTION }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
+            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
             summary && biliInfo.push(`\n${ summary }`);
             e.reply(biliInfo);
             return true;
@@ -890,6 +905,102 @@ export class tools extends plugin {
     }
 
     /**
+     * youtube解析
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async y2b(e) {
+        const urlRex = /(?:https?:\/\/)?www\.youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        let url = urlRex.exec(e.msg)[0];
+        // 获取url查询参数
+        const query = querystring.parse(url.split("?")[1]);
+        let p = query?.p || '0';
+        let v = query?.v;
+        // 判断是否是海外服务器，默认为false
+        const isProxy = !(await this.isOverseasServer());
+
+        let audios = [], videos = [];
+        let bestAudio = {}, bestVideo = {};
+
+        let rs = { title: '', thumbnail: '', formats: [] };
+        try {
+            let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} 2> /dev/null`
+            console.log('解析视频, 命令:', cmd);
+            rs = child_process.execSync(cmd).toString();
+            try {
+                rs = JSON.parse(rs);
+            } catch (error) {
+                let cmd = `yt-dlp --print-json --skip-download ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} '${url}?p=1' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} 2> /dev/null`;
+                logger.mark('尝试分P, 命令:', cmd);
+                rs = child_process.execSync(cmd).toString();
+                rs = JSON.parse(rs);
+                p = '1';
+                // url = `${msg.url}?p=1`;
+            }
+            if (!containsChinese(rs.title)) {
+                // 启用翻译引擎翻译不是中文的标题
+                const transedTitle = await this.translateEngine.translate(rs.title, '中');
+                // const transedDescription = await this.translateEngine.translate(rs.description, '中');
+                e.reply(`识别：油管，
+                    ${rs.title.trim()}\n
+                    ${DIVIDING_LINE.replace("{}", "R插件翻译引擎服务")}\n
+                    ${transedTitle}\n
+                    ${rs.description}
+                `);
+            } else {
+                e.reply(`识别：油管，${rs.title}`);
+            }
+        } catch (error) {
+            logger.error(error.toString());
+            e.reply("解析失败")
+            return;
+        }
+
+        // 格式化
+        rs.formats.forEach(it => {
+            let length = (it.filesize_approx ? '≈' : '') + ((it.filesize || it.filesize_approx || 0) / 1024 / 1024).toFixed(2);
+            if (it.audio_ext != 'none') {
+                audios.push(getAudio(it.format_id, it.ext, (it.abr || 0).toFixed(0), it.format_note || it.format || '', length));
+            } else if (it.video_ext != 'none') {
+                videos.push(getVideo(it.format_id, it.ext, it.resolution, it.height, (it.vbr || 0).toFixed(0), it.format_note || it.format || '', length));
+            }
+        });
+
+        // 寻找最佳的分辨率
+        // bestAudio = Array.from(audios).sort((a, b) => a.rate - b.rate)[audios.length - 1];
+        // bestVideo = Array.from(videos).sort((a, b) => a.rate - b.rate)[videos.length - 1];
+
+        // 较为有性能的分辨率
+        logger.info(videos)
+        bestVideo = Array.from(videos).filter(item => item.scale.includes("720"))[0];
+        bestAudio = Array.from(audios).filter(item => item.format === 'm4a')[0];
+        logger.info({
+            bestVideo,
+            bestAudio
+        })
+
+        // 格式化yt-dlp的请求
+        const format = `${bestVideo.id}x${bestAudio.id}`
+        // 下载地址格式化
+        const path = `${v}${ p ? `/p${p}` : '' }`;
+        const fullpath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/${path}`;
+        // yt-dlp下载
+        let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
+            `yt-dlp  ${this.y2bCk !== undefined ? `--cookies ${this.y2bCk}` : ''} https://youtu.be/${v} -f ${format.replace('x', '+')} ` +
+            `-o '${fullpath}/${v}.%(ext)s' ${isProxy ? '--proxy http://127.0.0.1:7890' : ''} -k --write-info-json`;
+        try {
+            await child_process.execSync(cmd);
+            e.reply(segment.video(`${fullpath}/${v}.mp4`))
+            // 清理文件
+            await deleteFolderRecursive(fullpath);
+        } catch (error) {
+            logger.error(error.toString());
+            e.reply("y2b下载失败");
+            return;
+        }
+    }
+
+    /**
      * 哔哩哔哩下载
      * @param title
      * @param videoUrl
@@ -1054,15 +1165,33 @@ export class tools extends plugin {
         }
     }
 
+    async setOversea(e) {
+        // 查看当前设置
+        let os;
+        if ((await redis.exists(REDIS_YUNZAI_ISOVERSEA))) {
+            os = JSON.parse(await redis.get(REDIS_YUNZAI_ISOVERSEA)).os;
+        }
+        // 设置
+        os = ~os
+        await redis.set(
+            REDIS_YUNZAI_ISOVERSEA,
+            JSON.stringify({
+                os: os,
+            }),
+        );
+        e.reply(`当前服务器：${os ? '海外服务器' : '国内服务器'}`)
+        return true;
+    }
+
     /**
      * 判断是否是海外服务器
      * @return {Promise<Boolean>}
      */
     async isOverseasServer() {
-        const isOS = "Yz:rconsole:tools:oversea";
         // 如果第一次使用没有值就设置
-        if (!(await redis.exists(isOS))) {
+        if (!(await redis.exists(REDIS_YUNZAI_ISOVERSEA))) {
             await redis.set(
+                REDIS_YUNZAI_ISOVERSEA,
                 JSON.stringify({
                     os: false,
                 }),
@@ -1070,7 +1199,7 @@ export class tools extends plugin {
             return true;
         }
         // 如果有就取出来
-        return JSON.parse(redis.get(isOS)).os;
+        return JSON.parse((await redis.get(REDIS_YUNZAI_ISOVERSEA))).os;
     }
 
     /**

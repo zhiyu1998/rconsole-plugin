@@ -1,10 +1,10 @@
 - {
-  version: 1.2.3,
+  version: 1.3.0,
   data:
     [
+      新增<span class="cmd">油管解析</span>功能,
       新增<span class="cmd">小红书无水印下载</span>功能,
       新增<span class="cmd">哔哩哔哩官方AI总结</span>功能,
-      新增<span class="cmd">哔哩哔哩音乐提取</span>功能,
       新增<span class="cmd">快手解析</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,

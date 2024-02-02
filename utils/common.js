@@ -9,7 +9,7 @@ import {TEN_THOUSAND} from "../constants/constant.js";
 /**
  * 请求模板
  */
-class jFeatch {
+export class jFetch {
     async get(url) {
         const r = await fetch(url);
         return await r.json();
@@ -26,7 +26,7 @@ class jFeatch {
  * @param time cron
  * @param isAutoPush 是否推送（开关）
  */
-function autoTask(func, time, groupList, isAutoPush = false) {
+export function autoTask(func, time, groupList, isAutoPush = false) {
     if (isAutoPush) {
         schedule.scheduleJob(time, () => {
             // 正常传输
@@ -55,7 +55,7 @@ function autoTask(func, time, groupList, isAutoPush = false) {
  * @param delay
  * @returns {Promise<unknown>}
  */
-function retry(func, maxRetries = 3, delay = 1000) {
+export function retry(func, maxRetries = 3, delay = 1000) {
     return new Promise((resolve, reject) => {
         const attempt = (remainingTries) => {
             func()
@@ -79,7 +79,7 @@ function retry(func, maxRetries = 3, delay = 1000) {
  * @param filename
  * @returns {Promise<unknown>}
  */
-function downloadPDF (url, filename) {
+export function downloadPDF (url, filename) {
     return axios({
         url: url,
         responseType: "stream",
@@ -102,7 +102,7 @@ function downloadPDF (url, filename) {
  * @param url
  * @returns {Promise<string|string|null>}
  */
-async function getIdVideo(url) {
+export async function getIdVideo(url) {
     const matching = url.includes("/video/");
     if (!matching) {
         this.e.reply("没找到，正在获取随机视频！");
@@ -112,7 +112,7 @@ async function getIdVideo(url) {
     return idVideo.length > 19 ? idVideo.substring(0, idVideo.indexOf("?")) : idVideo;
 }
 
-function generateRandomStr(randomlength = 16){
+export function generateRandomStr(randomlength = 16){
     const base_str = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789='
     let random_str = ''
     for (let i = 0; i < randomlength; i++) {
@@ -128,7 +128,7 @@ function generateRandomStr(randomlength = 16){
  * @param redirect  是否要重定向
  * @returns {Promise<unknown>}
  */
-async function downloadMp3(mp3Url, path, redirect = "manual") {
+export async function downloadMp3(mp3Url, path, redirect = "manual") {
     return fetch(mp3Url, {
         headers: {
             "User-Agent":
@@ -178,7 +178,7 @@ const dataProcessing = data => {
  * @param data
  * @return {string}
  */
-function formatBiliInfo(data) {
+export function formatBiliInfo(data) {
     return Object.keys(data).map(key => `${key}：${dataProcessing(data[key])}`).join(' | ');
 }
 
@@ -187,7 +187,7 @@ function formatBiliInfo(data) {
  * @param seconds
  * @return {string}
  */
-function secondsToTime(seconds) {
+export function secondsToTime(seconds) {
     const pad = (num, size) => num.toString().padStart(size, '0');
 
     let hours = Math.floor(seconds / 3600);
@@ -201,4 +201,29 @@ function secondsToTime(seconds) {
     return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(secs, 2)}`;
 }
 
-export { jFeatch, autoTask, retry, getIdVideo, generateRandomStr, downloadMp3, dataProcessing, formatBiliInfo, secondsToTime };
+/**
+ * 判断字符串是否是中文（全局判断）
+ * @param str
+ * @returns {boolean}
+ */
+export function isChinese(str) {
+    return /^[\u4e00-\u9fff]+$/.test(str);
+}
+
+/**
+ * 判断字符串是否包含中文
+ * @param str
+ * @returns {boolean}
+ */
+export function containsChinese(str) {
+    return /[\u4e00-\u9fff]/.test(str);
+}
+
+/**
+ * 判断字符串是否包含中文 &&   检测标点符号
+ * @param str
+ * @returns {boolean}
+ */
+export function containsChineseOrPunctuation(str) {
+    return /[\u4e00-\u9fff\uff00-\uffef]/.test(str);
+}

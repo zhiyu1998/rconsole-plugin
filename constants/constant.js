@@ -59,4 +59,10 @@ export const XHS_NO_WATERMARK_HEADER = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 UBrowser/6.2.4098.3 Safari/537.36',
 }
 
-export const RESTRICTION_DESCRIPTION = "\n-----------------------限制说明-----------------------"
+/**
+ * 分割线
+ * @type {string}
+ */
+export const DIVIDING_LINE = "\n-----------------------{}-----------------------"
+
+export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";

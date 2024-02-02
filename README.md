@@ -38,7 +38,7 @@ utils -- 工具类
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 ```
 
-2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）、哔哩哔哩总结(chatgpt-api)依赖
+2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）
 
 
 ```shell
@@ -53,6 +53,19 @@ sudo apt-get install ffmpeg
 # 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
+油管解析需要 yt-dlp 的依赖才能完成解析（三选一）：
+```shell
+# 三选一
+# ubuntu （国内 or 国外，且安装了snap）
+snap install yt-dlp
+# debian 海外
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# debian 国内
+curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+```
+
 4. 【可选】小程序解析适配了：
 * 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
 * TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
@@ -118,7 +131,7 @@ sudo apt-get install ffmpeg
 ![help](./img/help.webp)
 
 ## 📝 计划功能
-- [ ] YouTube解析（这个可能要🕊一久）
+- [x] YouTube解析（这个可能要🕊一久）
 - [ ] Instagram解析修复
   - [ ] 单张图片解析
   - [ ] 视频解析
@@ -141,6 +154,9 @@ sudo apt-get install ffmpeg
 * [好冷](https://gitee.com/hetangx) 提供Windows解决方案
 * [一杯凉](https://gitee.com/yibeiliang) 提供小程序解析冲突解决方案
 * [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
+
+感谢以下框架的开源：
+YouTube解析参考了：[yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
