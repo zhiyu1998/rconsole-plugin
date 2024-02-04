@@ -40,7 +40,7 @@ utils -- 工具类
 # 国内
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
 # 海外
-git clone https://gitclone.com/github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
+git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
 ```
 
 2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）
