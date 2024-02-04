@@ -37,10 +37,13 @@ utils -- 工具类
 
 1.【必要】下载插件
 ```shell
+# 国内
 git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
+# 海外
+git clone https://gitclone.com/github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
 ```
 
-2.【必要】在`Yunzai-Bot`目录下安装axios(0.27.2)、魔法工具（tunnel）
+2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）
 
 
 ```shell
@@ -55,7 +58,7 @@ sudo apt-get install ffmpeg
 # 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
-油管解析需要 yt-dlp 的依赖才能完成解析（三选一）：
+`油管解析`需要 `yt-dlp` 的依赖才能完成解析（三选一）：
 ```shell
 # 三选一
 # ubuntu （国内 or 国外，且安装了snap）
