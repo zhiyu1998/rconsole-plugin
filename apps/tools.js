@@ -31,6 +31,7 @@ import { BILI_SUMMARY } from "../constants/bili.js";
 import { XHS_VIDEO } from "../constants/xhs.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
+import { processTikTokUrl } from "../utils/tiktok.js";
 
 export class tools extends plugin {
     constructor() {
@@ -227,37 +228,11 @@ export class tools extends plugin {
 
     // tiktok解析
     async tiktok(e) {
-        const urlRex = /(http:|https:)\/\/www.tiktok.com\/[A-Za-z\d._?%&+\-=\/#@]*/g;
-        const urlShortRex = /(http:|https:)\/\/vt.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const urlShortRex2 = /(http:|https:)\/\/vm.tiktok.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url = e.msg.trim();
-        // 判断是否是海外服务器
+        // 判断海外
         const isOversea = await this.isOverseasServer();
-        // 短号处理
-        if (url.includes("vt.tiktok")) {
-            const temp_url = urlShortRex.exec(url)[0];
-            await fetch(temp_url, {
-                redirect: "follow",
-                follow: 10,
-                timeout: 10000,
-                agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
-            }).then(resp => {
-                url = resp.url;
-            });
-        } else if (url.includes("vm.tiktok")) {
-            const temp_url = urlShortRex2.exec(url)[0];
-            await fetch(temp_url, {
-                headers: { "User-Agent": "facebookexternalhit/1.1" },
-                redirect: "follow",
-                follow: 10,
-                timeout: 10000,
-                agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
-            }).then(resp => {
-                url = resp.url;
-            });
-        } else {
-            url = urlRex.exec(url)[0];
-        }
+        // 处理链接
+        let url = await processTikTokUrl(e.msg.trim(), isOversea);
+        // 处理ID
         let tiktokVideoId = await getIdVideo(url);
         tiktokVideoId = tiktokVideoId.replace(/\//g, "");
         // API链接

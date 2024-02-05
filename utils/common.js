@@ -105,7 +105,6 @@ export function downloadPDF (url, filename) {
 export async function getIdVideo(url) {
     const matching = url.includes("/video/");
     if (!matching) {
-        this.e.reply("没找到，正在获取随机视频！");
         return null;
     }
     const idVideo = url.substring(url.indexOf("/video/") + 7, url.length);
