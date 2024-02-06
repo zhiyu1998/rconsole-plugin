@@ -16,6 +16,7 @@ import {
     DIVIDING_LINE,
     XHS_NO_WATERMARK_HEADER,
     REDIS_YUNZAI_ISOVERSEA,
+    TWITTER_BEARER_TOKEN,
 } from "../constants/constant.js";
 import { containsChinese, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
@@ -27,8 +28,8 @@ import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 import TokenBucket from "../utils/token-bucket.js";
 import { getWbi } from "../utils/biliWbi.js";
-import { BILI_SUMMARY } from "../constants/bili.js";
-import { XHS_VIDEO } from "../constants/xhs.js";
+import { BILI_SUMMARY, DY_INFO, TIKTOK_INFO, TWITTER_TWEET_INFO, XHS_REQ_LINK } from "../constants/tools.js";
+import { XHS_VIDEO } from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
@@ -168,7 +169,7 @@ export class tools extends plugin {
                 Referer: "https://www.douyin.com/",
                 cookie: this.douyinCookie,
             };
-            const dyApi = `https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id=${ douId }&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=118.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC&webid=7284189800734082615&msToken=B1N9FM825TkvFbayDsDvZxM8r5suLrsfQbC93TciS0O9Iii8iJpAPd__FM2rpLUJi5xtMencSXLeNn8xmOS9q7bP0CUsrt9oVTL08YXLPRzZm0dHKLc9PGRlyEk=`;
+            const dyApi = DY_INFO.replace("{}", douId);
             // xg参数
             const xbParam = xBogus.sign(
                 new URLSearchParams(new URL(dyApi).search).toString(),
@@ -236,7 +237,7 @@ export class tools extends plugin {
         let tiktokVideoId = await getIdVideo(url);
         tiktokVideoId = tiktokVideoId.replace(/\//g, "");
         // API链接
-        const API_URL = `https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id=${ tiktokVideoId }`;
+        const API_URL = TIKTOK_INFO.replace("{}", tiktokVideoId);
         await fetch(API_URL, {
             headers: {
                 "User-Agent":
@@ -491,7 +492,7 @@ export class tools extends plugin {
         return true;
     }
 
-    // 小蓝鸟解析
+    // 小蓝鸟解析：停止更新
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
         // 配置参数及解析
@@ -499,65 +500,70 @@ export class tools extends plugin {
         const twitterUrl = reg.exec(e.msg);
         const id = twitterUrl[1];
         // 判断是否是海外服务器，默认为false
-        const isProxy = !(await this.isOverseasServer());
-        const httpAgent = new HttpsProxyAgent(this.myProxy);
-        const twitterClient = new TwitterApi(Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString(), !isProxy ?? { httpAgent });
+        const isOversea = !(await this.isOverseasServer());
 
-        // Tell typescript it's a readonly app
-        const readOnlyClient = twitterClient.readOnly;
-        readOnlyClient.v2
-            .singleTweet(id, {
-                "media.fields":
-                    "duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants",
-                expansions: ["entities.mentions.username", "attachments.media_keys"],
-            })
-            .then(async resp => {
-                e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
-                const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
-                // 创建文件夹（如果没有过这个群）
-                if (!fs.existsSync(downloadPath)) {
-                    mkdirsSync(downloadPath);
+        // 请求
+        const params = {
+            "ids": id,
+            "media.fields":
+                "duration_ms,height,media_key,preview_image_url,public_metrics,type,url,width,alt_text,variants",
+            "expansions": ["entities.mentions.username", "attachments.media_keys"],
+        }
+        await fetch(TWITTER_TWEET_INFO.replace("{}", id), {
+            headers: {
+                "User-Agent": "v2TweetLookupJS",
+                "authorization": `Bearer ${Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString()}`
+            },
+            ...params,
+            agent: !isOversea ? '' : new HttpProxyAgent(this.myProxy),
+        }).then(async resp => {
+            logger.info(resp)
+            e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
+            const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            // 创建文件夹（如果没有过这个群）
+            if (!fs.existsSync(downloadPath)) {
+                mkdirsSync(downloadPath);
+            }
+            // 逐个遍历判断
+            let task = [];
+            for (let item of resp.includes.media) {
+                if (item.type === "photo") {
+                    // 图片
+                    task.push(this.downloadImg(item.url, downloadPath, "", true));
+                } else if (item.type === "video") {
+                    // 视频
+                    await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
+                        _ => {
+                            e.reply(segment.video(`${ downloadPath }/temp.mp4`));
+                        },
+                    );
                 }
-                // 逐个遍历判断
-                let task = [];
-                for (let item of resp.includes.media) {
-                    if (item.type === "photo") {
-                        // 图片
-                        task.push(this.downloadImg(item.url, downloadPath, "", true));
-                    } else if (item.type === "video") {
-                        // 视频
-                        await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
-                            _ => {
-                                e.reply(segment.video(`${ downloadPath }/temp.mp4`));
-                            },
-                        );
-                    }
-                }
-                // 如果没有图片直接返回走
-                if (task.length === 0) {
-                    return true;
-                }
-                // 下面是有图片的情况
-                let images = [];
-                let path = [];
-                // 获取所有图片的promise
-                await Promise.all(task).then(resp => {
-                    // console.log(resp)
-                    resp.forEach(item => {
-                        path.push(item);
-                        images.push({
-                            message: segment.image(fs.readFileSync(item)),
-                            nickname: this.e.sender.card || this.e.user_id,
-                            user_id: this.e.user_id,
-                        });
+            }
+            // 如果没有图片直接返回走
+            if (task.length === 0) {
+                return true;
+            }
+            // 下面是有图片的情况
+            let images = [];
+            let path = [];
+            // 获取所有图片的promise
+            await Promise.all(task).then(resp => {
+                // console.log(resp)
+                resp.forEach(item => {
+                    path.push(item);
+                    images.push({
+                        message: segment.image(fs.readFileSync(item)),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
                     });
                 });
-                await e.reply(await Bot.makeForwardMsg(images));
-                // 清理文件
-                path.forEach(item => {
-                    fs.unlinkSync(item);
-                });
             });
+            await e.reply(await Bot.makeForwardMsg(images));
+            // 清理文件
+            path.forEach(item => {
+                fs.unlinkSync(item);
+            });
+        });
         return true;
     }
 
@@ -615,7 +621,7 @@ export class tools extends plugin {
         }
         const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
         // 获取信息
-        fetch(`https://www.xiaohongshu.com/explore/${ id }`, {
+        fetch(`${XHS_REQ_LINK}${ id }`, {
             headers: XHS_NO_WATERMARK_HEADER,
         }).then(async resp => {
             const xhsHtml = await resp.text();
@@ -951,8 +957,8 @@ export class tools extends plugin {
         // bestVideo = Array.from(videos).sort((a, b) => a.rate - b.rate)[videos.length - 1];
 
         // 较为有性能的分辨率
-        bestVideo = Array.from(videos).filter(item => item.scale.includes("720") || item.scale.includes("360"))[0];
-        bestAudio = Array.from(audios).filter(item => item.format === 'm4a')[0];
+        bestVideo = Array.from(videos).find(item => item.scale.includes("720") || item.scale.includes("360"));
+        bestAudio = Array.from(audios).find(item => item.format === 'm4a');
         // logger.mark({
         //     bestVideo,
         //     bestAudio
@@ -969,7 +975,7 @@ export class tools extends plugin {
         let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
             `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } ${url} -f ${ format.replace('x', '+') } ` +
             `-o '${ fullpath }/${ v }.%(ext)s' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } -k --write-info-json`;
-        logger.info(cmd)
+        logger.mark(cmd)
         try {
             await child_process.execSync(cmd);
             e.reply(segment.video(`${ fullpath }/${ v }.mp4`))
@@ -1147,6 +1153,11 @@ export class tools extends plugin {
         }
     }
 
+    /**
+     * 设置海外模式
+     * @param e
+     * @returns {Promise<boolean>}
+     */
     async setOversea(e) {
         // 查看当前设置
         let os;

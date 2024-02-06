@@ -70,3 +70,5 @@ export const DIVIDING_LINE = "\n------------------{}------------------"
  * @type {string}
  */
 export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
+
+export const TWITTER_BEARER_TOKEN = ""

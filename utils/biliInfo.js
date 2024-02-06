@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import axios from "axios";
-import { BILI_VIDEO_INFO } from "../constants/bili.js";
+import { BILI_VIDEO_INFO } from "../constants/tools.js";
 
 async function getVideoInfo(url) {
     // const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";

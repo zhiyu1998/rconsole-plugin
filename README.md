@@ -113,6 +113,9 @@ chmod a+rx ~/.local/bin/yt-dlp
 
 <img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
+### ✖️ 小蓝鸟问题
+**2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
+
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
@@ -161,7 +164,9 @@ chmod a+rx ~/.local/bin/yt-dlp
 * [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
 
 感谢以下框架的开源：
-YouTube解析参考了：[yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
+
+YouTube解析参考了：
+- [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
