@@ -124,7 +124,7 @@ chmod a+rx ~/.local/bin/yt-dlp
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
 > `百度翻译`api:https://fanyi-api.baidu.com/doc/21  
-注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
+> 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
 
 > (非必要不更改)更改魔法在`config/tools.yaml` 或 [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)的配置位置：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
@@ -165,7 +165,7 @@ chmod a+rx ~/.local/bin/yt-dlp
 
 感谢以下框架的开源：
 
-YouTube解析参考了：
+油管解析参考了：
 - [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
