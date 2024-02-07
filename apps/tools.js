@@ -6,35 +6,54 @@ import { Buffer } from 'node:buffer';
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
-import HttpProxyAgent, { HttpsProxyAgent } from "https-proxy-agent";
-import { mkdirIfNotExists, checkAndRemoveFile, deleteFolderRecursive } from "../utils/file.js";
-import { downloadBFile, getAudioUrl, getDownloadUrl, mergeFileToMp4 } from "../utils/bilibili.js";
-import { parseUrl, parseM3u8, downloadM3u8Videos, mergeAcFileToMp4 } from "../utils/acfun.js";
+import HttpProxyAgent from "https-proxy-agent";
+import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
 import {
-    transMap,
-    douyinTypeMap,
+    downloadBFile,
+    getBiliAudio,
+    getDownloadUrl,
+    getDynamic,
+    getVideoInfo,
+    m4sToMp3,
+    mergeFileToMp4
+} from "../utils/bilibili.js";
+import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
+import {
     DIVIDING_LINE,
-    XHS_NO_WATERMARK_HEADER,
+    douyinTypeMap,
     REDIS_YUNZAI_ISOVERSEA,
+    transMap,
     TWITTER_BEARER_TOKEN,
+    XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import { containsChinese, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
-import { getVideoInfo, getDynamic } from "../utils/biliInfo.js";
-import { getBodianAudio, getBodianMv, getBodianMusicInfo } from "../utils/bodian.js";
+import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 import TokenBucket from "../utils/token-bucket.js";
 import { getWbi } from "../utils/biliWbi.js";
-import { BILI_SUMMARY, DY_INFO, TIKTOK_INFO, TWITTER_TWEET_INFO, XHS_REQ_LINK } from "../constants/tools.js";
-import { XHS_VIDEO } from "../constants/tools.js";
+import { BILI_SUMMARY, DY_INFO, TIKTOK_INFO, TWITTER_TWEET_INFO, XHS_REQ_LINK, XHS_VIDEO } from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
 
 export class tools extends plugin {
+    /**
+     * 构造安全的命令
+     * @type {{existsPromptKey: string, existsTransKey: string}}
+     */
+    static Constants = {
+        existsTransKey: Object.keys(transMap).join("|"),
+    };
+    /**
+     * 构造令牌桶，防止解析致使服务器宕机（默认限制5s调用一次）
+     * @type {TokenBucket}
+     */
+    static #tokenBucket = new TokenBucket(1, 1, 5);
+
     constructor() {
         super({
             name: "R插件工具和学习类",
@@ -197,9 +216,7 @@ export class tools extends plugin {
                             "http",
                             "https",
                         );
-                        const path = `${ this.defaultPath }${
-                            this.e.group_id || this.e.user_id
-                        }/temp.mp4`;
+                        const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                         await this.downloadVideo(resUrl).then(() => {
                             e.reply(segment.video(path));
                         });
@@ -257,7 +274,7 @@ export class tools extends plugin {
                 this.downloadVideo(data.video.play_addr.url_list[0], !isOversea).then(video => {
                     e.reply(
                         segment.video(
-                            `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp.mp4`,
+                            `${ this.getCurDownloadPath(e) }/temp.mp4`,
                         ),
                     );
                 });
@@ -296,7 +313,7 @@ export class tools extends plugin {
         }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.includes("bili音乐")) {
-            await this.biliMusic(url, e);
+            await this.biliMusic(e, url);
             return true;
         }
         // 动态处理
@@ -346,7 +363,7 @@ export class tools extends plugin {
         }
 
         // 创建文件，如果不存在
-        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/`;
+        const path = `${ this.getCurDownloadPath(e) }/`;
         await mkdirIfNotExists(path);
         // 下载文件
         getDownloadUrl(url)
@@ -367,9 +384,13 @@ export class tools extends plugin {
         return true;
     }
 
-    async biliMusic(url, e) {
-        const { audioUrl } = await getAudioUrl(url);
-        e.reply(segment.record(audioUrl))
+    // 下载哔哩哔哩音乐
+    async biliMusic(e, url) {
+        const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+        getBiliAudio(videoId, "").then(async audioUrl => {
+            const path = this.getCurDownloadPath(e);
+            e.reply(segment.record(await m4sToMp3(audioUrl, path)));
+        })
         return true
     }
 
@@ -398,6 +419,8 @@ export class tools extends plugin {
         });
         return url;
     }
+
+    // 小蓝鸟解析：停止更新
 
     /**
      * 哔哩哔哩总结
@@ -492,7 +515,6 @@ export class tools extends plugin {
         return true;
     }
 
-    // 小蓝鸟解析：停止更新
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
     async twitter(e) {
         // 配置参数及解析
@@ -512,14 +534,14 @@ export class tools extends plugin {
         await fetch(TWITTER_TWEET_INFO.replace("{}", id), {
             headers: {
                 "User-Agent": "v2TweetLookupJS",
-                "authorization": `Bearer ${Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString()}`
+                "authorization": `Bearer ${ Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString() }`
             },
             ...params,
             agent: !isOversea ? '' : new HttpProxyAgent(this.myProxy),
         }).then(async resp => {
             logger.info(resp)
             e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
-            const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            const downloadPath = `${ this.getCurDownloadPath(e) }`;
             // 创建文件夹（如果没有过这个群）
             if (!fs.existsSync(downloadPath)) {
                 mkdirsSync(downloadPath);
@@ -569,7 +591,7 @@ export class tools extends plugin {
 
     // acfun解析
     async acfun(e) {
-        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/temp/`;
+        const path = `${ this.getCurDownloadPath(e) }/temp/`;
         await mkdirIfNotExists(path);
 
         let inputMsg = e.msg;
@@ -619,9 +641,9 @@ export class tools extends plugin {
         } else {
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
         }
-        const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+        const downloadPath = `${ this.getCurDownloadPath(e) }`;
         // 获取信息
-        fetch(`${XHS_REQ_LINK}${ id }`, {
+        fetch(`${ XHS_REQ_LINK }${ id }`, {
             headers: XHS_NO_WATERMARK_HEADER,
         }).then(async resp => {
             const xhsHtml = await resp.text();
@@ -641,7 +663,7 @@ export class tools extends plugin {
                 this.downloadVideo(xhsVideoUrl).then(path => {
                     if (path === undefined) {
                         // 创建文件，如果不存在
-                        path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/`;
+                        path = `${ this.getCurDownloadPath(e) }/`;
                     }
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
@@ -730,7 +752,7 @@ export class tools extends plugin {
         const API = `https://imginn.com/${ suffix }`;
         // logger.info(API);
         let imgPromise = [];
-        const downloadPath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+        const downloadPath = `${ this.getCurDownloadPath(e) }`;
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 简单封装图片下载
@@ -813,7 +835,7 @@ export class tools extends plugin {
             segment.image(albumPic120),
         ]);
         if (e.msg.includes("musicId")) {
-            const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`;
+            const path = `${ this.getCurDownloadPath(e) }`;
             await getBodianAudio(id, path).then(_ => {
                 Bot.acquireGfs(e.group_id).upload(
                     fs.readFileSync(path + "/temp.mp3"),
@@ -968,12 +990,12 @@ export class tools extends plugin {
         const format = `${ bestVideo.id }x${ bestAudio.id }`
         // 下载地址格式化
         const path = `${ v }${ p ? `/p${ p }` : '' }`;
-        const fullpath = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }/${ path }`;
+        const fullpath = `${ this.getCurDownloadPath(e) }/${ path }`;
         // 创建下载文件夹
         await mkdirIfNotExists(fullpath);
         // yt-dlp下载
         let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } ${url} -f ${ format.replace('x', '+') } ` +
+            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } ${ url } -f ${ format.replace('x', '+') } ` +
             `-o '${ fullpath }/${ v }.%(ext)s' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } -k --write-info-json`;
         logger.mark(cmd)
         try {
@@ -1100,6 +1122,15 @@ export class tools extends plugin {
     }
 
     /**
+     * 获取当前发送人/群的下载路径
+     * @param e Yunzai 机器人事件
+     * @returns {string}
+     */
+    getCurDownloadPath(e) {
+        return `${ this.defaultPath }${ e.group_id || e.user_id }`
+    }
+
+    /**
      * 提取视频下载位置
      * @returns {{groupPath: string, target: string}}
      */
@@ -1208,18 +1239,4 @@ export class tools extends plugin {
             logger.warn(`解析被限制使用`);
         }
     }
-
-    /**
-     * 构造安全的命令
-     * @type {{existsPromptKey: string, existsTransKey: string}}
-     */
-    static Constants = {
-        existsTransKey: Object.keys(transMap).join("|"),
-    };
-
-    /**
-     * 构造令牌桶，防止解析致使服务器宕机（默认限制5s调用一次）
-     * @type {TokenBucket}
-     */
-    static #tokenBucket = new TokenBucket(1, 1, 5);
 }

@@ -6,6 +6,27 @@
 export const BILI_SUMMARY = "https://api.bilibili.com/x/web-interface/view/conclusion/get"
 
 /**
+ * 视频流URL
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/videostream_url.md
+ * @type {string}
+ */
+export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/playurl?cid={cid}&bvid={bvid}&qn=64&fnval=16"
+
+/**
+ * 动态信息
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/dynamic/content.md
+ * @type {string}
+ */
+export const BILI_DYNAMIC = "https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id={}"
+
+/**
+ * BVID -> CID
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/33bde6f6afcac2ff8c6f7069f08ce84065a6cff6/docs/video/info.md?plain=1#L4352
+ * @type {string}
+ */
+export const BILI_BVID_TO_CID = "https://api.bilibili.com/x/player/pagelist?bvid={bvid}&jsonp=jsonp"
+
+/**
  * 视频基本信息API
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/info.md
  * @type {string}
