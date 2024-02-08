@@ -4,7 +4,7 @@ import axios from "axios";
 import fs from "node:fs";
 import fetch from "node-fetch";
 import { mkdirIfNotExists } from "./file.js";
-import {TEN_THOUSAND} from "../constants/constant.js";
+import { TEN_THOUSAND } from "../constants/constant.js";
 
 /**
  * 请求模板

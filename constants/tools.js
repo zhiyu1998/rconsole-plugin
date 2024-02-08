@@ -69,3 +69,9 @@ export const TWITTER_TWEET_INFO = "https://api.twitter.com/2/tweets?ids={}"
  * @type {string}
  */
 export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/"
+
+/**
+ * 🍉 的请求链接
+ * @type {string}
+ */
+export const XIGUA_REQ_LINK = "http://47.99.158.118/video-crack/v2/parse?content={}"

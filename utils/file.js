@@ -6,7 +6,7 @@ import path from "path";
  * @param file
  * @returns {Promise<void>}
  */
-async function checkAndRemoveFile(file) {
+export async function checkAndRemoveFile(file) {
     try {
         await fs.promises.access(file);
         await fs.promises.unlink(file);
@@ -23,7 +23,7 @@ async function checkAndRemoveFile(file) {
  * @param dir
  * @returns {Promise<void>}
  */
-async function mkdirIfNotExists(dir) {
+export async function mkdirIfNotExists(dir) {
     try {
         await fs.promises.access(dir);
     } catch (err) {
@@ -40,9 +40,9 @@ async function mkdirIfNotExists(dir) {
  * @returns {Promise<number>}
  * @param folderPath
  */
-async function deleteFolderRecursive(folderPath) {
+export async function deleteFolderRecursive(folderPath) {
     try {
-        const files = await fs.promises.readdir(folderPath);
+        const files = await readCurrentDir(folderPath);
         const actions = files.map(async (file) => {
             const curPath = path.join(folderPath, file);
 
@@ -64,4 +64,17 @@ async function deleteFolderRecursive(folderPath) {
     }
 }
 
-export { checkAndRemoveFile, mkdirIfNotExists, deleteFolderRecursive }
+/**
+ * 读取当前文件夹的所有文件和文件夹
+ * @param path      路径
+ * @param printTree 是否打印树状图
+ * @returns {Promise<*>} 返回一个包含文件名的数组
+ */
+export async function readCurrentDir(path) {
+    try {
+        const files = await fs.promises.readdir(path);
+        return files;
+    } catch (err) {
+        logger.error(err);
+    }
+}

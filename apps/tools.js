@@ -7,7 +7,7 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
-import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists, readCurrentDir } from "../utils/file.js";
 import {
     downloadBFile,
     getBiliAudio,
@@ -35,7 +35,15 @@ import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
 import TokenBucket from "../utils/token-bucket.js";
 import { getWbi } from "../utils/biliWbi.js";
-import { BILI_SUMMARY, DY_INFO, TIKTOK_INFO, TWITTER_TWEET_INFO, XHS_REQ_LINK, XHS_VIDEO } from "../constants/tools.js";
+import {
+    BILI_SUMMARY,
+    DY_INFO,
+    TIKTOK_INFO,
+    TWITTER_TWEET_INFO,
+    XHS_REQ_LINK,
+    XHS_VIDEO,
+    XIGUA_REQ_LINK
+} from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
@@ -122,6 +130,10 @@ export class tools extends plugin {
                 {
                     reg: "(youtube.com)",
                     fnc: "y2b"
+                },
+                {
+                    reg: "(ixigua.com)",
+                    fnc: "xigua"
                 }
             ],
         });
@@ -721,8 +733,9 @@ export class tools extends plugin {
     async clearTrash(e) {
         const dataDirectory = "./data/";
 
+        // 删除Yunzai遗留问题的合成视频垃圾文件
         try {
-            const files = await fs.promises.readdir(dataDirectory);
+            const files = await readCurrentDir(dataDirectory);
             let dataClearFileLen = 0;
             for (const file of files) {
                 // 如果文件名符合规则，执行删除操作
@@ -731,7 +744,8 @@ export class tools extends plugin {
                     dataClearFileLen++;
                 }
             }
-            const rTempFileLen = await deleteFolderRecursive(this.toolsConfig.defaultPath)
+            // 删除R插件临时文件
+            const rTempFileLen = await deleteFolderRecursive(this.defaultPath)
             e.reply(
                 `数据统计：\n` +
                 `- 当前清理了${ dataDirectory }下总计：${ dataClearFileLen } 个垃圾文件\n` +
@@ -1008,6 +1022,41 @@ export class tools extends plugin {
             e.reply("y2b下载失败");
             return;
         }
+    }
+
+    async xigua(e) {
+        // 1. https://v.ixigua.com/ienrQ5bR/
+        // 2. https://www.ixigua.com/7270448082586698281
+        // 3. https://m.ixigua.com/video/7270448082586698281
+        const msg = /(?:https?:\/\/)?(www|v|m)\.ixigua\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
+
+        const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
+        const videoReq = `https://www.ixigua.com/${ id }`;
+        const xiguaHeader = {
+            'authority': 'ib.365yg.com',
+            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'accept-language': 'zh-CN,zh;q=0.9',
+            'cache-control': 'no-cache',
+            'pragma': 'no-cache',
+            'sec-ch-ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
+            'sec-fetch-dest': 'document',
+            'sec-fetch-mode': 'navigate',
+            'sec-fetch-site': 'none',
+            'sec-fetch-user': '?1',
+            'upgrade-insecure-requests': '1',
+            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
+        }
+        axios.get(XIGUA_REQ_LINK.replace("{}", videoReq), {
+            headers: xiguaHeader
+        }).then(resp => {
+            const url = resp.data.data.url;
+            this.downloadVideo(url).then(path => {
+                e.reply(segment.video(path + "/temp.mp4"));
+            });
+        })
+        return true
     }
 
     /**
