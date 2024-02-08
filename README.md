@@ -146,7 +146,7 @@ chmod a+rx ~/.local/bin/yt-dlp
 - [x] 哔哩哔哩总结
 - [x] xhs解析去水印
 - [x] kuai_shou解析
-- [ ] xi_gua视频解析
+- [x] xi_gua视频解析
 - [ ] ...
 
 
