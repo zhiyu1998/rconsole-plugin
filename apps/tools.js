@@ -1030,7 +1030,17 @@ export class tools extends plugin {
         // 1. https://v.ixigua.com/ienrQ5bR/
         // 2. https://www.ixigua.com/7270448082586698281
         // 3. https://m.ixigua.com/video/7270448082586698281
-        const msg = /(?:https?:\/\/)?(www|v|m)\.ixigua\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
+        let msg = /(?:https?:\/\/)?(www|v|m)\.ixigua\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
+        // 跳转短号
+        if (msg.includes("v.ixigua")) {
+            await fetch(msg, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+                }
+            }).then(resp => {
+                msg = resp.url;
+            })
+        }
         e.reply("识别：🍉视频");
 
         const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
