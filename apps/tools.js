@@ -877,7 +877,19 @@ export class tools extends plugin {
     async kuaishou(e) {
         // 例子：https://www.kuaishou.com/short-video/3xkfs8p4pnd67p4?authorId=3xkznsztpwetngu&streamSource=find&area=homexxbrilliant
         // https://v.m.chenzhongtech.com/fw/photo/3xburnkmj3auazc
-        const msg = e.msg;
+        // https://v.kuaishou.com/1ff8QP
+        let msg = /(?:https?:\/\/)?(www|v)\.kuaishou\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
+        // 跳转短号
+        if (msg.includes("v.kuaishou")) {
+            await fetch(msg, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+                }
+            }).then(resp => {
+                msg = resp.url;
+            })
+        }
+        logger.info(msg)
         let video_id;
         if (msg.includes('/fw/photo/')) {
             video_id = msg.match(/\/fw\/photo\/([^/?]+)/)[1];
@@ -888,16 +900,16 @@ export class tools extends plugin {
             return
         }
         // 提取视频
-        const videoUrl = `https://www.kuaishou.com/short-video/${ video_id }`;
+        const videoUrl = XIGUA_REQ_LINK.replace("{}", `https://www.kuaishou.com/short-video/${ video_id }`);
+        e.reply("识别：快手");
 
         // 发送GET请求
-        const response = await axios.get(videoUrl, {
+        axios.get(videoUrl, {
             headers: {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
-                'Cookie': 'kpf=PC_WEB; clientid=3; did=web_c5627223fe1e796669894e6cb74f1461; _ga=GA1.1.1139357938.1696318390; didv=1696329758000; _ga_0P9YPW1GQ3=GS1.1.1696659232.14.0.1696659232.0.0.0; kpn=KUAISHOU_VISION',
                 'Pragma': 'no-cache',
                 'Sec-Fetch-Dest': 'document',
                 'Sec-Fetch-Mode': 'navigate',
@@ -905,24 +917,14 @@ export class tools extends plugin {
                 'Sec-Fetch-User': '?1',
                 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-                'sec-ch-ua': '"Google Chrome";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"macOS"',
+
             },
             timeout: 10000 // 设置超时时间
-        });
-
-        // 使用正则表达式提取视频数据
-        const videoDataMatch = response.data.match(/"photoH265Url":"(.*?)"/);
-        let videoData = videoDataMatch ? videoDataMatch[1] : null;
-        if (!videoData) {
-            e.reply("快手解析失败，可能原因：解析太多暂时失效，过一段时间再解析！");
-            return;
-        }
-        e.reply("识别：快手")
-        videoData = decodeURIComponent(videoData).replace(/\\u002F/g, '/');
-        this.downloadVideo(videoData).then(path => {
-            e.reply(segment.video(path + "/temp.mp4"));
+        }).then(resp => {
+            const url = resp.data.data.url;
+            this.downloadVideo(url).then(path => {
+                e.reply(segment.video(path + "/temp.mp4"));
+            });
         });
     }
 
@@ -1029,6 +1031,7 @@ export class tools extends plugin {
         // 2. https://www.ixigua.com/7270448082586698281
         // 3. https://m.ixigua.com/video/7270448082586698281
         const msg = /(?:https?:\/\/)?(www|v|m)\.ixigua\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
+        e.reply("识别：🍉视频");
 
         const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
         const videoReq = `https://www.ixigua.com/${ id }`;
