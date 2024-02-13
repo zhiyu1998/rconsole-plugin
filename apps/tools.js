@@ -321,16 +321,19 @@ export class tools extends plugin {
         // av处理
         const matched = url.match(/\/(AV|av)(\w+)/);
         if (matched) {
-            url = url.replace(matched[0], av2BV(Number(matched[2])));
+            url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
         }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.includes("bili音乐")) {
-            await this.biliMusic(e, url);
-            return true;
+            return await this.biliMusic(e, url);
         }
         // 动态处理
-        if (url.includes("t.bilibili.com")) {
-            url = this.biliDynamic(url, e);
+        if (url.includes("t.bilibili.com") || url.includes("bilibili.com\/opus")) {
+            if (_.isEmpty(this.biliSessData)) {
+                e.reply("检测到没有填写biliSessData，无法解析动态");
+                return true;
+            }
+            url = this.biliDynamic(e, url, this.biliSessData);
             return true;
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
@@ -407,13 +410,13 @@ export class tools extends plugin {
     }
 
     // 发送哔哩哔哩动态的算法
-    biliDynamic(url, e) {
+    biliDynamic(e, url, session) {
         // 去除多余参数
         if (url.includes("?")) {
             url = url.substring(0, url.indexOf("?"));
         }
         const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
-        getDynamic(dynamicId).then(async resp => {
+        getDynamic(dynamicId, session).then(async resp => {
             if (resp.dynamicSrc.length > 0) {
                 e.reply(`识别：哔哩哔哩动态, ${ resp.dynamicDesc }`);
                 let dynamicSrcMsg = [];

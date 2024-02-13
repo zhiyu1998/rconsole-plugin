@@ -227,14 +227,15 @@ export async function getVideoInfo(url) {
  * @param dynamicId
  * @returns {Promise<any>}
  */
-export async function getDynamic(dynamicId) {
+export async function getDynamic(dynamicId, SESSDATA) {
     const dynamicApi = BILI_DYNAMIC.replace("{}", dynamicId);
     return axios.get(dynamicApi, {
         headers: {
             'User-Agent':
                 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
             'referer': 'https://www.bilibili.com',
-        }
+            Cookie: `SESSDATA=${ SESSDATA }`
+        },
     }).then(resp => {
         const dynamicData = resp.data.data.card
         const card = JSON.parse(dynamicData.card)

@@ -14,7 +14,7 @@ export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/playurl?cid={
 
 /**
  * 动态信息
- * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/dynamic/content.md
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/dynamic/get_dynamic_detail.md
  * @type {string}
  */
 export const BILI_DYNAMIC = "https://api.vc.bilibili.com/dynamic_svr/v1/dynamic_svr/get_dynamic_detail?dynamic_id={}"
