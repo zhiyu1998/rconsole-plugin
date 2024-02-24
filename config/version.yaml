@@ -1,7 +1,8 @@
 - {
-  version: 1.3.5,
+  version: 1.4.0,
   data:
     [
+      新增<span class="cmd">米游社解析</span>功能,
       新增<span class="cmd">🍉解析</span>功能,
       新增<span class="cmd">油管解析</span>功能,
       新增<span class="cmd">小红书无水印下载</span>功能,

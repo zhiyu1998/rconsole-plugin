@@ -26,7 +26,7 @@ import {
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
-import { containsChinese, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
+import { containsChinese, downloadImg, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
@@ -38,6 +38,7 @@ import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_SUMMARY,
     DY_INFO,
+    MIYOUSHE_ARTICLE,
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
@@ -47,6 +48,7 @@ import {
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
+import { getDS } from "../utils/mihoyo.js";
 
 export class tools extends plugin {
     /**
@@ -134,6 +136,10 @@ export class tools extends plugin {
                 {
                     reg: "(ixigua.com)",
                     fnc: "xigua"
+                },
+                {
+                    reg: "(miyoushe.com)",
+                    fnc: "miyoushe"
                 }
             ],
         });
@@ -566,7 +572,7 @@ export class tools extends plugin {
             for (let item of resp.includes.media) {
                 if (item.type === "photo") {
                     // 图片
-                    task.push(this.downloadImg(item.url, downloadPath, "", true));
+                    task.push(downloadImg(item.url, downloadPath, "", true));
                 } else if (item.type === "video") {
                     // 视频
                     await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
@@ -686,7 +692,7 @@ export class tools extends plugin {
             } else if (type === "normal") {
                 e.reply(`识别：小红书, ${ title }\n${ desc }`);
                 noteData.imageList.map(async (item, index) => {
-                    imgPromise.push(this.downloadImg(item.urlDefault, downloadPath, index.toString()));
+                    imgPromise.push(downloadImg(item.urlDefault, downloadPath, index.toString()));
                 });
             }
             const paths = await Promise.all(imgPromise);
@@ -773,7 +779,7 @@ export class tools extends plugin {
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 简单封装图片下载
-        const downloadImg = (url, destination) => {
+        const downloadInsImg = (url, destination) => {
             return new Promise((resolve, reject) => {
                 fetch(url, {
                     timeout: 10000,
@@ -805,7 +811,7 @@ export class tools extends plugin {
                         .exec(item)[0]
                         .replace(/#38/g, "")
                         .replace(/;/g, "");
-                    imgPromise.push(downloadImg(imgUrl, `${ downloadPath }/${ index }.jpg`));
+                    imgPromise.push(downloadInsImg(imgUrl, `${ downloadPath }/${ index }.jpg`));
                 });
             }
             // TODO 视频，会出bug暂时不做
@@ -924,10 +930,25 @@ export class tools extends plugin {
             },
             timeout: 10000 // 设置超时时间
         }).then(resp => {
-            const url = resp.data.data.url;
-            this.downloadVideo(url).then(path => {
-                e.reply(segment.video(path + "/temp.mp4"));
-            });
+            // 图片：https://kph8gvfz.m.chenzhongtech.com/fw/photo/3x45s52s9wchwwm
+
+            if (resp.data.data?.imageUrl) {
+                const imageUrl = resp.data.data.imageUrl;
+                const images = imageUrl.map(item => {
+                    return {
+                        message: segment.image(item),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }
+                })
+                e.reply(Bot.makeForwardMsg(images));
+            } else {
+                // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
+                const url = resp.data.data.url;
+                this.downloadVideo(url).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            }
         });
     }
 
@@ -1075,6 +1096,60 @@ export class tools extends plugin {
         return true
     }
 
+    async miyoushe(e) {
+        let msg = /(?:https?:\/\/)?(m|www)\.miyoushe\.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(e.msg)[0];
+        const id = /\/(\d+)$/.exec(msg)?.[0].replace("\/", "");
+
+        fetch(MIYOUSHE_ARTICLE.replace("{}", id), {
+            headers: {
+                "Accept-Encoding": "gzip, deflate, br",
+                "Accept-Language": "zh-cn",
+                "Connection": "keep-alive",
+                "Host": "api-takumi.mihoyo.com",
+                "x-rpc-app_version": "2.11.0",
+                "x-rpc-client_type": "4",
+                "Referer": "https://bbs.mihoyo.com/",
+                "DS": getDS(),
+            }
+        }).then(async resp => {
+            const respJson = await resp.json();
+            const data = respJson.data.post.post;
+            // 分别获取：封面、主题、内容、图片
+            const { cover, subject, content, images, structured_content } = data;
+            let realContent = "";
+            // safe JSON.parse
+            try {
+                realContent = JSON.parse(content);
+            } catch (e) {
+                realContent = content;
+            }
+            const normalMsg = `识别：米游社，${ subject }\n${ realContent }`;
+            const replyMsg = cover ? [segment.image(cover), normalMsg] : normalMsg;
+            e.reply(replyMsg);
+            // 视频
+            if (structured_content) {
+                const sc = JSON.parse(structured_content);
+                const resolutions = sc?.[1].insert.vod.resolutions;
+                // 暂时选取分辨率较低的video进行解析
+                const videoUrl = resolutions[0].url;
+                this.downloadVideo(videoUrl).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            }
+            // 这个判断防止发送重复图片
+            if (images && images.length > 1) {
+                const replyImages = images.map(item => {
+                    return {
+                        message: segment.image(item),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }
+                });
+                e.reply(Bot.makeForwardMsg(replyImages));
+            }
+        })
+    }
+
     /**
      * 哔哩哔哩下载
      * @param title
@@ -1109,58 +1184,6 @@ export class tools extends plugin {
         ]).then(data => {
             return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${ title }.mp4`);
         });
-    }
-
-    /**
-     * 下载一张网络图片(自动以url的最后一个为名字)
-     * @param img
-     * @param dir
-     * @param fileName
-     * @param isProxy
-     * @returns {Promise<unknown>}
-     */
-    async downloadImg(img, dir, fileName = "", isProxy = false) {
-        if (fileName === "") {
-            fileName = img.split("/").pop();
-        }
-        const filepath = `${ dir }/${ fileName }`;
-        await mkdirIfNotExists(dir)
-        const writer = fs.createWriteStream(filepath);
-        const axiosConfig = {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-            },
-            responseType: "stream",
-        };
-
-        if (isProxy) {
-            axiosConfig.httpAgent = tunnel.httpOverHttp({
-                proxy: { host: this.proxyAddr, port: this.proxyPort },
-            });
-            axiosConfig.httpsAgent = tunnel.httpOverHttp({
-                proxy: { host: this.proxyAddr, port: this.proxyPort },
-            });
-        }
-        try {
-            const res = await axios.get(img, axiosConfig);
-            res.data.pipe(writer);
-
-            return new Promise((resolve, reject) => {
-                writer.on("finish", () => {
-                    writer.close(() => {
-                        resolve(filepath);
-                    });
-                });
-                writer.on("error", err => {
-                    fs.unlink(filepath, () => {
-                        reject(err);
-                    });
-                });
-            });
-        } catch (err) {
-            logger.error("图片下载失败");
-        }
     }
 
     /**

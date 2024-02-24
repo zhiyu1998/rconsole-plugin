@@ -8,12 +8,17 @@ import axios from "axios";
 // 常量
 import { CAT_LIMIT } from "../constants/constant.js";
 // 书库
-import { getZHelper, getYiBook, getZBook } from "../utils/books.js";
+import { getYiBook, getZBook, getZHelper } from "../utils/books.js";
 // 工具类
-import _ from "lodash";
 import TokenBucket from '../utils/token-bucket.js'
 
 export class query extends plugin {
+    /**
+     * 令牌桶 拿来限流
+     * @type {TokenBucket}
+     */
+    static #tokenBucket = new TokenBucket(1, 1, 60);
+
     constructor() {
         super({
             name: "R插件查询类",
@@ -59,19 +64,19 @@ export class query extends plugin {
 
     async doctor(e) {
         const keyword = e.msg.replace("#医药查询", "").trim();
-        const url = `https://api2.dayi.org.cn/api/search2?keyword=${keyword}&pageNo=1&pageSize=10`;
+        const url = `https://api2.dayi.org.cn/api/search2?keyword=${ keyword }&pageNo=1&pageSize=10`;
         try {
             const res = await fetch(url)
                 .then(resp => resp.json())
                 .then(resp => resp.list);
             const promises = res.map(async element => {
                 const title = this.removeTag(element.title);
-                const template = `${title}\n标签：${element.secondTitle}\n介绍：${element.introduction}`;
+                const template = `${ title }\n标签：${ element.secondTitle }\n介绍：${ element.introduction }`;
 
                 if (title === keyword) {
                     const browser = await puppeteer.browserInit();
                     const page = await browser.newPage();
-                    await page.goto(`https://www.dayi.org.cn/drug/${element.id}`);
+                    await page.goto(`https://www.dayi.org.cn/drug/${ element.id }`);
                     const buff = await page.screenshot({
                         fullPage: true,
                         type: "jpeg",
@@ -101,8 +106,8 @@ export class query extends plugin {
 
     async cat(e) {
         const [shibes, cats] = await Promise.allSettled([
-            fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data => data.json()),
-            fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`).then(data =>
+            fetch(`https://shibe.online/api/cats?count=${ CAT_LIMIT }`).then(data => data.json()),
+            fetch(`https://api.thecatapi.com/v1/images/search?limit=${ CAT_LIMIT }`).then(data =>
                 data.json(),
             ),
         ]);
@@ -139,7 +144,7 @@ export class query extends plugin {
             .filter(result => result.status === "fulfilled") // 只保留已解决的 Promise
             .flatMap(result =>
                 result.value.data.list.map(element => {
-                    const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
+                    const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`;
                     return {
                         message: { type: "text", text: template },
                         nickname: e.sender.card || e.user_id,
@@ -228,14 +233,14 @@ export class query extends plugin {
                         // 封装答案
                         let ans = "";
                         for (let i = 0; i < result.length; i++) {
-                            ans += `${i + 1}. ${result[i]}\n`;
+                            ans += `${ i + 1 }. ${ result[i] }\n`;
                         }
                         e.reply(ans);
                         const imgMatch = uri.match(/[^\/]+/g);
                         const imgId = imgMatch[imgMatch.length - 2];
 
                         axios
-                            .get(`https://h5.cyol.com/special/daxuexi/${imgId}/images/end.jpg`, {
+                            .get(`https://h5.cyol.com/special/daxuexi/${ imgId }/images/end.jpg`, {
                                 headers: {
                                     "User-Agent":
                                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
@@ -353,15 +358,15 @@ export class query extends plugin {
                     .sort((a, b) => b.luSort - a.luSort)
                     .map(item => {
                         const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
-                        const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl
+                        const template = `标题：${ pn }\n${ pa }\n期刊：${ zn }\n发布日期距今：${ lu }\n链接1：${ pu }\n链接2：${ pq }\n\n 大致描述：${ hl
                             .join("\n")
-                            .replace(/<\/?font[^>]*>/g, "")}`;
+                            .replace(/<\/?font[^>]*>/g, "") }`;
                         return {
                             message: [segment.image(aa), template],
                             nickname: this.e.sender.card || this.e.user_id,
                             user_id: this.e.user_id,
                         };
-                });
+                    });
                 e.reply(await Bot.makeForwardMsg(content));
             });
         return true;
@@ -377,7 +382,7 @@ export class query extends plugin {
         if (query.#tokenBucket.consume(e.user_id, 1)) {
             await func();
         } else {
-            e.reply(`🙅‍${e.nickname}你已经被限流，请稍后再试！`, true);
+            e.reply(`🙅‍${ e.nickname }你已经被限流，请稍后再试！`, true);
         }
     }
 
@@ -386,10 +391,4 @@ export class query extends plugin {
         const titleRex = /<[^>]+>/g;
         return title.replace(titleRex, "");
     }
-
-    /**
-     * 令牌桶 拿来限流
-     * @type {TokenBucket}
-     */
-    static #tokenBucket = new TokenBucket(1, 1, 60);
 }

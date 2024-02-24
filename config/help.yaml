@@ -56,6 +56,12 @@
     - icon: kuaishou
       title: "快手（测试阶段）"
       desc: 快手分享实时下载
+    - icon: xigua
+      title: "西瓜（测试阶段）"
+      desc: 西瓜分享实时下载
+    - icon: miyoushe
+      title: "米游社"
+      desc: 米游社文章分享实时下载
     - icon: literature
       title: "论文"
       desc: SCI论文实时解析
