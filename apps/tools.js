@@ -1129,12 +1129,18 @@ export class tools extends plugin {
             // 视频
             if (structured_content) {
                 const sc = JSON.parse(structured_content);
-                const resolutions = sc?.[1].insert.vod.resolutions;
-                // 暂时选取分辨率较低的video进行解析
-                const videoUrl = resolutions[0].url;
-                this.downloadVideo(videoUrl).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
-                });
+                // 逐个遍历是否包含url
+                for (let i = 0; i < sc.length; i++) {
+                    const resolutions = sc?.[i]?.insert.vod.resolutions;
+                    if (resolutions) {
+                        // 暂时选取分辨率较低的video进行解析
+                        const videoUrl = resolutions[0].url;
+                        this.downloadVideo(videoUrl).then(path => {
+                            e.reply(segment.video(path + "/temp.mp4"));
+                        });
+                        break;
+                    }
+                }
             }
             // 这个判断防止发送重复图片
             if (images && images.length > 1) {
