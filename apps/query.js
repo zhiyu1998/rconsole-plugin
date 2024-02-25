@@ -64,7 +64,7 @@ export class query extends plugin {
 
     async doctor(e) {
         const keyword = e.msg.replace("#医药查询", "").trim();
-        const url = `https://server.dayi.org.cn/api/search2?pageNo=1&pageSize=10&keyword=${ keyword }&pageNo=1&pageSize=10`;
+        const url = `https://server.dayi.org.cn/api/search2?keyword=${ keyword }&pageNo=1&pageSize=10`;
         try {
             const res = await fetch(url)
                 .then(resp => resp.json())
