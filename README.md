@@ -121,7 +121,7 @@ chmod a+rx ~/.local/bin/yt-dlp
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
-<img src="./img/qq.jpg" width="30%" height="30%">
+<img src="./img/qq.webp" width="30%" height="30%">
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
