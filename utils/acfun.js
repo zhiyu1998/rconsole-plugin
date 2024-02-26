@@ -13,13 +13,13 @@ function escapeSpecialChars(str) {
 }
 
 const parseVideoName = videoInfo => {
-    const strAc号 = "ac" + (videoInfo?.dougaId || "");
-    const str标题 = videoInfo?.title;
-    const str作者 = videoInfo?.user.name;
-    const str上传时间 = videoInfo?.createTime;
-    const str描述 = videoInfo?.description;
+    const acfunId = "ac" + (videoInfo?.dougaId || "");
+    const acfunTitle = videoInfo?.title;
+    const acfunAuthor = videoInfo?.user.name;
+    const uploadTime = videoInfo?.createTime;
+    const description = videoInfo?.description;
 
-    const raw = [strAc号, str标题, str作者, str上传时间, str描述]
+    const raw = [acfunId, acfunTitle, acfunAuthor, uploadTime, description]
         .map(d => d || "")
         .join("_")
         .slice(0, 100);

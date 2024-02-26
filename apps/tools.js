@@ -92,8 +92,8 @@ export class tools extends plugin {
                     fnc: "wiki",
                 },
                 {
-                    reg: "(twitter.com)",
-                    fnc: "twitter",
+                    reg: "(x.com)",
+                    fnc: "twitter_x",
                 },
                 {
                     reg: "(acfun.cn)",
@@ -610,6 +610,42 @@ export class tools extends plugin {
         return true;
     }
 
+    // 使用现有api解析小蓝鸟
+    async twitter_x(e) {
+        // 配置参数及解析
+        const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
+        const twitterUrl = reg.exec(e.msg)[0];
+        // 提取视频
+        const videoUrl = XIGUA_REQ_LINK.replace("{}", twitterUrl);
+        e.reply("识别：小蓝鸟");
+        axios.get(videoUrl, {
+            headers: {
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Language': 'zh-CN,zh;q=0.9',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Pragma': 'no-cache',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Upgrade-Insecure-Requests': '1',
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+
+            },
+            timeout: 10000 // 设置超时时间
+        }).then(resp => {
+            const url = resp.data.data?.url;
+            if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
+                e.reply(segment.image(url));
+            } else {
+                this.downloadVideo(url).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            }
+        });
+    }
+
     // acfun解析
     async acfun(e) {
         const path = `${ this.getCurDownloadPath(e) }/temp/`;
@@ -1096,6 +1132,7 @@ export class tools extends plugin {
         return true
     }
 
+    // 米游社
     async miyoushe(e) {
         let msg = /(?:https?:\/\/)?(m|www)\.miyoushe\.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(e.msg)[0];
         const id = /\/(\d+)$/.exec(msg)?.[0].replace("\/", "");
