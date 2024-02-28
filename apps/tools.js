@@ -220,12 +220,13 @@ export class tools extends plugin {
                     headers,
                 })
                 .then(async resp => {
-                    if (_.isEmpty(resp?.data)) {
+                    // console.log(resp)
+                    if (_.isEmpty(await resp?.data)) {
                         e.reply("解析失败，请重试！");
                         return;
                     }
-                    // console.log(resp.data)
-                    const item = resp.data.aweme_detail;
+                    // console.log(await resp.data)
+                    const item = await resp.data.aweme_detail;
                     e.reply(`识别：抖音, ${ item.desc }`);
                     const urlTypeCode = item.aweme_type;
                     const urlType = douyinTypeMap[urlTypeCode];
