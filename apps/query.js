@@ -58,6 +58,10 @@ export class query extends plugin {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
                 },
+                {
+                    reg: "^#(wiki|百科)(.*)$",
+                    fnc: "wiki",
+                }
             ],
         });
     }
@@ -369,6 +373,51 @@ export class query extends plugin {
                     });
                 e.reply(await Bot.makeForwardMsg(content));
             });
+        return true;
+    }
+
+    // 百科
+    async wiki(e) {
+        const key = e.msg.replace(/#|百科|wiki/g, "").trim();
+        const url = `https://xiaoapi.cn/API/bk.php?m=json&type=sg&msg=${ encodeURI(key) }`;
+        const bdUrl = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`;
+        const bkRes = await Promise.all([
+            axios
+                .get(bdUrl, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    timeout: 10000,
+                })
+                .then(resp => {
+                    return resp.data;
+                }),
+            axios
+                .get(url, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
+                    timeout: 10000,
+                })
+                .then(resp => {
+                    return resp.data;
+                }),
+        ]).then(async res => {
+            return res.map(item => {
+                return {
+                    message: `
+                      解释：${ _.get(item, "msg") }\n
+                      详情：${ _.get(item, "more") }\n
+                    `,
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            });
+            // 小鸡解释：${ _.get(data2, 'content') }
+        });
+        await e.reply(await Bot.makeForwardMsg(bkRes));
         return true;
     }
 

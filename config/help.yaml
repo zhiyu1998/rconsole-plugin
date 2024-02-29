@@ -24,14 +24,14 @@
     - icon: zhubai
       title: "#竹白"
       desc: 基于竹白百科的搜索
+    - icon: 百科
+      title: "#百科/wiki xxx"
+      desc: 百度百科/搜狗百科
 - group: 工具类合集
   list:
     - icon: translate
       title: "翻中/英/日 xxx"
-      desc: 百度翻译，例如：翻中 I want it!
-    - icon: 百科
-      title: "#百科/wiki xxx"
-      desc: 百度百科/搜狗百科
+      desc: R插件翻译引擎
     - icon: tiktok
       title: "xxxv.douyin.com"
       desc: 抖音分享实时下载

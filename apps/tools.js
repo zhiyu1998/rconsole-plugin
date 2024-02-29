@@ -26,7 +26,14 @@ import {
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
-import { containsChinese, downloadImg, formatBiliInfo, getIdVideo, secondsToTime } from "../utils/common.js";
+import {
+    containsChinese,
+    downloadImg,
+    downloadMp3,
+    formatBiliInfo,
+    getIdVideo,
+    secondsToTime
+} from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
 import * as xBogus from "../utils/x-bogus.cjs";
@@ -88,10 +95,6 @@ export class tools extends plugin {
                     fnc: "bili",
                 },
                 {
-                    reg: "^#(wiki|百科)(.*)$",
-                    fnc: "wiki",
-                },
-                {
                     reg: "(x.com)",
                     fnc: "twitter_x",
                 },
@@ -140,6 +143,10 @@ export class tools extends plugin {
                 {
                     reg: "(miyoushe.com)",
                     fnc: "miyoushe"
+                },
+                {
+                    reg: "(music.163.com|163cn.tv)",
+                    fnc: "netease",
                 }
             ],
         });
@@ -490,51 +497,6 @@ export class tools extends plugin {
                 }
                 return resReply;
             })
-    }
-
-    // 百科
-    async wiki(e) {
-        const key = e.msg.replace(/#|百科|wiki/g, "").trim();
-        const url = `https://xiaoapi.cn/API/bk.php?m=json&type=sg&msg=${ encodeURI(key) }`;
-        const bdUrl = `https://xiaoapi.cn/API/bk.php?m=json&type=bd&msg=${ encodeURI(key) }`;
-        const bkRes = await Promise.all([
-            axios
-                .get(bdUrl, {
-                    headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                    timeout: 10000,
-                })
-                .then(resp => {
-                    return resp.data;
-                }),
-            axios
-                .get(url, {
-                    headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                    timeout: 10000,
-                })
-                .then(resp => {
-                    return resp.data;
-                }),
-        ]).then(async res => {
-            return res.map(item => {
-                return {
-                    message: `
-                      解释：${ _.get(item, "msg") }\n
-                      详情：${ _.get(item, "more") }\n
-                    `,
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                };
-            });
-            // 小鸡解释：${ _.get(data2, 'content') }
-        });
-        await e.reply(await Bot.makeForwardMsg(bkRes));
-        return true;
     }
 
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
@@ -913,6 +875,55 @@ export class tools extends plugin {
             });
         }
         return true;
+    }
+
+    // 网易云解析
+    async netease(e) {
+        let message =
+            e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
+        const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
+        const id =
+            musicUrlReg2.exec(message)?.[3] ||
+            musicUrlReg.exec(message)?.[2] ||
+            /id=(\d+)/.exec(message)[1];
+        // 如果没有下载地址跳出if
+        if (_.isEmpty(id)) {
+            e.reply(`识别：网易云音乐，解析失败！`);
+            return
+        }
+        if (typeof message !== "string") {
+            return false;
+        }
+        try {
+            // 小程序
+            const musicJson = JSON.parse(message);
+            const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
+            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+            JSON.parse(message);
+            return true;
+        } catch (err) {
+            axios.get(`https://www.oranges1.top/neteaseapi.do/song/url?id=${id}`, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+            }).then(async resp => {
+                const url = await resp.data.data?.[0].url;
+                const title = await axios.get(`https://www.oranges1.top/neteaseapi.do/song/detail?ids=${id}`).then(res => {
+                    const song = res.data.songs[0];
+                    return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+                });
+                e.reply(`识别：网易云音乐，${title}`);
+                downloadMp3(url, 'follow').then(path => {
+                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+                })
+                    .catch(err => {
+                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                    });
+            })
+            return true;
+        }
     }
 
     /**

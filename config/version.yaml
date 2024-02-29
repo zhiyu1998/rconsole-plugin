@@ -1,5 +1,5 @@
 - {
-  version: 1.4.4,
+  version: 1.4.5,
   data:
     [
       新增<span class="cmd">米游社解析</span>功能,
