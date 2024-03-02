@@ -2,11 +2,10 @@
   version: 1.5.0,
   data:
     [
+      新增<span class="cmd">最右解析</span>功能,
       新增<span class="cmd">米游社解析</span>功能,
       新增<span class="cmd">🍉解析</span>功能,
       新增<span class="cmd">油管解析</span>功能,
-      新增<span class="cmd">小红书无水印下载</span>功能,
-      新增<span class="cmd">哔哩哔哩官方AI总结</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,
