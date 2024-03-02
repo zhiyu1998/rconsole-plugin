@@ -93,6 +93,15 @@ chmod a+rx ~/.local/bin/yt-dlp
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
+7. 【可选 & 慎重】下载指定版本的R插件：
+如果你觉得当前版本的功能出现了问题，那么可以下载指定版本的插件，比如`1.5.1`：
+```shell
+# 删除当前的R插件
+rm -rf ./plugins/rconsole-plugin/
+# 克隆指定版本的R插件
+git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
+```
+
 ##  🐤 Q&A
 ### bilibili问题
 > 哔哩哔哩的SESSDATA？
