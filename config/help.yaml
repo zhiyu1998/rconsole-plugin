@@ -62,6 +62,9 @@
     - icon: miyoushe
       title: "米游社"
       desc: 米游社文章分享实时下载
+    - icon: zuiyou
+      title: "最右（测试阶段）"
+      desc: 最右分享实时下载
     - icon: literature
       title: "论文"
       desc: SCI论文实时解析

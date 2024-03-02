@@ -45,17 +45,18 @@ import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_SUMMARY,
     DY_INFO,
-    MIYOUSHE_ARTICLE,
+    MIYOUSHE_ARTICLE, NETEASE_SONG_DETAIL, NETEASE_SONG_DOWNLOAD,
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
     XHS_VIDEO,
-    XIGUA_REQ_LINK
+    GENERAL_REQ_LINK
 } from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
+import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 
 export class tools extends plugin {
     /**
@@ -129,16 +130,12 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com)",
-                    fnc: "kuaishou",
+                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn)",
+                    fnc: "general",
                 },
                 {
                     reg: "(youtube.com)",
                     fnc: "y2b"
-                },
-                {
-                    reg: "(ixigua.com)",
-                    fnc: "xigua"
                 },
                 {
                     reg: "(miyoushe.com)",
@@ -147,7 +144,7 @@ export class tools extends plugin {
                 {
                     reg: "(music.163.com|163cn.tv)",
                     fnc: "netease",
-                }
+                },
             ],
         });
         // 配置文件
@@ -579,7 +576,7 @@ export class tools extends plugin {
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
         // 提取视频
-        const videoUrl = XIGUA_REQ_LINK.replace("{}", twitterUrl);
+        const videoUrl = GENERAL_REQ_LINK.replace("{}", twitterUrl);
         e.reply("识别：小蓝鸟");
         axios.get(videoUrl, {
             headers: {
@@ -903,18 +900,24 @@ export class tools extends plugin {
             JSON.parse(message);
             return true;
         } catch (err) {
-            axios.get(`https://www.oranges1.top/neteaseapi.do/song/url?id=${id}`, {
+            axios.get(NETEASE_SONG_DOWNLOAD.replace("{}", id), {
                 headers: {
                     "User-Agent":
                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                 },
             }).then(async resp => {
                 const url = await resp.data.data?.[0].url;
-                const title = await axios.get(`https://www.oranges1.top/neteaseapi.do/song/detail?ids=${id}`).then(res => {
+                // 获取歌曲信息
+                const title = await axios.get(NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
                     const song = res.data.songs[0];
                     return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
                 });
                 e.reply(`识别：网易云音乐，${title}`);
+                // const mvUrlJson = await getKugouMv(title, 1, 1, 0);
+                // const mvUrl = mvUrlJson.map(item => item.mv_url)?.[0];
+                // this.downloadVideo(mvUrl).then(path => {
+                //     e.reply(segment.video(path + "/temp.mp4"));
+                // });
                 downloadMp3(url, 'follow').then(path => {
                     Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
                 })
@@ -927,41 +930,17 @@ export class tools extends plugin {
     }
 
     /**
-     * 快手解析
+     * 通用解析
      * @param e
      * @return {Promise<void>}
      */
-    async kuaishou(e) {
-        // 例子：https://www.kuaishou.com/short-video/3xkfs8p4pnd67p4?authorId=3xkznsztpwetngu&streamSource=find&area=homexxbrilliant
-        // https://v.m.chenzhongtech.com/fw/photo/3xburnkmj3auazc
-        // https://v.kuaishou.com/1ff8QP
-        let msg = /(?:https?:\/\/)?(www|v)\.kuaishou\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
-        // 跳转短号
-        if (msg.includes("v.kuaishou")) {
-            await fetch(msg, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-                }
-            }).then(resp => {
-                msg = resp.url;
-            })
-        }
-        logger.info(msg)
-        let video_id;
-        if (msg.includes('/fw/photo/')) {
-            video_id = msg.match(/\/fw\/photo\/([^/?]+)/)[1];
-        } else if (msg.includes("short-video")) {
-            video_id = msg.match(/short-video\/([^/?]+)/)[1];
-        } else {
-            e.reply("无法提取快手的信息，请重试或者换一个视频！")
-            return
-        }
-        // 提取视频
-        const videoUrl = XIGUA_REQ_LINK.replace("{}", `https://www.kuaishou.com/short-video/${ video_id }`);
-        e.reply("识别：快手");
-
+    async general(e) {
+        const linkAdapter = new GeneralLinkAdapter(e.msg);
+        const adapter = await linkAdapter.build();
+        logger.info(adapter.link)
+        e.reply(`识别：${adapter.name}`);
         // 发送GET请求
-        axios.get(videoUrl, {
+        axios.get(adapter.link, {
             headers: {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -1096,52 +1075,6 @@ export class tools extends plugin {
             e.reply("y2b下载失败");
             return;
         }
-    }
-
-    async xigua(e) {
-        // 1. https://v.ixigua.com/ienrQ5bR/
-        // 2. https://www.ixigua.com/7270448082586698281
-        // 3. https://m.ixigua.com/video/7270448082586698281
-        let msg = /(?:https?:\/\/)?(www|v|m)\.ixigua\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(e.msg)[0];
-        // 跳转短号
-        if (msg.includes("v.ixigua")) {
-            await fetch(msg, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-                }
-            }).then(resp => {
-                msg = resp.url;
-            })
-        }
-        e.reply("识别：🍉视频");
-
-        const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
-        const videoReq = `https://www.ixigua.com/${ id }`;
-        const xiguaHeader = {
-            'authority': 'ib.365yg.com',
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language': 'zh-CN,zh;q=0.9',
-            'cache-control': 'no-cache',
-            'pragma': 'no-cache',
-            'sec-ch-ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"macOS"',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'none',
-            'sec-fetch-user': '?1',
-            'upgrade-insecure-requests': '1',
-            'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36'
-        }
-        axios.get(XIGUA_REQ_LINK.replace("{}", videoReq), {
-            headers: xiguaHeader
-        }).then(resp => {
-            const url = resp.data.data.url;
-            this.downloadVideo(url).then(path => {
-                e.reply(segment.video(path + "/temp.mp4"));
-            });
-        })
-        return true
     }
 
     // 米游社

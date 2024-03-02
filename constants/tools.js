@@ -81,4 +81,16 @@ export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/"
  * 🍉 的请求链接
  * @type {string}
  */
-export const XIGUA_REQ_LINK = "http://47.99.158.118/video-crack/v2/parse?content={}"
+export const GENERAL_REQ_LINK = "http://47.99.158.118/video-crack/v2/parse?content={}"
+
+/**
+ * 获取网易云歌曲下载链接
+ * @type {string}
+ */
+export const NETEASE_SONG_DOWNLOAD = "https://www.oranges1.top/neteaseapi.do/song/url?id={}"
+
+/**
+ * 获取网易云歌曲详情
+ * @type {string}
+ */
+export const NETEASE_SONG_DETAIL = "https://www.oranges1.top/neteaseapi.do/song/detail?ids={}"
