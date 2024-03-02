@@ -94,3 +94,9 @@ export const NETEASE_SONG_DOWNLOAD = "https://www.oranges1.top/neteaseapi.do/son
  * @type {string}
  */
 export const NETEASE_SONG_DETAIL = "https://www.oranges1.top/neteaseapi.do/song/detail?ids={}"
+
+/**
+ * 单条微博的接口
+ * @type {string}
+ */
+export const WEIBO_SINGLE_INFO = "https://m.weibo.cn/statuses/show?id={}"

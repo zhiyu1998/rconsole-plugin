@@ -50,7 +50,7 @@ import {
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
     XHS_VIDEO,
-    GENERAL_REQ_LINK
+    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO
 } from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
@@ -145,6 +145,10 @@ export class tools extends plugin {
                     reg: "(music.163.com|163cn.tv)",
                     fnc: "netease",
                 },
+                {
+                    reg: "(weibo.com|m.weibo.cn)",
+                    fnc: "weibo",
+                }
             ],
         });
         // 配置文件
@@ -927,6 +931,60 @@ export class tools extends plugin {
             })
             return true;
         }
+    }
+
+    // 微博解析
+    async weibo(e) {
+        let weiboId;
+        // 对已知情况进行判断
+        if (e.msg.includes("m.weibo.cn")) {
+            // https://m.weibo.cn/detail/4976424138313924
+            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(e.msg)?.[0];
+        } else {
+            // https://weibo.com/1707895270/5006106478773472
+            weiboId = /(?<=weibo.com\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(e.msg)?.[0];
+        }
+        // 无法获取id就结束
+        if (!weiboId) {
+            e.reply("解析失败：无法获取到wb的id");
+            return;
+        }
+        const id = weiboId.split("/")[1] || weiboId;
+        axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                "cookie": "_T_WM=40835919903; WEIBOCN_FROM=1110006030; MLOGIN=0; XSRF-TOKEN=4399c8",
+            }
+        })
+            .then(async resp => {
+                const wbData = resp.data.data;
+                const { text, status_title, source, region_name, pics, page_info } = wbData;
+                e.reply(`识别：微博，${text.replace(/<[^>]+>/g, '')}\n${status_title}\n${source}\t${region_name}`);
+                if (pics) {
+                    // 图片
+                    const images = pics.map(item => ({
+                        message: segment.image(item.url),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    }));
+                    await this.reply(await Bot.makeForwardMsg(images));
+                }
+                if (page_info) {
+                    // 视频
+                    const videoUrl = page_info.urls?.mp4_720p_mp4 || page_info.urls?.mp4_hd_mp4;
+                    try {
+                        this.downloadVideo(videoUrl).then(path => {
+                            e.reply(segment.video(path + "/temp.mp4"));
+                        });
+                    } catch (err) {
+                        e.reply("视频资源获取失败");
+                        logger.error("403错误：", err);
+                    }
+                }
+            });
+        return true;
     }
 
     /**
