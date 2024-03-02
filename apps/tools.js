@@ -1105,12 +1105,24 @@ export class tools extends plugin {
             } catch (e) {
                 realContent = content;
             }
-            const normalMsg = `识别：米游社，${ subject }\n${ realContent }`;
+            const normalMsg = `识别：米游社，${ subject }\n${ realContent?.describe || "" }`;
             const replyMsg = cover ? [segment.image(cover), normalMsg] : normalMsg;
             e.reply(replyMsg);
+            // 图片
+            if (images && images.length > 1) {
+                const replyImages = images.map(item => {
+                    return {
+                        message: segment.image(item),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }
+                });
+                e.reply(Bot.makeForwardMsg(replyImages));
+            }
             // 视频
-            if (structured_content) {
-                const sc = JSON.parse(structured_content);
+            const sc = JSON.parse(structured_content);
+            logger.info(sc.length)
+            if (sc?.[0]?.insert.vod.resolutions) {
                 // 逐个遍历是否包含url
                 for (let i = 0; i < sc.length; i++) {
                     const resolutions = sc?.[i]?.insert.vod.resolutions;
@@ -1123,17 +1135,6 @@ export class tools extends plugin {
                         break;
                     }
                 }
-            }
-            // 这个判断防止发送重复图片
-            if (images && images.length > 1) {
-                const replyImages = images.map(item => {
-                    return {
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    }
-                });
-                e.reply(Bot.makeForwardMsg(replyImages));
             }
         })
     }
