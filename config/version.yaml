@@ -1,5 +1,5 @@
 - {
-  version: 1.5.2,
+  version: 1.5.3,
   data:
     [
       新增<span class="cmd">微博解析</span>功能,

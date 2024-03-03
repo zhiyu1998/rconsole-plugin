@@ -965,7 +965,7 @@ export class tools extends plugin {
                 if (pics) {
                     // 图片
                     const images = pics.map(item => ({
-                        message: segment.image(item.url),
+                        message: segment.image(item?.large.url || item.url),
                         nickname: e.sender.card || e.user_id,
                         user_id: e.user_id,
                     }));
@@ -975,7 +975,12 @@ export class tools extends plugin {
                     // 视频
                     const videoUrl = page_info.urls?.mp4_720p_mp4 || page_info.urls?.mp4_hd_mp4;
                     try {
-                        this.downloadVideo(videoUrl).then(path => {
+                        this.downloadVideo(videoUrl, false, {
+                            "User-Agent":
+                                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                            "referer": "https://weibo.com/",
+                        }).then(path => {
                             e.reply(segment.video(path + "/temp.mp4"));
                         });
                     } catch (err) {
@@ -1153,9 +1158,18 @@ export class tools extends plugin {
             }
         }).then(async resp => {
             const respJson = await resp.json();
+            // debug专用
+            // fs.writeFile('data.json', JSON.stringify(respJson), (err) => {
+            //     if (err) {
+            //         console.error('Error writing file:', err);
+            //     } else {
+            //         console.log('JSON saved to file successfully.');
+            //     }
+            // });
+            // return;
             const data = respJson.data.post.post;
             // 分别获取：封面、主题、内容、图片
-            const { cover, subject, content, images, structured_content } = data;
+            const { cover, subject, content, images } = data;
             let realContent = "";
             // safe JSON.parse
             try {
@@ -1178,15 +1192,14 @@ export class tools extends plugin {
                 e.reply(Bot.makeForwardMsg(replyImages));
             }
             // 视频
-            const sc = JSON.parse(structured_content);
-            logger.info(sc.length)
-            if (sc?.[0]?.insert.vod.resolutions) {
+            let vod_list = respJson.data.post?.vod_list;
+            if (vod_list.length > 0) {
+                const resolutions = vod_list?.[0]?.resolutions;
                 // 逐个遍历是否包含url
-                for (let i = 0; i < sc.length; i++) {
-                    const resolutions = sc?.[i]?.insert.vod.resolutions;
+                for (let i = 0; i < resolutions.length; i++) {
                     if (resolutions) {
                         // 暂时选取分辨率较低的video进行解析
-                        const videoUrl = resolutions[0].url;
+                        const videoUrl = resolutions[i].url;
                         this.downloadVideo(videoUrl).then(path => {
                             e.reply(segment.video(path + "/temp.mp4"));
                         });
