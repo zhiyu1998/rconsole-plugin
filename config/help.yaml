@@ -65,6 +65,9 @@
     - icon: weibo
       title: "微博"
       desc: 微博文章分享实时下载
+    - icon: pixv
+      title: "pixivision"
+      desc: pixivision分享实时下载
     - icon: zuiyou
       title: "最右（测试阶段）"
       desc: 最右分享实时下载

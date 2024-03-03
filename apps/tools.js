@@ -57,6 +57,7 @@ import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
+import { mid2id } from "../utils/weibo.js";
 
 export class tools extends plugin {
     /**
@@ -148,6 +149,10 @@ export class tools extends plugin {
                 {
                     reg: "(weibo.com|m.weibo.cn)",
                     fnc: "weibo",
+                },
+                {
+                    reg: "(pixivision.net)",
+                    fnc: "pixivision"
                 }
             ],
         });
@@ -940,7 +945,11 @@ export class tools extends plugin {
         if (e.msg.includes("m.weibo.cn")) {
             // https://m.weibo.cn/detail/4976424138313924
             weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(e.msg)?.[0];
-        } else {
+        } else if (e.msg.includes("weibo.com\/tv\/show") && e.msg.includes("mid=")) {
+            // https://weibo.com/tv/show/1034:5007449447661594?mid=5007452630158934
+            weiboId = /(?<=mid=)[A-Za-z\d]+/.exec(e.msg)?.[0];
+            weiboId = mid2id(weiboId);
+        } else if (e.msg.includes("weibo.com")) {
             // https://weibo.com/1707895270/5006106478773472
             weiboId = /(?<=weibo.com\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(e.msg)?.[0];
         }
@@ -1208,6 +1217,75 @@ export class tools extends plugin {
                 }
             }
         })
+    }
+
+    // pixivision 解析
+    async pixivision(e) {
+        let msg = /https:\/\/www\.pixivision\.net\/zh\/a\/(\d+)/.exec(e.msg)[0];
+        if (!msg) {
+            e.reply("pixivision 无法获取到信息");
+            return;
+        }
+        fetch(msg, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+            }
+        }).then(async resp => {
+            const html = await resp.text();
+            // 正则表达式来匹配包含特定类名的img标签，并捕获src属性的值
+            const regex = /<img [^>]*src="([^"]*)"[^>]*class="[^"]*am__work__illust[^"]*"[^>]*>/g;
+
+            let matches;
+            const srcs = [];
+            // 获取图片信息
+            while ((matches = regex.exec(html)) !== null) {
+                // matches[1] 是正则表达式中第一个括号捕获的内容，即src属性的值
+                srcs.push(matches[1]);
+            }
+            // 获取下载路径
+            const curPath = this.getCurDownloadPath(e);
+            // 下载图片
+            Promise.all(srcs.map((item) => {
+                return new Promise((resolve, reject) => { // 使用新的Promise来控制异步流程
+                    axios.get(item, {
+                        responseType: 'stream',
+                        headers: {
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                            "Referer": "https://www.pixiv.net/",
+                        }
+                    }).then(response => {
+                        const downloadPath = `${curPath}/${item.split('/').pop()}`;
+                        const writer = fs.createWriteStream(downloadPath);
+                        response.data.pipe(writer);
+                        writer.on('finish', () => resolve(downloadPath)); // 在文件写入完成后解决Promise
+                        writer.on('error', reject); // 监听错误事件
+                    }).catch(reject); // 处理axios请求的错误
+                });
+            })).then(path => {
+                // 在这里，path数组包含的是所有下载并成功写入的文件路径
+                // 你可以在这里执行e.reply，此时所有文件都已经准备好了
+                try {
+                    // 假设e.reply返回一个Promise
+                    e.reply(Bot.makeForwardMsg(path.map(item => ({
+                        message: segment.image(fs.readFileSync(item)),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }))));
+
+                    // 删除文件操作
+                    path.forEach(item => {
+                        try {
+                            fs.unlinkSync(item);
+                        } catch (err) {
+                            logger.error(`删除文件${item}失败，请使用命令”清理data垃圾“进行清理`, err);
+                        }
+                    });
+                } catch (error) {
+                    logger.error(`发送消息失败`, error);
+                }
+            });
+        });
+        return true;
     }
 
     /**
