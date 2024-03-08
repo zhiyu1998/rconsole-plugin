@@ -676,7 +676,7 @@ export class tools extends plugin {
             const reg = /window\.__INITIAL_STATE__=(.*?)<\/script>/;
             const res = xhsHtml.match(reg)[1].replace(/undefined/g, "null");
             const resJson = JSON.parse(res);
-            const noteData = resJson.note.noteDetailMap[id].note
+            const noteData = resJson.note.noteDetailMap[id].note;
             const { title, desc, type } = noteData;
             let imgPromise = [];
             if (type === "video") {
@@ -684,7 +684,7 @@ export class tools extends plugin {
                 const cover = noteData.imageList?.[0].urlDefault;
                 e.reply([segment.image(cover), `识别：小红书, ${ title }\n${ desc }`]);
                 // 构造xhs视频链接
-                const xhsVideoUrl = `${ XHS_VIDEO }${ noteData.video.consumer.originVideoKey.replace('pre_post\/', '') }`;
+                const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
                 // 下载视频
                 this.downloadVideo(xhsVideoUrl).then(path => {
                     if (path === undefined) {

@@ -3,8 +3,10 @@ import Version from "../model/version.js";
 import config from "../model/index.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import lodash from "lodash";
+import YAML from "yaml";
 
 import { exec, execSync } from "node:child_process";
+import { copyFiles, deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
 
 /**
  * 处理插件更新1
@@ -57,6 +59,9 @@ export class update extends plugin {
 
         const pluginName = "rconsole-plugin";
 
+        // 保存配置文件
+        await copyFiles(`./plugins/${pluginName}/config`, "./temp/rconsole-update-tmp");
+
         let command = `git -C ./plugins/${pluginName}/ pull --no-rebase`;
         if (isForce) {
             command = `git -C ./plugins/${pluginName}/ checkout . && ${command}`;
@@ -78,6 +83,18 @@ export class update extends plugin {
             e.reply(`R插件更新成功，最后更新时间：${time}`);
             e.reply(await this.getLog(pluginName));
         }
+
+        // 读取配置文件比对更新
+        const confFiles = await readCurrentDir("./temp/rconsole-update-tmp");
+        for (let confFile of confFiles) {
+            await this.compareAndUpdateYaml(
+                `./temp/rconsole-update-tmp/${confFile}`,
+                `./plugins/${pluginName}/config/${confFile}`
+            );
+        }
+        // 删除临时文件
+        await deleteFolderRecursive("./temp/rconsole-update-tmp");
+
         return true;
     }
 
@@ -148,8 +165,8 @@ export class update extends plugin {
         } else if (errMsg.includes("be overwritten by merge")) {
             await this.reply(
                 msg +
-                    `存在冲突：\n${errMsg}\n` +
-                    "请解决冲突后再更新，或者执行#强制更新，放弃本地修改",
+                `存在冲突：\n${errMsg}\n` +
+                "请解决冲突后再更新，或者执行#强制更新，放弃本地修改",
             );
         } else if (stdout.includes("CONFLICT")) {
             await this.reply([
@@ -160,6 +177,39 @@ export class update extends plugin {
             ]);
         } else {
             await this.reply([errMsg, stdout]);
+        }
+    }
+
+    async compareAndUpdateYaml(sourcePath, updatedPath) {
+        try {
+            // Step 1 & 2: Read and parse YAML files
+            const sourceContent = await fs.readFileSync(sourcePath, 'utf8');
+            const updatedContent = await fs.readFileSync(updatedPath, 'utf8');
+            const sourceObj = YAML.parse(sourceContent);
+            const updatedObj = YAML.parse(updatedContent);
+
+            // Step 3: Compare objects and merge changes
+            Object.keys(updatedObj).forEach(key => {
+                if (!sourceObj.hasOwnProperty(key)) {
+                    sourceObj[key] = updatedObj[key]; // Add new keys with updated values
+                }
+            });
+
+            Object.keys(sourceObj).forEach(key => {
+                if (!updatedObj.hasOwnProperty(key)) {
+                    delete sourceObj[key]; // Remove keys not present in updated object
+                }
+            });
+
+            // Step 4 & 5: Convert object back to YAML
+            const newYamlContent = YAML.stringify(sourceObj);
+
+            // Step 6: Write the updated YAML back to the updatedPath
+            await fs.writeFileSync(updatedPath, newYamlContent, 'utf8');
+
+            logger.info(`[R插件更新配置文件记录]${updatedPath}`);
+        } catch (error) {
+            logger.error(error);
         }
     }
 }

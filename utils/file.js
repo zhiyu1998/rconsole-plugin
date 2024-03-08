@@ -78,3 +78,26 @@ export async function readCurrentDir(path) {
         logger.error(err);
     }
 }
+
+/**
+ * 拷贝文件
+ * @param srcDir
+ * @param destDir
+ * @returns {Promise<*|null>}
+ */
+export async function copyFiles(srcDir, destDir) {
+    try {
+        await mkdirIfNotExists(destDir);
+
+        const files = await readCurrentDir(srcDir);
+
+        for (const file of files) {
+            const srcFile = path.join(srcDir, file);
+            const destFile = path.join(destDir, file);
+            await fs.promises.copyFile(srcFile, destFile);
+        }
+    } catch (error) {
+        logger.error(error);
+    }
+    return null;
+}
