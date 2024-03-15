@@ -71,9 +71,9 @@
     - icon: zuiyou
       title: "最右（测试阶段）"
       desc: 最右分享实时下载
-    - icon: literature
-      title: "论文"
-      desc: SCI论文实时解析
+    - icon: pipi
+      title: "皮皮虾（测试阶段）"
+      desc: 皮皮虾分享实时下载
     - icon: bodian
       title: "波点音乐"
       desc: 波点云音乐点解析

@@ -97,7 +97,7 @@ export class tools extends plugin {
                     fnc: "bili",
                 },
                 {
-                    reg: "(x.com)",
+                    reg: "https?:\\/\\/x.com\\/[0-9-a-zA-Z_]{1,20}\\/status\\/([0-9]*)",
                     fnc: "twitter_x",
                 },
                 {
@@ -111,10 +111,6 @@ export class tools extends plugin {
                 {
                     reg: "(instagram.com)",
                     fnc: "instagram",
-                },
-                {
-                    reg: "(doi.org)",
-                    fnc: "literature",
                 },
                 {
                     reg: "^清理data垃圾$",
@@ -131,7 +127,7 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn)",
+                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com)",
                     fnc: "general",
                 },
                 {
@@ -721,28 +717,6 @@ export class tools extends plugin {
         return true;
     }
 
-    // 文献解析
-    async literature(e) {
-        const litReg = /(http:|https:)\/\/doi.org\/[A-Za-z\d._?%&+\-=\/#@]*/;
-        const url = litReg.exec(e.msg.trim())[0];
-        const waitList = [
-            "https://sci-hub.se/",
-            "https://sci-hub.st/",
-            "https://sci-hub.do/",
-            "https://sci-hubtw.hkvisa.net/",
-            "https://sci-hub.ren/",
-            "https://sci-hub.ee/",
-            "https://sci-hub.ru/",
-        ];
-        const flag = /doi.org\/(.*)/.exec(url)[1];
-        const newWaitList = waitList.map(item => {
-            return item + flag;
-        });
-        await Promise.any(newWaitList).then(resp => {
-            e.reply(resp);
-        });
-    }
-
     // 清理垃圾文件
     async clearTrash(e) {
         const dataDirectory = "./data/";
@@ -1009,7 +983,7 @@ export class tools extends plugin {
     async general(e) {
         const linkAdapter = new GeneralLinkAdapter(e.msg);
         const adapter = await linkAdapter.build();
-        logger.info(adapter.link)
+        logger.mark(adapter.link)
         e.reply(`识别：${adapter.name}`);
         // 发送GET请求
         axios.get(adapter.link, {

@@ -14,6 +14,8 @@ class GeneralLinkAdapter {
             this.#url = this.ks(link);
         } else if (/ixigua.com/.test(link)) {
             this.#url = this.xigua(link);
+        } else if (/h5.pipix.com/.test(link)) {
+            this.#url = this.pipixia(link);
         }
     }
 
@@ -72,6 +74,11 @@ class GeneralLinkAdapter {
         const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
         const videoReq = `https://www.ixigua.com/${ id }`;
         return {name: "西瓜", link: GENERAL_REQ_LINK.replace("{}", videoReq)};
+    }
+
+    async pipixia(link) {
+        const msg = /https:\/\/h5\.pipix\.com\/s\/[A-Za-z0-9]+/.exec(link)?.[0];
+        return {name: "皮皮虾", link: GENERAL_REQ_LINK.replace("{}", msg)};
     }
 
     async build() {
