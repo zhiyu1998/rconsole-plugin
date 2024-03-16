@@ -1126,7 +1126,8 @@ export class tools extends plugin {
 
     // 米游社
     async miyoushe(e) {
-        let msg = /(?:https?:\/\/)?(m|www)\.miyoushe\.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(e.msg)[0];
+        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        let msg = /(?:https?:\/\/)?(m|www)\.miyoushe\.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(url)?.[0];
         const id = /\/(\d+)$/.exec(msg)?.[0].replace("\/", "");
 
         fetch(MIYOUSHE_ARTICLE.replace("{}", id), {
