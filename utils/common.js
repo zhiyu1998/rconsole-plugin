@@ -287,7 +287,9 @@ export function containsChineseOrPunctuation(str) {
  * @returns {*|string}
  */
 export function truncateString(inputString, maxLength = 50) {
-    if (inputString.length <= maxLength) {
+    if (maxLength === 0 || maxLength === -1) {
+        return inputString;
+    } else if (inputString.length <= maxLength) {
         return inputString;
     } else {
         // 截取字符串，保留前面 maxLength 个字符

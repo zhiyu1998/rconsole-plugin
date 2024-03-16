@@ -105,7 +105,7 @@ export function supportGuoba() {
                     component: "Input",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入哔哩哔哩的简介长度限制（默认50个字符）",
+                        placeholder: "请输入哔哩哔哩的简介长度限制（默认50个字符），填 0 或者 -1 可以不做任何限制，显示完整简介",
                     },
                 },
                 {

@@ -6,7 +6,7 @@ translateAppId: '' # 百度翻译APP ID
 translateSecret: '' # 百度翻译密匙
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
-biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制
+biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
 biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
 
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
