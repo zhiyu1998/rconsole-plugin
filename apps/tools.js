@@ -19,6 +19,7 @@ import {
 } from "../utils/bilibili.js";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import {
+    BILI_DEFAULT_INTRO_LEN_LIMIT,
     DIVIDING_LINE,
     douyinTypeMap,
     REDIS_YUNZAI_ISOVERSEA,
@@ -32,7 +33,7 @@ import {
     downloadMp3,
     formatBiliInfo,
     getIdVideo,
-    secondsToTime
+    secondsToTime, truncateString
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -374,7 +375,7 @@ export class tools extends plugin {
             "评论": reply
         };
         // 格式化数据
-        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ desc }`;
+        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ truncateString(desc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);

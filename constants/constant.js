@@ -71,4 +71,10 @@ export const DIVIDING_LINE = "\n------------------{}------------------"
  */
 export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
 
-export const TWITTER_BEARER_TOKEN = ""
+export const TWITTER_BEARER_TOKEN = "";
+
+/**
+ * 哔哩哔哩简介默认长度限制
+ * @type {number}
+ */
+export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;

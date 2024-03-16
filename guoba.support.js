@@ -98,6 +98,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.biliIntroLenLimit",
+                    label: "哔哩哔哩的简介长度限制",
+                    bottomHelpMessage:
+                        "防止简介过长刷屏",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入哔哩哔哩的简介长度限制（默认50个字符）",
+                    },
+                },
+                {
                     field: "tools.douyinCookie",
                     label: "抖音的Cookie",
                     bottomHelpMessage:

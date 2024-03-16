@@ -279,3 +279,21 @@ export function containsChinese(str) {
 export function containsChineseOrPunctuation(str) {
     return /[\u4e00-\u9fff\uff00-\uffef]/.test(str);
 }
+
+/**
+ * 超过某个长度的字符串换为...
+ * @param inputString
+ * @param maxLength
+ * @returns {*|string}
+ */
+export function truncateString(inputString, maxLength = 50) {
+    if (inputString.length <= maxLength) {
+        return inputString;
+    } else {
+        // 截取字符串，保留前面 maxLength 个字符
+        let truncatedString = inputString.substring(0, maxLength);
+        // 添加省略号
+        truncatedString += '...';
+        return truncatedString;
+    }
+}
