@@ -16,6 +16,8 @@ class GeneralLinkAdapter {
             this.#url = this.xigua(link);
         } else if (/h5.pipix.com/.test(link)) {
             this.#url = this.pipixia(link);
+        } else if (/h5.pipigx.com/.test(link)) {
+            this.#url = this.pipigx(link);
         }
     }
 
@@ -79,6 +81,11 @@ class GeneralLinkAdapter {
     async pipixia(link) {
         const msg = /https:\/\/h5\.pipix\.com\/s\/[A-Za-z0-9]+/.exec(link)?.[0];
         return {name: "皮皮虾", link: GENERAL_REQ_LINK.replace("{}", msg)};
+    }
+
+    async pipigx(link) {
+        const msg = /https:\/\/h5\.pipigx\.com\/pp\/post\/[A-Za-z0-9]+/.exec(link)?.[0];
+        return {name: "皮皮搞笑", link: GENERAL_REQ_LINK.replace("{}", msg)};
     }
 
     async build() {

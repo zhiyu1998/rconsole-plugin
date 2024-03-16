@@ -1,9 +1,9 @@
 - {
-  version: 1.5.6,
+  version: 1.5.7,
   data:
     [
+      新增<span class="cmd">皮皮搞笑解析</span>功能,
       新增<span class="cmd">皮皮虾解析</span>功能,
-      新增<span class="cmd">Pixivision解析</span>功能,
       新增<span class="cmd">微博解析</span>功能,
       新增<span class="cmd">最右解析</span>功能,
       新增<span class="cmd">米游社解析</span>功能,

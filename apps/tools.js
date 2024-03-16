@@ -127,7 +127,7 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com)",
+                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com|h5.pipigx.com)",
                     fnc: "general",
                 },
                 {
