@@ -582,7 +582,7 @@ export class tools extends plugin {
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
         // 提取视频
-        const videoUrl = GENERAL_REQ_LINK.replace("{}", twitterUrl);
+        const videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
         e.reply("识别：小蓝鸟");
         axios.get(videoUrl, {
             headers: {
@@ -982,33 +982,12 @@ export class tools extends plugin {
      * @return {Promise<void>}
      */
     async general(e) {
-        const linkAdapter = new GeneralLinkAdapter(e.msg);
-        const adapter = await linkAdapter.build();
-        logger.mark(adapter.link)
-        e.reply(`识别：${adapter.name}`);
-        // 发送GET请求
-        axios.get(adapter.link, {
-            headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Accept-Language': 'zh-CN,zh;q=0.9',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Pragma': 'no-cache',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-
-            },
-            timeout: 10000 // 设置超时时间
-        }).then(resp => {
-            // 图片：https://kph8gvfz.m.chenzhongtech.com/fw/photo/3x45s52s9wchwwm
-
-            if (resp.data.data?.imageUrl) {
-                const imageUrl = resp.data.data.imageUrl;
-                const images = imageUrl.map(item => {
+        try {
+            const adapter = await GeneralLinkAdapter.create(e.msg);
+            e.reply(`识别：${ adapter.name }${ adapter.desc ? `, ${ adapter.desc }` : '' }`);
+            logger.mark(adapter);
+            if (adapter.images && adapter.images.length > 0) {
+                const images = adapter.images.map(item => {
                     return {
                         message: segment.image(item),
                         nickname: this.e.sender.card || this.e.user_id,
@@ -1016,14 +995,20 @@ export class tools extends plugin {
                     }
                 })
                 e.reply(Bot.makeForwardMsg(images));
-            } else {
+            } else if (adapter.video && adapter.video !== '') {
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
-                const url = resp.data.data.url;
+                const url = adapter.video;
                 this.downloadVideo(url).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
+            } else {
+                e.reply("解析失败：无法获取到资源");
             }
-        });
+        } catch (err) {
+            logger.error("解析失败 ", err);
+            return true
+        }
+        return true
     }
 
     /**

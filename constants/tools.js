@@ -81,7 +81,14 @@ export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/"
  * 🍉 的请求链接
  * @type {string}
  */
-export const GENERAL_REQ_LINK = "http://47.99.158.118/video-crack/v2/parse?content={}"
+export const GENERAL_REQ_LINK = {
+    link: "http://47.99.158.118/video-crack/v2/parse?content={}",
+    sign: 1
+}
+export const GENERAL_REQ_LINK_2 = {
+    link: "https://acid.jiuzige.com.cn/web/index/analysis?url={}",
+    sign: 2
+}
 
 /**
  * 获取网易云歌曲下载链接
