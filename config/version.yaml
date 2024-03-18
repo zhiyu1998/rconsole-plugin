@@ -1,11 +1,11 @@
 - {
-  version: 1.5.9,
+  version: 1.5.10,
   data:
     [
+      新增<span class="cmd">贴吧解析</span>功能,
       优化<span class="cmd">哔哩哔哩简介</span>功能,
       新增<span class="cmd">皮皮搞笑解析</span>功能,
       新增<span class="cmd">皮皮虾解析</span>功能,
-      新增<span class="cmd">微博解析</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,

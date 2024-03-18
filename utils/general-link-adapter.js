@@ -27,9 +27,9 @@ class GeneralLinkAdapter {
     }
 
     /**
-     * 辅助函数，该函数接收原始链接和需要插入的视频请求链接（videoReq），然后返回一个新的链接对象
-     * @param originalLink
-     * @param videoReq
+     * 辅助函数，创造一个第三方接口的链接
+     * @param originalLink  第三方接口：这个链接来自常量 constants/tools.js @GENERAL_REQ_LINK / ...
+     * @param videoReq      请求的链接
      * @returns {*}
      */
     createReqLink(originalLink, videoReq) {
@@ -55,7 +55,7 @@ class GeneralLinkAdapter {
         } else {
             throw Error("无法提取快手的信息，请重试或者换一个视频！");
         }
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK, `https://www.kuaishou.com/short-video/${video_id}`);
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, `https://www.kuaishou.com/short-video/${ video_id }`);
         // 提取视频
         return {
             name: "快手",
@@ -99,6 +99,13 @@ class GeneralLinkAdapter {
         return { name: "皮皮搞笑", reqLink };
     }
 
+    async tieba(link) {
+        const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(link)?.[0];
+        // 这里必须使用{ ...GENERAL_REQ_LINK_2 }赋值，不然就是对象的引用赋值，会造成全局数据问题！
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg)
+        return { name: "贴吧", reqLink };
+    }
+
     /**
      * 初始化通用适配器
      * @param link 通用链接
@@ -112,6 +119,7 @@ class GeneralLinkAdapter {
             [/ixigua.com/, this.xigua.bind(this)],
             [/h5.pipix.com/, this.pipixia.bind(this)],
             [/h5.pipigx.com/, this.pipigx.bind(this)],
+            [/tieba.baidu.com/, this.tieba.bind(this)],
         ]);
 
         for (let [regex, handler] of handlers) {

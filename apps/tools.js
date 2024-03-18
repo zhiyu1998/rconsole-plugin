@@ -128,7 +128,7 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com|h5.pipigx.com)",
+                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com|h5.pipigx.com|tieba.baidu.com)",
                     fnc: "general",
                 },
                 {
@@ -452,7 +452,6 @@ export class tools extends plugin {
         return url;
     }
 
-    // 小蓝鸟解析：停止更新
 
     /**
      * 哔哩哔哩总结
