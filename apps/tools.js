@@ -957,6 +957,8 @@ export class tools extends plugin {
                 if (page_info) {
                     // 视频
                     const videoUrl = page_info.urls?.mp4_720p_mp4 || page_info.urls?.mp4_hd_mp4;
+                    // 文章
+                    if (!videoUrl) return true
                     try {
                         this.downloadVideo(videoUrl, false, {
                             "User-Agent":
