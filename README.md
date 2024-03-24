@@ -173,12 +173,19 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 - [插件库](https://gitee.com/Hikari666/Yunzai-Bot-plugins-index)
 
 ## 🙏 贡献
-感谢下面的朋友对我插件的贡献（排名不分高低）
+🌸感谢下面的朋友对我插件的贡献（排名不分高低）🌸
 * [好冷](https://gitee.com/hetangx) 提供Windows解决方案
 * [一杯凉](https://gitee.com/yibeiliang) 提供小程序解析冲突解决方案
 * [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
 
-感谢以下框架的开源：
+
+🌸同时鸣谢感谢以下开发者对 `R插件` 出的贡献🌸：
+
+<a href="https://github.com/zhiyu1998/rconsole-plugin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=zhiyu1998/rconsole-plugin&max=1000" />
+</a>
+
+🌸感谢以下框架的开源🌸：
 
 油管解析参考了：
 - [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
