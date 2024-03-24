@@ -51,7 +51,7 @@ import {
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
     XHS_VIDEO,
-    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO
+    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO, WEISHI_VIDEO_INFO
 } from "../constants/tools.js";
 import child_process from 'node:child_process'
 import { getAudio, getVideo } from "../utils/y2b.js";
@@ -150,6 +150,10 @@ export class tools extends plugin {
                 {
                     reg: "(pixivision.net)",
                     fnc: "pixivision"
+                },
+                {
+                    reg: "(isee.weishi.qq.com)",
+                    fnc: "weishi"
                 }
             ],
         });
@@ -1248,6 +1252,52 @@ export class tools extends plugin {
                 }
             });
         });
+        return true;
+    }
+
+    // 微视
+    async weishi(e) {
+        // 拦截恶意链接 【后续如果有小程序检测可以删除这个逻辑】
+        if (!e.msg.includes('https://isee.weishi.qq.com/ws/app-pages/share/index.html')) {
+            e.reply("识别：微视，但无法完整检测到视频ID");
+            // 打个日志 方便后面出bug知道位置
+            logger.error("[R插件][微视] 无法检测链接")
+            return true;
+        }
+
+        const url = e.msg;
+        try {
+            const idMatch = url.match(/id=(.*)&spid/);
+            if (!idMatch || idMatch.length !== 2) {
+                e.reply("识别：微视，但无法完整检测到视频ID");
+                // 打个日志 方便后面出bug知道位置
+                logger.error("[R插件][微视] 无法检测到ID，逻辑大概问题在正则表达式")
+                return true;
+            }
+
+            const feedId = idMatch[1];
+            const response = await axios.get(WEISHI_VIDEO_INFO.replace("{}", feedId), {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                }
+            });
+
+            const weishiResponse = response.data;
+            const firstFeed = weishiResponse.data.feeds[0];
+            // 标题、封面、视频链接
+            const title = firstFeed.feed_desc;
+            const cover = firstFeed.images[0].url;
+            const noWatermarkDownloadUrl = firstFeed.video_url;
+
+            e.reply([segment.image(cover), `识别：微视，${ title }`]);
+
+            this.downloadVideo(noWatermarkDownloadUrl).then(path => {
+                e.reply(segment.video(path + "/temp.mp4"));
+            });
+        } catch (err) {
+            logger.error(err);
+            return true;
+        }
         return true;
     }
 

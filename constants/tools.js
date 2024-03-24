@@ -94,16 +94,22 @@ export const GENERAL_REQ_LINK_2 = {
  * 获取网易云歌曲下载链接
  * @type {string}
  */
-export const NETEASE_SONG_DOWNLOAD = "https://www.oranges1.top/neteaseapi.do/song/url?id={}"
+export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app/song/url?id={}"
 
 /**
  * 获取网易云歌曲详情
  * @type {string}
  */
-export const NETEASE_SONG_DETAIL = "https://www.oranges1.top/neteaseapi.do/song/detail?ids={}"
+export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song/detail?ids={}"
 
 /**
  * 单条微博的接口
  * @type {string}
  */
 export const WEIBO_SINGLE_INFO = "https://m.weibo.cn/statuses/show?id={}"
+
+/**
+ * 微视接口
+ * @type {string}
+ */
+export const WEISHI_VIDEO_INFO = "https://h5.weishi.qq.com/webapp/json/weishi/WSH5GetPlayPage?feedid={}"
