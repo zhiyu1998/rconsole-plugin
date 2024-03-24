@@ -4,7 +4,7 @@ import {
 } from "../constants/tools.js";
 
 /**
- * 第三方接口适配器，用户大面积覆盖解析视频的内容
+ * 第三方接口适配器，用于大面积覆盖解析视频的内容
  */
 class GeneralLinkAdapter {
 
@@ -27,14 +27,14 @@ class GeneralLinkAdapter {
     }
 
     /**
-     * 辅助函数，创造一个第三方接口的链接
-     * @param originalLink  第三方接口：这个链接来自常量 constants/tools.js @GENERAL_REQ_LINK / ...
-     * @param videoReq      请求的链接
+     * 【辅助函数】创造一个第三方接口的链接
+     * @param externalInterface  第三方接口：这个链接来自常量 constants/tools.js @GENERAL_REQ_LINK / ...
+     * @param requestURL         请求的链接
      * @returns {*}
      */
-    createReqLink(originalLink, videoReq) {
-        let reqLink = { ...originalLink };
-        reqLink.link = reqLink.link.replace("{}", videoReq);
+    createReqLink(externalInterface, requestURL) {
+        let reqLink = { ...externalInterface };
+        reqLink.link = reqLink.link.replace("{}", requestURL);
         return reqLink;
     }
 
@@ -106,6 +106,12 @@ class GeneralLinkAdapter {
         return { name: "贴吧", reqLink };
     }
 
+    async qqSmallWorld(link) {
+        const msg = /https:\/\/s.xsj\.qq\.com\/[A-Za-z0-9]+/.exec(link)?.[0];
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
+        return { name: "QQ小世界", reqLink };
+    }
+
     /**
      * 初始化通用适配器
      * @param link 通用链接
@@ -120,6 +126,7 @@ class GeneralLinkAdapter {
             [/h5.pipix.com/, this.pipixia.bind(this)],
             [/h5.pipigx.com/, this.pipigx.bind(this)],
             [/tieba.baidu.com/, this.tieba.bind(this)],
+            [/xsj.qq.com/, this.qqSmallWorld.bind(this)],
         ]);
 
         for (let [regex, handler] of handlers) {

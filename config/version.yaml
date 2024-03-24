@@ -1,7 +1,8 @@
 - {
-  version: 1.5.10,
+  version: 1.5.11,
   data:
     [
+      新增<span class="cmd">小世界解析</span>功能,
       新增<span class="cmd">贴吧解析</span>功能,
       优化<span class="cmd">哔哩哔哩简介</span>功能,
       新增<span class="cmd">皮皮搞笑解析</span>功能,
