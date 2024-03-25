@@ -11,6 +11,7 @@
 <img src="./img/github-contribution-grid-snake.svg">
 </div>
 
+> 📢 推荐 TG 个人互联网分享频道（分享日常冲浪互联网看到好玩的网站、app应用）：[RrOrange和朋友们](https://t.me/RrOrangeAndFriends)
 ## 🗃️ 文件架构
 apps -- 业务核心
 
