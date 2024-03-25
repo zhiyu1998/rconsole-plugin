@@ -50,7 +50,6 @@ import {
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
-    XHS_VIDEO,
     GENERAL_REQ_LINK, WEIBO_SINGLE_INFO, WEISHI_VIDEO_INFO
 } from "../constants/tools.js";
 import child_process from 'node:child_process'
@@ -128,7 +127,7 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com|ixigua.com|share.xiaochuankeji.cn|h5.pipix.com|h5.pipigx.com|tieba.baidu.com|s.xsj.qq.com)",
+                    reg: "(kuaishou.com|ixigua.com|h5.pipix.com|h5.pipigx.com|tieba.baidu.com|s.xsj.qq.com)",
                     fnc: "general",
                 },
                 {
@@ -154,6 +153,10 @@ export class tools extends plugin {
                 {
                     reg: "(isee.weishi.qq.com)",
                     fnc: "weishi"
+                },
+                {
+                    reg: "share.xiaochuankeji.cn",
+                    fnc: "zuiyou"
                 }
             ],
         });
@@ -1298,6 +1301,69 @@ export class tools extends plugin {
             return true;
         }
         return true;
+    }
+
+    async zuiyou(e) {
+        // #最右#分享一条有趣的内容给你，不好看算我输。请戳链接>>https://share.xiaochuankeji.cn/hybrid/share/post?pid=365367131&zy_to=applink&share_count=1&m=dc114ccc8e55492642f6a702b510c1f6&d=9e18ca2dace030af656baea96321e0ea353fe5c46097a7f3962b93f995641e962796dd5faa231feea5531ac65547045f&app=zuiyou&recommend=r0&name=n0&title_type=t0
+        const url = /(?:https?:\/\/)?(share|share.xiaochuankeji)\.cn\/[A-Za-z\d._?%&+\-=\/#]*/.exec(e.msg)[0];
+        try {
+            const response = await axios.get("https://share.xiaochuankeji.cn/hybrid/share/post?pid=370928872&zy_to=applink&share_count=1&m=dc114ccc8e55492642f6a702b510c1f6&d=9e18ca2dace030af656baea96321e0ea353fe5c46097a7f3962b93f995641e962796dd5faa231feea5531ac65547045f&app=zuiyou&recommend=r0&name=n0&title_type=t0", {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                }
+            });
+            const html = response.data;
+
+            const videoUrlRegex = /fullscreen="false" src="(.*?)"/;
+            const videoTitleRegex = /:<\/span><h1>(.*?)<\/h1><\/div><div class=/;
+            const videoCoverRegex = /poster="(.*?)"/;
+            const videoAuthorRegex = /<span class="SharePostCard__name">(.*?)<\/span>/;
+
+            const videoUrlMatch = html.match(videoUrlRegex);
+            const videoTitleMatch = html.match(videoTitleRegex);
+            const videoCoverMatch = html.match(videoCoverRegex);
+            const videoAuthorMatch = html.match(videoAuthorRegex);
+
+            const imgSrcRegex = /<img [^>]*src="([^"]*)"[^>]*\/>/gi;
+            let match;
+            const imgSrcs = [];
+
+            while ((match = imgSrcRegex.exec(html)) !== null) {
+                imgSrcs.push(match[1]); // Adds the content of the src attribute to the array
+            }
+
+            const images = imgSrcs.filter(item => item.startsWith("http://bd-tbfile.izuiyou.com/img/view/id"))
+
+            // Construct the response object
+            const shortVideoInfo = {
+                authorName: videoAuthorMatch ? videoAuthorMatch[1] : '',
+                title: videoTitleMatch ? videoTitleMatch[1] : '',
+                cover: videoCoverMatch ? videoCoverMatch[1] : '',
+                noWatermarkDownloadUrl: videoUrlMatch ? videoUrlMatch[1] : '',
+                images,
+            };
+
+            e.reply([segment.image(shortVideoInfo.cover), `识别：最右，${shortVideoInfo.authorName}\n${shortVideoInfo.title}`])
+
+            if (shortVideoInfo.images.length > 0) {
+                const replyImages = shortVideoInfo.images.map(item => {
+                    return {
+                        message: segment.image(item),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }
+                });
+                e.reply(Bot.makeForwardMsg(replyImages));
+            }
+            if (shortVideoInfo.noWatermarkDownloadUrl) {
+                this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            throw error; // Rethrow the error so it can be handled by the caller
+        }
     }
 
     /**
