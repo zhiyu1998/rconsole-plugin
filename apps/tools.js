@@ -325,8 +325,7 @@ export class tools extends plugin {
     async biliCore(e) {
         const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url1 = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
-        let url = url1.replaceAll(/\\/g, "")
+        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
         // 短号处理
         if (url.includes("b23.tv")) {
             const bShortUrl = bShortRex.exec(url)?.[0];
