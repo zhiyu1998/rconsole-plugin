@@ -63,18 +63,6 @@ sudo apt-get install ffmpeg
 # 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
-`油管解析`需要 `yt-dlp` 的依赖才能完成解析（三选一）：
-```shell
-# 三选一
-# ubuntu （国内 or 国外，且安装了snap）
-snap install yt-dlp
-# debian 海外
-curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
-chmod a+rx ~/.local/bin/yt-dlp
-# debian 国内
-curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
-chmod a+rx ~/.local/bin/yt-dlp
-```
 
 4. 【可选】小程序解析适配了：
 * 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
@@ -185,11 +173,6 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 <a href="https://github.com/zhiyu1998/rconsole-plugin/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=zhiyu1998/rconsole-plugin&max=1000" />
 </a>
-
-🌸感谢以下框架的开源🌸：
-
-油管解析参考了：
-- [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！

@@ -1,5 +1,5 @@
 - {
-  version: 1.5.13,
+  version: 1.6.0,
   data:
     [
       新增<span class="cmd">微视解析</span>功能,

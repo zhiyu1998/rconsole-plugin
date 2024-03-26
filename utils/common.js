@@ -1,6 +1,7 @@
 import schedule from "node-schedule";
 import common from "../../../lib/common/common.js";
 import axios from "axios";
+import tunnel from "tunnel";
 import fs from "node:fs";
 import fetch from "node-fetch";
 import { mkdirIfNotExists } from "./file.js";
@@ -298,4 +299,39 @@ export function truncateString(inputString, maxLength = 50) {
         truncatedString += '...';
         return truncatedString;
     }
+}
+
+/**
+ * 测试当前是否存在🪜
+ * @returns {Promise<Boolean>}
+ */
+export async function testProxy() {
+    // 配置代理服务器
+    const proxyOptions = {
+        host: '127.0.0.1',
+        port: 7890,
+        // 如果你的代理服务器需要认证
+        // auth: 'username:password', // 取消注释并提供实际的用户名和密码
+    };
+
+    // 创建一个代理隧道
+    const httpsAgent = tunnel.httpsOverHttp({
+        proxy: proxyOptions
+    });
+
+    try {
+        // 通过代理服务器发起请求
+        await axios.get('https://google.com.hk', { httpsAgent });
+        logger.mark('[R插件][梯子测试模块] 检测到梯子');
+        return true;
+    } catch (error) {
+        logger.error('[R插件][梯子测试模块] 检测不到梯子');
+        return false;
+    }
+}
+
+export function formatSeconds(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}分${remainingSeconds}秒`;
 }

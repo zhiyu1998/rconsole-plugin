@@ -63,7 +63,7 @@ export const DY_INFO = "https://www.douyin.com/aweme/v1/web/aweme/detail/?device
  * Tiktok API
  * @type {string}
  */
-export const TIKTOK_INFO = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1/feed/?aweme_id={}"
+export const TIKTOK_INFO = "https://api22-normal-c-alisg.tiktokv.com/aweme/v1/feed/"
 
 /**
  * X API

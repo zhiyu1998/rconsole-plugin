@@ -31,9 +31,9 @@ import {
     containsChinese,
     downloadImg,
     downloadMp3,
-    formatBiliInfo,
+    formatBiliInfo, formatSeconds,
     getIdVideo,
-    secondsToTime, truncateString
+    secondsToTime, testProxy, truncateString
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -284,25 +284,46 @@ export class tools extends plugin {
     async tiktok(e) {
         // 判断海外
         const isOversea = await this.isOverseasServer();
+        // 如果不是海外用户且没有梯子直接返回
+        if (!isOversea && await testProxy()) {
+            e.reply("检测到没有梯子，无法解析TikTok");
+            return false;
+        }
         // 处理链接
         let url = await processTikTokUrl(e.msg.trim(), isOversea);
         // 处理ID
         let tiktokVideoId = await getIdVideo(url);
         tiktokVideoId = tiktokVideoId.replace(/\//g, "");
-        // API链接
-        const API_URL = TIKTOK_INFO.replace("{}", tiktokVideoId);
-        await fetch(API_URL, {
+
+        const config = {
             headers: {
                 "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                "Content-Type": "application/json",
-                "Accept-Encoding": "gzip,deflate,compress",
+                    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
             },
             // redirect: "follow",
             follow: 10,
             timeout: 10000,
-            agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
+        }
+        // 如果不是海外，则使用代理
+        if (!isOversea) {
+            config.httpsAgent = tunnel.httpsOverHttp({
+                proxy: new HttpProxyAgent(this.myProxy),
+            });
+        }
+
+        const params = new URLSearchParams({
+            "iid": "7318518857994389254",
+            "device_id": "7318517321748022790",
+            "channel": "googleplay",
+            "app_name": "musical_ly",
+            "version_code": "300904",
+            "device_platform": "android",
+            "device_type": "ASUS_Z01QD",
+            "os_version": "9",
+            "aweme_id": tiktokVideoId
         })
+        console.log(`${TIKTOK_INFO}?${params.toString()}`)
+        await fetch(`${TIKTOK_INFO}?${params.toString()}`, config)
             .then(async resp => {
                 const respJson = await resp.json();
                 const data = respJson.aweme_list[0];
@@ -584,13 +605,21 @@ export class tools extends plugin {
 
     // 使用现有api解析小蓝鸟
     async twitter_x(e) {
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        // 如果不是海外用户且没有梯子直接返回
+        if (!isOversea && await testProxy()) {
+            e.reply("检测到没有梯子，无法解析TikTok");
+            return false;
+        }
+
         // 配置参数及解析
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
         // 提取视频
         const videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
         e.reply("识别：小蓝鸟");
-        axios.get(videoUrl, {
+        const config = {
             headers: {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -606,7 +635,17 @@ export class tools extends plugin {
 
             },
             timeout: 10000 // 设置超时时间
-        }).then(resp => {
+        }
+        // 如果不是海外，则使用代理
+        if (!isOversea) {
+            config.httpsAgent = tunnel.httpsOverHttp({
+                proxy: {
+                    host: this.proxyAddr,
+                    port: this.proxyPort
+                },
+            });
+        }
+        axios.get(videoUrl, config).then(resp => {
             const url = resp.data.data?.url;
             if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
                 e.reply(segment.image(url));
@@ -1027,94 +1066,55 @@ export class tools extends plugin {
     async y2b(e) {
         const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = urlRex.exec(e.msg)[0];
-        // 获取url查询参数
-        const query = querystring.parse(url.split("?")[1]);
-        let p = query?.p || '0';
-        let v = query?.v || url.match(/shorts\/([A-Za-z0-9_-]+)/)[1];
-        // 判断是否是海外服务器，默认为false
-        const isProxy = !(await this.isOverseasServer());
-
-        let audios = [], videos = [];
-        let bestAudio = {}, bestVideo = {};
-
-        let rs = { title: '', thumbnail: '', formats: [] };
-        try {
-            let cmd = `yt-dlp --print-json --skip-download ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } '${ url }' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } 2> /dev/null`
-            logger.mark('解析视频, 命令:', cmd);
-            rs = child_process.execSync(cmd).toString();
-            try {
-                rs = JSON.parse(rs);
-            } catch (error) {
-                let cmd = `yt-dlp --print-json --skip-download ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } '${ url }?p=1' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } 2> /dev/null`;
-                logger.mark('尝试分P, 命令:', cmd);
-                rs = child_process.execSync(cmd).toString();
-                rs = JSON.parse(rs);
-                p = '1';
-                // url = `${msg.url}?p=1`;
-            }
-            if (!containsChinese(rs.title)) {
-                // 启用翻译引擎翻译不是中文的标题
-                const transedTitle = await this.translateEngine.translate(rs.title, '中');
-                // const transedDescription = await this.translateEngine.translate(rs.description, '中');
-                e.reply(`识别：油管，
-                    ${ rs.title.trim() }\n
-                    ${ DIVIDING_LINE.replace("{}", "R插件翻译引擎服务") }\n
-                    ${ transedTitle }\n
-                    ${ rs.description }
-                `);
-            } else {
-                e.reply(`识别：油管，${ rs.title }`);
-            }
-        } catch (error) {
-            logger.error(error.toString());
-            e.reply("解析失败")
-            return;
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        // 如果不是海外用户且没有梯子直接返回
+        if (!isOversea && await testProxy()) {
+            e.reply("检测到没有梯子，无法解析TikTok");
+            return false;
         }
 
-        // 格式化
-        rs.formats.forEach(it => {
-            let length = (it.filesize_approx ? '≈' : '') + ((it.filesize || it.filesize_approx || 0) / 1024 / 1024).toFixed(2);
-            if (it.audio_ext != 'none') {
-                audios.push(getAudio(it.format_id, it.ext, (it.abr || 0).toFixed(0), it.format_note || it.format || '', length));
-            } else if (it.video_ext != 'none') {
-                videos.push(getVideo(it.format_id, it.ext, it.resolution, it.height, (it.vbr || 0).toFixed(0), it.format_note || it.format || '', length));
-            }
-        });
-
-        // 寻找最佳的分辨率
-        // bestAudio = Array.from(audios).sort((a, b) => a.rate - b.rate)[audios.length - 1];
-        // bestVideo = Array.from(videos).sort((a, b) => a.rate - b.rate)[videos.length - 1];
-
-        // 较为有性能的分辨率
-        bestVideo = Array.from(videos).find(item => item.scale.includes("720") || item.scale.includes("360"));
-        bestAudio = Array.from(audios).find(item => item.format === 'm4a');
-        // logger.mark({
-        //     bestVideo,
-        //     bestAudio
-        // })
-
-        // 格式化yt-dlp的请求
-        const format = `${ bestVideo.id }x${ bestAudio.id }`
-        // 下载地址格式化
-        const path = `${ v }${ p ? `/p${ p }` : '' }`;
-        const fullpath = `${ this.getCurDownloadPath(e) }/${ path }`;
-        // 创建下载文件夹
-        await mkdirIfNotExists(fullpath);
-        // yt-dlp下载
-        let cmd = //`cd '${__dirname}' && (cd tmp > /dev/null || (mkdir tmp && cd tmp)) &&` +
-            `yt-dlp  ${ this.y2bCk !== undefined ? `--cookies ${ this.y2bCk }` : '' } ${ url } -f ${ format.replace('x', '+') } ` +
-            `-o '${ fullpath }/${ v }.%(ext)s' ${ isProxy ? `--proxy ${ this.proxyAddr }:${ this.proxyPort }` : '' } -k --write-info-json`;
-        logger.mark(cmd)
         try {
-            await child_process.execSync(cmd);
-            e.reply(segment.video(`${ fullpath }/${ v }.mp4`))
-            // 清理文件
-            await deleteFolderRecursive(`${ fullpath.split('\/').slice(0, -2).join('/') }`);
+            // Perform the HTTP GET request
+            const formData = {
+                "link": url,
+                "from": "ytbsaver"
+            }
+            const params = new URLSearchParams();
+            Object.keys(formData).forEach(key => params.append(key, formData[key]));
+
+            const config = {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                    "origin": "https://www.ytbsaver.com"
+                },
+            }
+            // 如果不是海外，则使用代理
+            if (!isOversea) {
+                config.httpsAgent = tunnel.httpsOverHttp({
+                    proxy: {
+                        host: this.proxyAddr,
+                        port: this.proxyPort
+                    },
+                });
+            }
+
+            const response = await axios.post("https://api.ytbvideoly.com/api/thirdvideo/parse", params.toString(), config);
+
+            const {title, /*thumbnail,*/ duration, formats} = response.data.data;
+            e.reply(`识别：油管，${title}\n时长：${formatSeconds(duration)}`);
+            if (formats.length > 0) {
+                // 大概率是720p
+                const videoUrl = formats?.[formats.length - 1].url;
+                this.downloadVideo(videoUrl).then(path => {
+                    e.reply(segment.video(path + "/temp.mp4"));
+                });
+            }
         } catch (error) {
-            logger.error(error.toString());
-            e.reply("y2b下载失败");
-            return;
+            console.error(error);
+            throw error; // Rethrow the error so it can be handled by the caller
         }
+        return true;
     }
 
     // 米游社
