@@ -305,11 +305,11 @@ export function truncateString(inputString, maxLength = 50) {
  * 测试当前是否存在🪜
  * @returns {Promise<Boolean>}
  */
-export async function testProxy() {
+export async function testProxy(host='127.0.0.1', port=7890) {
     // 配置代理服务器
     const proxyOptions = {
-        host: '127.0.0.1',
-        port: 7890,
+        host: host,
+        port: port,
         // 如果你的代理服务器需要认证
         // auth: 'username:password', // 取消注释并提供实际的用户名和密码
     };

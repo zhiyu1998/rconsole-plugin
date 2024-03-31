@@ -285,7 +285,7 @@ export class tools extends plugin {
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
-        if (!isOversea && await testProxy()) {
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析TikTok");
             return false;
         }
@@ -608,7 +608,7 @@ export class tools extends plugin {
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
-        if (!isOversea && await testProxy()) {
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析TikTok");
             return false;
         }
@@ -1069,7 +1069,7 @@ export class tools extends plugin {
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
-        if (!isOversea && await testProxy()) {
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析TikTok");
             return false;
         }
