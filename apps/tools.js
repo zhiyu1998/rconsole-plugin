@@ -609,7 +609,7 @@ export class tools extends plugin {
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
-            e.reply("检测到没有梯子，无法解析TikTok");
+            e.reply("检测到没有梯子，无法解析");
             return false;
         }
 
@@ -1070,7 +1070,7 @@ export class tools extends plugin {
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
-            e.reply("检测到没有梯子，无法解析TikTok");
+            e.reply("检测到没有梯子，无法解析油管");
             return false;
         }
 
