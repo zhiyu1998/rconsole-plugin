@@ -92,10 +92,12 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 ```
 
 ##  🐤 Q&A
-### bilibili问题
-> 哔哩哔哩的SESSDATA？
-> 进入哔哩哔哩网站 -- 打开F12开发者选项 -- 应用 -- 找到Cookie -- 找到SESSDATA -- 复制 -- 粘贴到plugins/rconsole-plugin/config/tools.yaml or 锅巴  
-> [图文教程【群友推荐！】](https://www.bilibili.com/read/cv12349604)
+### B站扫码登录
+命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
+![rbq](./img/rbq.webp)
+
+示例：
+![rbq2](./img/rbq2.webp)
 
 ### 🎵 douyin问题
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：

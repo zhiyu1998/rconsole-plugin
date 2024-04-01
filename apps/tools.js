@@ -91,7 +91,7 @@ export class tools extends plugin {
                     fnc: "tiktok",
                 },
                 {
-                    reg: "^#RBQ$",
+                    reg: "^#(RBQ|rbq)$",
                     fnc: "biliScan",
                     permission: 'master',
                 },
