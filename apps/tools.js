@@ -91,7 +91,7 @@ export class tools extends plugin {
                     fnc: "tiktok",
                 },
                 {
-                    reg: "^#R插件B站扫码$",
+                    reg: "^#RBQ$",
                     fnc: "biliScan",
                     permission: 'master',
                 },
