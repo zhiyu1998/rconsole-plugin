@@ -41,6 +41,20 @@ export const BILI_VIDEO_INFO = "http://api.bilibili.com/x/web-interface/view"
 export const BILI_NAV = "https://api.bilibili.com/x/web-interface/nav"
 
 /**
+ * 扫码登录的二维码生成
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/login/login_action/QR.md
+ * @type {string}
+ */
+export const BILI_SCAN_CODE_GENERATE = "https://passport.bilibili.com/x/passport-login/web/qrcode/generate"
+
+/**
+ * 扫码登录检测然后发送令牌数据
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/login/login_action/QR.md
+ * @type {string}
+ */
+export const BILI_SCAN_CODE_DETECT = "https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key={}";
+
+/**
  * 米游社网页端获取文章
  * https://github.com/UIGF-org/mihoyo-api-collect/blob/main/hoyolab/article/article.md#%E8%8E%B7%E5%8F%96%E5%AE%8C%E6%95%B4%E6%96%87%E7%AB%A0%E4%BF%A1%E6%81%AF
  * @type {string}

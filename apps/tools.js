@@ -12,7 +12,7 @@ import {
     downloadBFile,
     getBiliAudio,
     getDownloadUrl,
-    getDynamic,
+    getDynamic, getScanCodeData,
     getVideoInfo,
     m4sToMp3,
     mergeFileToMp4
@@ -50,10 +50,8 @@ import {
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     XHS_REQ_LINK,
-    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO, WEISHI_VIDEO_INFO
+    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO, WEISHI_VIDEO_INFO, BILI_SCAN_CODE_GENERATE
 } from "../constants/tools.js";
-import child_process from 'node:child_process'
-import { getAudio, getVideo } from "../utils/y2b.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
@@ -91,6 +89,11 @@ export class tools extends plugin {
                 {
                     reg: "(www.tiktok.com)|(vt.tiktok.com)|(vm.tiktok.com)",
                     fnc: "tiktok",
+                },
+                {
+                    reg: "^#R插件B站扫码$",
+                    fnc: "biliScan",
+                    permission: 'master',
                 },
                 {
                     reg: "(bilibili.com|b23.tv|t.bilibili.com)",
@@ -338,6 +341,24 @@ export class tools extends plugin {
             });
         return true;
     }
+
+    async biliScan(e) {
+        e.reply('R插件开源免责声明:\n您将通过扫码完成获取哔哩哔哩refresh_token以及ck。\n本Bot将不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~', { recallMsg: 180 });
+        // 图片发送钩子
+        const imgSendHook = function (e, path) {
+            e.reply([segment.image(path), segment.at(e.user_id), '请扫码以完成获取'], { recallMsg: 180 })
+        };
+        // 发送请求
+        const saveCodePath = `${ this.defaultPath }qrcode.png`;
+
+        const { SESSDATA, refresh_token } = await getScanCodeData(saveCodePath, 8, () => imgSendHook(e, saveCodePath))
+
+        // 更新到配置文件
+        config.updateField("tools", "biliSessData", SESSDATA);
+        e.reply('登录成功！相关信息已保存至配置文件', true)
+        return true;
+    }
+
 
     // bilibi解析
     async bili(e) {

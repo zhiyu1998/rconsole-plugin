@@ -2,8 +2,21 @@ import fs from "node:fs";
 import axios from 'axios'
 import child_process from 'node:child_process'
 import util from "util";
-import { BILI_BVID_TO_CID, BILI_DYNAMIC, BILI_PLAY_STREAM, BILI_VIDEO_INFO } from "../constants/tools.js";
+import {
+    BILI_BVID_TO_CID,
+    BILI_DYNAMIC,
+    BILI_PLAY_STREAM, BILI_SCAN_CODE_DETECT,
+    BILI_SCAN_CODE_GENERATE,
+    BILI_VIDEO_INFO
+} from "../constants/tools.js";
 import { mkdirIfNotExists } from "./file.js";
+import qrcode from "qrcode"
+
+const biliHeaders = {
+    'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
+    referer: 'https://www.bilibili.com',
+}
 
 /**
  * 下载单个bili文件
@@ -17,9 +30,7 @@ export async function downloadBFile(url, fullFileName, progressCallback) {
         .get(url, {
             responseType: 'stream',
             headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-                referer: 'https://www.bilibili.com',
+                ...biliHeaders
             },
         })
         .then(({ data, headers }) => {
@@ -53,9 +64,7 @@ export async function getDownloadUrl(url) {
     return axios
         .get(url, {
             headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-                referer: 'https://www.bilibili.com',
+                ...biliHeaders
             },
         })
         .then(({ data }) => {
@@ -127,9 +136,7 @@ export async function m4sToMp3(m4sUrl, path) {
         .get(m4sUrl, {
             responseType: 'stream',
             headers: {
-                'User-Agent':
-                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-                referer: 'https://www.bilibili.com',
+                ...biliHeaders
             },
         }).then(async res => {
             // 如果没有目录就创建一个
@@ -231,9 +238,7 @@ export async function getDynamic(dynamicId, SESSDATA) {
     const dynamicApi = BILI_DYNAMIC.replace("{}", dynamicId);
     return axios.get(dynamicApi, {
         headers: {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
-            'referer': 'https://www.bilibili.com',
+            ...biliHeaders,
             Cookie: `SESSDATA=${ SESSDATA }`
         },
     }).then(resp => {
@@ -254,4 +259,60 @@ export async function getDynamic(dynamicId, SESSDATA) {
             dynamicDesc
         }
     })
+}
+
+/**
+ * 扫码
+ * @param qrcodeSavePath      【必须】QR保存位置
+ * @param detectTime          【可选】检测时间（默认10s检测一次）
+ * @param hook                【可选】钩子函数，目前只用来人机交互
+ * @returns {Promise<{
+ *             SESSDATA,
+ *             refresh_token
+ *         }>}
+ */
+export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime = 10, hook = () => {}) {
+    try {
+        const resp = await axios.get(BILI_SCAN_CODE_GENERATE, { ...biliHeaders });
+        // 保存扫码的地址、扫码登录秘钥
+        const { url: scanUrl, qrcode_key } = resp.data.data;
+        await qrcode.toFile(qrcodeSavePath, scanUrl);
+
+        let code = 1;
+
+        // 设置最大尝试次数
+        let attemptCount = 0;
+        const maxAttempts = 3;
+
+        let loginResp;
+        // 检测扫码情况默认 10s 检测一次，并且尝试3次，没扫就拜拜
+        while (code !== 0 && attemptCount < maxAttempts) {
+            // 钩子函数，目前用于发送二维码给用户
+            hook();
+            loginResp = await axios.get(BILI_SCAN_CODE_DETECT.replace("{}", qrcode_key), { ...biliHeaders });
+            code = loginResp.data.data.code;
+            await new Promise(resolve => setTimeout(resolve, detectTime * 1000)); // Wait for detectTime seconds
+        }
+        // 获取刷新令牌
+        const { refresh_token } = loginResp.data.data;
+
+        // 获取cookie
+        const cookies = loginResp.headers['set-cookie'];
+        const SESSDATA = cookies
+            .map(cookie => cookie.split(';').find(item => item.trim().startsWith('SESSDATA=')))
+            .find(item => item !== undefined)
+            ?.split('=')[1];
+
+        return {
+            SESSDATA,
+            refresh_token
+        };
+    } catch (err) {
+        logger.error(err);
+        // 可能需要处理错误或返回一个默认值
+        return {
+            SESSDATA: '',
+            refresh_token: ''
+        };
+    }
 }

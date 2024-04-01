@@ -38,6 +38,9 @@
     - icon: bilibili
       title: "bilibili/b23"
       desc: 哔哩哔哩分享实时下载
+    - icon: bqrcode
+      title: "R插件B站扫码"
+      desc: R插件B站扫码
     - icon: bilimusic
       title: "bili音乐+链接"
       desc: 哔哩哔哩音乐分享实时下载

@@ -28,6 +28,26 @@ class RConfig {
     return this.getYaml(name)
   }
 
+  // 获取指定配置的某个字段
+  getField(name, field) {
+    const config = this.getConfig(name);
+    return config[field];
+  }
+
+  // 更新指定配置的某个字段
+  updateField(name, field, value) {
+    let config = this.getConfig(name);
+    config[field] = value; // 更新字段值
+    this.saveSet(name, config); // 保存更改
+  }
+
+  // 删除指定配置的某个字段
+  deleteField(name, field) {
+    let config = this.getConfig(name);
+    delete config[field]; // 删除指定字段
+    this.saveSet(name, config); // 保存更改
+  }
+
   /**
    * 获取配置yaml
    * @param name 名称
