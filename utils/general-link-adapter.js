@@ -1,6 +1,6 @@
 import {
     GENERAL_REQ_LINK,
-    GENERAL_REQ_LINK_2
+    GENERAL_REQ_LINK_2, GENERAL_REQ_LINK_3
 } from "../constants/tools.js";
 
 /**
@@ -105,6 +105,13 @@ class GeneralLinkAdapter {
         return { name: "QQ小世界", reqLink };
     }
 
+    async jike(link) {
+        // https://m.okjike.com/originalPosts/6583b4421f0812cca58402a6?s=ewoidSI6ICI1YTgzMTY4ZmRmNDA2MDAwMTE5N2MwZmQiCn0=
+        const msg = /https:\/\/m.okjike.com\/originalPosts\/[A-Za-z0-9]+/.exec(link)?.[0];
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK_3, msg);
+        return { name: "即刻", reqLink };
+    }
+
     /**
      * 初始化通用适配器
      * @param link 通用链接
@@ -119,6 +126,7 @@ class GeneralLinkAdapter {
             [/h5.pipigx.com/, this.pipigx.bind(this)],
             [/tieba.baidu.com/, this.tieba.bind(this)],
             [/xsj.qq.com/, this.qqSmallWorld.bind(this)],
+            [/m.okjike.com/, this.jike.bind(this)],
         ]);
 
         for (let [regex, handler] of handlers) {
@@ -168,6 +176,12 @@ class GeneralLinkAdapter {
                     images: data.data?.images,
                     video: data.data?.videoUrl,
                     desc: data.data?.desc
+                }
+            } else if (sign === 3) {
+                console.log(data)
+                return {
+                    name: adapter.name,
+                    images: data?.images.map(item => item.url),
                 }
             } else {
                 throw Error("[R插件][通用解析]错误Sign标识");

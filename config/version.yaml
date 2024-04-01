@@ -1,7 +1,8 @@
 - {
-  version: 1.6.1,
+  version: 1.6.2,
   data:
     [
+      新增<span class="cmd">即刻解析</span>功能,
       新增<span class="cmd">微视解析</span>功能,
       新增<span class="cmd">小世界解析</span>功能,
       新增<span class="cmd">贴吧解析</span>功能,

@@ -90,6 +90,11 @@ export const GENERAL_REQ_LINK_2 = {
     sign: 2
 }
 
+export const GENERAL_REQ_LINK_3 = {
+    link: "https://picseed.com/v1/parser?auth_key=1E9DC25C-E75F-11EE-A0DD-0A5A298C6C2D&content={}",
+    sign: 3
+}
+
 /**
  * 获取网易云歌曲下载链接
  * @type {string}
