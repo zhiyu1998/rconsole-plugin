@@ -94,6 +94,7 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 ##  🐤 Q&A
 ### B站扫码登录
 命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
+
 ![rbq](./img/rbq.webp)
 
 示例：
