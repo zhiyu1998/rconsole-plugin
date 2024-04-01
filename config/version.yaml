@@ -1,5 +1,5 @@
 - {
-  version: 1.6.3,
+  version: 1.6.4,
   data:
     [
       新增<span class="cmd">B站扫码</span>功能,

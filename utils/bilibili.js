@@ -285,10 +285,10 @@ export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime 
         const maxAttempts = 3;
 
         let loginResp;
+        // 钩子函数，目前用于发送二维码给用户
+        hook();
         // 检测扫码情况默认 10s 检测一次，并且尝试3次，没扫就拜拜
         while (code !== 0 && attemptCount < maxAttempts) {
-            // 钩子函数，目前用于发送二维码给用户
-            hook();
             loginResp = await axios.get(BILI_SCAN_CODE_DETECT.replace("{}", qrcode_key), { ...biliHeaders });
             code = loginResp.data.data.code;
             await new Promise(resolve => setTimeout(resolve, detectTime * 1000)); // Wait for detectTime seconds
