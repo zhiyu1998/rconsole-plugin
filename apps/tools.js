@@ -134,7 +134,7 @@ export class tools extends plugin {
                     fnc: "general",
                 },
                 {
-                    reg: "(youtube.com)",
+                    reg: "(youtube.com|youtu.be)",
                     fnc: "y2b"
                 },
                 {
@@ -1086,7 +1086,9 @@ export class tools extends plugin {
      */
     async y2b(e) {
         const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url = urlRex.exec(e.msg)[0];
+        // https://youtu.be/9IoNgzpURDw?si=XlvOAxqqjF9FJYcF
+        const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        let url = urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0];
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
