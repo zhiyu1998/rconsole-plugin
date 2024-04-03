@@ -493,7 +493,7 @@ export class tools extends plugin {
         const isLimitDuration = curDuration > this.biliDuration;
         if (isLimitDuration) {
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            e.reply(`当前视频（${ videoId }）时长为 ${ durationInMinutes }，大于管理员设置的时长 ${ this.biliDuration / 60 }`);
+            e.reply(`当前视频（${ videoId }）时长为 ${ durationInMinutes } 分钟，大于管理员设置的时长 ${ this.biliDuration / 60 } 分钟`);
             return true;
         }
         // 获取关键信息
