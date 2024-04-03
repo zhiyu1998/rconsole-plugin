@@ -260,7 +260,7 @@ export class tools extends plugin {
                         );
                         const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                         await this.downloadVideo(resUrl).then(() => {
-                            e.reply(segment.video(path));
+                            this.video_file(e, path)
                         });
                     } else if (urlType === "image") {
                         // 无水印图片列表
@@ -464,7 +464,7 @@ export class tools extends plugin {
             .then(data => {
                 this.downBili(`${ path }temp`, data.videoUrl, data.audioUrl)
                     .then(_ => {
-                        e.reply(segment.video(`${ path }temp.mp4`));
+                        this.video_file(e, `${ path }temp.mp4`)
                     })
                     .catch(err => {
                         logger.error(err);
@@ -754,7 +754,7 @@ export class tools extends plugin {
             parseM3u8(res.urlM3u8s[res.urlM3u8s.length - 1]).then(res2 => {
                 downloadM3u8Videos(res2.m3u8FullUrls, path).then(_ => {
                     mergeAcFileToMp4(res2.tsNames, path, `${ path }out.mp4`).then(_ => {
-                        e.reply(segment.video(`${ path }out.mp4`));
+                        this.video_file(e, `${ path }out.mp4`)
                     });
                 });
             });
@@ -814,7 +814,7 @@ export class tools extends plugin {
                         // 创建文件，如果不存在
                         path = `${ this.getCurDownloadPath(e) }/`;
                     }
-                    e.reply(segment.video(path + "/temp.mp4"));
+                    this.video_file(e, `${ path }/temp.mp4`)
                 });
                 return true;
             } else if (type === "normal") {
@@ -1093,7 +1093,7 @@ export class tools extends plugin {
                             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                             "referer": "https://weibo.com/",
                         }).then(path => {
-                            e.reply(segment.video(path + "/temp.mp4"));
+                            this.video_file(e, `${ path }/temp.mp4`)
                         });
                     } catch (err) {
                         e.reply("视频资源获取失败");
@@ -1127,7 +1127,7 @@ export class tools extends plugin {
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
                 const url = adapter.video;
                 this.downloadVideo(url).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
+                    this.video_file(e, `${ path }/temp.mp4`)
                 });
             } else {
                 e.reply("解析失败：无法获取到资源");
@@ -1262,7 +1262,7 @@ export class tools extends plugin {
                         // 暂时选取分辨率较低的video进行解析
                         const videoUrl = resolutions[i].url;
                         this.downloadVideo(videoUrl).then(path => {
-                            e.reply(segment.video(path + "/temp.mp4"));
+                            this.video_file(e, `${ path }/temp.mp4`)
                         });
                         break;
                     }
@@ -1377,7 +1377,7 @@ export class tools extends plugin {
             e.reply([segment.image(cover), `识别：微视，${ title }`]);
 
             this.downloadVideo(noWatermarkDownloadUrl).then(path => {
-                e.reply(segment.video(path + "/temp.mp4"));
+                this.video_file(e, `${ path }/temp.mp4`)
             });
         } catch (err) {
             logger.error(err);
@@ -1441,7 +1441,7 @@ export class tools extends plugin {
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
                 this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
+                    this.video_file(e, `${ path }/temp.mp4`)
                 });
             }
         } catch (error) {
@@ -1625,6 +1625,27 @@ export class tools extends plugin {
             await func();
         } else {
             logger.warn(`解析被限制使用`);
+        }
+    }
+
+    /**
+     * 上传视频文件
+     * @param {*} e 
+     * @param {*} path 
+     */
+    async video_file(e, path) {
+        if(!fs.existsSync(path)) return e.reply('视频不存在')
+        const stats = fs.statSync(path)
+        const Video_size = (stats.size / (1024 * 1024)).toFixed(2)
+        if (Video_size > 70) {
+            e.reply(`当前视频大小：${ Video_size }MB，\n大于设置的最大限制，\n改为上传群文件`)
+            if(this.e.bot?.sendUni) {
+                this.e.group.fs.upload(path)
+            } else {
+                this.e.group.sendFile(path)
+            }
+        } else {
+            e.reply(segment.video(path));
         }
     }
 }
