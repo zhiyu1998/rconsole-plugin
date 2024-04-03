@@ -185,7 +185,7 @@ export class tools extends plugin {
             proxy: this.myProxy,
         });
         // 并发队列
-        this.queue = new PQueue({concurrency: this.toolsConfig.queueConcurrency});
+        this.queue = new PQueue({concurrency: Number(this.toolsConfig.queueConcurrency)});
     }
 
     // 翻译插件
