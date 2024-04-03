@@ -4,6 +4,7 @@ import config from "../model/index.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import lodash from "lodash";
 import YAML from "yaml";
+import fs from "node:fs";
 
 import { exec, execSync } from "node:child_process";
 import { copyFiles, deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
