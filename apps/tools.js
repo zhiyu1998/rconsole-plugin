@@ -731,7 +731,7 @@ export class tools extends plugin {
             if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
                 e.reply(segment.image(url));
             } else {
-                this.downloadVideo(url).then(path => {
+                this.downloadVideo(url, !isOversea).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
             }
@@ -1189,7 +1189,7 @@ export class tools extends plugin {
             if (formats.length > 0) {
                 // 大概率是720p
                 const videoUrl = formats?.[formats.length - 1].url;
-                this.downloadVideo(videoUrl).then(path => {
+                this.downloadVideo(videoUrl, !isOversea).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
             }
@@ -1549,7 +1549,7 @@ export class tools extends plugin {
                 httpAgent: tunnel.httpOverHttp({
                     proxy: { host: this.proxyAddr, port: this.proxyPort },
                 }),
-                httpsAgent: tunnel.httpOverHttp({
+                httpsAgent: tunnel.httpsOverHttp({
                     proxy: { host: this.proxyAddr, port: this.proxyPort },
                 }),
             }),
