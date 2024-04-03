@@ -515,7 +515,7 @@ export class tools extends plugin {
                 fs.unlinkSync(`${ path }${ videoId }.mp4`);
             })
             .catch(err => {
-                logger.error(`${[R插件][B站下载引擎] }err`);
+                logger.error(`[R插件][B站下载引擎] ${err}`);
                 e.reply("解析失败，请重试一下");
             })
         );
