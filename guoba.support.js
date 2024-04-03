@@ -119,6 +119,17 @@ export function supportGuoba() {
                         placeholder: "请输入抖音的Cookie",
                     },
                 },
+                {
+                    field: "tools.queueConcurrency",
+                    label: "并发下载个数",
+                    bottomHelpMessage:
+                        "【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "如果你的服务器比较强劲，就写4~12（比如4，就是可以4个人同时下载），较弱就一个一个下载，写1",
+                    },
+                },
             ],
             getConfigData() {
                 const toolsData = {

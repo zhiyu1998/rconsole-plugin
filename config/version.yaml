@@ -1,10 +1,10 @@
 - {
-  version: 1.6.5,
+  version: 1.6.6,
   data:
     [
+      新增<span class="cmd">B站下载</span>功能,
       新增<span class="cmd">B站扫码</span>功能,
       新增<span class="cmd">即刻解析</span>功能,
-      新增<span class="cmd">微视解析</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,
       添加<span class="cmd">#R版本</span>获取插件版本,

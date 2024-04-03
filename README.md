@@ -48,7 +48,7 @@ git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plu
 git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
 ```
 
-2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）
+2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）
 
 
 ```shell

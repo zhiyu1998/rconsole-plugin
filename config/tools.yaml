@@ -10,3 +10,5 @@ biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以�
 biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
 
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
+
+queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1

@@ -187,6 +187,23 @@ export async function getBiliAudio(bvid, cid) {
     }))
 }
 
+export async function getBiliVideoWithSession(bvid, cid, SESSDATA) {
+    if (!cid) {
+        cid = await fetchCID(bvid).catch((err) => console.log(err))
+    }
+    // 返回一个fetch的promise
+    return (new Promise((resolve, reject) => {
+        fetch(BILI_PLAY_STREAM.replace("{bvid}", bvid).replace("{cid}", cid), {
+            headers: {
+                // SESSDATA 字段
+                Cookie: `SESSDATA=${SESSDATA}`
+            }
+        })
+            .then(res => res.json())
+            .then(json => resolve(json.data.dash));
+    }))
+}
+
 /**
  * bvid转换成cid
  * @param bvid
