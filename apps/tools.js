@@ -328,7 +328,7 @@ export class tools extends plugin {
             "os_version": "9",
             "aweme_id": tiktokVideoId
         })
-        console.log(`${TIKTOK_INFO}?${params.toString()}`)
+        // console.log(`${TIKTOK_INFO}?${params.toString()}`)
         await fetch(`${TIKTOK_INFO}?${params.toString()}`, config)
             .then(async resp => {
                 const respJson = await resp.json();
@@ -506,18 +506,19 @@ export class tools extends plugin {
         e.reply(`正在下载${ height }p ${ Math.trunc(frameRate) }帧数 视频，请稍候...`);
         const path = `${ this.getCurDownloadPath(e) }/`;
         // 添加下载任务到并发队列
-        this.queue.add(() => this.downBili(`${ path }${ videoId }`, videoBaseUrl, audioBaseUrl)
-            .then(_ => {
-                Bot.acquireGfs(e.group_id).upload(fs.readFileSync(`${ path }${ videoId }.mp4`))
-            })
-            .then(_ => {
-                // 清除文件
-                fs.unlinkSync(`${ path }${ videoId }.mp4`);
-            })
-            .catch(err => {
-                logger.error(`[R插件][B站下载引擎] ${err}`);
-                e.reply("解析失败，请重试一下");
-            })
+        this.queue.add(() =>
+            this.downBili(`${ path }${ videoId }`, videoBaseUrl, audioBaseUrl)
+                    .then(_ => {
+                        e.group.sendFile(fs.readFileSync(`${ path }${ videoId }.mp4`));
+                    })
+                    .then(_ => {
+                        // 清除文件
+                        fs.unlinkSync(`${ path }${ videoId }.mp4`);
+                    })
+                    .catch(err => {
+                        logger.error(`[R插件][B站下载引擎] ${err}`);
+                        e.reply("解析失败，请重试一下");
+                    })
         );
         logger.mark(`[R插件][B站下载引擎] 当前下载队列大小${ this.queue.size }`);
 
@@ -1028,7 +1029,7 @@ export class tools extends plugin {
                 //     e.reply(segment.video(path + "/temp.mp4"));
                 // });
                 downloadMp3(url, 'follow').then(path => {
-                    Bot.acquireGfs(e.group_id).upload(fs.readFileSync(path), '/', `${title.replace(/[\/\?<>\\:\*\|".… ]/g, '')}.mp3`)
+                    e.group.sendFile(fs.readFileSync(path), '/', `${ title.replace(/[\/\?<>\\:\*\|".… ]/g, '') }.mp3`);
                 })
                     .catch(err => {
                         console.error(`下载音乐失败，错误信息为: ${err.message}`);
