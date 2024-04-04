@@ -186,6 +186,8 @@ export class tools extends plugin {
         });
         // 并发队列
         this.queue = new PQueue({concurrency: Number(this.toolsConfig.queueConcurrency)});
+        // 视频下载的并发数量
+        this.videoDownloadConcurrency = this.toolsConfig.videoDownloadConcurrency;
     }
 
     // 翻译插件
@@ -260,7 +262,7 @@ export class tools extends plugin {
                         );
                         const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                         await this.downloadVideo(resUrl).then(() => {
-                            this.video_file(e, path)
+                            this.sendVideoToUpload(e, path)
                         });
                     } else if (urlType === "image") {
                         // 无水印图片列表
@@ -464,7 +466,7 @@ export class tools extends plugin {
             .then(data => {
                 this.downBili(`${ path }temp`, data.videoUrl, data.audioUrl)
                     .then(_ => {
-                        this.video_file(e, `${ path }temp.mp4`)
+                        this.sendVideoToUpload(e, `${ path }temp.mp4`)
                     })
                     .catch(err => {
                         logger.error(err);
@@ -754,7 +756,7 @@ export class tools extends plugin {
             parseM3u8(res.urlM3u8s[res.urlM3u8s.length - 1]).then(res2 => {
                 downloadM3u8Videos(res2.m3u8FullUrls, path).then(_ => {
                     mergeAcFileToMp4(res2.tsNames, path, `${ path }out.mp4`).then(_ => {
-                        this.video_file(e, `${ path }out.mp4`)
+                        this.sendVideoToUpload(e, `${ path }out.mp4`)
                     });
                 });
             });
@@ -814,7 +816,7 @@ export class tools extends plugin {
                         // 创建文件，如果不存在
                         path = `${ this.getCurDownloadPath(e) }/`;
                     }
-                    this.video_file(e, `${ path }/temp.mp4`)
+                    this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                 });
                 return true;
             } else if (type === "normal") {
@@ -1093,7 +1095,7 @@ export class tools extends plugin {
                             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                             "referer": "https://weibo.com/",
                         }).then(path => {
-                            this.video_file(e, `${ path }/temp.mp4`)
+                            this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                         });
                     } catch (err) {
                         e.reply("视频资源获取失败");
@@ -1127,7 +1129,7 @@ export class tools extends plugin {
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
                 const url = adapter.video;
                 this.downloadVideo(url).then(path => {
-                    this.video_file(e, `${ path }/temp.mp4`)
+                    this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                 });
             } else {
                 e.reply("解析失败：无法获取到资源");
@@ -1262,7 +1264,7 @@ export class tools extends plugin {
                         // 暂时选取分辨率较低的video进行解析
                         const videoUrl = resolutions[i].url;
                         this.downloadVideo(videoUrl).then(path => {
-                            this.video_file(e, `${ path }/temp.mp4`)
+                            this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                         });
                         break;
                     }
@@ -1377,7 +1379,7 @@ export class tools extends plugin {
             e.reply([segment.image(cover), `识别：微视，${ title }`]);
 
             this.downloadVideo(noWatermarkDownloadUrl).then(path => {
-                this.video_file(e, `${ path }/temp.mp4`)
+                this.sendVideoToUpload(e, `${ path }/temp.mp4`)
             });
         } catch (err) {
             logger.error(err);
@@ -1441,7 +1443,7 @@ export class tools extends plugin {
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
                 this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
-                    this.video_file(e, `${ path }/temp.mp4`)
+                    this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                 });
             }
         } catch (error) {
@@ -1529,46 +1531,113 @@ export class tools extends plugin {
     }
 
     /**
-     * 工具：根URL据下载视频 / 音频
-     * @param url       下载地址
-     * @param isProxy   是否需要魔法
-     * @param headers   覆盖头节点
-     * @returns {Promise<unknown>}
+     * 工具：根据URL多线程下载视频 / 音频
+     * @param url
+     * @param isProxy
+     * @param headers
+     * @param numThreads
+     * @returns {Promise<void>}
      */
-    async downloadVideo(url, isProxy = false, headers = null) {
+    async downloadVideo(url, isProxy = false, headers = null, numThreads = 1) {
         const { groupPath, target } = this.getGroupPathAndTarget.call(this);
-
         await mkdirIfNotExists(groupPath);
+        const userAgent = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
+        // 用户设置优先策略，逻辑解释：如果使用了这个函数优先查看用户是否设置了大于1的线程，如果设置了优先使用，没设置就开发者设定的函数设置
+        numThreads = this.videoDownloadConcurrency !== 1 ? this.videoDownloadConcurrency : numThreads;
 
-        const userAgent =
-            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
-        const axiosConfig = {
-            headers: headers || { "User-Agent": userAgent },
-            responseType: "stream",
-            ...(isProxy && {
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
+        // 如果是用户设置了单线程，则不分片下载
+        if (numThreads === 1) {
+            const axiosConfig = {
+                headers: headers || { "User-Agent": userAgent },
+                responseType: "stream",
+                ...(isProxy && {
+                    httpAgent: tunnel.httpOverHttp({
+                        proxy: { host: this.proxyAddr, port: this.proxyPort },
+                    }),
+                    httpsAgent: tunnel.httpsOverHttp({
+                        proxy: { host: this.proxyAddr, port: this.proxyPort },
+                    }),
                 }),
-                httpsAgent: tunnel.httpsOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-            }),
-        };
+            };
 
-        try {
-            await checkAndRemoveFile(target);
+            try {
+                await checkAndRemoveFile(target);
 
-            const res = await axios.get(url, axiosConfig);
-            logger.mark(`开始下载: ${ url }`);
-            const writer = fs.createWriteStream(target);
-            res.data.pipe(writer);
+                const res = await axios.get(url, axiosConfig);
+                logger.mark(`开始下载: ${ url }`);
+                const writer = fs.createWriteStream(target);
+                res.data.pipe(writer);
 
-            return new Promise((resolve, reject) => {
-                writer.on("finish", () => resolve(groupPath));
-                writer.on("error", reject);
-            });
-        } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${ err }`);
+                return new Promise((resolve, reject) => {
+                    writer.on("finish", () => resolve(groupPath));
+                    writer.on("error", reject);
+                });
+            } catch (err) {
+                logger.error(`下载视频发生错误！\ninfo:${ err }`);
+            }
+        } else {
+            // 多线程分片下载
+            try {
+                await checkAndRemoveFile(target);
+                const sizeRes = await axios.head(url);
+                const contentLength = sizeRes.headers['content-length'];
+                const chunkSize = Math.ceil(contentLength / numThreads);
+                let promises = [];
+
+                for (let i = 0; i < numThreads; i++) {
+                    let start = i * chunkSize;
+                    let end = (i + 1) * chunkSize - 1;
+                    if (i === numThreads - 1) end = ''; // Last chunk goes till the end
+                    const axiosConfig = {
+                        headers: {
+                            "User-Agent": userAgent,
+                            "Range": `bytes=${start}-${end}`,
+                            ...headers
+                        },
+                        responseType: 'stream',
+                        ...(isProxy && {
+                            httpAgent: tunnel.httpOverHttp({
+                                proxy: { host: 'proxyAddress', port: 'proxyPort' },
+                            }),
+                            httpsAgent: tunnel.httpsOverHttp({
+                                proxy: { host: 'proxyAddress', port: 'proxyPort' },
+                            }),
+                        }),
+                    };
+                    promises.push(axios.get(url, axiosConfig));
+                }
+
+                const writer = fs.createWriteStream(target, { flags: 'a' });
+
+                // 同时下载所有部分
+                await Promise.all(promises.map(async (promise, index) => {
+                    const res = await promise;
+                    logger.mark(`开始下载部分: ${index + 1}`);
+                    res.data.pipe(writer, { end: false });
+                    await new Promise((resolve, reject) => {
+                        res.data.on('end', () => {
+                            logger.mark(`部分 ${index + 1} 下载完成`);
+                            resolve();
+                        });
+                        res.data.on('error', reject);
+                    });
+                }));
+
+                // 注意这里不应该在每个分块结束后立即调用writer.end()
+                // 我们只在所有分块都已经pipe完毕后调用writer.end()
+                writer.end();
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', () => {
+                        logger.mark(`所有部分下载完成，文件已保存至 ${target}`);
+                        resolve(target); // 返回目标文件路径
+                    });
+                    writer.on('error', reject);
+                });
+            } catch (err) {
+                logger.error(`下载视频发生错误！\ninfo:${err}`);
+                // 处理或抛出错误
+                throw err;
+            }
         }
     }
 
@@ -1629,20 +1698,21 @@ export class tools extends plugin {
     }
 
     /**
-     * 上传视频文件
-     * @param {*} e 
-     * @param {*} path 
+     * 发送转上传视频
+     * @param e              交互事件
+     * @param path           视频所在路径
+     * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
-    async video_file(e, path) {
-        if(!fs.existsSync(path)) return e.reply('视频不存在')
-        const stats = fs.statSync(path)
-        const Video_size = (stats.size / (1024 * 1024)).toFixed(2)
-        if (Video_size > 70) {
-            e.reply(`当前视频大小：${ Video_size }MB，\n大于设置的最大限制，\n改为上传群文件`)
-            if(this.e.bot?.sendUni) {
-                this.e.group.fs.upload(path)
+    async sendVideoToUpload(e, path, videoSizeLimit = 70) {
+        if (!fs.existsSync(path)) return e.reply('视频不存在');
+        const stats = fs.statSync(path);
+        const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
+        if (videoSize > videoSizeLimit) {
+            e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
+            if (this.e.bot?.sendUni) {
+                this.e.group.fs.upload(path);
             } else {
-                this.e.group.sendFile(path)
+                this.e.group.sendFile(path);
             }
         } else {
             e.reply(segment.video(path));

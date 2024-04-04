@@ -121,13 +121,24 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.queueConcurrency",
-                    label: "并发下载个数",
+                    label: "允许多用户下载个数",
                     bottomHelpMessage:
-                        "【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
+                        "【目前只涉及哔哩哔哩的下载功能】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
                     component: "Input",
                     required: false,
                     componentProps: {
                         placeholder: "如果你的服务器比较强劲，就写4~12（比如4，就是可以4个人同时下载），较弱就一个一个下载，写1",
+                    },
+                },
+                {
+                    field: "tools.videoDownloadConcurrency",
+                    label: "使用下载视频的并发个数",
+                    bottomHelpMessage:
+                        "与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "不确定用1即可，高性能服务器随意4~12都可以，看CPU的实力",
                     },
                 },
             ],

@@ -47,10 +47,6 @@ export class query extends plugin {
                     fnc: "cospro",
                 },
                 {
-                    reg: "^#青年大学习$",
-                    fnc: "youthLearning",
-                },
-                {
                     reg: "^#搜书(.*)$",
                     fnc: "searchBook",
                 },
@@ -178,105 +174,6 @@ export class query extends plugin {
             e.reply(segment.image(img));
         }
 
-        return true;
-    }
-
-    // 青年大学习
-    async youthLearning(e) {
-        await axios
-            .get(
-                "https://qczj.h5yunban.com/qczj-youth-learning/cgi-bin/common-api/course/current",
-                {
-                    headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53",
-                    },
-                },
-            )
-            .then(resp => {
-                // logger.info(resp.data);
-                return resp.data.result.uri.replace("index.html", "m.html");
-            })
-            .then(async uri => {
-                axios
-                    .get(uri, {
-                        headers: {
-                            "User-Agent":
-                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36 Edg/95.0.1020.53",
-                        },
-                    })
-                    .then(resp => {
-                        const content = resp.data;
-                        const resList = content.match(/<div class="w\d option" (.*)><\/div>/g);
-                        const valueList = resList.map(item => {
-                            return item.match(/data-a="(\d+)"/)[1];
-                        });
-                        let result = [];
-                        // 转换ABCD
-                        const digitToLetter = {
-                            0: "A",
-                            1: "B",
-                            2: "C",
-                            3: "D",
-                        };
-                        for (let i = 0; i < valueList.length; i += 4) {
-                            const group = valueList.slice(i, i + 4);
-                            if (group.length < 4) {
-                                continue;
-                            }
-
-                            const letters = group
-                                .map((d, indx) => {
-                                    if (d === "1") {
-                                        return digitToLetter[indx];
-                                    }
-                                })
-                                .join("");
-                            result.push(letters);
-                        }
-                        // 封装答案
-                        let ans = "";
-                        for (let i = 0; i < result.length; i++) {
-                            ans += `${ i + 1 }. ${ result[i] }\n`;
-                        }
-                        e.reply(ans);
-                        const imgMatch = uri.match(/[^\/]+/g);
-                        const imgId = imgMatch[imgMatch.length - 2];
-
-                        axios
-                            .get(`https://h5.cyol.com/special/daxuexi/${ imgId }/images/end.jpg`, {
-                                headers: {
-                                    "User-Agent":
-                                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                                },
-                                responseType: "stream",
-                            })
-                            .then(resp => {
-                                const filePath = "./youthLearning.png";
-                                const writer = fs.createWriteStream(filePath);
-                                resp.data.pipe(writer);
-                                return new Promise((resolve, reject) => {
-                                    writer.on("finish", () => {
-                                        writer.close(() => {
-                                            resolve(filePath);
-                                        });
-                                    });
-                                    writer.on("error", err => {
-                                        fs.unlink(filePath, () => {
-                                            reject(err);
-                                        });
-                                    });
-                                });
-                            })
-                            .then(filePath => {
-                                e.reply(segment.image(fs.readFileSync(filePath)));
-                                fs.unlinkSync(filePath, err => {
-                                    if (err) throw err;
-                                    logger.error("删除青年大学习文件失败");
-                                });
-                            });
-                    });
-            });
         return true;
     }
 
