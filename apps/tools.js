@@ -2,6 +2,9 @@
 import fetch from "node-fetch";
 import fs from "node:fs";
 import { Buffer } from 'node:buffer';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import path from "path";
 // 其他库
 import axios from "axios";
 import _ from "lodash";
@@ -1577,68 +1580,59 @@ export class tools extends plugin {
             }
         } else {
             // 多线程分片下载
+            const execFilePromise = promisify(execFile);
             try {
                 await checkAndRemoveFile(target);
-                const sizeRes = await axios.head(url);
+                const sizeRes = await axios.head(url, {headers: {'User-Agent': userAgent, ...headers}});
                 const contentLength = sizeRes.headers['content-length'];
                 const chunkSize = Math.ceil(contentLength / numThreads);
                 let promises = [];
 
                 for (let i = 0; i < numThreads; i++) {
                     let start = i * chunkSize;
-                    let end = (i + 1) * chunkSize - 1;
-                    if (i === numThreads - 1) end = ''; // Last chunk goes till the end
-                    const axiosConfig = {
-                        headers: {
-                            "User-Agent": userAgent,
-                            "Range": `bytes=${start}-${end}`,
-                            ...headers
-                        },
-                        responseType: 'stream',
-                        ...(isProxy && {
-                            httpAgent: tunnel.httpOverHttp({
-                                proxy: { host: 'proxyAddress', port: 'proxyPort' },
-                            }),
-                            httpsAgent: tunnel.httpsOverHttp({
-                                proxy: { host: 'proxyAddress', port: 'proxyPort' },
-                            }),
-                        }),
-                    };
-                    promises.push(axios.get(url, axiosConfig));
+                    let end = i === numThreads - 1 ? '' : (i + 1) * chunkSize - 1;
+                    logger.mark(`[R插件][视频下载引擎] 正在下载分片${ i }`);
+                    const tempPath = `${groupPath}/temp-${i}.mp4`;
+                    promises.push(this.downloadChunk(url, start, end, tempPath, userAgent, headers));
                 }
 
-                const writer = fs.createWriteStream(target, { flags: 'a' });
+                // Wait for all downloads to complete
+                await Promise.all(promises);
 
-                // 同时下载所有部分
-                await Promise.all(promises.map(async (promise, index) => {
-                    const res = await promise;
-                    logger.mark(`开始下载部分: ${index + 1}`);
-                    res.data.pipe(writer, { end: false });
-                    await new Promise((resolve, reject) => {
-                        res.data.on('end', () => {
-                            logger.mark(`部分 ${index + 1} 下载完成`);
-                            resolve();
-                        });
-                        res.data.on('error', reject);
-                    });
-                }));
+                // Use ffmpeg to concatenate files
+                const fileList = promises.map((_, index) => `file '${ path.resolve(groupPath + "/temp-" + index + ".mp4") }'`).join('\n');
+                const fileListPath = path.resolve(`${ groupPath }/fileList.txt`);
+                fs.writeFileSync(fileListPath, fileList);
 
-                // 注意这里不应该在每个分块结束后立即调用writer.end()
-                // 我们只在所有分块都已经pipe完毕后调用writer.end()
-                writer.end();
-                await new Promise((resolve, reject) => {
-                    writer.on('finish', () => {
-                        logger.mark(`所有部分下载完成，文件已保存至 ${target}`);
-                        resolve(target); // 返回目标文件路径
-                    });
-                    writer.on('error', reject);
+                await execFilePromise('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', fileListPath, '-c', 'copy', target]);
+
+                // Cleanup
+                promises.forEach((_, index) => {
+                    fs.unlinkSync(`${groupPath}/temp-${index}.mp4`);
                 });
+                fs.unlinkSync(fileListPath);
+
+                logger.mark(`[R插件][视频下载引擎] 提醒你：视频已经下载完成，路径：${target}`);
             } catch (err) {
                 logger.error(`下载视频发生错误！\ninfo:${err}`);
                 // 处理或抛出错误
                 throw err;
             }
         }
+    }
+
+    async downloadChunk(url, start, end, tempPath, userAgent, headers) {
+        const response = await axios.get(url, {
+            headers: {'Range': `bytes=${start}-${end}`, 'User-Agent': userAgent, ...headers},
+            responseType: 'stream'
+        });
+
+        const writer = fs.createWriteStream(tempPath);
+        response.data.pipe(writer);
+        return new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
     }
 
     /**
