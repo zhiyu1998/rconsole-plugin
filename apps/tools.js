@@ -2,9 +2,6 @@
 import fetch from "node-fetch";
 import fs from "node:fs";
 import { Buffer } from 'node:buffer';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
-import path from "path";
 // 其他库
 import axios from "axios";
 import _ from "lodash";
@@ -188,7 +185,7 @@ export class tools extends plugin {
             proxy: this.myProxy,
         });
         // 并发队列
-        this.queue = new PQueue({concurrency: Number(this.toolsConfig.queueConcurrency)});
+        this.queue = new PQueue({ concurrency: Number(this.toolsConfig.queueConcurrency) });
         // 视频下载的并发数量
         this.videoDownloadConcurrency = this.toolsConfig.videoDownloadConcurrency;
     }
@@ -334,7 +331,7 @@ export class tools extends plugin {
             "aweme_id": tiktokVideoId
         })
         // console.log(`${TIKTOK_INFO}?${params.toString()}`)
-        await fetch(`${TIKTOK_INFO}?${params.toString()}`, config)
+        await fetch(`${ TIKTOK_INFO }?${ params.toString() }`, config)
             .then(async resp => {
                 const respJson = await resp.json();
                 const data = respJson.aweme_list[0];
@@ -513,17 +510,17 @@ export class tools extends plugin {
         // 添加下载任务到并发队列
         this.queue.add(() =>
             this.downBili(`${ path }${ videoId }`, videoBaseUrl, audioBaseUrl)
-                    .then(_ => {
-                        e.group.sendFile(fs.readFileSync(`${ path }${ videoId }.mp4`));
-                    })
-                    .then(_ => {
-                        // 清除文件
-                        fs.unlinkSync(`${ path }${ videoId }.mp4`);
-                    })
-                    .catch(err => {
-                        logger.error(`[R插件][B站下载引擎] ${err}`);
-                        e.reply("解析失败，请重试一下");
-                    })
+                .then(_ => {
+                    e.group.sendFile(fs.readFileSync(`${ path }${ videoId }.mp4`));
+                })
+                .then(_ => {
+                    // 清除文件
+                    fs.unlinkSync(`${ path }${ videoId }.mp4`);
+                })
+                .catch(err => {
+                    logger.error(`[R插件][B站下载引擎] ${ err }`);
+                    e.reply("解析失败，请重试一下");
+                })
         );
         logger.mark(`[R插件][B站下载引擎] 当前下载队列大小${ this.queue.size }`);
 
@@ -1011,7 +1008,7 @@ export class tools extends plugin {
             // 小程序
             const musicJson = JSON.parse(message);
             const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
-            e.reply([`识别：网易云音乐，${title}--${desc}`, segment.image(preview)]);
+            e.reply([`识别：网易云音乐，${ title }--${ desc }`, segment.image(preview)]);
             JSON.parse(message);
             return true;
         } catch (err) {
@@ -1025,9 +1022,9 @@ export class tools extends plugin {
                 // 获取歌曲信息
                 const title = await axios.get(NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
                     const song = res.data.songs[0];
-                    return `${song?.name}-${song?.ar?.[0].name}`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+                    return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
                 });
-                e.reply(`识别：网易云音乐，${title}`);
+                e.reply(`识别：网易云音乐，${ title }`);
                 // const mvUrlJson = await getKugouMv(title, 1, 1, 0);
                 // const mvUrl = mvUrlJson.map(item => item.mv_url)?.[0];
                 // this.downloadVideo(mvUrl).then(path => {
@@ -1037,7 +1034,7 @@ export class tools extends plugin {
                     e.group.sendFile(fs.readFileSync(path), '/', `${ title.replace(/[\/\?<>\\:\*\|".… ]/g, '') }.mp3`);
                 })
                     .catch(err => {
-                        console.error(`下载音乐失败，错误信息为: ${err.message}`);
+                        console.error(`下载音乐失败，错误信息为: ${ err.message }`);
                     });
             })
             return true;
@@ -1076,7 +1073,7 @@ export class tools extends plugin {
             .then(async resp => {
                 const wbData = resp.data.data;
                 const { text, status_title, source, region_name, pics, page_info } = wbData;
-                e.reply(`识别：微博，${text.replace(/<[^>]+>/g, '')}\n${status_title}\n${source}\t${region_name}`);
+                e.reply(`识别：微博，${ text.replace(/<[^>]+>/g, '') }\n${ status_title }\n${ source }\t${ region_name }`);
                 if (pics) {
                     // 图片
                     const images = pics.map(item => ({
@@ -1189,8 +1186,8 @@ export class tools extends plugin {
 
             const response = await axios.post("https://api.ytbvideoly.com/api/thirdvideo/parse", params.toString(), config);
 
-            const {title, /*thumbnail,*/ duration, formats} = response.data.data;
-            e.reply(`识别：油管，${title}\n时长：${formatSeconds(duration)}`);
+            const { title, /*thumbnail,*/ duration, formats } = response.data.data;
+            e.reply(`识别：油管，${ title }\n时长：${ formatSeconds(duration) }`);
             if (formats.length > 0) {
                 // 大概率是720p
                 const videoUrl = formats?.[formats.length - 1].url;
@@ -1311,7 +1308,7 @@ export class tools extends plugin {
                             "Referer": "https://www.pixiv.net/",
                         }
                     }).then(response => {
-                        const downloadPath = `${curPath}/${item.split('/').pop()}`;
+                        const downloadPath = `${ curPath }/${ item.split('/').pop() }`;
                         const writer = fs.createWriteStream(downloadPath);
                         response.data.pipe(writer);
                         writer.on('finish', () => resolve(downloadPath)); // 在文件写入完成后解决Promise
@@ -1334,7 +1331,7 @@ export class tools extends plugin {
                         try {
                             fs.unlinkSync(item);
                         } catch (err) {
-                            logger.error(`删除文件${item}失败，请使用命令”清理data垃圾“进行清理`, err);
+                            logger.error(`删除文件${ item }失败，请使用命令”清理data垃圾“进行清理`, err);
                         }
                     });
                 } catch (error) {
@@ -1432,7 +1429,7 @@ export class tools extends plugin {
                 images,
             };
 
-            e.reply([segment.image(shortVideoInfo.cover), `识别：最右，${shortVideoInfo.authorName}\n${shortVideoInfo.title}`])
+            e.reply([segment.image(shortVideoInfo.cover), `识别：最右，${ shortVideoInfo.authorName }\n${ shortVideoInfo.title }`])
 
             if (shortVideoInfo.images.length > 0) {
                 const replyImages = shortVideoInfo.images.map(item => {
@@ -1542,12 +1539,15 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async downloadVideo(url, isProxy = false, headers = null, numThreads = 1) {
+        // 构造群信息参数
         const { groupPath, target } = this.getGroupPathAndTarget.call(this);
         await mkdirIfNotExists(groupPath);
+        // 构造header部分内容
         const userAgent = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
         // 用户设置优先策略，逻辑解释：如果使用了这个函数优先查看用户是否设置了大于1的线程，如果设置了优先使用，没设置就开发者设定的函数设置
         numThreads = this.videoDownloadConcurrency !== 1 ? this.videoDownloadConcurrency : numThreads;
 
+        // 构造代理参数
         const proxyOption = {
             ...(isProxy && {
                 httpAgent: tunnel.httpOverHttp({
@@ -1559,101 +1559,138 @@ export class tools extends plugin {
             }),
         }
 
+        /**
+         * 构造下载视频参数
+         * 构造信息：链接、头信息、userAgent、代理信息、下载位置、返回的路径
+         * @type {{headers: null, userAgent: string, groupPath: string, url, proxyOption: {}, target: string}}
+         */
+        const downloadVideoParams = {
+            url,
+            headers,
+            userAgent,
+            proxyOption,
+            target,
+            groupPath,
+        }
+
         // 如果是用户设置了单线程，则不分片下载
         if (numThreads === 1) {
-            const axiosConfig = {
-                headers: headers || { "User-Agent": userAgent },
-                responseType: "stream",
-                ...proxyOption
-            };
-
-            try {
-                await checkAndRemoveFile(target);
-
-                const res = await axios.get(url, axiosConfig);
-                logger.mark(`开始下载: ${ url }`);
-                const writer = fs.createWriteStream(target);
-                res.data.pipe(writer);
-
-                return new Promise((resolve, reject) => {
-                    writer.on("finish", () => resolve(groupPath));
-                    writer.on("error", reject);
-                });
-            } catch (err) {
-                logger.error(`下载视频发生错误！\ninfo:${ err }`);
-            }
+            return await this.downloadVideoWithSingleThread(downloadVideoParams);
         } else {
-            try {
-                // Step 1: 请求视频资源获取 Content-Length
-                const headRes = await axios.head(url, {
-                    headers: headers || { "User-Agent": userAgent },
-                    ...proxyOption
-                });
-                const contentLength = headRes.headers['content-length'];
-                if (!contentLength) {
-                    throw new Error("无法获取视频大小");
-                }
+            return await this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
+        }
+    }
 
-                // Step 2: 计算每个线程应该下载的文件部分
-                const partSize = Math.ceil(contentLength / numThreads);
-                let promises = [];
-
-                for (let i = 0; i < numThreads; i++) {
-                    const start = i * partSize;
-                    let end = start + partSize - 1;
-                    if (i === numThreads - 1) {
-                        end = contentLength - 1; // 确保最后一部分可以下载完整
-                    }
-
-                    // Step 3: 并发下载文件的不同部分
-                    const partAxiosConfig = {
-                        headers: {
-                            "User-Agent": userAgent,
-                            "Range": `bytes=${start}-${end}`
-                        },
-                        responseType: "stream",
-                        ...proxyOption
-                    };
-
-                    promises.push(axios.get(url, partAxiosConfig).then(res => {
-                        return new Promise((resolve, reject) => {
-                            const partPath = `${target}.part${i}`;
-                            logger.mark(`[R插件][视频下载引擎] 正在下载 part${i}`)
-                            const writer = fs.createWriteStream(partPath);
-                            res.data.pipe(writer);
-                            writer.on("finish", () => {
-                                logger.mark(`[R插件][视频下载引擎] part${i + 1} 下载完成`); // 记录线程下载完成
-                                resolve(partPath);
-                            });
-                            writer.on("error", reject);
-                        });
-                    }));
-                }
-
-                // 等待所有部分都下载完毕
-                const parts = await Promise.all(promises);
-
-                // Step 4: 合并下载的文件部分
-                await checkAndRemoveFile(target); // 确保目标文件不存在
-                const writer = fs.createWriteStream(target, {flags: 'a'});
-                for (const partPath of parts) {
-                    await new Promise((resolve, reject) => {
-                        const reader = fs.createReadStream(partPath);
-                        reader.pipe(writer, { end: false });
-                        reader.on('end', () => {
-                            fs.unlinkSync(partPath); // 删除部分文件
-                            resolve();
-                        });
-                        reader.on('error', reject);
-                    });
-                }
-
-                writer.close();
-
-                return groupPath;
-            } catch (err) {
-                logger.error(`下载视频发生错误！\ninfo:${err}`);
+    /**
+     * 多线程下载视频
+     * @link {downloadVideo}
+     * @param downloadVideoParams
+     * @param numThreads
+     * @returns {Promise<*>}
+     */
+    async downloadVideoWithMultiThread(downloadVideoParams, numThreads) {
+        const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        try {
+            // Step 1: 请求视频资源获取 Content-Length
+            const headRes = await axios.head(url, {
+                headers: headers || { "User-Agent": userAgent },
+                ...proxyOption
+            });
+            const contentLength = headRes.headers['content-length'];
+            if (!contentLength) {
+                throw new Error("无法获取视频大小");
             }
+
+            // Step 2: 计算每个线程应该下载的文件部分
+            const partSize = Math.ceil(contentLength / numThreads);
+            let promises = [];
+
+            for (let i = 0; i < numThreads; i++) {
+                const start = i * partSize;
+                let end = start + partSize - 1;
+                if (i === numThreads - 1) {
+                    end = contentLength - 1; // 确保最后一部分可以下载完整
+                }
+
+                // Step 3: 并发下载文件的不同部分
+                const partAxiosConfig = {
+                    headers: {
+                        "User-Agent": userAgent,
+                        "Range": `bytes=${ start }-${ end }`
+                    },
+                    responseType: "stream",
+                    ...proxyOption
+                };
+
+                promises.push(axios.get(url, partAxiosConfig).then(res => {
+                    return new Promise((resolve, reject) => {
+                        const partPath = `${ target }.part${ i }`;
+                        logger.mark(`[R插件][视频下载引擎] 正在下载 part${ i }`)
+                        const writer = fs.createWriteStream(partPath);
+                        res.data.pipe(writer);
+                        writer.on("finish", () => {
+                            logger.mark(`[R插件][视频下载引擎] part${ i + 1 } 下载完成`); // 记录线程下载完成
+                            resolve(partPath);
+                        });
+                        writer.on("error", reject);
+                    });
+                }));
+            }
+
+            // 等待所有部分都下载完毕
+            const parts = await Promise.all(promises);
+
+            // Step 4: 合并下载的文件部分
+            await checkAndRemoveFile(target); // 确保目标文件不存在
+            const writer = fs.createWriteStream(target, { flags: 'a' });
+            for (const partPath of parts) {
+                await new Promise((resolve, reject) => {
+                    const reader = fs.createReadStream(partPath);
+                    reader.pipe(writer, { end: false });
+                    reader.on('end', () => {
+                        fs.unlinkSync(partPath); // 删除部分文件
+                        resolve();
+                    });
+                    reader.on('error', reject);
+                });
+            }
+
+            writer.close();
+
+            return groupPath;
+        } catch (err) {
+            logger.error(`下载视频发生错误！\ninfo:${ err }`);
+        }
+    }
+
+    /**
+     * 单线程下载视频
+     * @link {downloadVideo}
+     * @returns {Promise<unknown>}
+     * @param downloadVideoParams
+     */
+    async downloadVideoWithSingleThread(downloadVideoParams) {
+        const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        const axiosConfig = {
+            headers: headers || { "User-Agent": userAgent },
+            responseType: "stream",
+            ...proxyOption
+        };
+
+        try {
+            await checkAndRemoveFile(target);
+
+            const res = await axios.get(url, axiosConfig);
+            logger.mark(`开始下载: ${ url }`);
+            const writer = fs.createWriteStream(target);
+            res.data.pipe(writer);
+
+            return new Promise((resolve, reject) => {
+                writer.on("finish", () => resolve(groupPath));
+                writer.on("error", reject);
+            });
+        } catch (err) {
+            logger.error(`下载视频发生错误！\ninfo:${ err }`);
         }
     }
 
@@ -1725,10 +1762,11 @@ export class tools extends plugin {
         const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
         if (videoSize > videoSizeLimit) {
             e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
-            if (this.e.bot?.sendUni) {
-                this.e.group.fs.upload(path);
+            // 判断是不是icqq
+            if (e.bot?.sendUni) {
+                e.group.fs.upload(path);
             } else {
-                this.e.group.sendFile(path);
+                e.group.sendFile(path);
             }
         } else {
             e.reply(segment.video(path));
