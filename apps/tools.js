@@ -1424,7 +1424,7 @@ export class tools extends plugin {
             const shortVideoInfo = {
                 authorName: videoAuthorMatch ? videoAuthorMatch[1] : '',
                 title: videoTitleMatch ? videoTitleMatch[1] : '',
-                cover: videoCoverMatch ? videoCoverMatch[1] : '',
+                cover: videoCoverMatch ? videoCoverMatch[1] : '' || images[0],
                 noWatermarkDownloadUrl: videoUrlMatch ? videoUrlMatch[1] : '',
                 images,
             };
