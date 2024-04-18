@@ -7,6 +7,7 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
+import { execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists, readCurrentDir } from "../utils/file.js";
 import {
     downloadBFile,
@@ -1161,40 +1162,12 @@ export class tools extends plugin {
 
         try {
             // Perform the HTTP GET request
-            const formData = {
-                "link": url,
-                "from": "ytbsaver"
-            }
-            const params = new URLSearchParams();
-            Object.keys(formData).forEach(key => params.append(key, formData[key]));
-
-            const config = {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
-                    "origin": "https://www.ytbsaver.com"
-                },
-            }
-            // 如果不是海外，则使用代理
-            if (!isOversea) {
-                config.httpsAgent = tunnel.httpsOverHttp({
-                    proxy: {
-                        host: this.proxyAddr,
-                        port: this.proxyPort
-                    },
-                });
-            }
-
-            const response = await axios.post("https://api.ytbvideoly.com/api/thirdvideo/parse", params.toString(), config);
-
-            const { title, /*thumbnail,*/ duration, formats } = response.data.data;
-            e.reply(`识别：油管，${ title }\n时长：${ formatSeconds(duration) }`);
-            if (formats.length > 0) {
-                // 大概率是720p
-                const videoUrl = formats?.[formats.length - 1].url;
-                this.downloadVideo(videoUrl, !isOversea).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
-                });
-            }
+            const title = execSync(`yt-dlp --get-title https://www.youtube.com/shorts/JNdllQl3n0g ${isOversea ? "" : `--proxy ${this.myProxy}`}`)
+            e.reply(`识别：油管，${title}`);
+            const path = this.getCurDownloadPath(e);
+            execSync(`yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} ${url} -o "temp.%(ext)s" --merge-output-format "mp4"`)
+            e.reply(segment.video(path + "/temp.mp4"));
+            await checkAndRemoveFile(path + "/temp.mp4");
         } catch (error) {
             console.error(error);
             throw error; // Rethrow the error so it can be handled by the caller

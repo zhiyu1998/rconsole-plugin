@@ -64,6 +64,19 @@ sudo apt-get install ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 
+`油管解析`需要 `yt-dlp` 的依赖才能完成解析（三选一）：
+```shell
+# 三选一
+# ubuntu （国内 or 国外，且安装了snap）
+snap install yt-dlp
+# debian 海外
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# debian 国内
+curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+```
+
 4. 【可选】小程序解析适配了：
 * 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
 * TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
@@ -165,17 +178,20 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 - [插件库](https://gitee.com/Hikari666/Yunzai-Bot-plugins-index)
 
 ## 🙏 贡献
-🌸感谢下面的朋友对我插件的贡献（排名不分高低）🌸
+🌸 感谢下面的朋友对我插件的贡献（排名不分高低）
 * [好冷](https://gitee.com/hetangx) 提供Windows解决方案
 * [一杯凉](https://gitee.com/yibeiliang) 提供小程序解析冲突解决方案
 * [x0rz4](https://gitee.com/x0rz4) 提供依赖掉包解决方案
 
 
-🌸同时鸣谢感谢以下开发者对 `R插件` 出的贡献🌸：
+🌸 同时鸣谢感谢以下开发者对 `R插件` 出的贡献：
 
 <a href="https://github.com/zhiyu1998/rconsole-plugin/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=zhiyu1998/rconsole-plugin&max=1000" />
 </a>
+
+🌸 感谢以下框架的开源：
+- [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！
