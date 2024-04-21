@@ -137,7 +137,7 @@ export class tools extends plugin {
                 },
                 {
                     reg: "(youtube.com|youtu.be)",
-                    fnc: "y2b"
+                    fnc: "sy2b"
                 },
                 {
                     reg: "(miyoushe.com)",
@@ -1147,28 +1147,39 @@ export class tools extends plugin {
      * @param e
      * @returns {Promise<void>}
      */
-    async y2b(e) {
-        const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        // https://youtu.be/9IoNgzpURDw?si=XlvOAxqqjF9FJYcF
-        const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        let url = urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0];
-        // 判断海外
+    async dy2b(path,url) {
+        return new Promise((resolve, reject) => {
+            const command = `yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} -o "temp.%(ext)s" -f 'bv[height<=720][ext=mp4]+ba[ext=m4a]' --merge-output-format "mp4"  ${url}`;
+            exec(command, (error, stdout) => {
+                if (error) {
+                    console.error(`Error executing command: ${error}`);
+                    reject(error);
+                } else {
+                    console.log(`Command output: ${stdout}`);
+                    resolve(stdout);
+                }
+            });
+        });
+    }       
+        
+    async sy2b(e){
+        let videoSizeLimit = 15
         const isOversea = await this.isOverseasServer();
-        // 如果不是海外用户且没有梯子直接返回
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
             return false;
         }
-
         try {
-            // Perform the HTTP GET request
-            const title = execSync(`yt-dlp --get-title https://www.youtube.com/shorts/JNdllQl3n0g ${isOversea ? "" : `--proxy ${this.myProxy}`}`)
-            e.reply(`识别：油管，${title}`);
-            const path = this.getCurDownloadPath(e);
-            execSync(`yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} ${url} -o "temp.%(ext)s" --merge-output-format "mp4"`)
-            e.reply(segment.video(path + "/temp.mp4"));
-            await checkAndRemoveFile(path + "/temp.mp4");
-        } catch (error) {
+        const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        let url = urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0];
+        const path = this.getCurDownloadPath(e)
+        await checkAndRemoveFile(path + "/temp.mp4")
+        const title = execSync(`yt-dlp --get-title ${url} ${isOversea ? "" : `--proxy ${this.myProxy}`}`)
+        e.reply(`识别：油管，视频下载中请耐心等待 \n${title}`);
+        await this.dy2b(path,url)
+        this.sendVideoToUpload(e, `${path}/temp.mp4`,videoSizeLimit)                
+         }catch (error) {
             console.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
         }
