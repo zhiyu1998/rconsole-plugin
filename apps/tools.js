@@ -1149,7 +1149,7 @@ export class tools extends plugin {
      */
     async dy2b(path,url) {
         return new Promise((resolve, reject) => {
-            const command = `yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} -o "temp.%(ext)s" -f 'bv[height<=720][ext=mp4]+ba[ext=m4a]' --merge-output-format "mp4"  ${url}`;
+            const command = `yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} -o "temp.%(ext)s" -f 'best[height<=720][ext=mp4]' --merge-output-format "mp4"  ${url}`;
             exec(command, (error, stdout) => {
                 if (error) {
                     console.error(`Error executing command: ${error}`);
@@ -1163,7 +1163,7 @@ export class tools extends plugin {
     }       
         
     async sy2b(e){
-        let videoSizeLimit = 15
+        let videoSizeLimit = 30
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
