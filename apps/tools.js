@@ -7,7 +7,7 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
-import { execSync } from "child_process";
+import { execSync, exec } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists, readCurrentDir } from "../utils/file.js";
 import {
     downloadBFile,
@@ -1143,9 +1143,11 @@ export class tools extends plugin {
     }
 
     /**
-     * youtube解析
-     * @param e
+     * yt-dlp工具类
      * @returns {Promise<void>}
+     * @param path      下载路径
+     * @param url       下载链接
+     * @param isOversea 是否是海外用户
      */
     async dy2b(path, url, isOversea) {
         return new Promise((resolve, reject) => {
@@ -1162,6 +1164,7 @@ export class tools extends plugin {
         });
     }
 
+    // 油管解析
     async sy2b(e) {
         let videoSizeLimit = 30
         const isOversea = await this.isOverseasServer();
