@@ -75,6 +75,8 @@ chmod a+rx ~/.local/bin/yt-dlp
 # debian 国内
 curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
 chmod a+rx ~/.local/bin/yt-dlp
+# archlinux
+sudo pacman -Syu yt-dlp
 ```
 
 4. 【可选】小程序解析适配了：
@@ -151,8 +153,7 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 `proxyPort: '7890' # 魔法端口`
 
 > 海外服务器示例：  
-`proxyAddr: '127.0.0.1' # 魔法地址`  
-`proxyPort: '80' # 魔法端口`
+直接发送`#设置海外解析`
 
 
 ## 📦 业务

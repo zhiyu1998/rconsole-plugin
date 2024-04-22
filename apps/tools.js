@@ -136,7 +136,7 @@ export class tools extends plugin {
                     fnc: "general",
                 },
                 {
-                    reg: "(youtube.com|youtu.be)",
+                    reg: "(youtube.com|youtu.be|music.youtube.com)",
                     fnc: "sy2b"
                 },
                 {
@@ -1173,10 +1173,15 @@ export class tools extends plugin {
             return false;
         }
         try {
-            const urlRex = /(?:https?:\/\/)?(www\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+            const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
             let url = urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0];
-            const path = this.getCurDownloadPath(e)
+            // 适配 YouTube Music
+            if (url.includes("music")) {
+                // https://music.youtube.com/watch?v=F4sRtMoIgUs&si=7ZYrHjlI3fHAha0F
+                url = url.replace("music", "www");
+            }
+            const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
             const title = execSync(`yt-dlp --get-title ${ url } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
             e.reply(`识别：油管，视频下载中请耐心等待 \n${ title }`);
