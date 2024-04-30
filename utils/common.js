@@ -130,39 +130,54 @@ export function generateRandomStr(randomlength = 16) {
  * @returns {Promise<unknown>}
  */
 export async function downloadMp3(mp3Url, path, redirect = "manual") {
-    return fetch(mp3Url, {
+    // 如果没有目录就创建一个
+    await mkdirIfNotExists(path)
+
+    // 补充保存文件名
+    path += "/temp.mp3";
+    if (fs.existsSync(path)) {
+        console.log(`音频已存在`);
+        fs.unlinkSync(path);
+    }
+
+    // 发起请求
+    const response = await fetch(mp3Url, {
         headers: {
             "User-Agent":
                 "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
         },
         responseType: "stream",
         redirect: redirect,
-    }).then(async res => {
-        // 如果没有目录就创建一个
-        await mkdirIfNotExists(path)
-
-        // 补充保存文件名
-        path += "/temp.mp3";
-        if (fs.existsSync(path)) {
-            console.log(`音频已存在`);
-            fs.unlinkSync(path);
-        }
-        // 开始下载
-        const fileStream = fs.createWriteStream(path);
-        res.body.pipe(fileStream);
-        return new Promise((resolve, reject) => {
-            fileStream.on("finish", () => {
-                fileStream.close(() => {
-                    resolve(path);
-                });
-            });
-            fileStream.on("error", err => {
-                fs.unlink(path, () => {
-                    reject(err);
-                });
-            });
-        });
     });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch ${response.statusText}`);
+    }
+
+    try {
+        const response = await axios({
+            method: 'get',
+            url: mp3Url,
+            responseType: 'stream',
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36"
+            }
+        });
+
+        // 开始下载
+        const writer = fs.createWriteStream(path);
+
+        response.data.pipe(writer);
+
+        return new Promise((resolve, reject) => {
+            writer.on('finish', () => resolve(path));
+            writer.on('error', reject);
+        });
+
+    } catch (error) {
+        console.error(`下载音乐失败，错误信息为: ${error.message}`);
+        throw error;
+    }
 }
 
 /**

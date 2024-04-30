@@ -92,7 +92,7 @@ export const TWITTER_TWEET_INFO = "https://api.twitter.com/2/tweets?ids={}"
 export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/"
 
 /**
- * 🍉 的请求链接
+ * 通用解析的请求链接
  * @type {string}
  */
 export const GENERAL_REQ_LINK = {

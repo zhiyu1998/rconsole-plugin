@@ -33,6 +33,7 @@ class GeneralLinkAdapter {
      * @returns {*}
      */
     createReqLink(externalInterface, requestURL) {
+        // 这里必须使用{ ...GENERAL_REQ_LINK_2 }赋值，不然就是对象的引用赋值，会造成全局数据问题！
         let reqLink = { ...externalInterface };
         reqLink.link = reqLink.link.replace("{}", requestURL);
         return reqLink;
@@ -81,8 +82,7 @@ class GeneralLinkAdapter {
 
     async pipixia(link) {
         const msg = /https:\/\/h5\.pipix\.com\/s\/[A-Za-z0-9]+/.exec(link)?.[0];
-        // 这里必须使用{ ...GENERAL_REQ_LINK_2 }赋值，不然就是对象的引用赋值，会造成全局数据问题！
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK_2, msg);
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
         return { name: "皮皮虾", reqLink };
     }
 

@@ -991,6 +991,15 @@ export class tools extends plugin {
     async netease(e) {
         let message =
             e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        // 处理短号，此时会变成y.music.163.com
+        if (message.includes("163cn.tv")) {
+            message = /(http:|https:)\/\/163cn\.tv\/([a-zA-Z1-9]+)/.exec(message)?.[0]
+            logger.info(message)
+            message = await axios.head(message).then((resp) => {
+                return resp.request.res.responseUrl;
+            });
+        }
+        // 处理网页链接
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const id =
@@ -1005,41 +1014,49 @@ export class tools extends plugin {
         if (typeof message !== "string") {
             return false;
         }
-        try {
-            // 小程序
-            const musicJson = JSON.parse(message);
-            const { preview, title, desc } = musicJson.meta.music || musicJson.meta.news;
-            e.reply([`识别：网易云音乐，${ title }--${ desc }`, segment.image(preview)]);
-            JSON.parse(message);
-            return true;
-        } catch (err) {
-            axios.get(NETEASE_SONG_DOWNLOAD.replace("{}", id), {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-            }).then(async resp => {
-                const url = await resp.data.data?.[0].url;
-                // 获取歌曲信息
-                const title = await axios.get(NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
-                    const song = res.data.songs[0];
-                    return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+        axios.get(NETEASE_SONG_DOWNLOAD.replace("{}", id), {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+        }).then(async resp => {
+            logger.info(resp.data)
+            let url = await resp.data.data?.[0].url;
+            // 获取歌曲信息
+            let title = await axios.get(NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
+                const song = res.data.songs[0];
+                return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+            });
+            // 一般这个情况是VIP歌曲
+            if (url == null) {
+                // 临时接口
+                const vipMusicData = await axios.get(`https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm=${ title }&n=1&type=json`, {
+                    headers: {
+                        "User-Agent":
+                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                    },
                 });
-                e.reply(`识别：网易云音乐，${ title }`);
-                // const mvUrlJson = await getKugouMv(title, 1, 1, 0);
-                // const mvUrl = mvUrlJson.map(item => item.mv_url)?.[0];
-                // this.downloadVideo(mvUrl).then(path => {
-                //     e.reply(segment.video(path + "/temp.mp4"));
-                // });
-                downloadMp3(url, 'follow').then(path => {
-                    e.group.sendFile(fs.readFileSync(path), '/', `${ title.replace(/[\/\?<>\\:\*\|".… ]/g, '') }.mp3`);
-                })
-                    .catch(err => {
-                        console.error(`下载音乐失败，错误信息为: ${ err.message }`);
-                    });
-            })
-            return true;
-        }
+                title += "\nR插件检测到当前为VIP音乐，正在转换...";
+                url = vipMusicData.data.music_url;
+            }
+            e.reply(`识别：网易云音乐，${ title }`);
+            // const mvUrlJson = await getKugouMv(title, 1, 1, 0);
+            // const mvUrl = mvUrlJson.map(item => item.mv_url)?.[0];
+            // this.downloadVideo(mvUrl).then(path => {
+            //     e.reply(segment.video(path + "/temp.mp4"));
+            // });
+            downloadMp3(url, 'follow').then(path => {
+                // 判断是不是icqq
+                if (e.bot?.sendUni) {
+                    e.group.fs.upload(path);
+                } else {
+                    e.group.sendFile(path);
+                }
+            }).catch(err => {
+                logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+            });
+        })
+        return true;
     }
 
     // 微博解析
