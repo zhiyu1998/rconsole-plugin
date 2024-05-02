@@ -126,15 +126,16 @@ export function generateRandomStr(randomlength = 16) {
  * 下载mp3
  * @param mp3Url    MP3地址
  * @param path      下载目录
+ * @param title     音乐名
  * @param redirect  是否要重定向
  * @returns {Promise<unknown>}
  */
-export async function downloadMp3(mp3Url, path, redirect = "manual") {
+export async function downloadMp3(mp3Url, path, title = "temp", redirect = "manual") {
     // 如果没有目录就创建一个
     await mkdirIfNotExists(path)
 
     // 补充保存文件名
-    path += "/temp.mp3";
+    path += `/${ title }.mp3`;
     if (fs.existsSync(path)) {
         console.log(`音频已存在`);
         fs.unlinkSync(path);

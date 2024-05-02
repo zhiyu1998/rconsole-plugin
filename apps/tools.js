@@ -7,13 +7,15 @@ import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
-import { execSync, exec } from "child_process";
+import { exec, execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists, readCurrentDir } from "../utils/file.js";
 import {
     downloadBFile,
-    getBiliAudio, getBiliVideoWithSession,
+    getBiliAudio,
+    getBiliVideoWithSession,
     getDownloadUrl,
-    getDynamic, getScanCodeData,
+    getDynamic,
+    getScanCodeData,
     getVideoInfo,
     m4sToMp3,
     mergeFileToMp4
@@ -29,12 +31,13 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
-    containsChinese,
     downloadImg,
     downloadMp3,
-    formatBiliInfo, formatSeconds,
+    formatBiliInfo,
     getIdVideo,
-    secondsToTime, testProxy, truncateString
+    secondsToTime,
+    testProxy,
+    truncateString
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -48,11 +51,15 @@ import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_SUMMARY,
     DY_INFO,
-    MIYOUSHE_ARTICLE, NETEASE_SONG_DETAIL, NETEASE_SONG_DOWNLOAD,
+    GENERAL_REQ_LINK,
+    MIYOUSHE_ARTICLE,
+    NETEASE_SONG_DETAIL,
+    NETEASE_SONG_DOWNLOAD,
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
-    XHS_REQ_LINK,
-    GENERAL_REQ_LINK, WEIBO_SINGLE_INFO, WEISHI_VIDEO_INFO, BILI_SCAN_CODE_GENERATE
+    WEIBO_SINGLE_INFO,
+    WEISHI_VIDEO_INFO,
+    XHS_REQ_LINK
 } from "../constants/tools.js";
 import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
@@ -1009,21 +1016,26 @@ export class tools extends plugin {
         // 如果没有下载地址跳出if
         if (_.isEmpty(id)) {
             e.reply(`识别：网易云音乐，解析失败！`);
+            logger.error("[R插件][网易云解析] 没有找到id，无法进行下一步！")
             return
         }
-        if (typeof message !== "string") {
-            return false;
-        }
-        axios.get(NETEASE_SONG_DOWNLOAD.replace("{}", id), {
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        // 国内解决方案，替换为国内API
+        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `http://cloud-music.pl-fe.cn/song/url?id={}`;
+        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `http://cloud-music.pl-fe.cn/song/detail?ids={}`;
+        logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
+        // 请求netease数据
+        axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
             headers: {
                 "User-Agent":
                     "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
             },
         }).then(async resp => {
-            logger.info(resp.data)
-            let url = await resp.data.data?.[0].url;
+            // 国内解决方案，替换API后这里也需要修改
+            let url = isOversea ? await resp.data.data?.[0].url : await resp.data.data.url;
             // 获取歌曲信息
-            let title = await axios.get(NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
+            let title = await axios.get(AUTO_NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
                 const song = res.data.songs[0];
                 return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
             });
@@ -1036,26 +1048,28 @@ export class tools extends plugin {
                             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                     },
                 });
-                title += "\nR插件检测到当前为VIP音乐，正在转换...";
+                const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
                 url = vipMusicData.data.music_url;
+                e.reply(`识别：网易云音乐，${ messageTitle }`);
+            } else {
+                // 不是VIP歌曲，直接识别完就下一步
+                e.reply(`识别：网易云音乐，${ title }`);
             }
-            e.reply(`识别：网易云音乐，${ title }`);
-            // const mvUrlJson = await getKugouMv(title, 1, 1, 0);
-            // const mvUrl = mvUrlJson.map(item => item.mv_url)?.[0];
-            // this.downloadVideo(mvUrl).then(path => {
-            //     e.reply(segment.video(path + "/temp.mp4"));
-            // });
-            downloadMp3(url, 'follow').then(path => {
+            // 下载音乐
+            downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
+                // 发送语音
+                e.reply(segment.record(path));
                 // 判断是不是icqq
                 if (e.bot?.sendUni) {
                     e.group.fs.upload(path);
                 } else {
                     e.group.sendFile(path);
                 }
+                await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
             });
-        })
+        });
         return true;
     }
 
