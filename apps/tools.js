@@ -1057,8 +1057,8 @@ export class tools extends plugin {
             }
             // 下载音乐
             downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
-                // 发送语音
-                e.reply(segment.record(path));
+                // 发送语音（待测试）
+                // e.reply(segment.record(fs.readFileSync(path)));
                 // 判断是不是icqq
                 if (e.bot?.sendUni) {
                     e.group.fs.upload(path);
