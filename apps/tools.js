@@ -1033,7 +1033,7 @@ export class tools extends plugin {
             },
         }).then(async resp => {
             // 国内解决方案，替换API后这里也需要修改
-            let url = isOversea ? await resp.data.data?.[0].url : await resp.data.data.url;
+            let url = await resp.data.data?.[0]?.url || null;
             // 获取歌曲信息
             let title = await axios.get(AUTO_NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
                 const song = res.data.songs[0];
@@ -1057,8 +1057,8 @@ export class tools extends plugin {
             }
             // 下载音乐
             downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
-                // 发送语音（待测试）
-                // e.reply(segment.record(fs.readFileSync(path)));
+                // 发送语音
+                // e.reply(segment.record(path));
                 // 判断是不是icqq
                 if (e.bot?.sendUni) {
                     e.group.fs.upload(path);
