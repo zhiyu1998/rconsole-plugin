@@ -515,15 +515,12 @@ export class tools extends plugin {
         const { baseUrl: audioBaseUrl } = audioData;
         e.reply(`正在下载${ height }p ${ Math.trunc(frameRate) }帧数 视频，请稍候...`);
         const path = `${ this.getCurDownloadPath(e) }/`;
+        const that = this;
         // 添加下载任务到并发队列
         this.queue.add(() =>
-            this.downBili(`${ path }${ videoId }`, videoBaseUrl, audioBaseUrl)
+            that.downBili(`${ path }temp`, videoBaseUrl, audioBaseUrl)
                 .then(_ => {
-                    e.group.sendFile(fs.readFileSync(`${ path }${ videoId }.mp4`));
-                })
-                .then(_ => {
-                    // 清除文件
-                    fs.unlinkSync(`${ path }${ videoId }.mp4`);
+                    that.sendVideoToUpload(e, `${ path }temp.mp4`);
                 })
                 .catch(err => {
                     logger.error(`[R插件][B站下载引擎] ${ err }`);
