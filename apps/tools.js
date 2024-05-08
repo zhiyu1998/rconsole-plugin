@@ -1792,9 +1792,9 @@ export class tools extends plugin {
      */
     async uploadGroupFile(e, path) {
         if (e.bot?.sendUni) {
-            e.group.fs.upload(path);
+            await e.group.fs.upload(path);
         } else {
-            e.group.sendFile(path);
+            await e.group.sendFile(path);
         }
     }
 }
