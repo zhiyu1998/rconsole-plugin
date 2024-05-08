@@ -1057,11 +1057,7 @@ export class tools extends plugin {
                 // 发送语音
                 // e.reply(segment.record(path));
                 // 判断是不是icqq
-                if (e.bot?.sendUni) {
-                    e.group.fs.upload(path);
-                } else {
-                    e.group.sendFile(path);
-                }
+                await this.uploadGroupFile(e, path);
                 await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
@@ -1782,14 +1778,23 @@ export class tools extends plugin {
         const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
         if (videoSize > videoSizeLimit) {
             e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
-            // 判断是不是icqq
-            if (e.bot?.sendUni) {
-                e.group.fs.upload(path);
-            } else {
-                e.group.sendFile(path);
-            }
+            await this.uploadGroupFile(e, path);
         } else {
             e.reply(segment.video(path));
+        }
+    }
+
+    /**
+     * 上传到群文件
+     * @param e             交互事件
+     * @param path          上传的文件所在路径
+     * @return {Promise<void>}
+     */
+    async uploadGroupFile(e, path) {
+        if (e.bot?.sendUni) {
+            e.group.fs.upload(path);
+        } else {
+            e.group.sendFile(path);
         }
     }
 }
