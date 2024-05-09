@@ -126,10 +126,17 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 具体图示，找以下这几个：
 - odin_tt
+- passport_fe_beating_status
+- sid_guard
+- uid_tt
+- uid_tt_ss
+- sid_tt
+- sessionid
 - sessionid_ss
+- sid_ucp_v1
+- ssid_ucp_v1
+- passport_assist_user
 - ttwid
-- passport_csrf_token
-- msToken
 
 <img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
