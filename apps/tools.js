@@ -1733,10 +1733,6 @@ export class tools extends plugin {
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
     async sendVideoToUpload(e, path, videoSizeLimit = 70) {
-        // 判断文件是否存在
-        if (!fs.existsSync(path)) {
-            return e.reply('视频不存在');
-        }
         // 判断是否是拉格朗日
         if (await this.isLagRangeDriver()) {
             // 构造拉格朗日适配器
@@ -1745,6 +1741,10 @@ export class tools extends plugin {
             await lagrange.uploadGroupFile(e.user_id || e.sender.card, e.group_id, path);
             // 上传完直接返回
             return;
+        }
+        // 判断文件是否存在
+        if (!fs.existsSync(path)) {
+            return e.reply('视频不存在');
         }
         const stats = fs.statSync(path);
         const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
