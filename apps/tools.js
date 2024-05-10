@@ -1701,7 +1701,7 @@ export class tools extends plugin {
         // 如果第一次使用没有值就设置
         if (!(await redis.exists(REDIS_YUNZAI_LAGRANGE))) {
             await redis.set(
-                REDIS_YUNZAI_ISOVERSEA,
+                REDIS_YUNZAI_LAGRANGE,
                 JSON.stringify({
                     driver: false,
                 }),
