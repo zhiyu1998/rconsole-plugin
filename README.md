@@ -175,7 +175,8 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 ```
 
 2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
-   <img src="./img/lagrange.webp" width="30%" height="30%">
+
+<img src="./img/lagrange.webp" width="30%" height="30%">
 
 ##  🤺 R插件交流群
 扫码不行就：575663150
