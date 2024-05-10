@@ -145,6 +145,38 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 > 2024/2/26 目前的替代方案：使用第三方解析，但是无法解析组图，只能解析单个图片，望周知！
 
+### ☀️ 拉格朗日配置
+
+使用拉格朗日作为驱动的同学要进行两步：
+
+1. 配置文件，将拉格朗日的配置文件`appsettings.json`中`Implementations`加入一个正向连接`ForwardWebSocket`
+   ，如（最好是9091，这样就不用改tools配置文件）：
+
+```json
+"Implementations": [
+{
+"Type": "ReverseWebSocket",
+"Host": "127.0.0.1",
+"Port": 9090,
+"Suffix": "/onebot/v11/",
+"ReconnectInterval": 5000,
+"HeartBeatInterval": 5000,
+"AccessToken": ""
+},
+{
+"Type": "ForwardWebSocket",
+"Host": "127.0.0.1",
+"Port": 9091,
+"HeartBeatInterval": 5000,
+"HeartBeatEnable": true,
+"AccessToken": ""
+}
+]
+```
+
+2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
+   <img src="./img/lagrange.webp" width="30%" height="30%">
+
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
@@ -160,7 +192,7 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 `proxyPort: '7890' # 魔法端口`
 
 > 海外服务器示例：  
-直接发送`#设置海外解析`
+> 直接发送`#设置海外解析`
 
 
 ## 📦 业务
