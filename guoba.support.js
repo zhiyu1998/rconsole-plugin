@@ -112,7 +112,7 @@ export function supportGuoba() {
                     field: "tools.douyinCookie",
                     label: "抖音的Cookie",
                     bottomHelpMessage:
-                        "登陆https://www.douyin.com/ - F12 - 自己替换一下odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;",
+                        "登陆https://www.douyin.com/ - F12 - 自己替换一下：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;",
                     component: "Input",
                     required: false,
                     componentProps: {
