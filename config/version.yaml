@@ -1,7 +1,8 @@
 - {
-  version: 1.6.7,
+  version: 1.7.0,
   data:
     [
+      新增<span class="cmd">适配拉格朗日上传</span>功能,
       新增<span class="cmd">超过文件大小转上传</span>功能,
       新增<span class="cmd">B站下载</span>功能,
       新增<span class="cmd">B站扫码</span>功能,

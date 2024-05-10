@@ -8,7 +8,7 @@ import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
 import { exec, execSync } from "child_process";
-import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists, readCurrentDir } from "../utils/file.js";
+import { checkAndRemoveFile, mkdirIfNotExists } from "../utils/file.js";
 import {
     downloadBFile,
     getBiliAudio,
@@ -26,6 +26,7 @@ import {
     DIVIDING_LINE,
     douyinTypeMap,
     REDIS_YUNZAI_ISOVERSEA,
+    REDIS_YUNZAI_LAGRANGE,
     transMap,
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER,
@@ -65,6 +66,7 @@ import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { mid2id } from "../utils/weibo.js";
+import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 
 export class tools extends plugin {
     /**
@@ -123,16 +125,6 @@ export class tools extends plugin {
                 {
                     reg: "(instagram.com)",
                     fnc: "instagram",
-                },
-                {
-                    reg: "^清理data垃圾$",
-                    fnc: "clearTrash",
-                    permission: "master",
-                },
-                {
-                    reg: "^#设置海外解析$",
-                    fnc: "setOversea",
-                    permission: "master",
                 },
                 {
                     reg: "(h5app.kuwo.cn)",
@@ -849,34 +841,6 @@ export class tools extends plugin {
             await Promise.all(paths.map(item => fs.promises.unlink(item)));
         });
         return true;
-    }
-
-    // 清理垃圾文件
-    async clearTrash(e) {
-        const dataDirectory = "./data/";
-
-        // 删除Yunzai遗留问题的合成视频垃圾文件
-        try {
-            const files = await readCurrentDir(dataDirectory);
-            let dataClearFileLen = 0;
-            for (const file of files) {
-                // 如果文件名符合规则，执行删除操作
-                if (/^[0-9a-f]{32}$/.test(file)) {
-                    await fs.promises.unlink(dataDirectory + file);
-                    dataClearFileLen++;
-                }
-            }
-            // 删除R插件临时文件
-            const rTempFileLen = await deleteFolderRecursive(this.defaultPath)
-            e.reply(
-                `数据统计：\n` +
-                `- 当前清理了${ dataDirectory }下总计：${ dataClearFileLen } 个垃圾文件\n` +
-                `- 当前清理了${ this.toolsConfig.defaultPath }下文件夹：${ rTempFileLen } 个群的所有临时文件`
-            );
-        } catch (err) {
-            logger.error(err);
-            await e.reply("清理失败，重试或者手动清理即可");
-        }
     }
 
     // ins解析
@@ -1711,29 +1675,6 @@ export class tools extends plugin {
     }
 
     /**
-     * 设置海外模式
-     * @param e
-     * @returns {Promise<boolean>}
-     */
-    async setOversea(e) {
-        // 查看当前设置
-        let os;
-        if ((await redis.exists(REDIS_YUNZAI_ISOVERSEA))) {
-            os = JSON.parse(await redis.get(REDIS_YUNZAI_ISOVERSEA)).os;
-        }
-        // 设置
-        os = ~os
-        await redis.set(
-            REDIS_YUNZAI_ISOVERSEA,
-            JSON.stringify({
-                os: os,
-            }),
-        );
-        e.reply(`当前服务器：${ os ? '海外服务器' : '国内服务器' }`)
-        return true;
-    }
-
-    /**
      * 判断是否是海外服务器
      * @return {Promise<Boolean>}
      */
@@ -1750,6 +1691,25 @@ export class tools extends plugin {
         }
         // 如果有就取出来
         return JSON.parse((await redis.get(REDIS_YUNZAI_ISOVERSEA))).os;
+    }
+
+    /**
+     * 判断是否是拉格朗日驱动
+     * @returns {Promise<Boolean>}
+     */
+    async isLagRangeDriver() {
+        // 如果第一次使用没有值就设置
+        if (!(await redis.exists(REDIS_YUNZAI_LAGRANGE))) {
+            await redis.set(
+                REDIS_YUNZAI_ISOVERSEA,
+                JSON.stringify({
+                    driver: false,
+                }),
+            );
+            return true;
+        }
+        // 如果有就取出来
+        return JSON.parse((await redis.get(REDIS_YUNZAI_LAGRANGE))).driver;
     }
 
     /**
@@ -1773,7 +1733,19 @@ export class tools extends plugin {
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
     async sendVideoToUpload(e, path, videoSizeLimit = 70) {
-        if (!fs.existsSync(path)) return e.reply('视频不存在');
+        // 判断文件是否存在
+        if (!fs.existsSync(path)) {
+            return e.reply('视频不存在');
+        }
+        // 判断是否是拉格朗日
+        if (await this.isLagRangeDriver()) {
+            // 构造拉格朗日适配器
+            const lagrange = new LagrangeAdapter(this.toolsConfig.lagrangeForwardWebSocket);
+            // 上传群文件
+            await lagrange.uploadGroupFile(e.user_id || e.sender.card, e.group_id, path);
+            // 上传完直接返回
+            return;
+        }
         const stats = fs.statSync(path);
         const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
         if (videoSize > videoSizeLimit) {
@@ -1791,6 +1763,7 @@ export class tools extends plugin {
      * @return {Promise<void>}
      */
     async uploadGroupFile(e, path) {
+        // 判断是否是ICQQ
         if (e.bot?.sendUni) {
             await e.group.fs.upload(path);
         } else {

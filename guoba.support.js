@@ -141,6 +141,17 @@ export function supportGuoba() {
                         placeholder: "不确定用1即可，高性能服务器随意4~12都可以，看CPU的实力",
                     },
                 },
+                {
+                    field: "tools.lagrangeForwardWebSocket",
+                    label: "拉格朗日正向WebSocket连接地址",
+                    bottomHelpMessage:
+                        "格式：ws://地址:端口/，拉格朗日正向连接地址，用于适配拉格朗日上传群文件，解决部分用户无法查看视频问题",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入拉格朗日正向WebSocket连接地址",
+                    },
+                }
             ],
             getConfigData() {
                 const toolsData = {
