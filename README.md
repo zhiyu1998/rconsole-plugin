@@ -120,7 +120,7 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
 3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
-> odin_tt=xxx;sessionid_ss=xxx;ttwid=xxx;passport_csrf_token=xxx;msToken=xxx;
+> odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 
 3. 如果是`Cookie-Editor`就直接到插件复制到`tools.yaml - douyinCookie`，或者锅巴
 
