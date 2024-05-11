@@ -79,6 +79,16 @@ chmod a+rx ~/.local/bin/yt-dlp
 sudo pacman -Syu yt-dlp
 ```
 
+`AM解析`需要使用两个依赖`freyr`、`atomicparsley`，现在只以Debian系统为例：
+
+```shell
+npm install -g freyr
+# 或者你有yarn的话可以使用
+yarn global add freyr
+# 接着安装它的依赖
+apt-get install atomicparsley
+```
+
 4. 【可选】小程序解析适配了：
 * 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
 * TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
@@ -102,8 +112,8 @@ sudo pacman -Syu yt-dlp
 ```shell
 # 删除当前的R插件
 rm -rf ./plugins/rconsole-plugin/
-# 克隆指定版本的R插件
-git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
+# 克隆指定版本的R插件稳定版本
+git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ```
 
 ##  🐤 Q&A
@@ -152,25 +162,25 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 1. 配置文件，将拉格朗日的配置文件`appsettings.json`中`Implementations`加入一个正向连接`ForwardWebSocket`
    ，如（最好是9091，这样就不用改tools配置文件）：
 
-```json
+```yaml
 "Implementations": [
-{
-"Type": "ReverseWebSocket",
-"Host": "127.0.0.1",
-"Port": 9090,
-"Suffix": "/onebot/v11/",
-"ReconnectInterval": 5000,
-"HeartBeatInterval": 5000,
-"AccessToken": ""
-},
-{
-"Type": "ForwardWebSocket",
-"Host": "127.0.0.1",
-"Port": 9091,
-"HeartBeatInterval": 5000,
-"HeartBeatEnable": true,
-"AccessToken": ""
-}
+  {
+    "Type": "ReverseWebSocket",
+    "Host": "127.0.0.1",
+    "Port": 9090,
+    "Suffix": "/onebot/v11/",
+    "ReconnectInterval": 5000,
+    "HeartBeatInterval": 5000,
+    "AccessToken": ""
+  },
+  {
+    "Type": "ForwardWebSocket",
+    "Host": "127.0.0.1",
+    "Port": 9091,
+    "HeartBeatInterval": 5000,
+    "HeartBeatEnable": true,
+    "AccessToken": ""
+  }
 ]
 ```
 
@@ -233,6 +243,7 @@ git clone -b 1.5.1 https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 🌸 感谢以下框架的开源：
 - [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
+- [freyr-js](https://github.com/miraclx/freyr-js)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！

@@ -8,7 +8,7 @@ import _ from "lodash";
 import tunnel from "tunnel";
 import HttpProxyAgent from "https-proxy-agent";
 import { exec, execSync } from "child_process";
-import { checkAndRemoveFile, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
 import {
     downloadBFile,
     getBiliAudio,
@@ -67,8 +67,14 @@ import { getDS } from "../utils/mihoyo.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { mid2id } from "../utils/weibo.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
+import path from "path";
 
 export class tools extends plugin {
+    /**
+     * 用于计数applemusic，达到一定数量清理文件
+     * @type {number}
+     */
+    static #amCount = 0;
     /**
      * 构造安全的命令
      * @type {{existsPromptKey: string, existsTransKey: string}}
@@ -161,6 +167,10 @@ export class tools extends plugin {
                 {
                     reg: "share.xiaochuankeji.cn",
                     fnc: "zuiyou"
+                },
+                {
+                    reg: "music.apple.com",
+                    fnc: "applemusic"
                 }
             ],
         });
@@ -1430,6 +1440,77 @@ export class tools extends plugin {
             console.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
         }
+    }
+
+    async applemusic(e) {
+        // https://music.apple.com/cn/album/hectopascal-from-yagate-kimi-ni-naru-piano-arrangement/1468323115?i=1468323724
+        // 过滤参数
+        const message = e.msg.replace("&ls", "");
+        // 找到R插件保存目录
+        const currentWorkingDirectory = path.resolve(this.defaultPath);
+        // 如果没有文件夹就创建一个
+        await mkdirIfNotExists(currentWorkingDirectory + "/am")
+        // 执行命令
+        const result = await execSync(`freyr -d ${ currentWorkingDirectory } get ${ message }`);
+        logger.info(result.toString());
+        // 获取信息
+        const { title, album, artist } = await this.parseFreyrLog(result.toString());
+        e.reply(`识别：Apple Music，${ title }--${ artist }\n${ album }`);
+        // 检查目录是否存在
+        const musicPath = currentWorkingDirectory + "/am/" + artist + "/" + album;
+        const that = this;
+        // 找到音频文件
+        if (fs.existsSync(musicPath)) {
+            logger.info('目录存在。正在获取.m4a文件...');
+
+            // 读取目录中的所有文件和文件夹
+            fs.readdir(musicPath, (err, files) => {
+                if (err) {
+                    e.reply("Apple Music解析出错，请查看日志！")
+                    logger.error('读取目录时出错:', err);
+                    return;
+                }
+
+                // 过滤出以.m4a结尾的文件
+                const m4aFiles = files.filter(file => path.extname(file).toLowerCase() === '.m4a');
+
+                // 打印出所有.m4a文件
+                logger.info('找到以下.m4a文件:');
+                m4aFiles.forEach(file => {
+                    that.uploadGroupFile(e, path.join(musicPath, file));
+                });
+            });
+        } else {
+            e.reply("下载失败！没有找到Apple Music下载下来文件！");
+        }
+        // 计数
+        tools.#amCount += 1;
+        logger.info(`当前Apple Music已经下载了：${ tools.#amCount }次`);
+        // 定时清理
+        if (tools.#amCount >= 5) {
+            await deleteFolderRecursive(currentWorkingDirectory + "/am");
+            // 重置
+            tools.#amCount = 0;
+        }
+        return true;
+    }
+
+    /**
+     * 用于Apple Music抓取部分信息的函数
+     * @link {applemusic}
+     * @param log
+     * @returns {Promise<{artist: (*|string), album: (*|string), title: (*|string)}>}
+     */
+    async parseFreyrLog(log) {
+        const titleMatch = log.match(/Title: (.*)/);
+        const albumMatch = log.match(/Album: (.*)/);
+        const artistMatch = log.match(/Artist: (.*)/);
+
+        const title = titleMatch ? titleMatch[1] : 'N/A';
+        const album = albumMatch ? albumMatch[1] : 'N/A';
+        const artist = artistMatch ? artistMatch[1] : 'N/A';
+
+        return { title, album, artist };
     }
 
     /**
