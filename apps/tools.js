@@ -1440,6 +1440,30 @@ export class tools extends plugin {
         // 获取信息
         const { title, album, artist } = await this.parseFreyrLog(result.toString());
         e.reply(`识别：Apple Music，${ title }--${ artist }\n${ album }`);
+        // 判断是否是海外服务器
+        const isOversea = await this.isOverseasServer();
+        // 国内服务器解决方案
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
+            // 临时接口
+            const vipMusicData = await axios.get(`https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm=${ title }&n=1&type=json`, {
+                headers: {
+                    "User-Agent":
+                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                },
+            });
+            const url = vipMusicData.data.music_url;
+            // 下载音乐
+            downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
+                // 发送语音
+                // e.reply(segment.record(path));
+                // 判断是不是icqq
+                await this.uploadGroupFile(e, path);
+                await checkAndRemoveFile(path);
+            }).catch(err => {
+                logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+            });
+            return true;
+        }
         // 检查目录是否存在
         const musicPath = currentWorkingDirectory + "/am/" + artist + "/" + album;
         const that = this;
