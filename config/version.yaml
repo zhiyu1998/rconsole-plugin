@@ -3,7 +3,7 @@
   data:
     [
       新增<span class="cmd">AM解析</span>功能,
-      适配<span class="cmd">拉格朗日上传</span>功能,
+      新增<span class="cmd">适配拉格朗日上传</span>功能,
       新增<span class="cmd">超过文件大小转上传</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       添加<span class="cmd">#R帮助</span>获取插件帮助,

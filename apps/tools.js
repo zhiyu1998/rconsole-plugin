@@ -1451,7 +1451,7 @@ export class tools extends plugin {
         // 如果没有文件夹就创建一个
         await mkdirIfNotExists(currentWorkingDirectory + "/am")
         // 执行命令
-        const result = await execSync(`freyr -d ${ currentWorkingDirectory } get ${ message }`);
+        const result = await execSync(`freyr -d ${ currentWorkingDirectory + "/am/" } get ${ message }`);
         logger.info(result.toString());
         // 获取信息
         const { title, album, artist } = await this.parseFreyrLog(result.toString());
