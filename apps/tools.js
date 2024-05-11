@@ -695,20 +695,12 @@ export class tools extends plugin {
 
     // 使用现有api解析小蓝鸟
     async twitter_x(e) {
-        // 判断海外
-        const isOversea = await this.isOverseasServer();
-        // 如果不是海外用户且没有梯子直接返回
-        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
-            e.reply("检测到没有梯子，无法解析");
-            return false;
-        }
-
         // 配置参数及解析
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
         // 提取视频
         const videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
-        e.reply("识别：小蓝鸟");
+        e.reply("识别：小蓝鸟学习版");
         const config = {
             headers: {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
@@ -726,21 +718,13 @@ export class tools extends plugin {
             },
             timeout: 10000 // 设置超时时间
         }
-        // 如果不是海外，则使用代理
-        if (!isOversea) {
-            config.httpsAgent = tunnel.httpsOverHttp({
-                proxy: {
-                    host: this.proxyAddr,
-                    port: this.proxyPort
-                },
-            });
-        }
+
         axios.get(videoUrl, config).then(resp => {
             const url = resp.data.data?.url;
             if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
                 e.reply(segment.image(url));
             } else {
-                this.downloadVideo(url, !isOversea).then(path => {
+                this.downloadVideo(url).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
             }
