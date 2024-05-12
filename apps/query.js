@@ -1,6 +1,5 @@
 // 主库
 import fetch from "node-fetch";
-import fs from "node:fs";
 // 爬虫库
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库

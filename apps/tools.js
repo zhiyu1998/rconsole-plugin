@@ -169,8 +169,8 @@ export class tools extends plugin {
                     fnc: "zuiyou"
                 },
                 {
-                    reg: "music.apple.com",
-                    fnc: "applemusic"
+                    reg: "(music.apple.com|open.spotify.com)",
+                    fnc: "freyr"
                 }
             ],
         });
@@ -1426,10 +1426,12 @@ export class tools extends plugin {
         }
     }
 
-    async applemusic(e) {
+    async freyr(e) {
         // https://music.apple.com/cn/album/hectopascal-from-yagate-kimi-ni-naru-piano-arrangement/1468323115?i=1468323724
         // 过滤参数
         const message = e.msg.replace("&ls", "");
+        // 匹配名字
+        const freyrName = message.includes("spotify") ? "Spotify" : "Apple Music";
         // 找到R插件保存目录
         const currentWorkingDirectory = path.resolve(this.defaultPath);
         // 如果没有文件夹就创建一个
@@ -1439,7 +1441,7 @@ export class tools extends plugin {
         logger.info(result.toString());
         // 获取信息
         const { title, album, artist } = await this.parseFreyrLog(result.toString());
-        e.reply(`识别：Apple Music，${ title }--${ artist }\n${ album }`);
+        e.reply(`识别：${freyrName}，${ title }--${ artist }\n${ album }`);
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 国内服务器解决方案
@@ -1474,7 +1476,7 @@ export class tools extends plugin {
             // 读取目录中的所有文件和文件夹
             fs.readdir(musicPath, (err, files) => {
                 if (err) {
-                    e.reply("Apple Music解析出错，请查看日志！")
+                    e.reply(`${freyrName}解析出错，请查看日志！`)
                     logger.error('读取目录时出错:', err);
                     return;
                 }
@@ -1489,11 +1491,11 @@ export class tools extends plugin {
                 });
             });
         } else {
-            e.reply("下载失败！没有找到Apple Music下载下来文件！");
+            e.reply(`下载失败！没有找到${freyrName}下载下来文件！`);
         }
         // 计数
         tools.#amCount += 1;
-        logger.info(`当前Apple Music已经下载了：${ tools.#amCount }次`);
+        logger.info(`当前${freyrName}已经下载了：${ tools.#amCount }次`);
         // 定时清理
         if (tools.#amCount >= 5) {
             await deleteFolderRecursive(currentWorkingDirectory + "/am");
