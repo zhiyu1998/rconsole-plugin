@@ -80,9 +80,9 @@
     - icon: bodian
       title: "波点音乐"
       desc: 波点云音乐点解析
-    - icon: ins
-      title: "Instagram"
-      desc: 解析Instagram
+    - icon: spotify
+      title: "Spotify"
+      desc: 解析Spotify音乐
 - group: 其他指令
   list:
     - icon: update
