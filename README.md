@@ -128,7 +128,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ### 🎵 douyin问题
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
 
-👍 推荐方案：
+👍 推荐方案（感谢群友湘潭提供的便捷方案）：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，打开`网络/network`
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
