@@ -127,6 +127,16 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 ### 🎵 douyin问题
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
+
+👍 推荐方案：
+1. 打开`https://www.douyin.com/` 扫码登入自己的账号
+2. F12进入控制台，打开`网络/network`
+3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
+
+<img src="./img/dy_ck.webp" alt="小程序解析" width="50%" height="50%" />
+
+备用方案：
+
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，或者下载一个[Cookie-Editor](https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm)
 3. 如果是F12，就将以下参数填入到`tools.yaml - douyinCookie`，或者使用锅巴
