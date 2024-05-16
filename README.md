@@ -211,7 +211,7 @@ aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要
 
 `Kimi`用户只需填写`aiBaseURL` 和 `aiApiKey`，其他用户都需要填写！效果展示如下：
 
-![imageRecognition.webp](./img/imageRecognition.webp)![]()
+![imageRecognition.webp](./img/imageRecognition.webp)
 
 - [Kimi开放平台](https://platform.moonshot.cn/console/info)
 - [OpenAI](https://platform.openai.com/api-keys)
