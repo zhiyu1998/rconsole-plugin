@@ -213,6 +213,9 @@ aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要
 
 ![imageRecognition.webp](./img/imageRecognition.webp)![]()
 
+- [Kimi开放平台](https://platform.moonshot.cn/console/info)
+- [OpenAI](https://platform.openai.com/api-keys)
+
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
