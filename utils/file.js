@@ -101,3 +101,41 @@ export async function copyFiles(srcDir, destDir) {
     }
     return null;
 }
+
+/**
+ * 转换路径图片为base64格式
+ * @param filePath  图片路径
+ * @return {Promise<string>}
+ */
+export async function toBase64(filePath) {
+    try {
+        // 读取文件数据
+        const fileData = await fs.readFileSync(filePath);
+        // 将文件数据转换为Base64字符串
+        const base64Data = fileData.toString('base64');
+        // 返回Base64字符串
+        return `data:${getMimeType(filePath)};base64,${base64Data}`;
+    } catch (error) {
+        throw new Error(`读取文件时出错: ${error.message}`);
+    }
+}
+
+/**
+ * 辅助函数：根据文件扩展名获取MIME类型
+ * @param filePath
+ * @return {*|string}
+ */
+function getMimeType(filePath) {
+    const mimeTypes = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        // 添加其他文件类型和MIME类型的映射
+    };
+
+    const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+    return mimeTypes[ext] || 'application/octet-stream';
+}

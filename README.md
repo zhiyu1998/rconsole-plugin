@@ -48,7 +48,7 @@ git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plu
 git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
 ```
 
-2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）
+2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）、用于拉格朗日（ws）、用于识图（openai）
 
 
 ```shell
@@ -197,6 +197,21 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
 
 <img src="./img/lagrange.webp" width="30%" height="30%">
+
+### 🤖 关于识图 [beta功能]
+
+R 插件集成了我的新作品`gpt2txt`：https://github.com/zhiyu1998/gpt2txt
+
+使用需要在锅巴 or tools.yaml修改以下内容：
+```yaml
+aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
+aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
+aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要填写
+```
+
+`Kimi`用户只需填写`aiBaseURL` 和 `aiApiKey`，其他用户都需要填写！效果展示如下：
+
+![imageRecognition.webp](./img/imageRecognition.webp)![]()
 
 ##  🤺 R插件交流群
 扫码不行就：575663150

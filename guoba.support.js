@@ -151,6 +151,39 @@ export function supportGuoba() {
                     componentProps: {
                         placeholder: "请输入拉格朗日正向WebSocket连接地址",
                     },
+                },
+                {
+                    field: "tools.aiBaseURL",
+                    label: "AI接口地址",
+                    bottomHelpMessage:
+                        "支持Kimi、OpenAI、Claude等",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入AI接口地址",
+                    },
+                },
+                {
+                    field: "tools.aiApiKey",
+                    label: "AI的key",
+                    bottomHelpMessage:
+                        "服务商提供的api key",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入AI的key",
+                    },
+                },
+                {
+                    field: "tools.aiModel",
+                    label: "AI的模型",
+                    bottomHelpMessage:
+                        "默认使用的是Claude，也可以自定义模型",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入AI的模型，例如：claude-3-haiku-20240307，使用kimi则不用填写",
+                    },
                 }
             ],
             getConfigData() {

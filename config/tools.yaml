@@ -18,3 +18,7 @@ videoDownloadConcurrency: 1 # 下载视频是否使用多线程，如果不使�
 lagrangeForwardWebSocket: 'ws://127.0.0.1:9091/' # 格式：ws://地址:端口/，拉格朗日正向连接地址，用于适配拉格朗日上传群文件，解决部分用户无法查看视频问题
 
 autoclearTrashtime: '0 0 8 * * ?' #每天早上8点自动清理视频缓存，cron可自定义时间
+
+aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
+aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
+aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要填写
