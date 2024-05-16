@@ -7,7 +7,7 @@ import axios from "axios";
 // url库
 import url from 'url';
 // 常量
-import { CAT_LIMIT } from "../constants/constant.js";
+import { CAT_LIMIT, OCR_PROMPT } from "../constants/constant.js";
 // 配置文件
 import config from "../model/index.js";
 // 书库
@@ -387,12 +387,15 @@ export class query extends plugin {
                 .setBaseURL(this.aiBaseURL)
                 .setApiKey(this.aiApiKey)
                 .setModel(this.aiModel)
+                .setPrompt(OCR_PROMPT)
                 .setPath(imgPath)
                 .build();
-            this.e.reply(`「R插件 x ${ model }」联合识别：\n${ ans }`);
+            const ocrAns = ans.split("▲");
+            logger.info(ocrAns)
+            this.e.reply(`「R插件 x ${ model }」联合识别：\n描述：${ ocrAns[1] } \nOCR识别结果：${ ocrAns[2] }`);
             await checkAndRemoveFile(filenameWithExtension);
         } catch (err) {
-            e.reply("「R插件 x 月之暗面 Kimi」联合识别提醒你：无法找到图片路径！")
+            this.e.reply("「R插件 x 月之暗面 Kimi」联合识别提醒你：无法找到图片路径！")
             logger.error(err);
         }
         return true;
