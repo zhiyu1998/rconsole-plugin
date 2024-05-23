@@ -90,3 +90,5 @@ export const OCR_PROMPT = `
 ▲ 图片中提取的文本，在适当的地方使用换行符。如果文本被某物遮挡，请使其不受阻隔，以便阅读。如果图像中没有文本，只需回复描述。不要包含任何其他信息。
 示例：▲ 文本编辑器中的代码行。▲ const x = 5; const y = 10; const z = x + y; console.log(z);
 `
+
+export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记`

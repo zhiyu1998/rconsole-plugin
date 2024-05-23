@@ -198,23 +198,27 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 <img src="./img/lagrange.webp" width="30%" height="30%">
 
-### 🤖 关于识图 [beta功能]
+### 微信文章总结 （完全免费总结）
 
-R 插件集成了我的新作品`gpt2txt`：https://github.com/zhiyu1998/gpt2txt
+官方Kimi API 暂时没有看到可以联网搜索的选项，所以选用开源的[kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
 
-使用需要在锅巴 or tools.yaml修改以下内容：
+1. 部署 kimi-free-api
+
+```shell
+docker run -it -d --init --name kimi-free-api -p 8000:8000 -e TZ=Asia/Shanghai vinlic/kimi-free-api:latest
+```
+
+2. 更改下面两个选项，自行修改 `tools.yaml` 或者锅巴：
+
 ```yaml
 aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
 aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
-aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要填写
 ```
 
-`Kimi`用户只需填写`aiBaseURL` 和 `aiApiKey`，其他用户都需要填写！效果展示如下：
+- aiBaseURL：你服务器的地址
+- aiApiKey：kimi 的 `refresh_token` （F12 -> 应用（Application） -> Local Storage -> `https://kimi.moonshot.cn` -> 找到）
 
-![imageRecognition.webp](./img/imageRecognition.webp)
-
-- [Kimi开放平台](https://platform.moonshot.cn/console/info)
-- [OpenAI](https://platform.openai.com/api-keys)
+3. 开始游玩
 
 ##  🤺 R插件交流群
 扫码不行就：575663150
@@ -272,6 +276,7 @@ aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要
 🌸 感谢以下框架的开源：
 - [yt-dlp:A youtube-dl fork with additional features and fixes](https://github.com/yt-dlp/yt-dlp)
 - [freyr-js](https://github.com/miraclx/freyr-js)
+- [kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
 
 ##  ☕ 请我喝一杯瑞幸咖啡
 如果你觉得插件能帮助到你增进好友关系，那么你可以在有条件的情况下[请我喝一杯瑞幸咖啡](https://afdian.net/a/zhiyu1998)，这是我开源这个插件的最大动力！

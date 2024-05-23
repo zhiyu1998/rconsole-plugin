@@ -4,19 +4,14 @@ import fetch from "node-fetch";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
-// url库
-import url from 'url';
 // 常量
-import { CAT_LIMIT, OCR_PROMPT } from "../constants/constant.js";
+import { CAT_LIMIT } from "../constants/constant.js";
 // 配置文件
 import config from "../model/index.js";
 // 书库
 import { getYiBook, getZBook, getZHelper } from "../utils/books.js";
 // 工具类
 import TokenBucket from '../utils/token-bucket.js'
-import { downloadImg } from "../utils/common.js";
-import { checkAndRemoveFile, toBase64 } from "../utils/file.js";
-import { OpenaiBuilder } from "../utils/openai-builder.js";
 
 export class query extends plugin {
     /**
@@ -63,10 +58,6 @@ export class query extends plugin {
                 {
                     reg: "^#(wiki|百科)(.*)$",
                     fnc: "wiki",
-                },
-                {
-                    reg: "^识图",
-                    fnc: "openAiOCR"
                 }
             ],
         });
@@ -74,12 +65,6 @@ export class query extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
-        // ai接口
-        this.aiBaseURL = this.toolsConfig.aiBaseURL;
-        // ai api key
-        this.aiApiKey = this.toolsConfig.aiApiKey;
-        // ai模型
-        this.aiModel = this.toolsConfig.aiModel;
     }
 
     async doctor(e) {
@@ -335,69 +320,6 @@ export class query extends plugin {
             // 小鸡解释：${ _.get(data2, 'content') }
         });
         await e.reply(await Bot.makeForwardMsg(bkRes));
-        return true;
-    }
-
-    // 识图
-    async openAiOCR(e) {
-        if (e.source) {
-            let reply;
-            if (e.isGroup) {
-                reply = (await e.group.getChatHistory(this.e.source.seq, 1)).pop()?.message;
-            } else {
-                reply = (await e.friend.getChatHistory(this.e.source.time, 1)).pop()?.message;
-            }
-            if (reply) {
-                for (let val of reply) {
-                    if (val.type == "image") {
-                        e.img = [val.url];
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (!e.img) {
-            this.setContext('openAiProcess');
-            await e.reply("「R插件 x 月之暗面 Kimi」联合识别提醒你：请发送图片！", false, { at: true });
-        } else {
-            this.openAiProcess();
-        }
-    }
-
-    /**
-     * AI引擎提供图像识别能力
-     * @return {Promise<boolean>}
-     */
-    async openAiProcess() {
-        if (!this.e.img) {
-            e.reply("「R插件 x 月之暗面 Kimi」联合识别提醒你：无法找到图片！")
-            return true;
-        }
-        const img = this.e.img.find(item => item.startsWith("http"));
-        const parsedUrl = url.parse(img);
-        const pathArray = parsedUrl.pathname.split('/');
-        const filenameWithExtension = pathArray[pathArray.length - 1];
-        const path = `${ this.defaultPath }${ this.e.group_id || this.e.user_id }`
-        // 下载图片
-        const imgPath = await downloadImg(img, path, filenameWithExtension);
-        // 构造OpenAI引擎
-        try {
-            const { model, ans } = await new OpenaiBuilder()
-                .setBaseURL(this.aiBaseURL)
-                .setApiKey(this.aiApiKey)
-                .setModel(this.aiModel)
-                .setPrompt(OCR_PROMPT)
-                .setPath(imgPath)
-                .build();
-            const ocrAns = ans.split("▲");
-            logger.info(ocrAns)
-            this.e.reply(`「R插件 x ${ model }」联合识别：\n描述：${ ocrAns[1] } \nOCR识别结果：${ ocrAns[2] }`);
-            await checkAndRemoveFile(filenameWithExtension);
-        } catch (err) {
-            this.e.reply("「R插件 x 月之暗面 Kimi」联合识别提醒你：无法找到图片路径！")
-            logger.error(err);
-        }
         return true;
     }
 

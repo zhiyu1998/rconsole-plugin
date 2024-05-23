@@ -27,6 +27,7 @@ import {
     douyinTypeMap,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
+    SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER,
@@ -68,6 +69,7 @@ import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { mid2id } from "../utils/weibo.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import path from "path";
+import { OpenaiBuilder } from "../utils/openai-builder.js";
 
 export class tools extends plugin {
     /**
@@ -171,6 +173,10 @@ export class tools extends plugin {
                 {
                     reg: "(music.apple.com|open.spotify.com)",
                     fnc: "freyr"
+                },
+                {
+                    reg: "mp.weixin",
+                    fnc: "weixin"
                 }
             ],
         });
@@ -198,6 +204,12 @@ export class tools extends plugin {
         this.queue = new PQueue({ concurrency: Number(this.toolsConfig.queueConcurrency) });
         // 视频下载的并发数量
         this.videoDownloadConcurrency = this.toolsConfig.videoDownloadConcurrency;
+        // ai接口
+        this.aiBaseURL = this.toolsConfig.aiBaseURL;
+        // ai api key
+        this.aiApiKey = this.toolsConfig.aiApiKey;
+        // ai模型
+        this.aiModel = this.toolsConfig.aiModel;
     }
 
     // 翻译插件
@@ -1446,7 +1458,7 @@ export class tools extends plugin {
         logger.info(result.toString());
         // 获取信息
         const { title, album, artist } = await this.parseFreyrLog(result.toString());
-        e.reply(`识别：${freyrName}，${ title }--${ artist }\n${ album }`);
+        e.reply(`识别：${ freyrName }，${ title }--${ artist }\n${ album }`);
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 国内服务器解决方案
@@ -1481,7 +1493,7 @@ export class tools extends plugin {
             // 读取目录中的所有文件和文件夹
             fs.readdir(musicPath, (err, files) => {
                 if (err) {
-                    e.reply(`${freyrName}解析出错，请查看日志！`)
+                    e.reply(`${ freyrName }解析出错，请查看日志！`)
                     logger.error('读取目录时出错:', err);
                     return;
                 }
@@ -1496,11 +1508,11 @@ export class tools extends plugin {
                 });
             });
         } else {
-            e.reply(`下载失败！没有找到${freyrName}下载下来文件！`);
+            e.reply(`下载失败！没有找到${ freyrName }下载下来文件！`);
         }
         // 计数
         tools.#amCount += 1;
-        logger.info(`当前${freyrName}已经下载了：${ tools.#amCount }次`);
+        logger.info(`当前${ freyrName }已经下载了：${ tools.#amCount }次`);
         // 定时清理
         if (tools.#amCount >= 5) {
             await deleteFolderRecursive(currentWorkingDirectory + "/am");
@@ -1526,6 +1538,21 @@ export class tools extends plugin {
         const artist = artistMatch ? artistMatch[1] : 'N/A';
 
         return { title, album, artist };
+    }
+
+    async weixin(e) {
+        const urlReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const wxUrl = urlReg.exec(e.msg)?.[0];
+        const builder = await new OpenaiBuilder()
+            .setBaseURL(this.aiBaseURL)
+            .setApiKey(this.aiApiKey)
+            .setModel(this.aiModel)
+            .setPrompt(SUMMARY_PROMPT)
+            .build();
+        e.reply(`识别：微信文章，正在为您总结，请稍等...`);
+        const { ans: kimiAns, model } = await builder.kimi(wxUrl);
+        e.reply(`「R插件 x ${ model }」联合为您总结内容：\n${ kimiAns }`)
+        return true;
     }
 
     /**

@@ -39,31 +39,43 @@ export class OpenaiBuilder {
     }
 
     async build() {
-        if (this.path === '') {
-            throw Error("无法获取到文件路径");
-            return null;
-        }
         // logger.info(this.baseURL, this.apiKey)
         // 创建客户端
         this.client = new OpenAI({
             baseURL: this.baseURL,
             apiKey: this.apiKey
         });
-        // 构建
-        if (this.baseURL.includes("api.moonshot.cn")) {
-            return await this.kimi(this.path);
-        } else {
-            return await this.openai(this.path);
+        return this;
+    }
+
+    async kimi(query) {
+        // 请求Kimi
+        const completion = await this.client.chat.completions.create({
+            model: "moonshot-v1-8k",
+            messages: [
+                {
+                    "role": "system",
+                    "content": this.prompt,
+                },
+                {
+                    role: "user",
+                    content: query
+                },
+            ],
+        });
+        return {
+            "model": "月之暗面 Kimi",
+            "ans": completion.choices[0].message.content
         }
     }
 
-    async kimi(path) {
+    async kimi_pic(path) {
         let file_object = await this.client.files.create({
             file: fs.createReadStream(path),
             purpose: "file-extract"
         })
         let file_content = await (await this.client.files.content(file_object.id)).text()
-        // 请求OpenAI
+        // 请求Kimi
         const completion = await this.client.chat.completions.create({
             model: "moonshot-v1-8k",
             messages: [
@@ -84,7 +96,7 @@ export class OpenaiBuilder {
         }
     }
 
-    async openai(path) {
+    async openai_pic(path) {
         // 转换base64
         const pic = await toBase64(path);
         const completion = await this.client.chat.completions.create({
