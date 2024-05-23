@@ -215,7 +215,7 @@ aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonsh
 aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
 ```
 
-- aiBaseURL：你服务器的地址
+- aiBaseURL：你服务器的地址部署的`kimi-free-api`，例如：http://localhost:8000
 - aiApiKey：kimi 的 `refresh_token` （F12 -> 应用（Application） -> Local Storage -> `https://kimi.moonshot.cn` -> 找到）
 
 3. 开始游玩
