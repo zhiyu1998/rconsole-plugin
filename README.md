@@ -220,6 +220,8 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 3. 开始游玩
 
+![wxkimi](./img/wxkimi.webp)
+
 ##  🤺 R插件交流群
 扫码不行就：575663150
 
