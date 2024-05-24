@@ -1541,6 +1541,11 @@ export class tools extends plugin {
     }
 
     async weixin(e) {
+        // 判断是否有总结的条件
+        if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
+            e.reply("没有配置 Kimi，无法为您的微信文章总结！\n文档：https://gitee.com/kyrzy0416/rconsole-plugin")
+            return true;
+        }
         const urlReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const wxUrl = urlReg.exec(e.msg)?.[0];
         const builder = await new OpenaiBuilder()
