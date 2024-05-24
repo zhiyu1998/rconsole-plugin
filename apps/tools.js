@@ -1551,7 +1551,8 @@ export class tools extends plugin {
             .build();
         e.reply(`识别：微信文章，正在为您总结，请稍等...`);
         const { ans: kimiAns, model } = await builder.kimi(wxUrl);
-        e.reply(`「R插件 x ${ model }」联合为您总结内容：\n${ kimiAns }`)
+        let Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
+        await e.reply(Msg);
         return true;
     }
 
@@ -1893,4 +1894,45 @@ export class tools extends plugin {
             await e.group.sendFile(path);
         }
     }
+   
+    async makeForwardMsg (e, msg = [], dec = '') {
+        let userInfo = {
+          nickname: e.nickname,
+          user_id: e.user_id          
+        }
+      
+        let forwardMsg = []
+        msg.forEach(v => {
+          forwardMsg.push({
+            ...userInfo,
+            message: v
+          })
+        })
+      
+        if (e.isGroup) {
+          forwardMsg = await e.group.makeForwardMsg(forwardMsg)
+        } else if (e.friend) {
+          forwardMsg = await e.friend.makeForwardMsg(forwardMsg)
+        } else {
+          return false
+        }
+      
+        if (dec) {
+          if (typeof (forwardMsg.data) === 'object') {
+            let detail = forwardMsg.data?.meta?.detail
+            if (detail) {
+              detail.news = [{ text: dec }]
+            }
+          } else {
+            forwardMsg.data = forwardMsg.data
+              .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
+              .replace(/\n/g, '')
+              .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+              .replace(/___+/, `<title color="#777777" size="26">${dec}</title>`)
+          }
+      
+        }
+      
+        return forwardMsg
+      }
 }
