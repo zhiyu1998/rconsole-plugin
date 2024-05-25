@@ -24,7 +24,7 @@ import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../ut
 import {
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     DIVIDING_LINE,
-    douyinTypeMap,
+    douyinTypeMap, HELP_DOC,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     SUMMARY_PROMPT,
@@ -238,7 +238,7 @@ export class tools extends plugin {
         await this.douyinRequest(douUrl).then(async res => {
             // 当前版本需要填入cookie
             if (_.isEmpty(this.douyinCookie)) {
-                e.reply("检测到没有Cookie，无法解析抖音");
+                e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
                 return;
             }
             const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
@@ -1543,7 +1543,7 @@ export class tools extends plugin {
     async weixin(e) {
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
-            e.reply("没有配置 Kimi，无法为您的微信文章总结！\n文档：https://gitee.com/kyrzy0416/rconsole-plugin")
+            e.reply(`没有配置 Kimi，无法为您的微信文章总结！${HELP_DOC}`)
             return true;
         }
         const urlReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;

@@ -92,3 +92,5 @@ export const OCR_PROMPT = `
 `
 
 export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记`
+
+export const HELP_DOC = "\n文档：https://gitee.com/kyrzy0416/rconsole-plugin"
