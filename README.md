@@ -305,3 +305,7 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 * 素材来源于网络，仅供交流学习使用
 * 严禁用于任何商业用途和非法行为
 * 如果对你有帮助辛苦给个star，这是对我最大的鼓励
+
+## 📃 日志
+![Alt](https://repobeats.axiom.co/api/embed/42b5a7769074be124bd9ab02456897e37d1581f1.svg "Repobeats analytics image")
+[![zhiyu/rconsole-plugin](https://gitee.com/kyrzy0416/rconsole-plugin/widgets/widget_card.svg?colors=4183c4,ffffff,ffffff,e3e9ed,666666,9b9b9b)](https://gitee.com/kyrzy0416/rconsole-plugin)
