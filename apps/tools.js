@@ -255,12 +255,12 @@ export class tools extends plugin {
             };
             const dyApi = DY_INFO.replace("{}", douId);
             // xg参数
-            const xbParam = aBogus.generate_a_bogus(
+            const abParam = aBogus.generate_a_bogus(
                 new URLSearchParams(new URL(dyApi).search).toString(),
                 headers["User-Agent"],
             );
             // const param = resp.data.result[0].paramsencode;
-            const resDyApi = `${ dyApi }&a_bogus=${ xbParam }`;
+            const resDyApi = `${ dyApi }&a_bogus=${ abParam }`;
             headers['Referer'] = `https://www.douyin.com/video/${ douId }`
             const dyResponse = () => axios.get(resDyApi, {
                 headers,
