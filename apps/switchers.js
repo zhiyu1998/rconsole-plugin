@@ -63,6 +63,10 @@ export class switchers extends plugin {
         if ((await redis.exists(REDIS_YUNZAI_LAGRANGE))) {
             driver = JSON.parse(await redis.get(REDIS_YUNZAI_LAGRANGE)).driver;
         }
+        // 异常检测，之前算法出现问题，如果出现异常就检测纠正
+        if (driver === -1) {
+            driver = 1;
+        }
         // 设置
         driver ^= 1;
         await redis.set(
