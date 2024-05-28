@@ -43,7 +43,7 @@ import {
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
-import * as xBogus from "../utils/x-bogus.cjs";
+import * as aBogus from "../utils/a-bogus.cjs";
 import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
@@ -255,12 +255,12 @@ export class tools extends plugin {
             };
             const dyApi = DY_INFO.replace("{}", douId);
             // xg参数
-            const xbParam = xBogus.sign(
+            const xbParam = aBogus.generate_a_bogus(
                 new URLSearchParams(new URL(dyApi).search).toString(),
                 headers["User-Agent"],
             );
             // const param = resp.data.result[0].paramsencode;
-            const resDyApi = `${ dyApi }&X-Bogus=${ xbParam }`;
+            const resDyApi = `${ dyApi }&a_bogus=${ xbParam }`;
             headers['Referer'] = `https://www.douyin.com/video/${ douId }`
             const dyResponse = () => axios.get(resDyApi, {
                 headers,
