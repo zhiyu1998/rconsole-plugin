@@ -187,9 +187,10 @@ export async function downloadMp3(mp3Url, path, title = "temp", redirect = "manu
  * @param dir
  * @param fileName
  * @param isProxy
+ * @param headersExt
  * @returns {Promise<unknown>}
  */
-export async function downloadImg(img, dir, fileName = "", isProxy = false) {
+export async function downloadImg(img, dir, fileName = "", isProxy = false, headersExt = {}) {
     if (fileName === "") {
         fileName = img.split("/").pop();
     }
@@ -200,6 +201,7 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false) {
         headers: {
             "User-Agent":
                 "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            ...headersExt
         },
         responseType: "stream",
     };

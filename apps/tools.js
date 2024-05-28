@@ -1062,6 +1062,7 @@ export class tools extends plugin {
             return;
         }
         const id = weiboId.split("/")[1] || weiboId;
+        const that = this;
         axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
             headers: {
                 "User-Agent":
@@ -1075,13 +1076,31 @@ export class tools extends plugin {
                 const { text, status_title, source, region_name, pics, page_info } = wbData;
                 e.reply(`识别：微博，${ text.replace(/<[^>]+>/g, '') }\n${ status_title }\n${ source }\t${ region_name }`);
                 if (pics) {
+                    const removePath = [];
                     // 图片
-                    const images = pics.map(item => ({
-                        message: segment.image(item?.large.url || item.url),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    }));
-                    await this.reply(await Bot.makeForwardMsg(images));
+                    const imagesPromise = pics.map(item => {
+                        // 下载
+                        return downloadImg(item?.large.url || item.url, this.getCurDownloadPath(e), "", false, {
+                            "Referer": "http://blog.sina.com.cn/",
+                        });
+                    })
+                    const images = await Promise.all(imagesPromise).then(paths => {
+                        return paths.map(item => {
+                            // 记录删除的路径
+                            removePath.push(item);
+                            // 格式化发送图片
+                            return {
+                                message: segment.image(fs.readFileSync(item)),
+                                nickname: e.sender.card || e.user_id,
+                                user_id: e.user_id,
+                            }
+                        })
+                    })
+                    await e.reply(await Bot.makeForwardMsg(images));
+                    // 发送完就删除
+                    removePath.forEach(async item => {
+                        checkAndRemoveFile(item);
+                    })
                 }
                 if (page_info) {
                     // 视频
