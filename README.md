@@ -299,6 +299,8 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 |    [Kr] 5s¹     | 1杯瑞幸 |
 |     春日野穹OvO     | 25   |
 |       MiX       | 30   |
+|       AO        | 26   |
+|       Chino        | 30   |
 
 ## 🚀 声明
 * 文件借鉴了很多插件，精简个人认为可以精简的内容。
