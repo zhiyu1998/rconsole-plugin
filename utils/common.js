@@ -353,3 +353,28 @@ export function formatSeconds(seconds) {
     const remainingSeconds = seconds % 60;
     return `${minutes}分${remainingSeconds}秒`;
 }
+
+/**
+ * 重试 axios 请求
+ * @param requestFunction
+ * @param retries
+ * @param delay
+ * @returns {*}
+ */
+export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) {
+    try {
+        const response = await requestFunction();
+        if (!response.data) {
+            throw new Error('请求空数据');
+        }
+        return response.data;
+    } catch (error) {
+        if (retries > 0) {
+            logger.mark(`[R插件][重试模块]重试中... (${3 - retries + 1}/3) 次`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return retryAxiosReq(requestFunction, retries - 1, delay);
+        } else {
+            throw error;
+        }
+    }
+}

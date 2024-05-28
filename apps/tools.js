@@ -36,7 +36,7 @@ import {
     downloadImg,
     downloadMp3,
     formatBiliInfo,
-    getIdVideo,
+    getIdVideo, retryAxiosReq,
     secondsToTime,
     testProxy,
     truncateString
@@ -262,50 +262,43 @@ export class tools extends plugin {
             // const param = resp.data.result[0].paramsencode;
             const resDyApi = `${ dyApi }&X-Bogus=${ xbParam }`;
             headers['Referer'] = `https://www.douyin.com/video/${ douId }`
-            axios
-                .get(resDyApi, {
-                    headers,
-                })
-                .then(async resp => {
-                    // console.log(resp)
-                    if (_.isEmpty(await resp?.data)) {
-                        e.reply("解析失败，请重试！");
-                        return;
-                    }
-                    // console.log(await resp.data)
-                    const item = await resp.data.aweme_detail;
-                    e.reply(`识别：抖音, ${ item.desc }`);
-                    const urlTypeCode = item.aweme_type;
-                    const urlType = douyinTypeMap[urlTypeCode];
-                    if (urlType === "video") {
-                        const resUrl = item.video.play_addr.url_list[0].replace(
-                            "http",
-                            "https",
-                        );
-                        const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
-                        await this.downloadVideo(resUrl).then(() => {
-                            this.sendVideoToUpload(e, path)
-                        });
-                    } else if (urlType === "image") {
-                        // 无水印图片列表
-                        let no_watermark_image_list = [];
-                        // 有水印图片列表
-                        // let watermark_image_list = [];
-                        for (let i of item.images) {
-                            // 无水印图片列表
-                            no_watermark_image_list.push({
-                                message: segment.image(i.url_list[0]),
-                                nickname: this.e.sender.card || this.e.user_id,
-                                user_id: this.e.user_id,
-                            });
-                            // 有水印图片列表
-                            // watermark_image_list.push(i.download_url_list[0]);
-                            // e.reply(segment.image(i.url_list[0]));
-                        }
-                        // console.log(no_watermark_image_list)
-                        await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
-                    }
+            const dyResponse = () => axios.get(resDyApi, {
+                headers,
+            });
+            const data = await retryAxiosReq(dyResponse)
+            // logger.info(data)
+            const item = await data.aweme_detail;
+            e.reply(`识别：抖音, ${ item.desc }`);
+            const urlTypeCode = item.aweme_type;
+            const urlType = douyinTypeMap[urlTypeCode];
+            if (urlType === "video") {
+                const resUrl = item.video.play_addr.url_list[0].replace(
+                    "http",
+                    "https",
+                );
+                const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
+                await this.downloadVideo(resUrl).then(() => {
+                    this.sendVideoToUpload(e, path)
                 });
+            } else if (urlType === "image") {
+                // 无水印图片列表
+                let no_watermark_image_list = [];
+                // 有水印图片列表
+                // let watermark_image_list = [];
+                for (let i of item.images) {
+                    // 无水印图片列表
+                    no_watermark_image_list.push({
+                        message: segment.image(i.url_list[0]),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    });
+                    // 有水印图片列表
+                    // watermark_image_list.push(i.download_url_list[0]);
+                    // e.reply(segment.image(i.url_list[0]));
+                }
+                // console.log(no_watermark_image_list)
+                await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
+            }
         });
         return true;
     }
