@@ -1047,7 +1047,7 @@ export class tools extends plugin {
         // 对已知情况进行判断
         if (e.msg.includes("m.weibo.cn")) {
             // https://m.weibo.cn/detail/4976424138313924
-            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(e.msg)?.[0];
+            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(e.msg)?.[0] || /(?<=m.weibo.cn\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(e.msg)?.[0];
         } else if (e.msg.includes("weibo.com\/tv\/show") && e.msg.includes("mid=")) {
             // https://weibo.com/tv/show/1034:5007449447661594?mid=5007452630158934
             weiboId = /(?<=mid=)[A-Za-z\d]+/.exec(e.msg)?.[0];
