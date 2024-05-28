@@ -254,7 +254,7 @@ export class tools extends plugin {
                 cookie: this.douyinCookie,
             };
             const dyApi = DY_INFO.replace("{}", douId);
-            // xg参数
+            // a-bogus参数
             const abParam = aBogus.generate_a_bogus(
                 new URLSearchParams(new URL(dyApi).search).toString(),
                 headers["User-Agent"],
@@ -262,9 +262,11 @@ export class tools extends plugin {
             // const param = resp.data.result[0].paramsencode;
             const resDyApi = `${ dyApi }&a_bogus=${ abParam }`;
             headers['Referer'] = `https://www.douyin.com/video/${ douId }`
+            // 定义一个dy请求
             const dyResponse = () => axios.get(resDyApi, {
                 headers,
             });
+            // 如果失败进行3次重试
             const data = await retryAxiosReq(dyResponse)
             // logger.info(data)
             const item = await data.aweme_detail;
