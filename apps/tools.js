@@ -1851,7 +1851,7 @@ export class tools extends plugin {
             await redis.set(
                 REDIS_YUNZAI_LAGRANGE,
                 JSON.stringify({
-                    driver: false,
+                    driver: 0,
                 }),
             );
             return true;
@@ -1881,8 +1881,9 @@ export class tools extends plugin {
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
     async sendVideoToUpload(e, path, videoSizeLimit = 70) {
+        const isLag = await this.isLagRangeDriver();
         // 判断是否是拉格朗日
-        if (await this.isLagRangeDriver()) {
+        if (isLag === 1) {
             // 构造拉格朗日适配器
             const lagrange = new LagrangeAdapter(this.toolsConfig.lagrangeForwardWebSocket);
             // 上传群文件

@@ -64,7 +64,7 @@ export class switchers extends plugin {
             driver = JSON.parse(await redis.get(REDIS_YUNZAI_LAGRANGE)).driver;
         }
         // 设置
-        driver = ~driver
+        driver ^= 1;
         await redis.set(
             REDIS_YUNZAI_LAGRANGE,
             JSON.stringify({
