@@ -1569,8 +1569,8 @@ export class tools extends plugin {
             .build();
         e.reply(`识别：${name}，正在为您总结，请稍等...`);
         const { ans: kimiAns, model } = await builder.kimi(summaryLink);
-        // const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
-        await e.reply(`「R插件 x ${ model }」联合为您总结内容：${kimiAns}`);
+        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
+        await e.reply(Msg);
         return true;
     }
 
