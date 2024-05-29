@@ -10,7 +10,7 @@ import HttpProxyAgent from "https-proxy-agent";
 import { exec, execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
 import {
-    downloadBFile,
+    downloadBFile, filterBiliDescLink,
     getBiliAudio,
     getBiliVideoWithSession,
     getDownloadUrl,
@@ -460,8 +460,10 @@ export class tools extends plugin {
             "弹幕数量": danmaku,
             "评论": reply
         };
+        // 过滤简介中的一些链接
+        const filteredDesc = await filterBiliDescLink(desc);
         // 格式化数据
-        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ truncateString(desc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
+        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);

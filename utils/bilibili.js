@@ -333,3 +333,18 @@ export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime 
         };
     }
 }
+
+/**
+ * 过滤简介中的一些链接
+ * @param link
+ * @returns {Promise<string>}
+ */
+export async function filterBiliDescLink(link) {
+    // YouTube链接
+    const regex = /(?:https?:\/\/)?(?:www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+    if (regex.test(link)) {
+        // 使用replace方法过滤掉匹配的链接
+        return link.replace(regex, '').replace(/\n/g, '').trim();
+    }
+    return link;
+}
