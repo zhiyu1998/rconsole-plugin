@@ -91,6 +91,6 @@ export const OCR_PROMPT = `
 示例：▲ 文本编辑器中的代码行。▲ const x = 5; const y = 10; const z = x + y; console.log(z);
 `
 
-export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记`
+export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记，如果是ArXiv论文就简要介绍下内容和创新点即可`
 
 export const HELP_DOC = "\n文档：https://gitee.com/kyrzy0416/rconsole-plugin"

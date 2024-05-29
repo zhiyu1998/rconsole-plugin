@@ -175,8 +175,8 @@ export class tools extends plugin {
                     fnc: "freyr"
                 },
                 {
-                    reg: "mp.weixin",
-                    fnc: "weixin"
+                    reg: "(mp.weixin|arxiv.org)",
+                    fnc: "linkShareSummary"
                 }
             ],
         });
@@ -1554,25 +1554,48 @@ export class tools extends plugin {
         return { title, album, artist };
     }
 
-    async weixin(e) {
+    async linkShareSummary(e) {
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
-            e.reply(`没有配置 Kimi，无法为您的微信文章总结！${HELP_DOC}`)
+            e.reply(`没有配置 Kimi，无法为您总结！${HELP_DOC}`)
             return true;
         }
-        const urlReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const wxUrl = urlReg.exec(e.msg)?.[0];
+        const { name, summaryLink } = this.contentEstimator(e.msg);
         const builder = await new OpenaiBuilder()
             .setBaseURL(this.aiBaseURL)
             .setApiKey(this.aiApiKey)
             .setModel(this.aiModel)
             .setPrompt(SUMMARY_PROMPT)
             .build();
-        e.reply(`识别：微信文章，正在为您总结，请稍等...`);
-        const { ans: kimiAns, model } = await builder.kimi(wxUrl);
-        let Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
-        await e.reply(Msg);
+        e.reply(`识别：${name}，正在为您总结，请稍等...`);
+        const { ans: kimiAns, model } = await builder.kimi(summaryLink);
+        // const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
+        await e.reply(`「R插件 x ${ model }」联合为您总结内容：${kimiAns}`);
         return true;
+    }
+
+    /**
+     * 内容评估器
+     * @link {weixin}
+     * @param link 链接
+     */
+    contentEstimator(link) {
+        const wxReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/;
+        const arxivReg = /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/;
+        if (wxReg.test(link)) {
+            return {
+                name: '微信文章',
+                summaryLink: wxReg.exec(link)?.[0]
+            };
+        } else if (arxivReg.test(link)) {
+            return {
+                name: 'ArXiv论文',
+                summaryLink: arxivReg.exec(link)?.[0]
+            };
+        } else {
+            logger.error("[R插件][总结模块] 内容评估出错...");
+            throw Error("内容评估出错...");
+        }
     }
 
     /**
