@@ -1032,10 +1032,10 @@ export class tools extends plugin {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
-                // e.reply(segment.record(path));
-                // 判断是不是icqq
                 await e.reply(segment.record(path));
+                // 上传群文件
                 await this.uploadGroupFile(e, path);
+                // 删除文件
                 await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${ err.message }`);

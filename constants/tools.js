@@ -123,6 +123,7 @@ export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song
 
 /**
  * 下载VIP的临时接口 (感谢桑帛云API，如果站长能看到)
+ * 备用：另外一个兜底策略：https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm={搜索内容}&n=1&type=json
  * @type {string}
  */
 export const NETEASE_TEMP_API = "https://api.lolimi.cn/API/wydg/api.php?msg={}&n=1"
