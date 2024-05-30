@@ -70,6 +70,7 @@ import { mid2id } from "../utils/weibo.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import path from "path";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
+import { contentEstimator } from "../utils/link-share-summary-util.js";
 
 export class tools extends plugin {
     /**
@@ -1562,7 +1563,7 @@ export class tools extends plugin {
             e.reply(`没有配置 Kimi，无法为您总结！${HELP_DOC}`)
             return true;
         }
-        const { name, summaryLink } = this.contentEstimator(e.msg);
+        const { name, summaryLink } = contentEstimator(e.msg);
         const builder = await new OpenaiBuilder()
             .setBaseURL(this.aiBaseURL)
             .setApiKey(this.aiApiKey)
@@ -1577,30 +1578,6 @@ export class tools extends plugin {
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
         await e.reply(Msg);
         return true;
-    }
-
-    /**
-     * 内容评估器
-     * @link {weixin}
-     * @param link 链接
-     */
-    contentEstimator(link) {
-        const wxReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/;
-        const arxivReg = /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/;
-        if (wxReg.test(link)) {
-            return {
-                name: '微信文章',
-                summaryLink: wxReg.exec(link)?.[0]
-            };
-        } else if (arxivReg.test(link)) {
-            return {
-                name: 'ArXiv论文',
-                summaryLink: arxivReg.exec(link)?.[0]
-            };
-        } else {
-            logger.error("[R插件][总结模块] 内容评估出错...");
-            throw Error("内容评估出错...");
-        }
     }
 
     /**
