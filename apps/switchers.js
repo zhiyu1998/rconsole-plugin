@@ -31,7 +31,7 @@ export class switchers extends plugin {
                     permission: "master",
                 },
             ]
-        });   
+        });
     }
 
     /**
@@ -84,20 +84,20 @@ export class switchers extends plugin {
         try {
             const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
             e.reply(`手动清理垃圾完成:\n` +
-                `- 清理了${dataClearFileLen}个垃圾文件\n` +
-                `- 清理了${rTempFileLen}个群临时文件`);
+                `- 清理了${ dataClearFileLen }个垃圾文件\n` +
+                `- 清理了${ rTempFileLen }个群临时文件`);
         } catch (err) {
-            e.reply(`手动清理垃圾时发生错误: ${err.message}`);
+            e.reply(`手动清理垃圾时发生错误: ${ err.message }`);
         }
     }
 }
 
 
-     /**
-     * 清理垃圾文件
-     * @param e
-     * @returns {Promise<void>}
-     */
+/**
+ * 清理垃圾文件
+ * @param e
+ * @returns {Promise<void>}
+ */
 async function autoclearTrash(e) {
     const dataDirectory = "./data/";
     try {
@@ -105,7 +105,7 @@ async function autoclearTrash(e) {
         let dataClearFileLen = 0;
         for (const file of files) {
             if (/^[0-9a-f]{32}$/.test(file)) {
-              await fs.promises.unlink(dataDirectory + file);
+                await fs.promises.unlink(dataDirectory + file);
                 dataClearFileLen++;
             }
         }
@@ -116,22 +116,22 @@ async function autoclearTrash(e) {
         };
     } catch (err) {
         logger.error(err);
-        throw err; 
+        throw err;
     }
 }
 
 function autoclear(time) {
-    schedule.scheduleJob(time, async function() {
-    try {
-    const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
-    console.log(`自动清理垃圾完成:\n` +
-        `- 清理了${dataClearFileLen}个垃圾文件\n` +
-        `- 清理了${rTempFileLen}个群临时文件`);
-    } catch (err) {
-    console.error(`自动清理垃圾时发生错误: ${err.message}`);
+    schedule.scheduleJob(time, async function () {
+        try {
+            const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
+            console.log(`自动清理垃圾完成:\n` +
+                `- 清理了${ dataClearFileLen }个垃圾文件\n` +
+                `- 清理了${ rTempFileLen }个群临时文件`);
+        } catch (err) {
+            console.error(`自动清理垃圾时发生错误: ${ err.message }`);
+        }
+    })
 }
-})
-} 
 
 //自动清理垃圾
 autoclear(autotime)
