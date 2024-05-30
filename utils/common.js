@@ -128,14 +128,15 @@ export function generateRandomStr(randomlength = 16) {
  * @param path      下载目录
  * @param title     音乐名
  * @param redirect  是否要重定向
+ * @param audioType 建议填写 mp3 / m4a / flac 类型
  * @returns {Promise<unknown>}
  */
-export async function downloadMp3(mp3Url, path, title = "temp", redirect = "manual") {
+export async function downloadAudio(mp3Url, path, title = "temp", redirect = "manual", audioType = "mp3") {
     // 如果没有目录就创建一个
     await mkdirIfNotExists(path)
 
     // 补充保存文件名
-    path += `/${ title }.mp3`;
+    path += `/${ title }.${audioType}`;
     if (fs.existsSync(path)) {
         console.log(`音频已存在`);
         fs.unlinkSync(path);

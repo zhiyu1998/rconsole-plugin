@@ -34,7 +34,7 @@ import {
 } from "../constants/constant.js";
 import {
     downloadImg,
-    downloadMp3, estimateReadingTime,
+    downloadAudio, estimateReadingTime,
     formatBiliInfo,
     getIdVideo, retryAxiosReq,
     secondsToTime,
@@ -1026,8 +1026,11 @@ export class tools extends plugin {
                 // 不是VIP歌曲，直接识别完就下一步
                 e.reply(`识别：网易云音乐，${ title }`);
             }
+            // 动态判断后缀名
+            const extensionPattern = /\.([a-zA-Z0-9]+)$/;
+            const musicExt = url.match(extensionPattern);
             // 下载音乐
-            downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
+            downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
                 // e.reply(segment.record(path));
                 // 判断是不是icqq
@@ -1490,7 +1493,7 @@ export class tools extends plugin {
             });
             const url = vipMusicData.data.mp3;
             // 下载音乐
-            downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
+            downloadAudio(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
                 // 发送语音
                 // e.reply(segment.record(path));
                 // 判断是不是icqq
