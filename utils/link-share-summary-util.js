@@ -20,7 +20,7 @@ export function contentEstimator(link) {
     } else if (sspaiReg.test(link)) {
         return {
             name: '少数派',
-            summaryLink: sspaiReg.execSync(link)?.[0]
+            summaryLink: sspaiReg.exec(link)?.[0]
         }
     } else {
         logger.error("[R插件][总结模块] 内容评估出错...");
