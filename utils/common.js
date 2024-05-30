@@ -380,13 +380,15 @@ export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) 
 }
 
 /**
- * 统计给定文本中的字数
+ * 统计给定文本中的中文字数
  *
  * @param {string} text - The text to count words in
  * @return {number} The number of words in the text
  */
-export function countWords(text) {
-    return text.split(/\s+/).filter(word => word.length > 0).length;
+export function countChineseCharacters(text) {
+    const chineseCharacterRegex = /[\u4e00-\u9fa5]/g;
+    const matches = text.match(chineseCharacterRegex);
+    return matches ? matches.length : 0;
 }
 
 /**
@@ -397,7 +399,7 @@ export function countWords(text) {
  * @return {Object} An object containing the estimated reading time in minutes and the word count.
  */
 export function estimateReadingTime(text, wpm = 200) {
-    const wordCount = countWords(text);
+    const wordCount = countChineseCharacters(text);
     const readingTimeMinutes = wordCount / wpm;
     return {
         minutes: Math.ceil(readingTimeMinutes),
