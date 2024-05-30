@@ -1029,12 +1029,12 @@ export class tools extends plugin {
             // 动态判断后缀名
             const extensionPattern = /\.([a-zA-Z0-9]+)$/;
             const musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
-            logger.info(musicExt);
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
                 // e.reply(segment.record(path));
                 // 判断是不是icqq
+                await e.reply(segment.record(path));
                 await this.uploadGroupFile(e, path);
                 await checkAndRemoveFile(path);
             }).catch(err => {
