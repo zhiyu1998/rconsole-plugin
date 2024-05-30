@@ -378,3 +378,29 @@ export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) 
         }
     }
 }
+
+/**
+ * 统计给定文本中的字数
+ *
+ * @param {string} text - The text to count words in
+ * @return {number} The number of words in the text
+ */
+export function countWords(text) {
+    return text.split(/\s+/).filter(word => word.length > 0).length;
+}
+
+/**
+ * 根据每分钟平均单词数估计给定文本的阅读时间
+ *
+ * @param {string} text - The text for which the reading time is estimated.
+ * @param {number} wpm - The average words per minute for calculating reading time. Default is 200.
+ * @return {Object} An object containing the estimated reading time in minutes and the word count.
+ */
+export function estimateReadingTime(text, wpm = 200) {
+    const wordCount = countWords(text);
+    const readingTimeMinutes = wordCount / wpm;
+    return {
+        minutes: Math.ceil(readingTimeMinutes),
+        words: wordCount
+    };
+}

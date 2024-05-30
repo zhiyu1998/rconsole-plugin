@@ -34,7 +34,7 @@ import {
 } from "../constants/constant.js";
 import {
     downloadImg,
-    downloadMp3,
+    downloadMp3, estimateReadingTime,
     formatBiliInfo,
     getIdVideo, retryAxiosReq,
     secondsToTime,
@@ -1569,8 +1569,11 @@ export class tools extends plugin {
             .setModel(this.aiModel)
             .setPrompt(SUMMARY_PROMPT)
             .build();
-        e.reply(`识别：${name}，正在为您总结，请稍等...`);
+        e.reply(`识别：${name}，正在为您总结，请稍等...`, true, { recallMsg: 60 });
         const { ans: kimiAns, model } = await builder.kimi(summaryLink);
+        // 计算阅读时间
+        const stats = estimateReadingTime(kimiAns);
+        e.reply(`当前 ${name} 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`)
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
         await e.reply(Msg);
         return true;
