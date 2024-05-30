@@ -56,7 +56,7 @@ import {
     GENERAL_REQ_LINK,
     MIYOUSHE_ARTICLE,
     NETEASE_SONG_DETAIL,
-    NETEASE_SONG_DOWNLOAD,
+    NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API,
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
@@ -1012,15 +1012,16 @@ export class tools extends plugin {
             // 一般这个情况是VIP歌曲
             if (url == null) {
                 // 临时接口
-                const vipMusicData = await axios.get(`https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm=${ title }&n=1&type=json`, {
+                const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title), {
                     headers: {
                         "User-Agent":
                             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                     },
                 });
                 const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-                url = vipMusicData.data.music_url;
-                e.reply(`识别：网易云音乐，${ messageTitle }`);
+                url = vipMusicData.data.mp3;
+                const cover = vipMusicData.data.img;
+                e.reply([segment.image(cover), `识别：网易云音乐，${ messageTitle }`]);
             } else {
                 // 不是VIP歌曲，直接识别完就下一步
                 e.reply(`识别：网易云音乐，${ title }`);
@@ -1481,13 +1482,13 @@ export class tools extends plugin {
         // 国内服务器解决方案
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             // 临时接口
-            const vipMusicData = await axios.get(`https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm=${ title }&n=1&type=json`, {
+            const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title), {
                 headers: {
                     "User-Agent":
                         "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
                 },
             });
-            const url = vipMusicData.data.music_url;
+            const url = vipMusicData.data.mp3;
             // 下载音乐
             downloadMp3(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
                 // 发送语音

@@ -122,6 +122,12 @@ export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app/so
 export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song/detail?ids={}"
 
 /**
+ * 下载VIP的临时接口 (感谢桑帛云API，如果站长能看到)
+ * @type {string}
+ */
+export const NETEASE_TEMP_API = "https://api.lolimi.cn/API/wydg/api.php?msg={}&n=1"
+
+/**
  * 单条微博的接口
  * @type {string}
  */
