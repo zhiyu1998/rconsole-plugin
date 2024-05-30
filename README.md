@@ -99,7 +99,7 @@ apt-get install atomicparsley
 
 <img src="./img/example6.webp" alt="小程序解析" width="50%" height="50%" />
 
-5. 【可选】对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA
+5. 【可选】对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA，或者[【推荐】扫码登录](https://gitee.com/kyrzy0416/rconsole-plugin#b%E7%AB%99%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95)
 
 <img src="./img/example7.webp" alt="小程序解析" width="50%" height="50%" />
 
