@@ -1,5 +1,5 @@
 import axios from "axios";
-import { downloadMp3, generateRandomStr } from "./common.js";
+import { downloadAudio, generateRandomStr } from "./common.js";
 
 /**
  * 获取音频
@@ -28,7 +28,7 @@ async function getBodianAudio(id, path) {
         .then(async resp => {
             const respJson = resp.data;
             const audioUrl = respJson.data.audioUrl;
-            await downloadMp3(audioUrl, path)
+            await downloadAudio(audioUrl, path)
                 .catch(err => {
                     console.error(`下载音乐失败，错误信息为: ${err.message}`);
                 });
