@@ -81,7 +81,7 @@ class GeneralLinkAdapter {
     }
 
     async pipixia(link) {
-        const msg = /https:\/\/h5\.pipix\.com\/s\/[A-Za-z0-9]+/.exec(link)?.[0];
+        const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9]+/.exec(link)?.[0];
         const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
         return { name: "皮皮虾", reqLink };
     }
