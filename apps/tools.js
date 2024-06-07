@@ -971,7 +971,7 @@ export class tools extends plugin {
         // 处理短号，此时会变成y.music.163.com
         if (message.includes("163cn.tv")) {
             message = /(http:|https:)\/\/163cn\.tv\/([a-zA-Z0-9]+)/.exec(message)?.[0]
-            logger.info(message)
+            // logger.info(message)
             message = await axios.head(message).then((resp) => {
                 return resp.request.res.responseUrl;
             });
@@ -1009,8 +1009,8 @@ export class tools extends plugin {
                 const song = res.data.songs[0];
                 return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
             });
-            // 一般这个情况是VIP歌曲
-            if (url == null) {
+            // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
+            if (!isOversea || url == null) {
                 // 临时接口
                 const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title), {
                     headers: {
