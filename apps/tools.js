@@ -1011,8 +1011,8 @@ export class tools extends plugin {
             });
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
             if (!isOversea || url == null) {
-                // 临时接口
-                const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title), {
+                // 临时接口，title经过变换后搜索到的音乐质量提升
+                const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title.replace("-", " ")), {
                     headers: {
                         "User-Agent":
                             "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
