@@ -164,11 +164,6 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 在安卓手机下载一个via，在via那选择电脑网页版抖音，然后登录，登陆完点左上角小标有个cookie，复制
 
-<video width="320" height="240" controls>
-  <source src="https://gitee.com/kyrzy0416/rrorange-image-bed/blob/master/rconsole-plugin/22456fdd9b6d73c6b68999a6831cd750.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
-
 ### ✖️ 小蓝鸟问题
 **2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
 
