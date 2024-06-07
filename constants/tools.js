@@ -121,6 +121,8 @@ export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app/so
  */
 export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song/detail?ids={}"
 
+export const NETEASE_API_CN = 'https://mu-api.yuk0.com';
+
 /**
  * 下载VIP的临时接口 (感谢桑帛云API，如果站长能看到)
  * 备用：另外一个兜底策略：https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm={搜索内容}&n=1&type=json

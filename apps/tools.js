@@ -54,7 +54,7 @@ import {
     BILI_SUMMARY,
     DY_INFO,
     GENERAL_REQ_LINK,
-    MIYOUSHE_ARTICLE,
+    MIYOUSHE_ARTICLE, NETEASE_API_CN,
     NETEASE_SONG_DETAIL,
     NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API,
     TIKTOK_INFO,
@@ -991,9 +991,9 @@ export class tools extends plugin {
         }
         // 判断海外
         const isOversea = await this.isOverseasServer();
-        // 国内解决方案，替换为国内API
-        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `http://cloud-music.pl-fe.cn/song/url?id={}`;
-        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `http://cloud-music.pl-fe.cn/song/detail?ids={}`;
+        // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
+        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `${NETEASE_API_CN}/song/url?id={}`;
+        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `${NETEASE_API_CN}/song/detail?ids={}`;
         logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
         // 请求netease数据
         axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
