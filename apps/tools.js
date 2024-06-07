@@ -970,7 +970,7 @@ export class tools extends plugin {
             e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         // 处理短号，此时会变成y.music.163.com
         if (message.includes("163cn.tv")) {
-            message = /(http:|https:)\/\/163cn\.tv\/([a-zA-Z1-9]+)/.exec(message)?.[0]
+            message = /(http:|https:)\/\/163cn\.tv\/([a-zA-Z0-9]+)/.exec(message)?.[0]
             logger.info(message)
             message = await axios.head(message).then((resp) => {
                 return resp.request.res.responseUrl;
