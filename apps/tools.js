@@ -1506,7 +1506,6 @@ export class tools extends plugin {
             title = name;
             artist = artists;
         }
-        e.reply(`识别：${ freyrName }，${ title }--${ artist }`);
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 国内服务器解决方案
@@ -1525,6 +1524,7 @@ export class tools extends plugin {
             });
             return true;
         }
+        e.reply(`识别：${ freyrName }，${ title }--${ artist }`);
         // 检查目录是否存在
         const musicPath = currentWorkingDirectory + "/am/" + artist + "/" + album;
         const that = this;
