@@ -6,6 +6,7 @@ import fs from "node:fs";
 import fetch from "node-fetch";
 import { mkdirIfNotExists } from "./file.js";
 import { TEN_THOUSAND } from "../constants/constant.js";
+import { exec } from "child_process";
 
 /**
  * 请求模板
@@ -406,4 +407,23 @@ export function estimateReadingTime(text, wpm = 200) {
         minutes: Math.ceil(readingTimeMinutes),
         words: wordCount
     };
+}
+
+/**
+ * 检查是否存在某个命令
+ * @param command
+ * @returns {Promise<boolean>}
+ */
+export function checkCommandExists(command) {
+    return new Promise((resolve, reject) => {
+        exec(`which ${command}`, (error, stdout, stderr) => {
+            if (error) {
+                // Command not found
+                resolve(false);
+            } else {
+                // Command found
+                resolve(true);
+            }
+        });
+    });
 }

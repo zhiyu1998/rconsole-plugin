@@ -39,7 +39,7 @@ import {
     getIdVideo, retryAxiosReq,
     secondsToTime,
     testProxy,
-    truncateString
+    truncateString, checkCommandExists
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -1011,17 +1011,7 @@ export class tools extends plugin {
             });
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
             if (!isOversea || url == null) {
-                // 临时接口，title经过变换后搜索到的音乐质量提升
-                const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title.replace("-", " ")), {
-                    headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                    },
-                });
-                const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-                url = vipMusicData.data.mp3;
-                const cover = vipMusicData.data.img;
-                e.reply([segment.image(cover), `识别：网易云音乐，${ messageTitle }`]);
+                url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 不是VIP歌曲，直接识别完就下一步
                 e.reply(`识别：网易云音乐，${ title }`);
@@ -1042,6 +1032,22 @@ export class tools extends plugin {
             });
         });
         return true;
+    }
+
+    // 临时接口
+    async musicTempApi(e, title, musicType) {
+        // 临时接口，title经过变换后搜索到的音乐质量提升
+        const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title.replace("-", " ")), {
+            headers: {
+                "User-Agent":
+                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            },
+        });
+        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
+        const url = vipMusicData.data.mp3;
+        const cover = vipMusicData.data.img;
+        e.reply([segment.image(cover), `识别：${musicType}，${ messageTitle }`]);
+        return url;
     }
 
     // 微博解析
@@ -1475,28 +1481,42 @@ export class tools extends plugin {
         const currentWorkingDirectory = path.resolve(this.defaultPath);
         // 如果没有文件夹就创建一个
         await mkdirIfNotExists(currentWorkingDirectory + "/am")
+        // 检测是否存在框架
+        const isExistFreyr = await checkCommandExists("freyr");
+        if (!isExistFreyr) {
+            e.reply(`检测到没有${freyrName}需要的环境，无法解析！${HELP_DOC}`);
+            return;
+        }
         // 执行命令
         const result = await execSync(`freyr -d ${ currentWorkingDirectory + "/am/" } get ${ message }`);
         logger.info(result.toString());
         // 获取信息
-        const { title, album, artist } = await this.parseFreyrLog(result.toString());
-        e.reply(`识别：${ freyrName }，${ title }--${ artist }\n${ album }`);
+        let { title, album, artist } = await this.parseFreyrLog(result.toString());
+        // 兜底策略
+        if (freyrName === "Apple Music" && (title === "N/A" || album === "N/A" || artist === "N/A")) {
+            const data = await axios.get(`https://api.fabdl.com/apple-music/get?url=${message}`, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+                    "Referer": "https://apple-music-downloader.com/",
+                    "Origin": "https://apple-music-downloader.com",
+                    "Accept": "application/json, text/plain, */*",
+                },
+            })
+            const { name, artists } = data.data.result;
+            title = name;
+            artist = artists;
+        }
+        e.reply(`识别：${ freyrName }，${ title }--${ artist }`);
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 国内服务器解决方案
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             // 临时接口
-            const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title), {
-                headers: {
-                    "User-Agent":
-                        "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-                },
-            });
-            const url = vipMusicData.data.mp3;
+            const url = await this.musicTempApi(e, `${title} ${artist}`, freyrName);
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
                 // 发送语音
-                // e.reply(segment.record(path));
+                await e.reply(segment.record(path));
                 // 判断是不是icqq
                 await this.uploadGroupFile(e, path);
                 await checkAndRemoveFile(path);
