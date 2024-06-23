@@ -21,18 +21,14 @@ async function getBodianAudio(id, path) {
         "Cache-Control": "no-cache",
         channel: "appstore",
     };
-    return await axios
-        .get(API, {
-            headers,
-        })
-        .then(async resp => {
-            const respJson = resp.data;
-            const audioUrl = respJson.data.audioUrl;
-            await downloadAudio(audioUrl, path)
-                .catch(err => {
-                    console.error(`下载音乐失败，错误信息为: ${err.message}`);
-                });
-            return respJson;
+    const resp = await axios.get(API, {
+        headers,
+    });
+    const respJson = resp.data;
+    const audioUrl = respJson.data.audioUrl;
+    return await downloadAudio(audioUrl, path)
+        .catch(err => {
+            console.error(`下载音乐失败，错误信息为: ${ err.message }`);
         });
 }
 
