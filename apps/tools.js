@@ -945,7 +945,7 @@ export class tools extends plugin {
         ]);
         if (e.msg.includes("musicId")) {
             const path = `${ this.getCurDownloadPath(e) }`;
-            await getBodianAudio(id, path).then(sendPath => {
+            await getBodianAudio(id, path, `${ name }-${ artist }`).then(sendPath => {
                 // 发送语音
                 e.reply(segment.record(sendPath));
                 // 上传群文件

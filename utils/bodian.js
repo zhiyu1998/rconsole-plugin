@@ -5,9 +5,10 @@ import { downloadAudio, generateRandomStr } from "./common.js";
  * 获取音频
  * @param id
  * @param path
+ * @param songName
  * @returns {Promise<any>}
  */
-async function getBodianAudio(id, path) {
+async function getBodianAudio(id, path, songName = "temp") {
     // 音乐数据
     const API = `https://bd-api.kuwo.cn/api/service/music/audioUrl/${id}?format=mp3&br=320kmp3&songType=&fromList=&weListenUid=&weListenDevId=`;
     const headers = {
@@ -26,7 +27,7 @@ async function getBodianAudio(id, path) {
     });
     const respJson = resp.data;
     const audioUrl = respJson.data.audioUrl;
-    return await downloadAudio(audioUrl, path)
+    return await downloadAudio(audioUrl, path, songName)
         .catch(err => {
             console.error(`下载音乐失败，错误信息为: ${ err.message }`);
         });
