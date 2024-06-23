@@ -945,12 +945,13 @@ export class tools extends plugin {
         ]);
         if (e.msg.includes("musicId")) {
             const path = `${ this.getCurDownloadPath(e) }`;
-            await getBodianAudio(id, path).then(_ => {
-                Bot.acquireGfs(e.group_id).upload(
-                    fs.readFileSync(path + "/temp.mp3"),
-                    "/",
-                    `${ name }-${ album }-${ artist }.mp3`,
-                );
+            await getBodianAudio(id, path).then(async sendPath => {
+                // 发送语音
+                await e.reply(segment.record(sendPath));
+                // 上传群文件
+                await this.uploadGroupFile(e, sendPath);
+                // 删除文件
+                await checkAndRemoveFile(sendPath);
             });
         } else if (e.msg.includes("mvId")) {
             await getBodianMv(id).then(res => {
