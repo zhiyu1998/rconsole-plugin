@@ -275,10 +275,19 @@ export class tools extends plugin {
             const urlTypeCode = item.aweme_type;
             const urlType = douyinTypeMap[urlTypeCode];
             if (urlType === "video") {
-                const resUrl = item.video.play_addr.url_list[0].replace(
-                    "http",
-                    "https",
-                );
+                // logger.info(item.video);
+                // 多位面选择：play_addr、play_addr_265、play_addr_h264
+                // H.265压缩率更高、流量省一半. 相对于H.264
+                let resUrl;
+                // 265 和 264 随机均衡负载
+                if (Math.random() > 0.5) {
+                    const videoAddrList = item.video.play_addr_265.url_list;
+                    resUrl = videoAddrList[videoAddrList.length - 1 || 0];
+                } else {
+                    const videoAddrList = item.video.play_addr_h264.url_list;
+                    resUrl = videoAddrList[videoAddrList.length - 1 || 0];
+                }
+                // logger.info(resUrl);
                 const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                 await this.downloadVideo(resUrl).then(() => {
                     this.sendVideoToUpload(e, path)
