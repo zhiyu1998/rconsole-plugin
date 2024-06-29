@@ -195,6 +195,8 @@ export class tools extends plugin {
         this.biliDuration = this.toolsConfig.biliDuration;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
+        // 加载抖音是否压缩
+        this.douyinCompression = this.toolsConfig.douyinCompression;
         // 翻译引擎
         this.translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
@@ -277,16 +279,20 @@ export class tools extends plugin {
             if (urlType === "video") {
                 // logger.info(item.video);
                 // 多位面选择：play_addr、play_addr_265、play_addr_h264
-                // H.265压缩率更高、流量省一半. 相对于H.264
                 let resUrl;
-                // 265 和 264 随机均衡负载
-                if (Math.random() > 0.5) {
-                    const videoAddrList = item.video.play_addr_265.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1 || 0];
+                // 判断是否使用压缩格式
+                const { play_addr_265, play_addr_h264, play_addr } = item.video;
+                if (this.douyinCompression === 1) {
+                    // H.265压缩率更高、流量省一半. 相对于H.264
+                    // 265 和 264 随机均衡负载
+                    const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
+                    resUrl = videoAddrList[0] || videoAddrList[videoAddrList.length - 1];
                 } else {
-                    const videoAddrList = item.video.play_addr_h264.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1 || 0];
+                    // 原始格式，ps. videoAddrList 这里[0]、[1]是 http，[最后一个]是 https
+                    const videoAddrList = play_addr.url_list;
+                    resUrl = videoAddrList[0] || videoAddrList[videoAddrList.length - 1];
                 }
+
                 // logger.info(resUrl);
                 const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                 await this.downloadVideo(resUrl).then(() => {

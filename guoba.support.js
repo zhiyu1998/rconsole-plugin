@@ -120,6 +120,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.douyinCompression",
+                    label: "抖音是否使用压缩格式（1-压缩，0-不压缩）",
+                    bottomHelpMessage:
+                        "1-压缩，0-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入1或者0（默认1）",
+                    },
+                },
+                {
                     field: "tools.queueConcurrency",
                     label: "允许多用户下载个数",
                     bottomHelpMessage:
