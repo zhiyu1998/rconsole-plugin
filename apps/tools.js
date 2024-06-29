@@ -286,11 +286,11 @@ export class tools extends plugin {
                     // H.265压缩率更高、流量省一半. 相对于H.264
                     // 265 和 264 随机均衡负载
                     const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
-                    resUrl = videoAddrList[0] || videoAddrList[videoAddrList.length - 1];
+                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
                 } else {
-                    // 原始格式，ps. videoAddrList 这里[0]、[1]是 http，[最后一个]是 https
+                    // 原始格式
                     const videoAddrList = play_addr.url_list;
-                    resUrl = videoAddrList[0] || videoAddrList[videoAddrList.length - 1];
+                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
                 }
 
                 // logger.info(resUrl);
