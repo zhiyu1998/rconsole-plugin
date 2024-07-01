@@ -10,7 +10,8 @@ import HttpProxyAgent from "https-proxy-agent";
 import { exec, execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
 import {
-    downloadBFile, filterBiliDescLink,
+    downloadBFile,
+    filterBiliDescLink,
     getBiliAudio,
     getBiliVideoWithSession,
     getDownloadUrl,
@@ -24,7 +25,8 @@ import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../ut
 import {
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     DIVIDING_LINE,
-    douyinTypeMap, HELP_DOC,
+    douyinTypeMap,
+    HELP_DOC,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     SUMMARY_PROMPT,
@@ -33,13 +35,16 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
+    checkCommandExists,
+    downloadAudio,
     downloadImg,
-    downloadAudio, estimateReadingTime,
+    estimateReadingTime,
     formatBiliInfo,
-    getIdVideo, retryAxiosReq,
+    getIdVideo,
+    retryAxiosReq,
     secondsToTime,
     testProxy,
-    truncateString, checkCommandExists
+    truncateString
 } from "../utils/common.js";
 import config from "../model/index.js";
 import Translate from "../utils/trans-strategy.js";
@@ -53,10 +58,13 @@ import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_SUMMARY,
     DY_INFO,
+    DY_TOUTIAO_INFO,
     GENERAL_REQ_LINK,
-    MIYOUSHE_ARTICLE, NETEASE_API_CN,
+    MIYOUSHE_ARTICLE,
+    NETEASE_API_CN,
     NETEASE_SONG_DETAIL,
-    NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API,
+    NETEASE_SONG_DOWNLOAD,
+    NETEASE_TEMP_API,
     TIKTOK_INFO,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
@@ -282,7 +290,18 @@ export class tools extends plugin {
                 let resUrl;
                 // 判断是否使用压缩格式
                 const { play_addr_265, play_addr_h264, play_addr } = item.video;
+                // 使用今日头条 CDN 进一步加快解析速度
                 if (this.douyinCompression === 1) {
+                    const videoAddrURI = Math.random() > 0.5 ? play_addr_265.uri : play_addr_h264.uri;
+                    resUrl = DY_TOUTIAO_INFO.replace("1080p", "720p").replace("{}", videoAddrURI);
+                } else {
+                    // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
+                    const videoAddrURI = play_addr.uri;
+                    resUrl = DY_TOUTIAO_INFO.replace("{}", videoAddrURI);
+                }
+
+                // ⚠️ 暂时废弃代码
+                /*if (this.douyinCompression === 1) {
                     // H.265压缩率更高、流量省一半. 相对于H.264
                     // 265 和 264 随机均衡负载
                     const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
@@ -291,7 +310,7 @@ export class tools extends plugin {
                     // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
                     const videoAddrList = play_addr.url_list;
                     resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-                }
+                }*/
 
                 // logger.info(resUrl);
                 const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
