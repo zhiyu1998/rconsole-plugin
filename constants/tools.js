@@ -117,11 +117,17 @@ export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app/so
 
 /**
  * 获取网易云歌曲详情
+ * 致谢 NeteaseCloudMusicApi：https://gitlab.com/Binaryify/neteasecloudmusicapi
  * @type {string}
  */
 export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song/detail?ids={}"
 
-export const NETEASE_API_CN = 'https://mu-api.yuk0.com';
+/**
+ * 国内网易云服务，如果有大佬可以有闲置的服务器可以到群里赞助
+ * 致谢 NeteaseCloudMusicApi：https://gitlab.com/Binaryify/neteasecloudmusicapi
+ * @type {string}
+ */
+export const NETEASE_API_CN = 'https://neteasecloudmusicapi.js.org';
 
 /**
  * 下载VIP的临时接口 (感谢桑帛云API，如果站长能看到)
