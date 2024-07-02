@@ -289,7 +289,7 @@ export class tools extends plugin {
                 // 多位面选择：play_addr、play_addr_265、play_addr_h264
                 let resUrl;
                 // 判断是否使用压缩格式
-                const { play_addr_265, play_addr_h264, play_addr } = item.video;
+                const { play_addr } = item.video;
                 // 使用今日头条 CDN 进一步加快解析速度
                 const videoAddrURI = play_addr.uri;
                 if (this.douyinCompression === 1) {
