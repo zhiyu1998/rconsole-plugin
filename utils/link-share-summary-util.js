@@ -7,6 +7,7 @@ export function contentEstimator(link) {
     const wxReg = /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/;
     const arxivReg = /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/;
     const sspaiReg = /(?:https?:\/\/)?sspai.com\/[a-zA-Z\d._?%&+\-=\/#]*/;
+    const biliReadReg = /(?:https?:\/\/)?www\.bilibili\.com\/read\/[A-Za-z\d._?%&+\-=\/#]*/;
     if (wxReg.test(link)) {
         return {
             name: '微信文章',
@@ -21,6 +22,11 @@ export function contentEstimator(link) {
         return {
             name: '少数派',
             summaryLink: sspaiReg.exec(link)?.[0]
+        }
+    } else if (biliReadReg.test(link)) {
+        return {
+            name: '哔哩哔哩专栏',
+            summaryLink: biliReadReg.exec(link)?.[0]
         }
     } else {
         logger.error("[R插件][总结模块] 内容评估出错...");

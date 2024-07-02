@@ -443,6 +443,11 @@ export class tools extends plugin {
         if (matched) {
             url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
         }
+        // 处理专栏
+        if (e.msg !== undefined && e.msg.includes("read\/cv")) {
+            this.linkShareSummary(e);
+            return true;
+        }
         // 处理下载逻辑
         if (e.msg !== undefined && e.msg.startsWith("下载")) {
             // 检测是否扫码了，如果没有扫码数据终止下载
