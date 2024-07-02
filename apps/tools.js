@@ -291,12 +291,11 @@ export class tools extends plugin {
                 // 判断是否使用压缩格式
                 const { play_addr_265, play_addr_h264, play_addr } = item.video;
                 // 使用今日头条 CDN 进一步加快解析速度
+                const videoAddrURI = play_addr.uri;
                 if (this.douyinCompression === 1) {
-                    const videoAddrURI = Math.random() > 0.5 ? play_addr_265.uri : play_addr_h264.uri;
                     resUrl = DY_TOUTIAO_INFO.replace("1080p", "720p").replace("{}", videoAddrURI);
                 } else {
                     // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
-                    const videoAddrURI = play_addr.uri;
                     resUrl = DY_TOUTIAO_INFO.replace("{}", videoAddrURI);
                 }
 
