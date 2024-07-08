@@ -33,10 +33,10 @@
       title: "翻中/英/日 xxx"
       desc: R插件翻译引擎
     - icon: tiktok
-      title: "xxxv.douyin.com"
+      title: "douyin"
       desc: 抖音分享实时下载
     - icon: bilibili
-      title: "bilibili/b23"
+      title: "哔哩哔哩"
       desc: 哔哩哔哩分享实时下载
     - icon: bqrcode
       title: "#rbq/#RBQ"
@@ -45,7 +45,7 @@
       title: "Apple Music"
       desc: Apple Music音乐分享实时下载
     - icon: youtube
-      title: "youtube.com"
+      title: "油管"
       desc: 油管学习版分享实时下载
     - icon: 推特
       title: "小蓝鸟"
@@ -68,9 +68,6 @@
     - icon: weibo
       title: "微博"
       desc: 微博文章分享实时下载
-    - icon: pixv
-      title: "pixivision"
-      desc: pixivision分享实时下载
     - icon: zuiyou
       title: "最右（测试阶段）"
       desc: 最右分享实时下载
