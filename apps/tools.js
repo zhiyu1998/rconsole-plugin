@@ -342,7 +342,7 @@ export class tools extends plugin {
             return false;
         }
         // 处理链接
-        let url = await processTikTokUrl(e.msg.trim(), isOversea);
+        let url = await processTikTokUrl(e.msg.trim(), isOversea, this.myProxy);
         // 去除多余参数
         const parsedUrl = new URL(url);
         parsedUrl.search = '';
