@@ -80,12 +80,6 @@ export const DY_INFO = "https://www.douyin.com/aweme/v1/web/aweme/detail/?device
 export const DY_TOUTIAO_INFO = "https://aweme.snssdk.com/aweme/v1/play/?video_id={}&ratio=1080p&line=0"
 
 /**
- * Tiktok API
- * @type {string}
- */
-export const TIKTOK_INFO = "https://api22-normal-c-alisg.tiktokv.com/aweme/v1/feed/"
-
-/**
  * X API
  * @type {string}
  */
