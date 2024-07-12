@@ -1,4 +1,4 @@
-import HttpProxyAgent from "https-proxy-agent";
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 /**
  * Tiktok专属解析链接的Fetch
@@ -7,7 +7,6 @@ import HttpProxyAgent from "https-proxy-agent";
  * @param proxy 梯子
  */
 const fetchTiktokUrl = async (url, isOversea, proxy) => {
-    const proxyAgent = isOversea ? '' : new HttpProxyAgent(proxy);
     // 处理特殊情况 & 非特殊情况的header
     const headers = url.includes("vm.tiktok") || url.includes("tiktok.com/t")
         ? { "User-Agent": "facebookexternalhit/1.1" }
@@ -18,7 +17,7 @@ const fetchTiktokUrl = async (url, isOversea, proxy) => {
         redirect: "follow",
         follow: 10,
         timeout: 10000,
-        agent: proxyAgent,
+        agent: isOversea ? undefined : new HttpsProxyAgent(proxy),
     }).then(resp => resp.url);
 };
 
