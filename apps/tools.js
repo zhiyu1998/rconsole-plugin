@@ -343,52 +343,40 @@ export class tools extends plugin {
         }
         // 处理链接
         let url = await processTikTokUrl(e.msg.trim(), isOversea);
-        // 处理ID
-        let tiktokVideoId = await getIdVideo(url);
-        tiktokVideoId = tiktokVideoId.replace(/\//g, "");
-
-        const config = {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36",
-            },
-            // redirect: "follow",
-            follow: 10,
-            timeout: 10000,
-        }
-        // 如果不是海外，则使用代理
-        if (!isOversea) {
-            config.httpsAgent = tunnel.httpsOverHttp({
-                proxy: new HttpProxyAgent(this.myProxy),
-            });
-        }
-
-        const params = new URLSearchParams({
-            "iid": "7318518857994389254",
-            "device_id": "7318517321748022790",
-            "channel": "googleplay",
-            "app_name": "musical_ly",
-            "version_code": "300904",
-            "device_platform": "android",
-            "device_type": "ASUS_Z01QD",
-            "os_version": "9",
-            "aweme_id": tiktokVideoId
-        })
-        // console.log(`${TIKTOK_INFO}?${params.toString()}`)
-        await fetch(`${ TIKTOK_INFO }?${ params.toString() }`, config)
-            .then(async resp => {
-                const respJson = await resp.json();
-                const data = respJson.aweme_list[0];
-                e.reply(`识别：tiktok, ${ data.desc }`);
-                this.downloadVideo(data.video.play_addr.url_list[0], !isOversea).then(video => {
-                    e.reply(
-                        segment.video(
-                            `${ this.getCurDownloadPath(e) }/temp.mp4`,
-                        ),
-                    );
-                });
-            });
+        // 去除多余参数
+        const parsedUrl = new URL(url);
+        parsedUrl.search = '';
+        const cleanedTiktokUrl = parsedUrl.toString();
+        // 下载逻辑
+        const path = this.getCurDownloadPath(e);
+        const title = execSync(`yt-dlp --get-title ${ cleanedTiktokUrl } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
+        e.reply(`识别：TikTok，视频下载中请耐心等待 \n${ title }`);
+        await this.tiktokHelper(path, cleanedTiktokUrl, isOversea);
+        await this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         return true;
+    }
+
+
+    /**
+     * yt-dlp for tiktok 工具
+     * @returns {Promise<void>}
+     * @param path      下载路径
+     * @param url       下载链接
+     * @param isOversea 是否是海外用户
+     */
+    async tiktokHelper(path, url, isOversea) {
+        return new Promise((resolve, reject) => {
+            const command = `yt-dlp ${ isOversea ? "" : `--proxy ${ this.myProxy }` } -P ${ path } -o "temp.%(ext)s" ${ url }`;
+            exec(command, (error, stdout) => {
+                if (error) {
+                    console.error(`Error executing command: ${ error }`);
+                    reject(error);
+                } else {
+                    console.log(`Command output: ${ stdout }`);
+                    resolve(stdout);
+                }
+            });
+        });
     }
 
     async biliScan(e) {

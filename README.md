@@ -79,6 +79,29 @@ chmod a+rx ~/.local/bin/yt-dlp
 sudo pacman -Syu yt-dlp
 ```
 
+`Tiktok解析`需要将`yt-dlp`升级到`最新版本`，如果不会可以按照下面的教程（Linux），Windows换个文件应该就可以：
+```shell
+# 1. 去官方下载最新版本：https://github.com/yt-dlp/yt-dlp/releases
+# 2. 把yt-dlp放在Linux某个位置，比如/home/YtDlpHome/yt-dlp
+# 3. 删除之前的yt-dlp，删除之前可以看看是不是最新版本
+
+# 查看最新版本
+yt-dlp --version
+# 如果你是 apt 安装需要卸载
+apt remove yt-dlp
+
+# 4. 将/home/YtDlpHome/yt-dlp添加到环境变量（下面二选一）
+vim ~/.bashrc  # 如果你使用 bash
+vim ~/.zshrc   # 如果你使用 zsh
+
+# 5. 添加到最后一行
+export PATH="/home/YtDlpHome:$PATH"
+
+# 6. 刷新环境变量即可
+source ~/.bashrc  # 如果你使用 bash
+source ~/.zshrc   # 如果你使用 zsh
+```
+
 `AM解析`需要使用两个依赖`freyr`、`atomicparsley`，现在只以Debian系统为例：
 
 ```shell
