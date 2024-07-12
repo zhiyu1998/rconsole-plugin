@@ -189,9 +189,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 1. 下载python
 
-> 下载链接：  
-> [官网](https://www.python.org/)  
-> [微软商店](https://apps.microsoft.com/detail/9pjpw5ldxlz5?hl=zh-cn&gl=CN)
+> 下载链接：[官网](https://www.python.org/) | [微软商店](https://apps.microsoft.com/detail/9pjpw5ldxlz5?hl=zh-cn&gl=CN)
 
 2. 下载：https://gitee.com/OvertimeBunny/tiktok-ck-douying
 
