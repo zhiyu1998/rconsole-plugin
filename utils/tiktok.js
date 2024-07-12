@@ -1,3 +1,5 @@
+import HttpProxyAgent from "https-proxy-agent";
+
 /**
  * Tiktok专属解析链接的Fetch
  * @param url 地址
