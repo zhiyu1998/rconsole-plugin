@@ -195,7 +195,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 2. 下载：https://gitee.com/OvertimeBunny/tiktok-ck-douying
 
-3. **<span style="color: orange;">扫码后自动获取ck</span>**
+3. 扫码后自动获取ck
 
 ### ✖️ 小蓝鸟问题
 **2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
