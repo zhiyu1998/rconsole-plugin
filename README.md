@@ -151,9 +151,9 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ### 🎵 douyin问题
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
 
-👍 **推荐方案** ：via 视频教程（由群友@麦满分 录制）：https://thumbsnap.com/rKxUGKqp
+👍 **推荐方案** ：via 视频教程（由群友 `@麦满分` 录制）：https://thumbsnap.com/rKxUGKqp
 
-👍 **推荐方案**（感谢群友 @湘潭 提供的便捷方案）：
+👍 **推荐方案**（感谢群友 `@湘潭` 提供的便捷方案）：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，打开`网络/network`
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
@@ -185,11 +185,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 <img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
-**备用方案2**（由群友`@麦满分`提供视频）: 
-
-> https://thumbsnap.com/rKxUGKqp
-
-**备用方案3** （由`@重装小兔`提供）
+**备用方案2** （由`@重装小兔`提供）
 
 1. 下载python
 
