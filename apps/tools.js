@@ -349,6 +349,7 @@ export class tools extends plugin {
         const cleanedTiktokUrl = parsedUrl.toString();
         // 下载逻辑
         const path = this.getCurDownloadPath(e);
+        await checkAndRemoveFile(path + "/temp.mp4")
         const title = execSync(`yt-dlp --get-title ${ cleanedTiktokUrl } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
         e.reply(`识别：TikTok，视频下载中请耐心等待 \n${ title }`);
         await this.tiktokHelper(path, cleanedTiktokUrl, isOversea);
