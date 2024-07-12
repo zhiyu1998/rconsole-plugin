@@ -151,7 +151,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ### 🎵 douyin问题
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
 
-> 👍 **推荐方案** ：via 视频教程（由群友@麦满分 录制）：https://thumbsnap.com/rKxUGKqp
+👍 **推荐方案** ：via 视频教程（由群友@麦满分 录制）：https://thumbsnap.com/rKxUGKqp
 
 👍 **推荐方案**（感谢群友 @湘潭 提供的便捷方案）：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
@@ -159,8 +159,6 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
 
 <img src="./img/dy_ck.webp" alt="小程序解析" width="50%" height="50%" />
-
->**备用方案**
 
 **备用方案1** ：
 
@@ -187,23 +185,21 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 <img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
-**备用方案2**（由群友麦满分提供）:
+**备用方案2**（由群友`@麦满分`提供视频）: 
 
-在安卓手机下载一个via，在via那选择电脑网页版抖音，然后登录，登陆完点左上角小标有个cookie，复制
+> https://thumbsnap.com/rKxUGKqp
 
-**备用方案3** （由重装小兔提供）
+**备用方案3** （由`@重装小兔`提供）
 
-**下载python**
+1. 下载python
 
-**下载链接：**
+> 下载链接：  
+> [官网](https://www.python.org/)  
+> [微软商店](https://apps.microsoft.com/detail/9pjpw5ldxlz5?hl=zh-cn&gl=CN)
 
-[官网](https://www.python.org/)
+2. 下载：https://gitee.com/OvertimeBunny/tiktok-ck-douying
 
-[微软商店](https://apps.microsoft.com/detail/9pjpw5ldxlz5?hl=zh-cn&gl=CN)
-
-然后根据项目：https://gitee.com/OvertimeBunny/tiktok-ck-douying
-
-**<span style="color: orange;">扫码后自动获取ck</span>**
+3. **<span style="color: orange;">扫码后自动获取ck</span>**
 
 ### ✖️ 小蓝鸟问题
 **2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
@@ -291,8 +287,8 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 ## 📝 计划功能
 - [x] YouTube解析（这个可能要🕊一久）
 - [ ] Instagram解析修复
-    - [ ] 单张图片解析
-    - [ ] 视频解析
+  - [ ] 单张图片解析
+  - [ ] 视频解析
 - [x] 哔哩哔哩总结
 - [x] xhs解析去水印
 - [x] kuai_shou解析
