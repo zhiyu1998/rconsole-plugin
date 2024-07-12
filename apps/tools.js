@@ -6,7 +6,7 @@ import { Buffer } from 'node:buffer';
 import axios from "axios";
 import _ from "lodash";
 import tunnel from "tunnel";
-import HttpProxyAgent from "https-proxy-agent";
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { exec, execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
 import {
@@ -676,7 +676,7 @@ export class tools extends plugin {
                 "authorization": `Bearer ${ Buffer.from(TWITTER_BEARER_TOKEN, "base64").toString() }`
             },
             ...params,
-            agent: !isOversea ? '' : new HttpProxyAgent(this.myProxy),
+            agent: !isOversea ? '' : new HttpsProxyAgent(this.myProxy),
         }).then(async resp => {
             logger.info(resp)
             e.reply(`识别：小蓝鸟学习版，${ resp.data.text }`);
@@ -889,7 +889,7 @@ export class tools extends plugin {
             return new Promise((resolve, reject) => {
                 fetch(url, {
                     timeout: 10000,
-                    agent: isOversea ? '' : new HttpProxyAgent(this.myProxy),
+                    agent: isOversea ? '' : new HttpsProxyAgent(this.myProxy),
                     redirect: "follow",
                     follow: 10,
                 })
