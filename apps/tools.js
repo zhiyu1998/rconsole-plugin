@@ -122,7 +122,7 @@ export class tools extends plugin {
                     permission: 'master',
                 },
                 {
-                    reg: "(bilibili.com|b23.tv|t.bilibili.com|^BV[1-9a-zA-Z]{10}$)",
+                    reg: "(bilibili.com|b23.tv|t.bilibili.com|BV[1-9a-zA-Z]{10})",
                     fnc: "bili",
                 },
                 {
