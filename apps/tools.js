@@ -770,7 +770,7 @@ export class tools extends plugin {
                     e.reply(segment.image(url));
                 } else {
                     // 非海外使用🪜下载
-                    this.downloadImg(url, this.getCurDownloadPath(e), "", !isOversea).then(path => {
+                    downloadImg(url, this.getCurDownloadPath(e), "", !isOversea).then(path => {
                         e.reply(segment.image(fs.readFileSync(path)));
                     });
                 }
