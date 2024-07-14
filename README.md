@@ -153,6 +153,10 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 👍 **推荐方案** ：via 视频教程（由群友 `@麦满分` 录制）：https://thumbsnap.com/rKxUGKqp
 
+<video id="video" controls="" preload="none" poster="封面">
+      <source id="mp4" src="https://cdn2.thumbsnap.com/i/114/75/rKxUGKqp.mp4" type="video/mp4">
+</videos>
+
 👍 **推荐方案**（感谢群友 `@湘潭` 提供的便捷方案）：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
 2. F12进入控制台，打开`网络/network`
