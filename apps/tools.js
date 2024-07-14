@@ -572,10 +572,11 @@ export class tools extends plugin {
         const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
         getBiliAudio(videoId, "").then(async audioUrl => {
             const path = this.getCurDownloadPath(e);
+            const biliMusicPath = await m4sToMp3(audioUrl, path)
             // 发送语音
-            e.reply(segment.record(await m4sToMp3(audioUrl, path)));
+            e.reply(segment.record(biliMusicPath));
             // 上传群文件
-            await this.uploadGroupFile(e, path);
+            await this.uploadGroupFile(e, biliMusicPath);
         })
         return true
     }
