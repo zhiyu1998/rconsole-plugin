@@ -153,7 +153,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 👍 **推荐方案** ：via 视频教程（由群友 `@麦满分` 录制）：https://thumbsnap.com/rKxUGKqp
 
-<iframe width="560" height="315" src="https://cdn2.thumbsnap.com/i/114/75/rKxUGKqp.mp4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+![](https://51shazhu.com/autoupload/20240714/Ew6x/1024X640/rKxUGKqp.gif?type=ha)
 
 👍 **推荐方案**（感谢群友 `@湘潭` 提供的便捷方案）：
 1. 打开`https://www.douyin.com/` 扫码登入自己的账号
