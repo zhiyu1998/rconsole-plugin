@@ -1,3 +1,5 @@
+import { contentEstimator } from "../utils/link-share-summary-util.js";
+
 /**
  * 用于百度翻译的常量控制
  *
@@ -85,12 +87,18 @@ export const TWITTER_BEARER_TOKEN = "";
  */
 export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;
 
-export const OCR_PROMPT = `
-▲ 首先，对将要用作替代文本的图像进行简短描述。不要在描述中描述或提取文本。
-▲ 图片中提取的文本，在适当的地方使用换行符。如果文本被某物遮挡，请使其不受阻隔，以便阅读。如果图像中没有文本，只需回复描述。不要包含任何其他信息。
-示例：▲ 文本编辑器中的代码行。▲ const x = 5; const y = 10; const z = x + y; console.log(z);
-`
-
 export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记，如果是ArXiv论文就简要介绍下内容和创新点即可`
 
 export const HELP_DOC = "\n文档：https://gitee.com/kyrzy0416/rconsole-plugin"
+
+/**
+ * 总结内容评估器的正则
+ * @type {{reg: RegExp, name: string}[]}
+ */
+export const SUMMARY_CONTENT_ESTIMATOR_PATTERNS = [
+    { reg: /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/, name: '微信文章' },
+    { reg: /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/, name: 'ArXiv论文' },
+    { reg: /(?:https?:\/\/)?sspai.com\/[a-zA-Z\d._?%&+\-=\/#]*/, name: '少数派' },
+    { reg: /(?:https?:\/\/)?www\.bilibili\.com\/read\/[A-Za-z\d._?%&+\-=\/#]*/, name: '哔哩哔哩专栏' },
+    { reg: /(?:https?:\/\/)?(www\.)chinadaily.com.cn\/a\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'ChinaDaily' }
+];

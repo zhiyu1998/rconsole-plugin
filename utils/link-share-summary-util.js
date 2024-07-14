@@ -1,18 +1,12 @@
+import { SUMMARY_CONTENT_ESTIMATOR_PATTERNS } from "../constants/constant.js";
+
 /**
  * 内容评估器
- * @link {weixin}
+ * @link {linkShareSummary}
  * @param link 链接
  */
 export function contentEstimator(link) {
-    const patterns = [
-        { reg: /(?:https?:\/\/)?mp\.weixin\.qq\.com\/[A-Za-z\d._?%&+\-=\/#]*/, name: '微信文章' },
-        { reg: /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/, name: 'ArXiv论文' },
-        { reg: /(?:https?:\/\/)?sspai.com\/[a-zA-Z\d._?%&+\-=\/#]*/, name: '少数派' },
-        { reg: /(?:https?:\/\/)?www\.bilibili\.com\/read\/[A-Za-z\d._?%&+\-=\/#]*/, name: '哔哩哔哩专栏' },
-        { reg: /(?:https?:\/\/)?(www\.)chinadaily.com.cn\/a\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'ChinaDaily' }
-    ];
-
-    for (const pattern of patterns) {
+    for (const pattern of SUMMARY_CONTENT_ESTIMATOR_PATTERNS) {
         if (pattern.reg.test(link)) {
             return {
                 name: pattern.name,
