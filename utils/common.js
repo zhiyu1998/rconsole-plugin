@@ -234,7 +234,7 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false, head
             });
         });
     } catch (err) {
-        logger.error("图片下载失败");
+        logger.error(`图片下载失败, 原因：${err}`);
     }
 }
 
