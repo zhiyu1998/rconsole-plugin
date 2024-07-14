@@ -1,5 +1,3 @@
-import { contentEstimator } from "../utils/link-share-summary-util.js";
-
 /**
  * 用于百度翻译的常量控制
  *
@@ -36,8 +34,16 @@ export const douyinTypeMap = {
     150: "image",
 };
 
+/**
+ * 固定值 1w，目前用于哔哩哔哩的数值渲染
+ * @type {number}
+ */
 export const TEN_THOUSAND = 10000;
 
+/**
+ * #cat 指令的限制
+ * @type {number}
+ */
 export const CAT_LIMIT = 10;
 
 /**
@@ -87,8 +93,16 @@ export const TWITTER_BEARER_TOKEN = "";
  */
 export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;
 
+/**
+ * 总结的prompt
+ * @type {string}
+ */
 export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记，如果是ArXiv论文就简要介绍下内容和创新点即可`
 
+/**
+ * 帮助文档提示
+ * @type {string}
+ */
 export const HELP_DOC = "\n文档：https://gitee.com/kyrzy0416/rconsole-plugin"
 
 /**
