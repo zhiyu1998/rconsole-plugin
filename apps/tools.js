@@ -776,7 +776,7 @@ export class tools extends plugin {
                     downloadImg(url, localPath, "", isOversea, {}, {
                         proxyAddr: proxy,
                         proxyPort: port
-                    }).then(path => {
+                    }).then(_ => {
                         e.reply(segment.image(fs.readFileSync(localPath + "/" + url.split("/").pop())));
                     });
                 }
