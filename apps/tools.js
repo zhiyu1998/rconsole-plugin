@@ -182,7 +182,7 @@ export class tools extends plugin {
                     fnc: "freyr"
                 },
                 {
-                    reg: "(mp.weixin|arxiv.org|sspai.com)",
+                    reg: "(mp.weixin|arxiv.org|sspai.com|chinadaily.com.cn)",
                     fnc: "linkShareSummary"
                 }
             ],
