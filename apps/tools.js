@@ -770,7 +770,12 @@ export class tools extends plugin {
                     e.reply(segment.image(url));
                 } else {
                     // 非海外使用🪜下载
-                    downloadImg(url, this.getCurDownloadPath(e), "", !isOversea).then(path => {
+                    const proxy = this.myProxy;
+                    const port = this.proxyPort;
+                    downloadImg(url, this.getCurDownloadPath(e), "", !isOversea, {}, {
+                        proxyAddr: proxy,
+                        proxyPort: port
+                    }).then(path => {
                         e.reply(segment.image(fs.readFileSync(path)));
                     });
                 }

@@ -185,14 +185,15 @@ export async function downloadAudio(mp3Url, path, title = "temp", redirect = "ma
 
 /**
  * 下载一张网络图片(自动以url的最后一个为名字)
- * @param img
- * @param dir
- * @param fileName
- * @param isProxy
- * @param headersExt
+ * @param {string} img
+ * @param {string} dir
+ * @param {string} fileName
+ * @param {boolean} isProxy
+ * @param {Object} headersExt
+ * @param {Object} proxyInfo 参数：proxyAddr=地址，proxyPort=端口
  * @returns {Promise<unknown>}
  */
-export async function downloadImg(img, dir, fileName = "", isProxy = false, headersExt = {}) {
+export async function downloadImg(img, dir, fileName = "", isProxy = false, headersExt = {}, proxyInfo = {}) {
     if (fileName === "") {
         fileName = img.split("/").pop();
     }
@@ -210,10 +211,10 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false, head
 
     if (isProxy) {
         axiosConfig.httpAgent = tunnel.httpOverHttp({
-            proxy: { host: this.proxyAddr, port: this.proxyPort },
+            proxy: { host: proxyInfo.proxyAddr, port: proxyInfo.proxyPort },
         });
         axiosConfig.httpsAgent = tunnel.httpOverHttp({
-            proxy: { host: this.proxyAddr, port: this.proxyPort },
+            proxy: { host: proxyInfo.proxyAddr, port: proxyInfo.proxyPort },
         });
     }
     try {
