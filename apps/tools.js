@@ -736,6 +736,12 @@ export class tools extends plugin {
         // 配置参数及解析
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
+        // 检测
+        const isOversea = await this.isOverseasServer();
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
+            e.reply("检测到没有梯子，无法解析小蓝鸟");
+            return false;
+        }
         // 提取视频
         const videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
         e.reply("识别：小蓝鸟学习版");
@@ -752,7 +758,6 @@ export class tools extends plugin {
                 'Sec-Fetch-User': '?1',
                 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-
             },
             timeout: 10000 // 设置超时时间
         }
@@ -760,9 +765,17 @@ export class tools extends plugin {
         axios.get(videoUrl, config).then(resp => {
             const url = resp.data.data?.url;
             if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
-                e.reply(segment.image(url));
+                if (isOversea) {
+                    // 海外直接下载
+                    e.reply(segment.image(url));
+                } else {
+                    // 非海外使用🪜下载
+                    this.downloadImg(url, this.getCurDownloadPath(e), "", !isOversea).then(path => {
+                        e.reply(segment.image(fs.readFileSync(path)));
+                    });
+                }
             } else {
-                this.downloadVideo(url).then(path => {
+                this.downloadVideo(url, !isOversea).then(path => {
                     e.reply(segment.video(path + "/temp.mp4"));
                 });
             }
