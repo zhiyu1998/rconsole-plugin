@@ -446,7 +446,8 @@ export class tools extends plugin {
             return true;
         }
         // 只提取音乐处理
-        if (e.msg !== undefined && e.msg.includes("bili音乐")) {
+        if (e.msg !== undefined && e.msg.includes("音乐")) {
+            e.reply("识别：哔哩哔哩音乐，正在提取请稍候...")
             return await this.biliMusic(e, url);
         }
         // 动态处理
