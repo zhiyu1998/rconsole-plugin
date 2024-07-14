@@ -780,6 +780,7 @@ export class tools extends plugin {
                 });
             }
         });
+        return true;
     }
 
     // acfun解析
