@@ -772,7 +772,8 @@ export class tools extends plugin {
                     // 非海外使用🪜下载
                     const proxy = this.myProxy;
                     const port = this.proxyPort;
-                    downloadImg(url, this.getCurDownloadPath(e), "", !isOversea, {}, {
+                    const path = this.getCurDownloadPath(e);
+                    downloadImg(url, path, "", !isOversea, {}, {
                         proxyAddr: proxy,
                         proxyPort: port
                     }).then(path => {
