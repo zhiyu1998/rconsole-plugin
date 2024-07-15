@@ -331,11 +331,7 @@ export class tools extends plugin {
         }
         // 如果开启评论的就调用
         if (this.douyinComments) {
-            const comments = (await this.douyinComment(douId)).unshift({
-                message: "前20条热门评论",
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            });
+            const comments = await this.douyinComment(douId);
             e.reply(await Bot.makeForwardMsg(comments));
         }
         return true;
