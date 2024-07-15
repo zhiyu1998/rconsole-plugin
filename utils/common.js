@@ -7,6 +7,7 @@ import fetch from "node-fetch";
 import { mkdirIfNotExists } from "./file.js";
 import { TEN_THOUSAND } from "../constants/constant.js";
 import { exec } from "child_process";
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 /**
  * 请求模板
@@ -208,13 +209,11 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false, head
         },
         responseType: "stream",
     };
-
+    // 添加🪜
     if (isProxy) {
-        axiosConfig.httpAgent = tunnel.httpOverHttp({
-            proxy: { host: proxyInfo.proxyAddr, port: proxyInfo.proxyPort },
-        });
-        axiosConfig.httpsAgent = tunnel.httpOverHttp({
-            proxy: { host: proxyInfo.proxyAddr, port: proxyInfo.proxyPort },
+        axiosConfig.httpsAgent = new HttpsProxyAgent({
+            host: proxyInfo.proxyAddr,
+            port: proxyInfo.proxyPort
         });
     }
     try {
