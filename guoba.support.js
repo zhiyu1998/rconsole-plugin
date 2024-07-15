@@ -14,12 +14,14 @@ export function supportGuoba() {
             isV3: true,
             isV2: false,
             description: "专门为朋友们写的Yunzai-Bot插件，专注图片分享和生活的插件！",
+            // 是否显示在左侧菜单，可选值：auto、true、false
+            // 当为 auto 时，如果配置项大于等于 3 个，则显示在左侧菜单
+            showInMenu: 'auto',
             // 显示图标，此为个性化配置
             // 图标可在 https://icon-sets.iconify.design 这里进行搜索
-            // icon: "mdi:share-reviews-sharp",
+            icon: 'mdi:stove',
             // 图标颜色，例：#FF0000 或 rgb(255, 0, 0)
-            // iconColor: "#3498db",
-            // 如果想要显示成图片，也可以填写图标路径（绝对路径）
+            iconColor: '#d19f56',
             iconPath: path.join(_path, "resources/img/rank/top.png"),
         },
         configInfo: {
@@ -121,14 +123,15 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.douyinCompression",
-                    label: "抖音是否使用压缩格式（1-压缩，0-不压缩）",
-                    bottomHelpMessage:
-                        "1-压缩，0-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送",
-                    component: "Input",
+                    label: "抖音是否使用压缩格式",
+                    component: "Switch",
                     required: false,
-                    componentProps: {
-                        placeholder: "请输入1或者0（默认1）",
-                    },
+                },
+                {
+                    field: "tools.douyinComments",
+                    label: "抖音是否开启评论",
+                    component: "Switch",
+                    required: false,
                 },
                 {
                     field: "tools.queueConcurrency",
@@ -154,7 +157,7 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.lagrangeForwardWebSocket",
-                    label: "拉格朗日正向WebSocket连接地址",
+                    label: "Lagrange.Core-WebSocket连接地址",
                     bottomHelpMessage:
                         "格式：ws://地址:端口/，拉格朗日正向连接地址，用于适配拉格朗日上传群文件，解决部分用户无法查看视频问题",
                     component: "Input",

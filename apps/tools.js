@@ -56,6 +56,7 @@ import PQueue from 'p-queue';
 import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_SUMMARY,
+    DY_COMMENT,
     DY_INFO,
     DY_TOUTIAO_INFO,
     GENERAL_REQ_LINK,
@@ -203,6 +204,8 @@ export class tools extends plugin {
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
         this.douyinCompression = this.toolsConfig.douyinCompression;
+        // 加载抖音是否开启评论
+        this.douyinComments = this.toolsConfig.douyinComments;
         // 翻译引擎
         this.translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
@@ -244,90 +247,120 @@ export class tools extends plugin {
         const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const douUrl = urlRex.exec(e.msg.trim())[0];
 
-        await this.douyinRequest(douUrl).then(async res => {
-            // 当前版本需要填入cookie
-            if (_.isEmpty(this.douyinCookie)) {
-                e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
-                return;
+        const res = await this.douyinRequest(douUrl);
+        // 当前版本需要填入cookie
+        if (_.isEmpty(this.douyinCookie)) {
+            e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
+            return;
+        }
+        const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
+        // 以下是更新了很多次的抖音API历史，且用且珍惜
+        // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
+        // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
+        // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
+        const headers = {
+            "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+            "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+            Referer: "https://www.douyin.com/",
+            cookie: this.douyinCookie,
+        };
+        const dyApi = DY_INFO.replace("{}", douId);
+        // a-bogus参数
+        const abParam = aBogus.generate_a_bogus(
+            new URLSearchParams(new URL(dyApi).search).toString(),
+            headers["User-Agent"],
+        );
+        // const param = resp.data.result[0].paramsencode;
+        const resDyApi = `${ dyApi }&a_bogus=${ abParam }`;
+        headers['Referer'] = `https://www.douyin.com/video/${ douId }`
+        // 定义一个dy请求
+        const dyResponse = () => axios.get(resDyApi, {
+            headers,
+        });
+        // 如果失败进行3次重试
+        const data = await retryAxiosReq(dyResponse)
+        // logger.info(data)
+        const item = await data.aweme_detail;
+        e.reply(`识别：抖音, ${ item.desc }`);
+        const urlTypeCode = item.aweme_type;
+        const urlType = douyinTypeMap[urlTypeCode];
+        if (urlType === "video") {
+            // logger.info(item.video);
+            // 多位面选择：play_addr、play_addr_265、play_addr_h264
+            const { play_addr: { uri: videoAddrURI } } = item.video;
+            const resolution = this.douyinCompression ? "720p" : "1080p";
+            // 使用今日头条 CDN 进一步加快解析速度
+            const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
+
+            // ⚠️ 暂时废弃代码
+            /*if (this.douyinCompression) {
+                // H.265压缩率更高、流量省一半. 相对于H.264
+                // 265 和 264 随机均衡负载
+                const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
+                resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
+            } else {
+                // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
+                const videoAddrList = play_addr.url_list;
+                resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
+            }*/
+
+            // logger.info(resUrl);
+            const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
+            await this.downloadVideo(resUrl).then(() => {
+                this.sendVideoToUpload(e, path)
+            });
+        } else if (urlType === "image") {
+            // 无水印图片列表
+            let no_watermark_image_list = [];
+            // 有水印图片列表
+            // let watermark_image_list = [];
+            for (let i of item.images) {
+                // 无水印图片列表
+                no_watermark_image_list.push({
+                    message: segment.image(i.url_list[0]),
+                    nickname: this.e.sender.card || this.e.user_id,
+                    user_id: this.e.user_id,
+                });
+                // 有水印图片列表
+                // watermark_image_list.push(i.download_url_list[0]);
+                // e.reply(segment.image(i.url_list[0]));
             }
-            const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
-            // 以下是更新了很多次的抖音API历史，且用且珍惜
-            // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
-            // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
-            // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
-            const headers = {
-                "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+            // console.log(no_watermark_image_list)
+            await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
+        }
+        // 如果开启评论的就调用
+        if (this.douyinComments) {
+            const comments = (await this.douyinComment(douId)).unshift({
+                message: "前20条热门评论",
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            });
+            e.reply(await Bot.makeForwardMsg(comments));
+        }
+        return true;
+    }
+
+    /**
+     * 获取 DY 评论，暂时由群友 @慢热 提供
+     * @param douId
+     * @returns {Promise<*>}
+     */
+    async douyinComment(douId) {
+        const commentsResp = await axios.get(DY_COMMENT.replace("{}", douId), {
+            headers: {
                 "User-Agent":
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-                Referer: "https://www.douyin.com/",
-                cookie: this.douyinCookie,
-            };
-            const dyApi = DY_INFO.replace("{}", douId);
-            // a-bogus参数
-            const abParam = aBogus.generate_a_bogus(
-                new URLSearchParams(new URL(dyApi).search).toString(),
-                headers["User-Agent"],
-            );
-            // const param = resp.data.result[0].paramsencode;
-            const resDyApi = `${ dyApi }&a_bogus=${ abParam }`;
-            headers['Referer'] = `https://www.douyin.com/video/${ douId }`
-            // 定义一个dy请求
-            const dyResponse = () => axios.get(resDyApi, {
-                headers,
-            });
-            // 如果失败进行3次重试
-            const data = await retryAxiosReq(dyResponse)
-            // logger.info(data)
-            const item = await data.aweme_detail;
-            e.reply(`识别：抖音, ${ item.desc }`);
-            const urlTypeCode = item.aweme_type;
-            const urlType = douyinTypeMap[urlTypeCode];
-            if (urlType === "video") {
-                // logger.info(item.video);
-                // 多位面选择：play_addr、play_addr_265、play_addr_h264
-                const { play_addr: { uri: videoAddrURI } } = item.video;
-                const resolution = this.douyinCompression === 1 ? "720p" : "1080p";
-                // 使用今日头条 CDN 进一步加快解析速度
-                const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
-
-                // ⚠️ 暂时废弃代码
-                /*if (this.douyinCompression === 1) {
-                    // H.265压缩率更高、流量省一半. 相对于H.264
-                    // 265 和 264 随机均衡负载
-                    const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-                } else {
-                    // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
-                    const videoAddrList = play_addr.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-                }*/
-
-                // logger.info(resUrl);
-                const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
-                await this.downloadVideo(resUrl).then(() => {
-                    this.sendVideoToUpload(e, path)
-                });
-            } else if (urlType === "image") {
-                // 无水印图片列表
-                let no_watermark_image_list = [];
-                // 有水印图片列表
-                // let watermark_image_list = [];
-                for (let i of item.images) {
-                    // 无水印图片列表
-                    no_watermark_image_list.push({
-                        message: segment.image(i.url_list[0]),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    });
-                    // 有水印图片列表
-                    // watermark_image_list.push(i.download_url_list[0]);
-                    // e.reply(segment.image(i.url_list[0]));
-                }
-                // console.log(no_watermark_image_list)
-                await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
             }
-        });
-        return true;
+        })
+        const comments = commentsResp.data.data.comments;
+        return comments.map(item => {
+            return {
+                message: item.text,
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            }
+        })
     }
 
     // tiktok解析
@@ -1632,7 +1665,13 @@ export class tools extends plugin {
         try {
             const resp = await axios.head(url, params);
             const location = resp.request.res.responseUrl;
-            return location;
+            return new Promise((resolve, reject) => {
+                if (location != null) {
+                    return resolve(location);
+                } else {
+                    return reject("获取失败");
+                }
+            });
         } catch (error) {
             console.error(error);
             throw error;

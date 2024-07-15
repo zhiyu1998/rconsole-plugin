@@ -10,7 +10,8 @@ biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以�
 biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
 
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
-douyinCompression: 1 # 1-压缩，0-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
+douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
+douyinComments: false # true-开启评论，false-关闭评论
 
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
 
@@ -22,4 +23,4 @@ autoclearTrashtime: '0 0 8 * * ?' #每天早上8点自动清理视频缓存，cr
 
 aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
 aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
-aiModel: 'claude-3-haiku-20240307' # 模型，使用kimi不用填写，其他要填写
+aiModel: 'moonshot-v1-8k' # 模型，使用kimi不用填写，其他要填写

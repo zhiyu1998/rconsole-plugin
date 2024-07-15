@@ -48,7 +48,7 @@ body:
       label: 版本
       description: 你当前正在使用我们软件的哪个版本/分支？
       options:
-        - 1.7.1 (默认)
-        - 1.7.1 (最新)
+        - 1.7.2 (默认)
+        - 1.7.2 (最新)
     validations:
       required: true

@@ -74,6 +74,12 @@ export const XHS_VIDEO = "http://sns-video-bd.xhscdn.com/"
 export const DY_INFO = "https://www.douyin.com/aweme/v1/web/aweme/detail/?device_platform=webapp&aid=6383&channel=channel_pc_web&aweme_id={}&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1344&screen_height=756&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=118.0&browser_online=true&engine_name=Gecko&engine_version=109.0&os_name=Windows&os_version=10&cpu_core_num=16&device_memory=&platform=PC"
 
 /**
+ * DY COMMENT API
+ * @type {string}
+ */
+export const DY_COMMENT = "https://bzapi.bzweb.xyz/api/public/dy/video/comment?id={}"
+
+/**
  * 今日头条 DY API
  * @type {string}
  */
