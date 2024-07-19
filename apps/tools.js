@@ -250,7 +250,7 @@ export class tools extends plugin {
         const res = await this.douyinRequest(douUrl);
         // 当前版本需要填入cookie
         if (_.isEmpty(this.douyinCookie)) {
-            e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
+            e.reply(`检测到没有Cookie，无法解析抖音${ HELP_DOC }`);
             return;
         }
         const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
@@ -279,60 +279,66 @@ export class tools extends plugin {
             headers,
         });
         // 如果失败进行3次重试
-        const data = await retryAxiosReq(dyResponse)
-        // logger.info(data)
-        const item = await data.aweme_detail;
-        e.reply(`识别：抖音, ${ item.desc }`);
-        const urlTypeCode = item.aweme_type;
-        const urlType = douyinTypeMap[urlTypeCode];
-        if (urlType === "video") {
-            // logger.info(item.video);
-            // 多位面选择：play_addr、play_addr_265、play_addr_h264
-            const { play_addr: { uri: videoAddrURI } } = item.video;
-            const resolution = this.douyinCompression ? "720p" : "1080p";
-            // 使用今日头条 CDN 进一步加快解析速度
-            const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
+        try {
+            const data = await retryAxiosReq(dyResponse)
 
-            // ⚠️ 暂时废弃代码
-            /*if (this.douyinCompression) {
-                // H.265压缩率更高、流量省一半. 相对于H.264
-                // 265 和 264 随机均衡负载
-                const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
-                resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-            } else {
-                // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
-                const videoAddrList = play_addr.url_list;
-                resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-            }*/
+            // logger.info(data)
+            const item = await data.aweme_detail;
+            e.reply(`识别：抖音, ${ item.desc }`);
+            const urlTypeCode = item.aweme_type;
+            const urlType = douyinTypeMap[urlTypeCode];
+            if (urlType === "video") {
+                // logger.info(item.video);
+                // 多位面选择：play_addr、play_addr_265、play_addr_h264
+                const { play_addr: { uri: videoAddrURI } } = item.video;
+                const resolution = this.douyinCompression ? "720p" : "1080p";
+                // 使用今日头条 CDN 进一步加快解析速度
+                const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
 
-            // logger.info(resUrl);
-            const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
-            await this.downloadVideo(resUrl).then(() => {
-                this.sendVideoToUpload(e, path)
-            });
-        } else if (urlType === "image") {
-            // 无水印图片列表
-            let no_watermark_image_list = [];
-            // 有水印图片列表
-            // let watermark_image_list = [];
-            for (let i of item.images) {
-                // 无水印图片列表
-                no_watermark_image_list.push({
-                    message: segment.image(i.url_list[0]),
-                    nickname: this.e.sender.card || this.e.user_id,
-                    user_id: this.e.user_id,
+                // ⚠️ 暂时废弃代码
+                /*if (this.douyinCompression) {
+                    // H.265压缩率更高、流量省一半. 相对于H.264
+                    // 265 和 264 随机均衡负载
+                    const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
+                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
+                } else {
+                    // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
+                    const videoAddrList = play_addr.url_list;
+                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
+                }*/
+
+                // logger.info(resUrl);
+                const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
+                await this.downloadVideo(resUrl).then(() => {
+                    this.sendVideoToUpload(e, path)
                 });
+            } else if (urlType === "image") {
+                // 无水印图片列表
+                let no_watermark_image_list = [];
                 // 有水印图片列表
-                // watermark_image_list.push(i.download_url_list[0]);
-                // e.reply(segment.image(i.url_list[0]));
+                // let watermark_image_list = [];
+                for (let i of item.images) {
+                    // 无水印图片列表
+                    no_watermark_image_list.push({
+                        message: segment.image(i.url_list[0]),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    });
+                    // 有水印图片列表
+                    // watermark_image_list.push(i.download_url_list[0]);
+                    // e.reply(segment.image(i.url_list[0]));
+                }
+                // console.log(no_watermark_image_list)
+                await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
             }
-            // console.log(no_watermark_image_list)
-            await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
-        }
-        // 如果开启评论的就调用
-        if (this.douyinComments) {
-            const comments = await this.douyinComment(douId);
-            e.reply(await Bot.makeForwardMsg(comments));
+            // 如果开启评论的就调用
+            if (this.douyinComments) {
+                const comments = await this.douyinComment(douId);
+                e.reply(await Bot.makeForwardMsg(comments));
+            }
+        } catch (err) {
+            logger.error(err);
+            e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
         }
         return true;
     }
@@ -1065,8 +1071,8 @@ export class tools extends plugin {
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
-        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `${NETEASE_API_CN}/song/url?id={}`;
-        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `${NETEASE_API_CN}/song/detail?ids={}`;
+        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `${ NETEASE_API_CN }/song/url?id={}`;
+        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `${ NETEASE_API_CN }/song/detail?ids={}`;
         logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
         // 请求netease数据
         axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
@@ -1119,7 +1125,7 @@ export class tools extends plugin {
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         const url = vipMusicData.data.mp3;
         const cover = vipMusicData.data.img;
-        e.reply([segment.image(cover), `识别：${musicType}，${ messageTitle }`]);
+        e.reply([segment.image(cover), `识别：${ musicType }，${ messageTitle }`]);
         return url;
     }
 
@@ -1488,7 +1494,7 @@ export class tools extends plugin {
         // 检测是否存在框架
         const isExistFreyr = await checkCommandExists("freyr");
         if (!isExistFreyr) {
-            e.reply(`检测到没有${freyrName}需要的环境，无法解析！${HELP_DOC}`);
+            e.reply(`检测到没有${ freyrName }需要的环境，无法解析！${ HELP_DOC }`);
             return;
         }
         // 执行命令
@@ -1498,7 +1504,7 @@ export class tools extends plugin {
         let { title, album, artist } = await this.parseFreyrLog(result.toString());
         // 兜底策略
         if (freyrName === "Apple Music" && (title === "N/A" || album === "N/A" || artist === "N/A")) {
-            const data = await axios.get(`https://api.fabdl.com/apple-music/get?url=${message}`, {
+            const data = await axios.get(`https://api.fabdl.com/apple-music/get?url=${ message }`, {
                 headers: {
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
                     "Referer": "https://apple-music-downloader.com/",
@@ -1515,7 +1521,7 @@ export class tools extends plugin {
         // 国内服务器解决方案
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             // 临时接口
-            const url = await this.musicTempApi(e, `${title} ${artist}`, freyrName);
+            const url = await this.musicTempApi(e, `${ title } ${ artist }`, freyrName);
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
                 // 发送语音
@@ -1589,7 +1595,7 @@ export class tools extends plugin {
     async linkShareSummary(e) {
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
-            e.reply(`没有配置 Kimi，无法为您总结！${HELP_DOC}`)
+            e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
             return true;
         }
         const { name, summaryLink } = contentEstimator(e.msg);
@@ -1599,12 +1605,12 @@ export class tools extends plugin {
             .setModel(this.aiModel)
             .setPrompt(SUMMARY_PROMPT)
             .build();
-        e.reply(`识别：${name}，正在为您总结，请稍等...`, true, { recallMsg: 60 });
+        e.reply(`识别：${ name }，正在为您总结，请稍等...`, true, { recallMsg: 60 });
         const { ans: kimiAns, model } = await builder.kimi(summaryLink);
         // 计算阅读时间
         const stats = estimateReadingTime(kimiAns);
-        e.reply(`当前 ${name} 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`)
-        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`,kimiAns]);
+        e.reply(`当前 ${ name } 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
+        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]);
         await e.reply(Msg);
         return true;
     }
@@ -1954,45 +1960,45 @@ export class tools extends plugin {
             await e.group.sendFile(path);
         }
     }
-   
-    async makeForwardMsg (e, msg = [], dec = '') {
+
+    async makeForwardMsg(e, msg = [], dec = '') {
         let userInfo = {
-          nickname: e.nickname,
-          user_id: e.user_id          
+            nickname: e.nickname,
+            user_id: e.user_id
         }
-      
+
         let forwardMsg = []
         msg.forEach(v => {
-          forwardMsg.push({
-            ...userInfo,
-            message: v
-          })
+            forwardMsg.push({
+                ...userInfo,
+                message: v
+            })
         })
-      
+
         if (e.isGroup) {
-          forwardMsg = await e.group.makeForwardMsg(forwardMsg)
+            forwardMsg = await e.group.makeForwardMsg(forwardMsg)
         } else if (e.friend) {
-          forwardMsg = await e.friend.makeForwardMsg(forwardMsg)
+            forwardMsg = await e.friend.makeForwardMsg(forwardMsg)
         } else {
-          return false
+            return false
         }
-      
+
         if (dec) {
-          if (typeof (forwardMsg.data) === 'object') {
-            let detail = forwardMsg.data?.meta?.detail
-            if (detail) {
-              detail.news = [{ text: dec }]
+            if (typeof (forwardMsg.data) === 'object') {
+                let detail = forwardMsg.data?.meta?.detail
+                if (detail) {
+                    detail.news = [{ text: dec }]
+                }
+            } else {
+                forwardMsg.data = forwardMsg.data
+                    .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
+                    .replace(/\n/g, '')
+                    .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+                    .replace(/___+/, `<title color="#777777" size="26">${ dec }</title>`)
             }
-          } else {
-            forwardMsg.data = forwardMsg.data
-              .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
-              .replace(/\n/g, '')
-              .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-              .replace(/___+/, `<title color="#777777" size="26">${dec}</title>`)
-          }
-      
+
         }
-      
+
         return forwardMsg
-      }
+    }
 }
