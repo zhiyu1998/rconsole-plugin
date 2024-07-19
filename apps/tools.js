@@ -419,6 +419,8 @@ export class tools extends plugin {
         const imgSendHook = function (e, path) {
             e.reply([segment.image(path), segment.at(e.user_id), '请扫码以完成获取'], { recallMsg: 180 })
         };
+        // 检查路径是否存在文件夹
+        await mkdirIfNotExists(this.defaultPath);
         // 发送请求
         const saveCodePath = `${ this.defaultPath }qrcode.png`;
 
