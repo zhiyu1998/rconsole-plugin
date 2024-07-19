@@ -55,6 +55,7 @@ import TokenBucket from "../utils/token-bucket.js";
 import PQueue from 'p-queue';
 import { getWbi } from "../utils/biliWbi.js";
 import {
+    BILI_STREAM_INFO,
     BILI_SUMMARY,
     DY_COMMENT,
     DY_INFO,
@@ -473,6 +474,21 @@ export class tools extends plugin {
         if (matched) {
             url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
         }
+        // 直播间分享
+        logger.info(url)
+        if (url.includes("live")) {
+            // 提取直播间id
+            const idPattern = /\/(\d+)$/;
+            const parsedUrl = new URL(url);
+            const streamId = parsedUrl.pathname.match(idPattern)?.[1];
+            // logger.info(streamId)
+            // 提取相关信息
+            const liveData = await this.getBiliStream(streamId);
+            // logger.info(liveData);
+            const { title, user_cover, description, tags } = liveData.data.data;
+            e.reply([segment.image(user_cover), `直播间：${ title }\n\n简述：${ description }\n标签：${ tags }`]);
+            return true;
+        }
         // 处理专栏
         if (e.msg !== undefined && e.msg.includes("read\/cv")) {
             this.linkShareSummary(e);
@@ -698,6 +714,19 @@ export class tools extends plugin {
                 }
                 return resReply;
             })
+    }
+
+    /**
+     * 获取直播间信息
+     * @param liveId
+     * @returns {Promise<*>}
+     */
+    async getBiliStream(liveId) {
+        return axios.get(`${ BILI_STREAM_INFO }?room_id=${ liveId }`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+            }
+        });
     }
 
     // 例子：https://twitter.com/chonkyanimalx/status/1595834168000204800
