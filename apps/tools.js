@@ -1671,6 +1671,7 @@ export class tools extends plugin {
                 const imgMessage = await curGroup.getMsg(itemMessage.id);
                 // logger.info(imgMessage)
                 refImgUrl = imgMessage.message.pop()?.url;
+                break;
             }
         }
         if (refImgUrl === undefined || refImgUrl == null) {
