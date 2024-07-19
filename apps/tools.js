@@ -475,7 +475,7 @@ export class tools extends plugin {
             url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
         }
         // 直播间分享
-        logger.info(url)
+        // logger.info(url)
         if (url.includes("live")) {
             // 提取直播间id
             const idPattern = /\/(\d+)$/;
