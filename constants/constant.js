@@ -100,6 +100,12 @@ export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;
 export const SUMMARY_PROMPT = `请返回您仔细阅读正文后精心写成的详尽笔记，如果是ArXiv论文就简要介绍下内容和创新点即可`
 
 /**
+ * 图片翻译 prompt
+ * @type {string}
+ */
+export const IMAGE_TRANSLATION_PROMPT = `Begin each of the following with a triangle symbol (▲ U+25B2): First, a brief description of the image to be used as alt text. Do not describe or extract text in the description. Second, the text extracted from the image, with newlines where applicable. Un-obstruct text if it is covered by something, to make it readable. If there is no text in the image, only respond with the description. Do not include any other information. Example: ▲ Lines of code in a text editor.▲ const x = 5; const y = 10; const z = x + y; console.log(z); Finally, answer in Chinese.`
+
+/**
  * 帮助文档提示
  * @type {string}
  */

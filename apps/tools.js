@@ -26,7 +26,7 @@ import {
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     DIVIDING_LINE,
     douyinTypeMap,
-    HELP_DOC,
+    HELP_DOC, IMAGE_TRANSLATION_PROMPT,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     SUMMARY_PROMPT,
@@ -185,6 +185,10 @@ export class tools extends plugin {
                 {
                     reg: "(mp.weixin|arxiv.org|sspai.com|chinadaily.com.cn)",
                     fnc: "linkShareSummary"
+                },
+                {
+                    reg: "#(RPT|rpt)$",
+                    fnc: "pictureTranslate"
                 }
             ],
         });
@@ -413,6 +417,7 @@ export class tools extends plugin {
         });
     }
 
+    // 哔哩哔哩扫码登录
     async biliScan(e) {
         e.reply('R插件开源免责声明:\n您将通过扫码完成获取哔哩哔哩refresh_token以及ck。\n本Bot将不会保存您的登录状态。\n我方仅提供视频解析及相关B站内容服务,若您的账号封禁、被盗等处罚与我方无关。\n害怕风险请勿扫码 ~', { recallMsg: 180 });
         // 图片发送钩子
@@ -435,6 +440,7 @@ export class tools extends plugin {
 
     // bilibi解析
     async bili(e) {
+        // 限制用户密集使用的 AOP
         await this.limitUserUse(e, () => {
             this.biliCore(e);
         });
@@ -1613,6 +1619,39 @@ export class tools extends plugin {
         const stats = estimateReadingTime(kimiAns);
         e.reply(`当前 ${ name } 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]);
+        await e.reply(Msg);
+        return true;
+    }
+
+    async pictureTranslate(e) {
+        // logger.info(Bot.pickGroup(e.group_id, true))
+        const curGroup = Bot.pickGroup(e.group_id, true);
+        const curGroupMessages = await curGroup.getChatHistory(e.message_seq, 1);
+        const groupMessage = curGroupMessages.pop()?.message;
+        // logger.info(groupMessage)
+        let refImgUrl;
+        for (let itemMessage of groupMessage) {
+            if (itemMessage.type === 'reply') {
+                const imgMessage = await curGroup.getMsg(itemMessage.id);
+                // logger.info(imgMessage)
+                refImgUrl = imgMessage.message.pop()?.url;
+            }
+        }
+        if (refImgUrl === undefined || refImgUrl == null) {
+            e.reply("无法检测到图片，请重试！");
+            return
+        }
+        const builder = await new OpenaiBuilder()
+            .setBaseURL(this.aiBaseURL)
+            .setApiKey(this.aiApiKey)
+            .setModel(this.aiModel)
+            .setPrompt(IMAGE_TRANSLATION_PROMPT)
+            .build();
+        e.reply(`识别：图片翻译，请稍等...`, true, { recallMsg: 60 });
+        const refImgDownloadPath = this.getCurDownloadPath(e);
+        await downloadImg(refImgUrl, refImgDownloadPath, "demo.png");
+        const { ans: kimiAns, model } = await builder.openai_pic(`${refImgDownloadPath}/demo.png`);
+        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您识别内容：`, kimiAns]);
         await e.reply(Msg);
         return true;
     }
