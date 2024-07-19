@@ -1629,6 +1629,7 @@ export class tools extends plugin {
         return { title, album, artist };
     }
 
+    // 链接总结
     async linkShareSummary(e) {
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
@@ -1652,7 +1653,13 @@ export class tools extends plugin {
         return true;
     }
 
+    // 图片翻译和总结
     async pictureTranslate(e) {
+        // 判断是否有总结的条件
+        if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
+            e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
+            return true;
+        }
         // logger.info(Bot.pickGroup(e.group_id, true))
         const curGroup = Bot.pickGroup(e.group_id, true);
         const curGroupMessages = await curGroup.getChatHistory(e.message_seq, 1);
