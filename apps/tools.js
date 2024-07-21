@@ -484,9 +484,13 @@ export class tools extends plugin {
             // logger.info(streamId)
             // 提取相关信息
             const liveData = await this.getBiliStream(streamId);
-            // logger.info(liveData);
-            const { title, user_cover, description, tags } = liveData.data.data;
-            e.reply([segment.image(user_cover), `直播间：${ title }\n\n简述：${ description }\n标签：${ tags }`]);
+            logger.info(liveData);
+            const { title, user_cover, keyframe, description, tags } = liveData.data.data;
+            e.reply([
+                segment.image(user_cover),
+                segment.image(keyframe),
+                `识别：哔哩哔哩直播，${title}${description ? `\n\n简述：${description}\n` : ''}${tags ? `标签：${tags}\n` : ''}`
+            ]);
             return true;
         }
         // 处理专栏
