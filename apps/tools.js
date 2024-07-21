@@ -484,7 +484,7 @@ export class tools extends plugin {
             // logger.info(streamId)
             // 提取相关信息
             const liveData = await this.getBiliStream(streamId);
-            logger.info(liveData);
+            // logger.info(liveData);
             const { title, user_cover, keyframe, description, tags } = liveData.data.data;
             e.reply([
                 segment.image(user_cover),
