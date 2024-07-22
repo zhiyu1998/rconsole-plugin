@@ -289,13 +289,30 @@ export class tools extends plugin {
 
             // logger.info(data)
             const item = await data.aweme_detail;
-            e.reply(`识别：抖音, ${ item.desc }`);
             const urlTypeCode = item.aweme_type;
             const urlType = douyinTypeMap[urlTypeCode];
+            // 核心内容
             if (urlType === "video") {
                 // logger.info(item.video);
                 // 多位面选择：play_addr、play_addr_265、play_addr_h264
-                const { play_addr: { uri: videoAddrURI } } = item.video;
+                const { play_addr: { uri: videoAddrURI }, duration, cover } = item.video;
+                // 进行时间判断，如果超过时间阈值就不发送
+                const dyDuration = Math.trunc(duration / 1000);
+                const durationThreshold = this.biliDuration;
+                if (dyDuration >= durationThreshold) {
+                    // 超过阈值，不发送的情况
+                    const dyCover = cover.url_list?.pop();
+                    // logger.info(cover.url_list);
+                    e.reply([segment.image(dyCover) ,`识别：抖音, ${ item.desc }\n
+                    ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ Math.trunc(dyDuration / 60) }分钟，\n大于管理员设置的最大时长 ${ durationThreshold / 60 } 分钟！`])
+                    // 如果开启评论的就调用
+                    await this.douyinComment(e, douId);
+                    return;
+                } else {
+                    // 正常发送
+                    e.reply(`识别：抖音, ${ item.desc }`);
+                }
+                // 分辨率判断是否压缩
                 const resolution = this.douyinCompression ? "720p" : "1080p";
                 // 使用今日头条 CDN 进一步加快解析速度
                 const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
@@ -318,6 +335,8 @@ export class tools extends plugin {
                     this.sendVideoToUpload(e, path)
                 });
             } else if (urlType === "image") {
+                // 发送描述
+                e.reply(`识别：抖音, ${ item.desc }`);
                 // 无水印图片列表
                 let no_watermark_image_list = [];
                 // 有水印图片列表
@@ -337,10 +356,7 @@ export class tools extends plugin {
                 await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
             }
             // 如果开启评论的就调用
-            if (this.douyinComments) {
-                const comments = await this.douyinComment(douId);
-                e.reply(await Bot.makeForwardMsg(comments));
-            }
+            await this.douyinComment(e, douId);
         } catch (err) {
             logger.error(err);
             e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
@@ -350,10 +366,13 @@ export class tools extends plugin {
 
     /**
      * 获取 DY 评论，暂时由群友 @慢热 提供
+     * @param e
      * @param douId
-     * @returns {Promise<*>}
      */
-    async douyinComment(douId) {
+    async douyinComment(e, douId) {
+        if (!this.douyinComments) {
+            return;
+        }
         const commentsResp = await axios.get(DY_COMMENT.replace("{}", douId), {
             headers: {
                 "User-Agent":
@@ -361,13 +380,14 @@ export class tools extends plugin {
             }
         })
         const comments = commentsResp.data.data.comments;
-        return comments.map(item => {
+        const replyComments = comments.map(item => {
             return {
                 message: item.text,
                 nickname: this.e.sender.card || this.e.user_id,
                 user_id: this.e.user_id,
             }
         })
+        e.reply(await Bot.makeForwardMsg(replyComments));
     }
 
     // tiktok解析

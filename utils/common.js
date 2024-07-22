@@ -427,3 +427,26 @@ export function checkCommandExists(command) {
         });
     });
 }
+
+/**
+ * debug：将 JSON 数据保存到本地文件
+ * eg. saveJsonToFile(data, 'data.json', (err) => {})
+ * @param {Object} jsonData - 要保存的 JSON 数据
+ * @param {string} filename - 目标文件名
+ * @param {function} callback - 可选的回调函数，处理写入完成后的操作
+ */
+function saveJsonToFile(jsonData, filename, callback) {
+    // 转换 JSON 数据为字符串
+    const jsonString = JSON.stringify(jsonData, null, 2); // 第二个参数是 replacer，第三个参数是缩进
+
+    // 保存到文件
+    fs.writeFile(filename, jsonString, 'utf8', (err) => {
+        if (err) {
+            console.error('Error writing file', err);
+            if (callback) callback(err);
+        } else {
+            console.log('File successfully written');
+            if (callback) callback(null);
+        }
+    });
+}
