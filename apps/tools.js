@@ -41,6 +41,7 @@ import {
     estimateReadingTime,
     formatBiliInfo,
     retryAxiosReq,
+    saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString
@@ -306,7 +307,7 @@ export class tools extends plugin {
                     e.reply([segment.image(dyCover) ,`识别：抖音, ${ item.desc }\n
                     ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ Math.trunc(dyDuration / 60) }分钟，\n大于管理员设置的最大时长 ${ durationThreshold / 60 } 分钟！`])
                     // 如果开启评论的就调用
-                    await this.douyinComment(e, douId);
+                    await this.douyinComment(e, douId, headers);
                     return;
                 } else {
                     // 正常发送
@@ -356,7 +357,7 @@ export class tools extends plugin {
                 await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
             }
             // 如果开启评论的就调用
-            await this.douyinComment(e, douId);
+            await this.douyinComment(e, douId, headers);
         } catch (err) {
             logger.error(err);
             e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
@@ -368,18 +369,23 @@ export class tools extends plugin {
      * 获取 DY 评论，暂时由群友 @慢热 提供
      * @param e
      * @param douId
+     * @param headers
      */
-    async douyinComment(e, douId) {
+    async douyinComment(e, douId, headers) {
         if (!this.douyinComments) {
             return;
         }
-        const commentsResp = await axios.get(DY_COMMENT.replace("{}", douId), {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
-            }
+        const dyCommentUrl = DY_COMMENT.replace("{}", douId);
+        const abParam = aBogus.generate_a_bogus(
+            new URLSearchParams(new URL(dyCommentUrl).search).toString(),
+            headers["User-Agent"],
+        );
+        const commentsResp = await axios.get(`${dyCommentUrl}&a_bogus=${ abParam }`, {
+            headers
         })
-        const comments = commentsResp.data.data.comments;
+        // logger.info(headers)
+        // saveJsonToFile(commentsResp.data, "data.json", _);
+        const comments = commentsResp.data.comments;
         const replyComments = comments.map(item => {
             return {
                 message: item.text,
