@@ -10,15 +10,8 @@ import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 import config from "../model/index.js";
 // 书库
 import { getYiBook, getZBook, getZHelper } from "../utils/books.js";
-// 工具类
-import TokenBucket from '../utils/token-bucket.js'
 
 export class query extends plugin {
-    /**
-     * 令牌桶 拿来限流
-     * @type {TokenBucket}
-     */
-    static #tokenBucket = new TokenBucket(1, 1, 60);
 
     constructor() {
         super({
@@ -318,20 +311,6 @@ export class query extends plugin {
         });
         await e.reply(await Bot.makeForwardMsg(bkRes));
         return true;
-    }
-
-    /**
-     * 限制用户调用（默认1分钟1次）
-     * @param e
-     * @param func
-     * @return {Promise<void>}
-     */
-    async limitUserUse(e, func) {
-        if (query.#tokenBucket.consume(e.user_id, 1)) {
-            await func();
-        } else {
-            e.reply(`🙅‍${ e.nickname }你已经被限流，请稍后再试！`, true);
-        }
     }
 
     // 删除标签

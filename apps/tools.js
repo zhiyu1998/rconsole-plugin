@@ -52,7 +52,6 @@ import * as aBogus from "../utils/a-bogus.cjs";
 import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import querystring from "querystring";
-import TokenBucket from "../utils/token-bucket.js";
 import PQueue from 'p-queue';
 import { getWbi } from "../utils/biliWbi.js";
 import {
@@ -94,11 +93,6 @@ export class tools extends plugin {
     static Constants = {
         existsTransKey: Object.keys(transMap).join("|"),
     };
-    /**
-     * 构造令牌桶，防止解析致使服务器宕机（默认限制5s调用一次）
-     * @type {TokenBucket}
-     */
-    static #tokenBucket = new TokenBucket(1, 1, 5);
 
     constructor() {
         super({
@@ -463,16 +457,8 @@ export class tools extends plugin {
         return true;
     }
 
-
-    // bilibi解析
+    // B 站解析
     async bili(e) {
-        // 限制用户密集使用的 AOP
-        await this.limitUserUse(e, () => {
-            this.biliCore(e);
-        });
-    }
-
-    async biliCore(e) {
         const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
@@ -659,13 +645,15 @@ export class tools extends plugin {
     // 下载哔哩哔哩音乐
     async biliMusic(e, url) {
         const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
-        getBiliAudio(videoId, "").then(async audioUrl => {
-            const path = this.getCurDownloadPath(e);
-            const biliMusicPath = await m4sToMp3(audioUrl, path)
-            // 发送语音
-            e.reply(segment.record(biliMusicPath));
-            // 上传群文件
-            await this.uploadGroupFile(e, biliMusicPath);
+        this.queue.add(() => {
+            getBiliAudio(videoId, "").then(async audioUrl => {
+                const path = this.getCurDownloadPath(e);
+                const biliMusicPath = await m4sToMp3(audioUrl, path)
+                // 发送语音
+                e.reply(segment.record(biliMusicPath));
+                // 上传群文件
+                await this.uploadGroupFile(e, biliMusicPath);
+            })
         })
         return true
     }
@@ -2000,20 +1988,6 @@ export class tools extends plugin {
         }
         // 如果有就取出来
         return JSON.parse((await redis.get(REDIS_YUNZAI_LAGRANGE))).driver;
-    }
-
-    /**
-     * 限制用户调用
-     * @param e
-     * @param func
-     * @return {Promise<void>}
-     */
-    async limitUserUse(e, func) {
-        if (tools.#tokenBucket.consume(e.user_id, 1)) {
-            await func();
-        } else {
-            logger.warn(`解析被限制使用`);
-        }
     }
 
     /**
