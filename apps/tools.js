@@ -325,9 +325,12 @@ export class tools extends plugin {
 
                 // logger.info(resUrl);
                 const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
-                await this.downloadVideo(resUrl).then(() => {
-                    this.sendVideoToUpload(e, path)
-                });
+                // 加入队列
+                this.queue.add(async () => {
+                    await this.downloadVideo(resUrl).then(() => {
+                        this.sendVideoToUpload(e, path)
+                    });
+                })
             } else if (urlType === "image") {
                 // 发送描述
                 e.reply(`识别：抖音, ${ item.desc }`);
@@ -579,22 +582,25 @@ export class tools extends plugin {
         // 创建文件，如果不存在
         const path = `${ this.getCurDownloadPath(e) }/`;
         await mkdirIfNotExists(path);
-        // 下载文件
-        getDownloadUrl(url)
-            .then(data => {
-                this.downBili(`${ path }temp`, data.videoUrl, data.audioUrl)
-                    .then(_ => {
-                        this.sendVideoToUpload(e, `${ path }temp.mp4`)
-                    })
-                    .catch(err => {
-                        logger.error(err);
-                        e.reply("解析失败，请重试一下");
-                    });
-            })
-            .catch(err => {
-                logger.error(err);
-                e.reply("解析失败，请重试一下");
-            });
+        // 加入队列
+        this.queue.add(async () => {
+            // 下载文件
+            getDownloadUrl(url)
+                .then(data => {
+                    this.downBili(`${ path }temp`, data.videoUrl, data.audioUrl)
+                        .then(_ => {
+                            this.sendVideoToUpload(e, `${ path }temp.mp4`)
+                        })
+                        .catch(err => {
+                            logger.error(err);
+                            e.reply("解析失败，请重试一下");
+                        });
+                })
+                .catch(err => {
+                    logger.error(err);
+                    e.reply("解析失败，请重试一下");
+                });
+        })
         return true;
     }
 
