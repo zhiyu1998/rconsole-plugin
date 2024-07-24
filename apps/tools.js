@@ -23,7 +23,7 @@ import {
 } from "../utils/bilibili.js";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import {
-    BILI_DEFAULT_INTRO_LEN_LIMIT,
+    BILI_DEFAULT_INTRO_LEN_LIMIT, COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
     HELP_DOC, IMAGE_TRANSLATION_PROMPT,
@@ -266,8 +266,7 @@ export class tools extends plugin {
         // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
         const headers = {
             "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-            "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36",
+            "User-Agent": COMMON_USER_AGENT,
             Referer: "https://www.douyin.com/",
             cookie: this.douyinCookie,
         };
@@ -366,7 +365,7 @@ export class tools extends plugin {
     }
 
     /**
-     * 获取 DY 评论，暂时由群友 @慢热 提供
+     * 获取 DY 评论
      * @param e
      * @param douId
      * @param headers
@@ -754,7 +753,7 @@ export class tools extends plugin {
     async getBiliStream(liveId) {
         return axios.get(`${ BILI_STREAM_INFO }?room_id=${ liveId }`, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+                'User-Agent': COMMON_USER_AGENT,
             }
         });
     }
@@ -859,7 +858,7 @@ export class tools extends plugin {
                 'Sec-Fetch-Site': 'none',
                 'Sec-Fetch-User': '?1',
                 'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+                'User-Agent': COMMON_USER_AGENT,
             },
             timeout: 10000 // 设置超时时间
         }
@@ -1028,8 +1027,7 @@ export class tools extends plugin {
         };
         await fetch(API, {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36",
+                "User-Agent": COMMON_USER_AGENT,
             },
         }).then(async resp => {
             const html = await resp.text();
@@ -1144,8 +1142,7 @@ export class tools extends plugin {
         // 请求netease数据
         axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "User-Agent": COMMON_USER_AGENT,
             },
         }).then(async resp => {
             // 国内解决方案，替换API后这里也需要修改
@@ -1185,8 +1182,7 @@ export class tools extends plugin {
         // 临时接口，title经过变换后搜索到的音乐质量提升
         const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title.replace("-", " ")), {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "User-Agent": COMMON_USER_AGENT,
             },
         });
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
@@ -1220,8 +1216,7 @@ export class tools extends plugin {
         const that = this;
         axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                "User-Agent": COMMON_USER_AGENT,
                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                 "cookie": "_T_WM=40835919903; WEIBOCN_FROM=1110006030; MLOGIN=0; XSRF-TOKEN=4399c8",
             }
@@ -1264,8 +1259,7 @@ export class tools extends plugin {
                     if (!videoUrl) return true
                     try {
                         this.downloadVideo(videoUrl, false, {
-                            "User-Agent":
-                                "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                            "User-Agent": COMMON_USER_AGENT,
                             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                             "referer": "https://weibo.com/",
                         }).then(path => {
@@ -1461,7 +1455,7 @@ export class tools extends plugin {
             const feedId = idMatch[1];
             const response = await axios.get(WEISHI_VIDEO_INFO.replace("{}", feedId), {
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                    "User-Agent": COMMON_USER_AGENT,
                 }
             });
 
@@ -1491,7 +1485,7 @@ export class tools extends plugin {
         try {
             const response = await axios.get(url, {
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36",
+                    "User-Agent": COMMON_USER_AGENT,
                 }
             });
             const html = response.data;
@@ -1573,7 +1567,7 @@ export class tools extends plugin {
         if (freyrName === "Apple Music" && (title === "N/A" || album === "N/A" || artist === "N/A")) {
             const data = await axios.get(`https://api.fabdl.com/apple-music/get?url=${ message }`, {
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
+                    "User-Agent": COMMON_USER_AGENT,
                     "Referer": "https://apple-music-downloader.com/",
                     "Origin": "https://apple-music-downloader.com",
                     "Accept": "application/json, text/plain, */*",
@@ -1767,8 +1761,7 @@ export class tools extends plugin {
     async douyinRequest(url) {
         const params = {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                "User-Agent": COMMON_USER_AGENT,
             },
             timeout: 10000,
         };

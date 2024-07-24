@@ -47,15 +47,10 @@ export const TEN_THOUSAND = 10000;
 export const CAT_LIMIT = 10;
 
 /**
- * 有水印的头请求
- * @type {{cookie: string, "User-Agent": string, accept: string}}
+ * 公共的 User-Agent
+ * @type {string}
  */
-export const XHS_WATERMARK_HEADER = {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'cookie': '',
-    'User-Agent':
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/110.0.0.0",
-}
+export const COMMON_USER_AGENT = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
 
 /**
  * 无水印的头请求
@@ -64,7 +59,7 @@ export const XHS_WATERMARK_HEADER = {
 export const XHS_NO_WATERMARK_HEADER = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9 ',
     'cookie': '',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 UBrowser/6.2.4098.3 Safari/537.36',
+    'User-Agent': COMMON_USER_AGENT,
 }
 
 /**

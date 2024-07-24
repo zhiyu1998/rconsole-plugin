@@ -5,7 +5,7 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
 // 常量
-import { CAT_LIMIT } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 // 配置文件
 import config from "../model/index.js";
 // 书库
@@ -253,8 +253,7 @@ export class query extends plugin {
                 },
                 {
                     headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                        "User-Agent": COMMON_USER_AGENT,
                     },
                 },
             )
@@ -287,8 +286,7 @@ export class query extends plugin {
             axios
                 .get(bdUrl, {
                     headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                        "User-Agent": COMMON_USER_AGENT,
                     },
                     timeout: 10000,
                 })
@@ -298,8 +296,7 @@ export class query extends plugin {
             axios
                 .get(url, {
                     headers: {
-                        "User-Agent":
-                            "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+                        "User-Agent": COMMON_USER_AGENT,
                     },
                     timeout: 10000,
                 })
