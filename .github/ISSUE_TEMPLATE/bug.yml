@@ -7,12 +7,12 @@ body:
     attributes:
       value: |
         感谢对项目的支持与关注。在提出问题之前，请确保你已查看相关开发或使用文档：
-        - https://...
+        - https://gitee.com/kyrzy0416/rconsole-plugin
   - type: checkboxes
     attributes:
       label: 这个问题是否已经存在？
       options:
-        - label: 我已经搜索过现有的问题 (https://gitee.com/../../issues)
+        - label: 我已经搜索过现有的问题 (https://gitee.com/kyrzy0416/rconsole-plugin/issues)
           required: true
   - type: textarea
     attributes:
@@ -43,12 +43,37 @@ body:
       value: |
         [在这里上传图片]
   - type: dropdown
-    id: version
+    id: yunzai
     attributes:
-      label: 版本
-      description: 你当前正在使用我们软件的哪个版本/分支？
+      label: 使用的本体
+      description: 你当前正在使用的崽？
       options:
-        - 1.7.2 (默认)
-        - 1.7.2 (最新)
+        - Miao
+        - Trss
+        - 其他
     validations:
       required: true
+  - type: dropdown
+    id: systemType
+    attributes:
+      label: 系统类型
+      description: 你当前正在使用的系统类型？
+      options:
+        - Windows
+        - Linux
+        - Mac
+    validations:
+      required: true
+  - type: dropdown
+    id: linuxType
+    attributes:
+      label: Linux类型（如果是）
+      description: 你当前正在使用的Linux是什么系统？
+      options:
+        - Debian
+        - Ubuntu
+        - Arch
+        - CentOS
+        - 其他
+    validations:
+      required: false
