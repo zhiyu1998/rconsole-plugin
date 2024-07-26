@@ -95,7 +95,8 @@ class GeneralLinkAdapter {
     async tieba(link) {
         const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(link)?.[0];
         // 这里必须使用{ ...GENERAL_REQ_LINK_2 }赋值，不然就是对象的引用赋值，会造成全局数据问题！
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg)
+        // ！！！这里加了 '\?' 是因为 API 问题
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg + "\"?")
         return { name: "贴吧", reqLink };
     }
 
