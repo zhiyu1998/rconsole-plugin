@@ -297,7 +297,7 @@ export class tools extends plugin {
                     // 超过阈值，不发送的情况
                     const dyCover = cover.url_list?.pop();
                     // logger.info(cover.url_list);
-                    e.reply([segment.image(dyCover) ,`识别：抖音, ${ item.desc }\n
+                    e.reply([segment.image(dyCover), `识别：抖音, ${ item.desc }\n
                     ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ Math.trunc(dyDuration / 60) }分钟，\n大于管理员设置的最大时长 ${ durationThreshold / 60 } 分钟！`])
                     // 如果开启评论的就调用
                     await this.douyinComment(e, douId, headers);
@@ -356,7 +356,7 @@ export class tools extends plugin {
             await this.douyinComment(e, douId, headers);
         } catch (err) {
             logger.error(err);
-            e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
+            e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${ HELP_DOC }\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
         }
         return true;
     }
@@ -376,7 +376,7 @@ export class tools extends plugin {
             new URLSearchParams(new URL(dyCommentUrl).search).toString(),
             headers["User-Agent"],
         );
-        const commentsResp = await axios.get(`${dyCommentUrl}&a_bogus=${ abParam }`, {
+        const commentsResp = await axios.get(`${ dyCommentUrl }&a_bogus=${ abParam }`, {
             headers
         })
         // logger.info(headers)
@@ -503,7 +503,7 @@ export class tools extends plugin {
             e.reply([
                 segment.image(user_cover),
                 segment.image(keyframe),
-                `识别：哔哩哔哩直播，${title}${description ? `\n\n简述：${description}\n` : ''}${tags ? `标签：${tags}\n` : ''}`
+                `识别：哔哩哔哩直播，${ title }${ description ? `\n\n简述：${ description }\n` : '' }${ tags ? `标签：${ tags }\n` : '' }`
             ]);
             return true;
         }
@@ -1129,10 +1129,39 @@ export class tools extends plugin {
         }
         // 判断海外
         const isOversea = await this.isOverseasServer();
+        // 自动选择 API
+        const autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        // mv截断
+        if (message.includes("mv")) {
+            const AUTO_NETEASE_MV_DETAIL = autoSelectNeteaseApi + "/mv/detail?mvid={}";
+            const AUTO_NETEASE_MV_URL = autoSelectNeteaseApi + "/mv/url?id={}";
+            // logger.info(AUTO_NETEASE_MV_DETAIL.replace("{}", id));
+            // logger.info(AUTO_NETEASE_MV_URL.replace("{}", id));
+            const [mvDetailData, mvUrlData] = await Promise.all([
+                axios.get(AUTO_NETEASE_MV_DETAIL.replace("{}", id), {
+                    headers: {
+                        "User-Agent": COMMON_USER_AGENT,
+                    }
+                }),
+                axios.get(AUTO_NETEASE_MV_URL.replace("{}", id), {
+                    headers: {
+                        "User-Agent": COMMON_USER_AGENT,
+                    }
+                })
+            ]);
+            const { name: mvName, artistName: mvArtist, cover: mvCover } = mvDetailData.data?.data;
+            e.reply([segment.image(mvCover), `识别：网易云MV，${ mvName } - ${ mvArtist }`]);
+            // logger.info(mvUrlData.data)
+            const { url: mvUrl } = mvUrlData.data?.data;
+            this.downloadVideo(mvUrl).then(path => {
+                this.sendVideoToUpload(e, `${ path }/temp.mp4`)
+            });
+            return;
+        }
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
-        const AUTO_NETEASE_SONG_DOWNLOAD = isOversea ? NETEASE_SONG_DOWNLOAD : `${ NETEASE_API_CN }/song/url?id={}`;
-        const AUTO_NETEASE_SONG_DETAIL = isOversea ? NETEASE_SONG_DETAIL : `${ NETEASE_API_CN }/song/detail?ids={}`;
-        logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
+        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url?id={}";
+        const AUTO_NETEASE_SONG_DETAIL = autoSelectNeteaseApi + "/song/detail?ids={}";
+        // logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
         // 请求netease数据
         axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
             headers: {
@@ -1705,7 +1734,7 @@ export class tools extends plugin {
         e.reply(`识别：图片翻译，请稍等...`, true, { recallMsg: 60 });
         const refImgDownloadPath = this.getCurDownloadPath(e);
         await downloadImg(refImgUrl, refImgDownloadPath, "demo.png");
-        const { ans: kimiAns, model } = await builder.openai_pic(`${refImgDownloadPath}/demo.png`);
+        const { ans: kimiAns, model } = await builder.openai_pic(`${ refImgDownloadPath }/demo.png`);
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您识别内容：`, kimiAns]);
         await e.reply(Msg);
         return true;

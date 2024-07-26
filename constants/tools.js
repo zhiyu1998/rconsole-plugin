@@ -126,14 +126,14 @@ export const GENERAL_REQ_LINK_3 = {
  * 获取网易云歌曲下载链接
  * @type {string}
  */
-export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app/song/url?id={}"
+export const NETEASE_SONG_DOWNLOAD = "https://neteasecloudmusicapi.vercel.app"
 
 /**
  * 获取网易云歌曲详情
  * 致谢 NeteaseCloudMusicApi：https://gitlab.com/Binaryify/neteasecloudmusicapi
  * @type {string}
  */
-export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app/song/detail?ids={}"
+export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app"
 
 /**
  * 国内网易云服务，如果有大佬可以有闲置的服务器可以到群里赞助
