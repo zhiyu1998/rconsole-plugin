@@ -356,7 +356,7 @@ export class tools extends plugin {
             await this.douyinComment(e, douId, headers);
         } catch (err) {
             logger.error(err);
-            e.reply(`Cookie 过期或者 Cookie 没有填写，请参考\n${ HELP_DOC }\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
+            logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${ HELP_DOC }\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`)
         }
         return true;
     }
