@@ -57,9 +57,9 @@ export const COMMON_USER_AGENT = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Buil
  * @type {{cookie: string, "User-Agent": string, accept: string}}
  */
 export const XHS_NO_WATERMARK_HEADER = {
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9 ',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
     'cookie': '',
-    'User-Agent': COMMON_USER_AGENT,
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 UBrowser/6.2.4098.3 Safari/537.36',
 }
 
 /**
