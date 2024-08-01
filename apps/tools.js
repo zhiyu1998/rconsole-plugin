@@ -35,7 +35,7 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
-    checkCommandExists,
+    checkCommandExists, cleanFilename,
     downloadAudio,
     downloadImg,
     estimateReadingTime,
@@ -65,7 +65,7 @@ import {
     NETEASE_API_CN,
     NETEASE_SONG_DETAIL,
     NETEASE_SONG_DOWNLOAD,
-    NETEASE_TEMP_API,
+    NETEASE_TEMP_API, QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
     WEISHI_VIDEO_INFO,
@@ -185,6 +185,10 @@ export class tools extends plugin {
                 {
                     reg: "#(RPT|rpt)$",
                     fnc: "pictureTranslate"
+                },
+                {
+                    reg: "(y.qq.com)",
+                    fnc: "qqMusic"
                 }
             ],
         });
@@ -1202,16 +1206,24 @@ export class tools extends plugin {
 
     // 临时接口
     async musicTempApi(e, title, musicType) {
+        let musicReqApi = NETEASE_TEMP_API;
+        if (musicType === "QQ音乐") {
+            musicReqApi = QQ_MUSIC_TEMP_API;
+        }
         // 临时接口，title经过变换后搜索到的音乐质量提升
-        const vipMusicData = await axios.get(NETEASE_TEMP_API.replace("{}", title.replace("-", " ")), {
+        const vipMusicData = await axios.get(musicReqApi.replace("{}", title.replace("-", " ")), {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
             },
         });
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-        const url = vipMusicData.data.mp3;
-        const cover = vipMusicData.data.img;
-        e.reply([segment.image(cover), `识别：${ musicType }，${ messageTitle }`]);
+        // ??后的内容是适配`QQ_MUSIC_TEMP_API`
+        const url = vipMusicData.data.mp3 ??　vipMusicData.data.data.url;
+        const cover = vipMusicData.data.img ??　vipMusicData.data.data.cover;
+
+        logger.info(url)
+        logger.info(cover)
+        await e.reply([segment.image(cover), `识别：${ musicType }，${ messageTitle }`]);
         return url;
     }
 
@@ -1737,6 +1749,44 @@ export class tools extends plugin {
         const { ans: kimiAns, model } = await builder.openai_pic(`${ refImgDownloadPath }/demo.png`);
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您识别内容：`, kimiAns]);
         await e.reply(Msg);
+        return true;
+    }
+
+    // q q m u s i c 解析
+    async qqMusic(e) {
+        // case1:　Taylor Swift/Bleachers《Anti-Hero (Feat. Bleachers) (Explicit)》 https://c6.y.qq.com/base/fcgi-bin/u?__=lg19lFgQerbo @QQ音乐
+        /** case 2:
+         * {"app":"com.tencent.structmsg","config":{"ctime":1722497864,"forward":1,"token":"987908ab4a1c566d3645ef0ca52a162a","type":"normal"},"extra":{"app_type":1,"appid":100497308,"uin":542716863},"meta":{"news":{"action":"","android_pkg_name":"","app_type":1,"appid":100497308,"ctime":1722497864,"desc":"Taylor Swift/Bleachers","jumpUrl":"https://i.y.qq.com/v8/playsong.html?hosteuin=7KvA7i6sNeCi&sharefrom=gedan&from_id=1674373010&from_idtype=10014&from_name=(7rpl)&songid=382775503&songmid=&type=0&platform=1&appsongtype=1&_wv=1&source=qq&appshare=iphone&media_mid=000dKYJS3KCzpu&ADTAG=qfshare","preview":"https://pic.ugcimg.cn/1070bf5a6962b75263eee1404953c9b2/jpg1","source_icon":"https://p.qpic.cn/qqconnect/0/app_100497308_1626060999/100?max-age=2592000&t=0","source_url":"","tag":"QQ音乐","title":"Anti-Hero (Feat. Bleachers) (E…","uin":542716863}},"prompt":"[分享]Anti-Hero (Feat. Bleachers) (E…","ver":"0.0.0.1","view":"news"}
+         */
+        let musicInfo;
+        if (e.msg.includes(`"app":"com.tencent.structmsg"`)) {
+            logger.info("[R插件][qqMusic] 识别为小程序分享");
+            const musicInfoJson = JSON.parse(e.msg);
+            const prompt = musicInfoJson.meta?.news?.title || '';
+            const desc = musicInfoJson.meta?.news?.desc || '';
+            musicInfo = prompt + "-" + desc;
+            if (musicInfo.trim() === "") {
+                logger.info(`没有识别到QQ音乐小程序，帮助文档如下：${ HELP_DOC }`)
+                return true;
+            }
+        } else {
+            const normalRegex = /^(.*?)\s+https?:\/\//;
+            musicInfo = normalRegex.exec(e.msg)?.[1].trim();
+        }
+        // 删除特殊字符
+        musicInfo = cleanFilename(musicInfo);
+        // 使用临时接口下载
+        const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
+        // 下载音乐
+        await downloadAudio(url, this.getCurDownloadPath(e), musicInfo, 'follow').then(async path => {
+            // 发送语音
+            await e.reply(segment.record(path));
+            // 判断是不是icqq
+            await this.uploadGroupFile(e, path);
+            await checkAndRemoveFile(path);
+        }).catch(err => {
+            logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+        });
         return true;
     }
 

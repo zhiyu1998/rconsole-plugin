@@ -450,3 +450,21 @@ export function saveJsonToFile(jsonData, filename, callback) {
         }
     });
 }
+
+/**
+ * 删除文件名中的特殊符号（待完善）
+ * @param filename
+ * @returns {string}
+ */
+export function cleanFilename(filename) {
+    // 去除省略号（…）
+    filename = filename.replace(/…/g, '');
+    // 删除括号及其内容
+    filename = filename.replace(/\(|\)/g, '');
+    // 删除反斜杠
+    filename = filename.replace(/\//g, '');
+
+    filename = filename.trim();
+
+    return filename;
+}

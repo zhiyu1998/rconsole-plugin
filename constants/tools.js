@@ -150,6 +150,12 @@ export const NETEASE_API_CN = 'https://www.markingchen.ink';
 export const NETEASE_TEMP_API = "https://api.lolimi.cn/API/wydg/api.php?msg={}&n=1"
 
 /**
+ * 下载VIP的临时接口2
+ * @type {string}
+ */
+export const QQ_MUSIC_TEMP_API = "https://api.lolimi.cn/API/yiny/?word={}&n=1&q=8"
+
+/**
  * 单条微博的接口
  * @type {string}
  */
