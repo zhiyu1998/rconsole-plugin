@@ -1764,7 +1764,7 @@ export class tools extends plugin {
                 return true;
             }
         } else {
-            const normalRegex = /^(.*?)\s+https?:\/\//;
+            const normalRegex = /^(.*?)\s*https?:\/\//;
             musicInfo = normalRegex.exec(e.msg)?.[1].trim();
         }
         // 删除特殊字符
