@@ -1756,10 +1756,10 @@ export class tools extends plugin {
         if (e.msg.includes(`"app":"com.tencent.structmsg"`)) {
             logger.info("[R插件][qqMusic] 识别为小程序分享");
             const musicInfoJson = JSON.parse(e.msg);
-            const prompt = musicInfoJson.meta?.news?.title || '';
-            const desc = musicInfoJson.meta?.news?.desc || '';
+            const prompt = musicInfoJson.meta?.news?.title ?? musicInfoJson.meta?.music?.title;
+            const desc = musicInfoJson.meta?.news?.desc ?? musicInfoJson.meta?.music.desc;
             musicInfo = prompt + "-" + desc;
-            if (musicInfo.trim() === "") {
+            if (musicInfo.trim() === "-" || prompt === undefined || desc === undefined) {
                 logger.info(`没有识别到QQ音乐小程序，帮助文档如下：${ HELP_DOC }`)
                 return true;
             }
@@ -1769,6 +1769,7 @@ export class tools extends plugin {
         }
         // 删除特殊字符
         musicInfo = cleanFilename(musicInfo);
+        logger.info(`[R插件][qqMusic] 识别音乐为：${musicInfo}`);
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
         // 下载音乐
