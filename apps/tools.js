@@ -1753,17 +1753,22 @@ export class tools extends plugin {
          * {"app":"com.tencent.structmsg","config":{"ctime":1722497864,"forward":1,"token":"987908ab4a1c566d3645ef0ca52a162a","type":"normal"},"extra":{"app_type":1,"appid":100497308,"uin":542716863},"meta":{"news":{"action":"","android_pkg_name":"","app_type":1,"appid":100497308,"ctime":1722497864,"desc":"Taylor Swift/Bleachers","jumpUrl":"https://i.y.qq.com/v8/playsong.html?hosteuin=7KvA7i6sNeCi&sharefrom=gedan&from_id=1674373010&from_idtype=10014&from_name=(7rpl)&songid=382775503&songmid=&type=0&platform=1&appsongtype=1&_wv=1&source=qq&appshare=iphone&media_mid=000dKYJS3KCzpu&ADTAG=qfshare","preview":"https://pic.ugcimg.cn/1070bf5a6962b75263eee1404953c9b2/jpg1","source_icon":"https://p.qpic.cn/qqconnect/0/app_100497308_1626060999/100?max-age=2592000&t=0","source_url":"","tag":"QQ音乐","title":"Anti-Hero (Feat. Bleachers) (E…","uin":542716863}},"prompt":"[分享]Anti-Hero (Feat. Bleachers) (E…","ver":"0.0.0.1","view":"news"}
          */
         let musicInfo;
+        // applet判定
         if (e.msg.includes(`"app":"com.tencent.structmsg"`)) {
             logger.info("[R插件][qqMusic] 识别为小程序分享");
             const musicInfoJson = JSON.parse(e.msg);
+            // 歌手和歌名
             const prompt = musicInfoJson.meta?.news?.title ?? musicInfoJson.meta?.music?.title;
             const desc = musicInfoJson.meta?.news?.desc ?? musicInfoJson.meta?.music?.desc;
+            // 必要性拼接
             musicInfo = prompt + "-" + desc;
+            // 空判定
             if (musicInfo.trim() === "-" || prompt === undefined || desc === undefined) {
                 logger.info(`没有识别到QQ音乐小程序，帮助文档如下：${ HELP_DOC }`)
                 return true;
             }
         } else {
+            // 连接判定
             const normalRegex = /^(.*?)\s*https?:\/\//;
             musicInfo = normalRegex.exec(e.msg)?.[1].trim();
         }
