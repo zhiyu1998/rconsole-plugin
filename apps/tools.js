@@ -1757,7 +1757,7 @@ export class tools extends plugin {
             logger.info("[R插件][qqMusic] 识别为小程序分享");
             const musicInfoJson = JSON.parse(e.msg);
             const prompt = musicInfoJson.meta?.news?.title ?? musicInfoJson.meta?.music?.title;
-            const desc = musicInfoJson.meta?.news?.desc ?? musicInfoJson.meta?.music.desc;
+            const desc = musicInfoJson.meta?.news?.desc ?? musicInfoJson.meta?.music?.desc;
             musicInfo = prompt + "-" + desc;
             if (musicInfo.trim() === "-" || prompt === undefined || desc === undefined) {
                 logger.info(`没有识别到QQ音乐小程序，帮助文档如下：${ HELP_DOC }`)
