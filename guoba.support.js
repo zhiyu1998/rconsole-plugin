@@ -135,9 +135,9 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.queueConcurrency",
-                    label: "允许多用户下载个数",
+                    label: "（高级）队列长度",
                     bottomHelpMessage:
-                        "【目前只涉及哔哩哔哩的下载功能】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
+                        "【目前只涉及哔哩哔哩的下载功能】允许队列下载个数：根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -146,9 +146,9 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.videoDownloadConcurrency",
-                    label: "使用下载视频的并发个数",
+                    label: "（高级）下载并发个数",
                     bottomHelpMessage:
-                        "与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                        "【涉及哔哩哔哩、抖音】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -170,7 +170,7 @@ export function supportGuoba() {
                     field: "tools.aiBaseURL",
                     label: "AI接口地址",
                     bottomHelpMessage:
-                        "支持Kimi、OpenAI、Claude等",
+                        "支持Kimi、OpenAI、Claude等，例如官方的可以填写：https://api.moonshot.cn，如果是本机可以填写：http://localhost:8000",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -181,7 +181,7 @@ export function supportGuoba() {
                     field: "tools.aiApiKey",
                     label: "AI的key",
                     bottomHelpMessage:
-                        "服务商提供的api key",
+                        "服务商提供的api key，如果是官方的就是sk-....，如果是本机的就是ey...（推荐使用ey因为sk没有联网功能）",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -192,11 +192,11 @@ export function supportGuoba() {
                     field: "tools.aiModel",
                     label: "AI的模型",
                     bottomHelpMessage:
-                        "默认使用的是Claude，也可以自定义模型",
+                        "默认使用的是moonshot-v1-8k，也可以自定义模型，只要能联网就能使用！",
                     component: "Input",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入AI的模型，例如：claude-3-haiku-20240307，使用kimi则不用填写",
+                        placeholder: "请输入AI的模型，例如：moonshot-v1-8k，使用kimi则不用填写",
                     },
                 }
             ],
