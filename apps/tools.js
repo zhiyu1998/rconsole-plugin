@@ -1797,7 +1797,7 @@ export class tools extends plugin {
     // 汽水音乐
     async qishuiMusic(e) {
         const normalRegex = /^(.*?)\s*https?:\/\//;
-        const musicInfo = normalRegex.exec(e.msg)?.[1].trim();
+        const musicInfo = normalRegex.exec(e.msg)?.[1].trim().replace("@汽水音乐", "");
         logger.info(`[R插件][qishuiMusic] 识别音乐为：${musicInfo}`);
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "汽水音乐");
