@@ -189,6 +189,10 @@ export class tools extends plugin {
                 {
                     reg: "(y.qq.com)",
                     fnc: "qqMusic"
+                },
+                {
+                    reg: "(qishui.douyin.com)",
+                    fnc:　"qishuiMusic"
                 }
             ],
         });
@@ -1777,6 +1781,26 @@ export class tools extends plugin {
         logger.info(`[R插件][qqMusic] 识别音乐为：${musicInfo}`);
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
+        // 下载音乐
+        await downloadAudio(url, this.getCurDownloadPath(e), musicInfo, 'follow').then(async path => {
+            // 发送语音
+            await e.reply(segment.record(path));
+            // 判断是不是icqq
+            await this.uploadGroupFile(e, path);
+            await checkAndRemoveFile(path);
+        }).catch(err => {
+            logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+        });
+        return true;
+    }
+
+    // 汽水音乐
+    async qishuiMusic(e) {
+        const normalRegex = /^(.*?)\s*https?:\/\//;
+        const musicInfo = normalRegex.exec(e.msg)?.[1].trim();
+        logger.info(`[R插件][qishuiMusic] 识别音乐为：${musicInfo}`);
+        // 使用临时接口下载
+        const url = await this.musicTempApi(e, musicInfo, "汽水音乐");
         // 下载音乐
         await downloadAudio(url, this.getCurDownloadPath(e), musicInfo, 'follow').then(async path => {
             // 发送语音
