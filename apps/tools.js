@@ -23,10 +23,12 @@ import {
 } from "../utils/bilibili.js";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import {
-    BILI_DEFAULT_INTRO_LEN_LIMIT, COMMON_USER_AGENT,
+    BILI_DEFAULT_INTRO_LEN_LIMIT,
+    COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
-    HELP_DOC, IMAGE_TRANSLATION_PROMPT,
+    HELP_DOC,
+    IMAGE_TRANSLATION_PROMPT,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     SUMMARY_PROMPT,
@@ -35,13 +37,13 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
-    checkCommandExists, cleanFilename,
+    checkCommandExists,
+    cleanFilename,
     downloadAudio,
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
     retryAxiosReq,
-    saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString
@@ -63,9 +65,9 @@ import {
     GENERAL_REQ_LINK,
     MIYOUSHE_ARTICLE,
     NETEASE_API_CN,
-    NETEASE_SONG_DETAIL,
     NETEASE_SONG_DOWNLOAD,
-    NETEASE_TEMP_API, QQ_MUSIC_TEMP_API,
+    NETEASE_TEMP_API,
+    QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
     WEISHI_VIDEO_INFO,
@@ -214,6 +216,8 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
+        // 加载小红书Cookie
+        this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
         this.translateEngine = new Translate({
             translateAppId: this.toolsConfig.translateAppId,
@@ -945,6 +949,8 @@ export class tools extends plugin {
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
         }
         const downloadPath = `${ this.getCurDownloadPath(e) }`;
+        // 注入ck
+        XHS_NO_WATERMARK_HEADER.cookie = this.xiaohongshuCookie;
         // 获取信息
         fetch(`${ XHS_REQ_LINK }${ id }`, {
             headers: XHS_NO_WATERMARK_HEADER,

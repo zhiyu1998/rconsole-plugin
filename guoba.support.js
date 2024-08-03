@@ -134,6 +134,17 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.xiaohongshuCookie",
+                    label: "小红书的Cookie",
+                    bottomHelpMessage:
+                        "2024-8-2后反馈必须使用ck，不然无法解析",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入小红书的Cookie",
+                    },
+                },
+                {
                     field: "tools.queueConcurrency",
                     label: "（高级）队列长度",
                     bottomHelpMessage:
