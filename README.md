@@ -102,7 +102,7 @@ source ~/.bashrc  # 如果你使用 bash
 source ~/.zshrc   # 如果你使用 zsh
 ```
 
-`AM解析`需要使用两个依赖`freyr`、`atomicparsley`，现在只以Debian系统为例：
+`AM解析`和`Spotify解析`需要使用两个依赖`freyr`、`atomicparsley`，现在只以Debian系统为例：
 
 ```shell
 npm install -g freyr
