@@ -5,7 +5,8 @@ import util from "util";
 import {
     BILI_BVID_TO_CID,
     BILI_DYNAMIC,
-    BILI_PLAY_STREAM, BILI_SCAN_CODE_DETECT,
+    BILI_PLAY_STREAM,
+    BILI_SCAN_CODE_DETECT,
     BILI_SCAN_CODE_GENERATE,
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
@@ -71,14 +72,12 @@ export async function getDownloadUrl(url) {
             const info = JSON.parse(
                 data.match(/<script>window\.__playinfo__=({.*})<\/script><script>/)?.[1],
             );
-            // 如果是大视频直接最低分辨率
-            const videoUrl =
-                info?.data?.dash?.video?.[0]?.baseUrl ?? info?.data?.dash?.video?.[0]?.backupUrl?.[0];
+            // 自动绕过解析不了的mcdn视频链接
+            const videoUrl = selectAndAvoidMCdnUrl(info?.data?.dash?.video?.[0]?.baseUrl, info?.data?.dash?.video?.[0]?.backupUrl);
+            // 自动绕过解析不了的mcdn音频链接
+            const audioUrl = selectAndAvoidMCdnUrl(info?.data?.dash?.audio?.[0]?.baseUrl, info?.data?.dash?.audio?.[0]?.backupUrl);
 
-            const audioUrl =
-                info?.data?.dash?.audio?.[0]?.baseUrl ?? info?.data?.dash?.audio?.[0]?.backupUrl?.[0];
             const title = data.match(/title="(.*?)"/)?.[1]?.replaceAll?.(/\\|\/|:|\*|\?|"|<|>|\|/g, '');
-
 
             if (videoUrl && audioUrl) {
                 return { videoUrl, audioUrl, title };
@@ -347,4 +346,65 @@ export async function filterBiliDescLink(link) {
         return link.replace(regex, '').replace(/\n/g, '').trim();
     }
     return link;
+}
+
+/**
+ * 动态规避哔哩哔哩cdn中的mcdn
+ * @param baseUrl
+ * @param backupUrls
+ * @returns {string}
+ */
+function selectAndAvoidMCdnUrl(baseUrl, backupUrls) {
+    // 判断BaseUrl
+    if (!baseUrl.includes(".mcdn.bilivideo.cn")) {
+        return baseUrl;
+    }
+    // backUrls, 找不到返回undefined
+    const backupUrl = backupUrls.find(backupUrl => {
+        return !backupUrl.includes(".mcdn.bilivideo.cn");
+    })
+    // 找到直接返回
+    if (backupUrl !== undefined) {
+        return backupUrl;
+    }
+    logger.info("[R插件][bili-MCDN] 检测到 mcdn 开始替换为源站的 cdn");
+    // 找不到替换 backupUrls 的第一个链接
+    return replaceP2PUrl(backupUrls?.[0]);
+}
+
+/**
+ * 动态替换哔哩哔哩 CDN
+ * @param url
+ * @param cdnSelect
+ * @returns {*|string}
+ */
+function replaceP2PUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        const hostName = urlObj.hostname;
+        if (urlObj.hostname.match(/upos-sz-mirror08[ch]\.bilivideo\.com/) || urlObj.hostname.match(/upos-hz-mirrorakam\.akamaized\.net/)) {
+            urlObj.host = 'upos-sz-mirrorhwo1.bilivideo.com'
+            urlObj.port = 443;
+            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            return urlObj.toString();
+        } else if (urlObj.hostname.match(/upos-sz-estgoss\.bilivideo\.com/) || urlObj.hostname.match(/upos-sz-mirrorali(ov|b)?\.bilivideo\.com/)) {
+            urlObj.host = 'upos-sz-mirroralio1.bilivideo.com'
+            urlObj.port = 443;
+            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            return urlObj.toString();
+        } else if (urlObj.hostname.endsWith(".mcdn.bilivideo.cn") || urlObj.hostname.match(/cn(-[a-z]+){2}(-\d{2}){2}\.bilivideo\.com/)) {
+            urlObj.host = 'upos-sz-mirrorcoso1.bilivideo.com';
+            urlObj.port = 443;
+            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            return urlObj.toString();
+        } else if (urlObj.hostname.endsWith(".szbdyd.com")) {
+            urlObj.host = urlObj.searchParams.get('xy_usource');
+            urlObj.port = 443;
+            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            return urlObj.toString();
+        }
+        return url;
+    } catch (e) {
+        return url;
+    }
 }
