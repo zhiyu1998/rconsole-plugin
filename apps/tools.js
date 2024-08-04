@@ -951,7 +951,7 @@ export class tools extends plugin {
         const downloadPath = `${this.getCurDownloadPath(e)}`;
         // 检测没有 cookie 则退出
         if (_.isEmpty(this.xiaohongshuCookie)) {
-            e.reply(`2024-8-2后反馈必须使用ck，不然无法解析请填写相关ck，文档：${HELP_DOC}`);
+            e.reply(`2024-8-2后反馈必须使用ck，不然无法解析请填写相关ck\n文档：${HELP_DOC}`);
             return;
         }
         // 注入ck
