@@ -137,10 +137,6 @@ export class tools extends plugin {
                     fnc: "xhs",
                 },
                 {
-                    reg: "(instagram.com)",
-                    fnc: "instagram",
-                },
-                {
                     reg: "(h5app.kuwo.cn)",
                     fnc: "bodianMusic",
                 },
@@ -1006,82 +1002,6 @@ export class tools extends plugin {
             // Clean up files
             await Promise.all(paths.map(item => fs.promises.unlink(item)));
         });
-        return true;
-    }
-
-    // ins解析
-    async instagram(e) {
-        let suffix = e.msg.match(/(?<=com\/)[\/a-z0-9A-Z].*/)[0];
-        if (suffix.startsWith("reel")) {
-            suffix = suffix.replace("reel/", "p/");
-        }
-        const API = `https://imginn.com/${suffix}`;
-        // logger.info(API);
-        let imgPromise = [];
-        const downloadPath = `${this.getCurDownloadPath(e)}`;
-        // 判断是否是海外服务器
-        const isOversea = await this.isOverseasServer();
-        // 简单封装图片下载
-        const downloadInsImg = (url, destination) => {
-            return new Promise((resolve, reject) => {
-                fetch(url, {
-                    timeout: 10000,
-                    agent: isOversea ? '' : new HttpsProxyAgent(this.myProxy),
-                    redirect: "follow",
-                    follow: 10,
-                })
-                    .then(res => {
-                        const dest = fs.createWriteStream(destination);
-                        res.body.pipe(dest);
-                        dest.on("finish", () => resolve(destination));
-                    })
-                    .catch(err => reject(err));
-            });
-        };
-        await fetch(API, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-            },
-        }).then(async resp => {
-            const html = await resp.text();
-            const desc = html.match(/(?<=content=").*?(?=\")/g)?.[2];
-            const images = html.match(/<div class=\"swiper-slide.*?\">/g);
-            if (!_.isNull(images)) {
-                e.reply(`识别：Insta，${desc || "暂无描述"}\n`);
-                images.map((item, index) => {
-                    const imgUrl = /(?<=data-src=").*?(?=")/
-                        .exec(item)[0]
-                        .replace(/#38/g, "")
-                        .replace(/;/g, "");
-                    imgPromise.push(downloadInsImg(imgUrl, `${downloadPath}/${index}.jpg`));
-                });
-            }
-            // TODO 视频，会出bug暂时不做
-            // if (html.includes("data-video")) {
-            //     const video = html.match(/(?<=data-video=").*?(?=")/g)[0].replace(/#38/g, "").replace(/;/g, "")
-            //     this.downloadVideo(video, true).then(path => {
-            //         e.reply(segment.video(path));
-            //     })
-            // }
-        });
-        if (imgPromise.length > 0) {
-            let path = [];
-            const images = await Promise.all(imgPromise).then(paths => {
-                return paths.map(item => {
-                    path.push(item);
-                    return {
-                        message: segment.image(fs.readFileSync(item)),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    };
-                });
-            });
-            await this.reply(await Bot.makeForwardMsg(images));
-            // 清理
-            path.forEach(item => {
-                fs.unlinkSync(item);
-            });
-        }
         return true;
     }
 
