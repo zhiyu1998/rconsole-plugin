@@ -257,6 +257,18 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 3. 开始游玩
 
+### 🍠 小红书的 Cookie 问题
+
+小红书导出cookie最佳实践，由@辰提供解决方案：
+1. 下一个 Cookie-Editor
+- Chrome：https://chrome.google.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
+
+- Edge：
+  https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi
+
+
+2. 进入小红书-注册-然后点击 Cookie-Editor的导出 Header String
+
 ![wxkimi](./img/wxkimi.webp)
 
 ##  🤺 R插件交流群
