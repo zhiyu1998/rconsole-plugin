@@ -111,6 +111,14 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.biliUseBBDown",
+                    label: "使用BBDown下载",
+                    bottomHelpMessage:
+                        "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后下载更强劲，并且一劳永逸！",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.douyinCookie",
                     label: "抖音的Cookie",
                     bottomHelpMessage:

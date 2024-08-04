@@ -277,6 +277,10 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 ![](./img/xhs-ck-export.webp)
 
+### 📺 关于使用 BBDown 下载
+
+- Linux教程：https://pwa.sspai.com/post/83345
+- Windows教程：https://github.com/nilaoda/BBDown/issues/305
 
 
 ##  🤺 R插件交流群

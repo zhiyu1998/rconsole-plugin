@@ -81,6 +81,7 @@ import {LagrangeAdapter} from "../utils/lagrange-adapter.js";
 import path from "path";
 import {OpenaiBuilder} from "../utils/openai-builder.js";
 import {contentEstimator} from "../utils/link-share-summary-util.js";
+import {checkBBDown, startBBDown} from "../utils/bbdown-util.js";
 
 export class tools extends plugin {
     /**
@@ -206,6 +207,8 @@ export class tools extends plugin {
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
         this.biliDuration = this.toolsConfig.biliDuration;
+        // 加载哔哩哔哩是否使用BBDown
+        this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -593,23 +596,51 @@ export class tools extends plugin {
         // 加入队列
         this.queue.add(async () => {
             // 下载文件
-            getDownloadUrl(url)
-                .then(data => {
-                    this.downBili(`${path}temp`, data.videoUrl, data.audioUrl)
-                        .then(_ => {
-                            this.sendVideoToUpload(e, `${path}temp.mp4`)
-                        })
-                        .catch(err => {
-                            logger.error(err);
-                            e.reply("解析失败，请重试一下");
-                        });
-                })
-                .catch(err => {
-                    logger.error(err);
-                    e.reply("解析失败，请重试一下");
-                });
+            await this.biliDownloadStrategy(e, url, path);
         })
         return true;
+    }
+
+    /**
+     * 哔哩哔哩下载策略
+     * @param e     事件
+     * @param url   链接
+     * @param path  保存路径
+     * @returns {Promise<void>}
+     */
+    async biliDownloadStrategy(e, url, path) {
+        // =================以下是调用BBDown的逻辑=====================
+        // 下载视频和音频
+        const tempPath = `${path}temp`;
+        // 检测是否开启BBDown
+        if (this.biliUseBBDown) {
+            // 检测环境的 BBDown
+            const isExistBBDown = await checkBBDown();
+            // 存在 BBDown
+            if (isExistBBDown) {
+                // 删除之前的文件
+                await checkAndRemoveFile(`${tempPath}.mp4`);
+                // 下载视频
+                await startBBDown(url, path, this.biliSessData);
+                // 发送视频
+                return this.sendVideoToUpload(e, `${tempPath}.mp4`);
+            }
+            e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
+        }
+        // =================默认下载方式=====================
+        try {
+            // 获取下载链接
+            const data = await getDownloadUrl(url);
+
+            await this.downBili(tempPath, data.videoUrl, data.audioUrl);
+
+            // 上传视频
+            return this.sendVideoToUpload(e, `${tempPath}.mp4`);
+        } catch (err) {
+            // 错误处理
+            logger.error('[R插件][哔哩哔哩视频发送]下载错误，具体原因为:', err);
+            e.reply("解析失败，请重试一下");
+        }
     }
 
     /**
