@@ -257,19 +257,27 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 3. 开始游玩
 
+![wxkimi](./img/wxkimi.webp)
+
 ### 🍠 小红书的 Cookie 问题
 
-小红书导出cookie最佳实践，由@辰提供解决方案：
+小红书导出cookie最佳实践，由群友 `@辰` 提供解决方案：
+
 1. 下一个 Cookie-Editor
-- Chrome：https://chrome.google.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
 
-- Edge：
-  https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi
+> - Chrome：https://chrome.google.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
+>
+> - Edge：
+>   https://microsoftedge.microsoft.com/addons/detail/cookieeditor/neaplmfkghagebokkhpjpoebhdledlfi
+>
+> - 国内直通：https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
 
 
-2. 进入小红书-注册-然后点击 Cookie-Editor的导出 Header String
+2. 进入小红书 - 注册 - 点击 Cookie-Editor的导出 `Header String`
 
-![wxkimi](./img/wxkimi.webp)
+![](./img/xhs-ck-export.webp)
+
+
 
 ##  🤺 R插件交流群
 扫码不行就：575663150
