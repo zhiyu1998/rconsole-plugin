@@ -261,9 +261,9 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 ### 🍠 小红书的 Cookie 问题
 
-小红书导出cookie最佳实践，由群友 `@辰` 提供解决方案：
+小红书导出 cookie 最佳实践，由群友 `@辰` 提供解决方案：
 
-1. 下一个 Cookie-Editor
+1. 下一个 `Cookie-Editor`
 
 > - Chrome：https://chrome.google.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
 >
@@ -273,16 +273,16 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 > - 国内直通：https://www.crxsoso.com/webstore/detail/hlkenndednhfkekhgcdicdfddnkalmdm
 
 
-2. 进入小红书 - 注册 - 点击 Cookie-Editor的导出 `Header String`
+2. 进入小红书 - 注册 - 点击 `Cookie-Editor` 的导出 `Header String`
 
 ![](./img/xhs-ck-export.webp)
 
 
 
 ##  🤺 R插件交流群
-扫码不行就：575663150
-
 <img src="./img/qq.webp" width="30%" height="30%">
+
+>  扫码不行就输入：575663150
 
 ## 🧑‍🌾 进阶内容
 【可选】相关配置(apps/tools.js)：
