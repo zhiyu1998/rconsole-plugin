@@ -82,7 +82,7 @@ export function supportGuoba() {
                     label: "视频大小限制",
                     bottomHelpMessage:
                         "视频大小限制（单位MB），超过大小则转换成群文件上传",
-                    component: "Input",
+                    component: "InputNumber",
                     required: false,
                     componentProps: {
                         placeholder: "请输入视频大小限制",
@@ -104,7 +104,7 @@ export function supportGuoba() {
                     label: "哔哩哔哩的视频最大限制时长",
                     bottomHelpMessage:
                         "超过时长无法解析，保护服务器性能",
-                    component: "Input",
+                    component: "InputNumber",
                     required: false,
                     componentProps: {
                         placeholder: "请输入哔哩哔哩的视频最大限制时长（默认15分钟）",
@@ -115,7 +115,7 @@ export function supportGuoba() {
                     label: "哔哩哔哩的简介长度限制",
                     bottomHelpMessage:
                         "防止简介过长刷屏",
-                    component: "Input",
+                    component: "InputNumber",
                     required: false,
                     componentProps: {
                         placeholder: "请输入哔哩哔哩的简介长度限制（默认50个字符），填 0 或者 -1 可以不做任何限制，显示完整简介",
@@ -168,7 +168,7 @@ export function supportGuoba() {
                     label: "（高级）队列长度",
                     bottomHelpMessage:
                         "【目前只涉及哔哩哔哩的下载功能】允许队列下载个数：根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
-                    component: "Input",
+                    component: "InputNumber",
                     required: false,
                     componentProps: {
                         placeholder: "如果你的服务器比较强劲，就写4~12（比如4，就是可以4个人同时下载），较弱就一个一个下载，写1",
@@ -179,7 +179,7 @@ export function supportGuoba() {
                     label: "（高级）下载并发个数",
                     bottomHelpMessage:
                         "【涉及哔哩哔哩、抖音】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
-                    component: "Input",
+                    component: "InputNumber",
                     required: false,
                     componentProps: {
                         placeholder: "不确定用1即可，高性能服务器随意4~12都可以，看CPU的实力",
