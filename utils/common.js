@@ -341,7 +341,7 @@ export async function testProxy(host='127.0.0.1', port=7890) {
 
     try {
         // 通过代理服务器发起请求
-        await axios.get('https://google.com.hk', { httpsAgent });
+        await axios.get('https://www.google.com', { httpsAgent });
         logger.mark('[R插件][梯子测试模块] 检测到梯子');
         return true;
     } catch (error) {
