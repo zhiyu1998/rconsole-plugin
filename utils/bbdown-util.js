@@ -32,7 +32,16 @@ export function startBBDown(videoUrl, downloadDir, biliSessData) {
         // logger.info(videoUrl);
         // 解析URL并提取参数p（页数）
         const urlObj = new URL(videoUrl);
-        const pageParam = urlObj.searchParams.get('p');
+        const params = urlObj.searchParams;
+        const newParams = new URLSearchParams();
+        const pageParam = params.get('p');
+        // 这里提取p参数，防止丢失
+        if (params.has('p')) {
+            newParams.set('p', pageParam);
+        }
+        // 这里如果有p参数就放置到url上，没有就相当于作了一次去跟踪参数的清除，也方便BBDown下载
+        urlObj.search = newParams.toString();
+        videoUrl = urlObj.toString();
         // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
         const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c ' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp`;
         // logger.info(command);
