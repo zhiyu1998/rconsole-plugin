@@ -1,12 +1,12 @@
 - {
-  version: 1.7.2,
+  version: 1.7.3,
   data:
     [
-      新增<span class="cmd">Spotify解析</span>功能,
-      新增<span class="cmd">AM解析</span>功能,
-      新增<span class="cmd">适配拉格朗日上传</span>功能,
+      新增<span class="cmd">最大上传限制选项</span>功能,
+      新增<span class="cmd">BBDown下载方式</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
-      添加<span class="cmd">#R帮助</span>获取插件帮助,
-      添加<span class="cmd">#R版本</span>获取插件版本,
+      输入<span class="cmd">#R帮助</span>获取插件帮助,
+      输入<span class="cmd">#R更新</span>更新插件,
+      输入<span class="cmd">#R版本</span>获取插件版本,
     ],
 }
