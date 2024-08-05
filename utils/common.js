@@ -435,18 +435,16 @@ export function checkCommandExists(command) {
  * @param {string} filename - 目标文件名
  * @param {function} callback - 可选的回调函数，处理写入完成后的操作
  */
-export function saveJsonToFile(jsonData, filename, callback) {
+export function saveJsonToFile(jsonData, filename = "data.json") {
     // 转换 JSON 数据为字符串
     const jsonString = JSON.stringify(jsonData, null, 2); // 第二个参数是 replacer，第三个参数是缩进
 
     // 保存到文件
-    fs.writeFile(filename, jsonString, 'utf8', (err) => {
+    return fs.writeFile(filename, jsonString, 'utf8', (err) => {
         if (err) {
-            console.error('Error writing file', err);
-            if (callback) callback(err);
+            logger.error('Error writing file', err);
         } else {
-            console.log('File successfully written');
-            if (callback) callback(null);
+            logger.info('File successfully written');
         }
     });
 }
