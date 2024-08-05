@@ -101,13 +101,13 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.biliDuration",
-                    label: "哔哩哔哩的视频最大限制时长",
+                    label: "视频最大时长限制",
                     bottomHelpMessage:
-                        "超过时长无法解析，保护服务器性能",
+                        "超过时长无法解析（单位：秒），保护服务器性能，计算公式：8分钟 x 60秒 = 480秒",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入哔哩哔哩的视频最大限制时长（默认15分钟）",
+                        placeholder: "请输入哔哩哔哩的视频最大限制时长（默认8分钟）",
                     },
                 },
                 {
