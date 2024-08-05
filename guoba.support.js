@@ -78,6 +78,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.videoSizeLimit",
+                    label: "视频大小限制",
+                    bottomHelpMessage:
+                        "视频大小限制（单位MB），超过大小则转换成群文件上传",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入视频大小限制",
+                    },
+                },
+                {
                     field: "tools.biliSessData",
                     label: "哔哩哔哩SESSDATA",
                     bottomHelpMessage:

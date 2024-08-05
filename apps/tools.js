@@ -199,6 +199,8 @@ export class tools extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
+        // 视频限制大小
+        this.videoSizeLimit = this.toolsConfig.videoSizeLimit;
         // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
@@ -2067,7 +2069,8 @@ export class tools extends plugin {
      * @param path           视频所在路径
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
-    async sendVideoToUpload(e, path, videoSizeLimit = 70) {
+    async sendVideoToUpload(e, path, videoSizeLimit = this.videoSizeLimit) {
+        // logger.info(videoSizeLimit);
         const isLag = await this.isLagRangeDriver();
         // 判断是否是拉格朗日
         if (isLag === 1) {
