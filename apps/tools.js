@@ -1807,7 +1807,8 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
-                this.biliUseAria2
+                this.biliUseAria2,
+                this.videoDownloadConcurrency
             ),
             downloadBFile(
                 audioUrl,
@@ -1819,7 +1820,8 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
-                this.biliUseAria2
+                this.biliUseAria2,
+                this.videoDownloadConcurrency
             ),
         ]).then(data => {
             return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${ title }.mp4`);

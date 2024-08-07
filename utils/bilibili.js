@@ -22,15 +22,16 @@ const biliHeaders = {
 
 /**
  * 下载单个bili文件
- * @param url
- * @param fullFileName
- * @param progressCallback
- * @param isAria2
+ * @param url                       下载链接
+ * @param fullFileName              文件名
+ * @param progressCallback          下载进度
+ * @param isAria2                   是否使用aria2
+ * @param videoDownloadConcurrency  视频下载并发
  * @returns {Promise<any>}
  */
-export async function downloadBFile(url, fullFileName, progressCallback, isAria2 = false) {
+export async function downloadBFile(url, fullFileName, progressCallback, isAria2 = false, videoDownloadConcurrency = 1) {
     if (isAria2) {
-        return aria2DownloadBFile(url, fullFileName, progressCallback);
+        return aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency);
     } else {
         return normalDownloadBFile(url, fullFileName, progressCallback);
     }
@@ -78,9 +79,10 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
  * @param url
  * @param fullFileName
  * @param progressCallback
+ * @param videoDownloadConcurrency
  * @returns {Promise<void>}
  */
-async function aria2DownloadBFile(url, fullFileName, progressCallback) {
+async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     return new Promise((resolve, reject) => {
         logger.info(`[R插件][Aria2下载] 正在使用Aria2进行下载!`);
         // 构建aria2c命令
@@ -91,6 +93,8 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback) {
             '--console-log-level=warn', // 减少日志 verbosity
             '--download-result=hide',   // 隐藏下载结果概要
             '--header', 'referer: https://www.bilibili.com', // 添加自定义标头
+            `--max-connection-per-server=${videoDownloadConcurrency}`, // 每个服务器的最大连接数
+            `--split=${videoDownloadConcurrency}`,               // 分成 6 个部分进行下载
             url
         ];
 
