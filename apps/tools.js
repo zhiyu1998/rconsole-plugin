@@ -211,6 +211,8 @@ export class tools extends plugin {
         this.biliDuration = this.toolsConfig.biliDuration;
         // 加载哔哩哔哩是否使用BBDown
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
+        // 加载哔哩哔哩是否使用Aria2
+        this.biliUseAria2 = this.toolsConfig.biliUseAria2;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -627,7 +629,7 @@ export class tools extends plugin {
                 // 删除之前的文件
                 await checkAndRemoveFile(`${tempPath}.mp4`);
                 // 下载视频
-                await startBBDown(url, path, this.biliSessData);
+                await startBBDown(url, path, this.biliSessData, this.biliUseAria2);
                 // 发送视频
                 return this.sendVideoToUpload(e, `${tempPath}.mp4`);
             }
