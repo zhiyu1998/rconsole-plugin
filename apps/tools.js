@@ -293,9 +293,13 @@ export class tools extends plugin {
         // 如果失败进行3次重试
         try {
             const data = await retryAxiosReq(dyResponse)
-
             // logger.info(data)
             const item = await data.aweme_detail;
+            // 如果为null则退出
+            if (item == null) {
+                e.reply("R插件无法识别到当前抖音内容，请换一个试试！");
+                return;
+            }
             const urlTypeCode = item.aweme_type;
             const urlType = douyinTypeMap[urlTypeCode];
             // 核心内容
