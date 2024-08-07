@@ -130,7 +130,7 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: "tools.biliUseBBDown",
+                    field: "tools.biliUseAria2",
                     label: "使用Aria2下载",
                     bottomHelpMessage:
                         "【默认不开启，目前只有开启BBDown后才有效果】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后更加强劲，宽带直接拉满，Debian和Ubuntu用户直接使用命令安装：apt-get install aria2",
