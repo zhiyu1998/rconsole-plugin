@@ -14,6 +14,7 @@ export function checkBBDown(callback) {
             if (error) {
                 logger.error(`[R插件][BBDown]未找到: ${stderr || error.message}`);
                 resolve(false);
+                return;
             }
             logger.info(`[R插件][BBDown]找到: ${stdout.trim()}`);
             resolve(true);
@@ -43,7 +44,7 @@ export function startBBDown(videoUrl, downloadDir, biliSessData) {
         urlObj.search = newParams.toString();
         videoUrl = urlObj.toString();
         // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
-        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp`;
+        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover`;
         // logger.info(command);
         // 直接调用BBDown，因为它已经在系统路径中
         exec(command, (error, stdout, stderr) => {
@@ -55,7 +56,7 @@ export function startBBDown(videoUrl, downloadDir, biliSessData) {
                 reject(`[R插件][BBDown]错误信息: ${stderr}`);
                 return;
             }
-            logger.info(`[R插件][BBDown]输出结果: ${stdout}`);
+            // logger.info(`[R插件][BBDown]输出结果: ${stdout}`);
             resolve(stdout);
         });
     });
