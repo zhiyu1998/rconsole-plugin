@@ -12,18 +12,37 @@
 </div>
 
 > 📢 推荐 TG 个人互联网分享频道（分享日常冲浪互联网看到好玩的网站、app应用）：[RrOrange和朋友们](https://t.me/RrOrangeAndFriends)
-## 🗃️ 文件架构
-apps -- 业务核心
+## 🗃️ 文件架构 & 🌟 特征
+🗃️ 文件结构：
+```
+├─.github
+│  └─ISSUE_TEMPLATE
+├─.idea
+├─apps
+├─config
+├─constants
+├─img
+├─model
+├─resources
+│  ├─html
+│  │  ├─help
+│  │  └─version
+│  └─img
+│      ├─icon
+│      ├─other
+│      └─rank
+└─utils
+```
 
-config -- 配置文件
 
-img -- README图片
 
-model -- 核心文件
+🌟 特征：
 
-resource -- 资源文件
-
-utils -- 工具类
+- 📦 开箱即用，git 到 Yunzai就可以使用
+- 🚀 速度巨快，考虑单线程、多线程，用户可以联合 BBDown、Aria2
+- 🤔 多方面考虑，低画质看内容、高画质看品质都考虑
+- 💪 健壮性高，开源时间长，信任用户多，bug 及时解决，程序运行稳定
+- 📄 健全文档，文档注释丰富，方便调试和开发
 
 
 
