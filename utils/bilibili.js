@@ -11,6 +11,7 @@ import {
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
 import { mkdirIfNotExists } from "./file.js";
+import { spawn } from 'child_process';
 import qrcode from "qrcode"
 
 const biliHeaders = {
@@ -24,9 +25,25 @@ const biliHeaders = {
  * @param url
  * @param fullFileName
  * @param progressCallback
+ * @param isAria2
  * @returns {Promise<any>}
  */
-export async function downloadBFile(url, fullFileName, progressCallback) {
+export async function downloadBFile(url, fullFileName, progressCallback, isAria2 = false) {
+    if (isAria2) {
+        return aria2DownloadBFile(url, fullFileName, progressCallback);
+    } else {
+        return normalDownloadBFile(url, fullFileName, progressCallback);
+    }
+}
+
+/**
+ * 正常下载
+ * @param url
+ * @param fullFileName
+ * @param progressCallback
+ * @returns {Promise<any>}
+ */
+async function normalDownloadBFile(url, fullFileName, progressCallback) {
     return axios
         .get(url, {
             responseType: 'stream',
@@ -54,6 +71,60 @@ export async function downloadBFile(url, fullFileName, progressCallback) {
                 );
             });
         });
+}
+
+/**
+ * 使用Aria2下载
+ * @param url
+ * @param fullFileName
+ * @param progressCallback
+ * @returns {Promise<void>}
+ */
+async function aria2DownloadBFile(url, fullFileName, progressCallback) {
+    return new Promise((resolve, reject) => {
+        logger.info(`[R插件][Aria2下载] 正在使用Aria2进行下载!`);
+        // 构建aria2c命令
+        const aria2cArgs = [
+            '--file-allocation=none',  // 避免预分配文件空间
+            '--continue',              // 启用暂停支持
+            '-o', fullFileName,        // 指定输出文件名
+            '--console-log-level=warn', // 减少日志 verbosity
+            '--download-result=hide',   // 隐藏下载结果概要
+            '--header', 'referer: https://www.bilibili.com', // 添加自定义标头
+            url
+        ];
+
+        // Spawn aria2c 进程
+        const aria2c = spawn('aria2c', aria2cArgs);
+
+        let totalLen = 0;
+        let currentLen = 0;
+
+        // 处理aria2c标准输出数据以捕获进度（可选）
+        aria2c.stdout.on('data', (data) => {
+            const output = data.toString();
+            const match = output.match(/\((\d+)\s*\/\s*(\d+)\)/);
+            if (match) {
+                currentLen = parseInt(match[1], 10);
+                totalLen = parseInt(match[2], 10);
+                progressCallback?.(currentLen / totalLen);
+            }
+        });
+
+        // 处理aria2c的stderr以捕获错误
+        aria2c.stderr.on('data', (data) => {
+            console.error(`aria2c error: ${data}`);
+        });
+
+        // 处理进程退出
+        aria2c.on('close', (code) => {
+            if (code === 0) {
+                resolve({ fullFileName, totalLen });
+            } else {
+                reject(new Error(`aria2c exited with code ${code}`));
+            }
+        });
+    });
 }
 
 /**

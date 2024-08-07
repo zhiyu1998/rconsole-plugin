@@ -1807,6 +1807,7 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
+                this.biliUseAria2
             ),
             downloadBFile(
                 audioUrl,
@@ -1818,9 +1819,10 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
+                this.biliUseAria2
             ),
         ]).then(data => {
-            return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${title}.mp4`);
+            return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${ title }.mp4`);
         });
     }
 
