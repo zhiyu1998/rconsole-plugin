@@ -2,6 +2,7 @@
   version: 1.7.3,
   data:
     [
+      新增<span class="cmd">Aria2下载选项</span>功能,
       新增<span class="cmd">最大上传限制选项</span>功能,
       新增<span class="cmd">BBDown下载方式</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
