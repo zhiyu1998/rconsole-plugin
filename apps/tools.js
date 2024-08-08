@@ -2109,9 +2109,7 @@ export class tools extends plugin {
                 e.reply(segment.video(path));
             }
         } catch (err) {
-            logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${err}`);
-            e.reply(`上传发生错误，R插件正在为你采用备用策略，请稍等，如果发不出来请再次尝试！`);
-            e.reply(segment.video(path));
+            logger.error(`[R插件][发送视频判断是否需要上传] 检测到错误:\n ${err}`);
         }
     }
 
