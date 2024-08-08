@@ -989,7 +989,7 @@ export class tools extends plugin {
         const downloadPath = `${this.getCurDownloadPath(e)}`;
         // 检测没有 cookie 则退出
         if (_.isEmpty(this.xiaohongshuCookie)) {
-            e.reply(`2024-8-2后反馈必须使用ck，不然无法解析请填写相关ck\n文档：${HELP_DOC}`);
+            e.reply(`2024-8-2后反馈必须使用ck，不然无法解析请填写相关ck\n${HELP_DOC}`);
             return;
         }
         // 获取信息
@@ -1325,7 +1325,7 @@ export class tools extends plugin {
      */
     async dy2b(path, url, isOversea) {
         return new Promise((resolve, reject) => {
-            const command = `yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} -o "temp.%(ext)s" -f 'best[height<=720][ext=mp4]' --merge-output-format "mp4"  ${url}`;
+            const command = `yt-dlp ${isOversea ? "" : `--proxy ${this.myProxy}`} -P ${path} -o "temp.%(ext)s" --merge-output-format "mp4"  ${url}`;
             exec(command, (error, stdout) => {
                 if (error) {
                     console.error(`Error executing command: ${error}`);
@@ -2084,27 +2084,33 @@ export class tools extends plugin {
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
     async sendVideoToUpload(e, path, videoSizeLimit = this.videoSizeLimit) {
-        // logger.info(videoSizeLimit);
-        const isLag = await this.isLagRangeDriver();
-        // 判断是否是拉格朗日
-        if (isLag === 1) {
-            // 构造拉格朗日适配器
-            const lagrange = new LagrangeAdapter(this.toolsConfig.lagrangeForwardWebSocket);
-            // 上传群文件
-            await lagrange.uploadGroupFile(e.user_id || e.sender.card, e.group_id, path);
-            // 上传完直接返回
-            return;
-        }
-        // 判断文件是否存在
-        if (!fs.existsSync(path)) {
-            return e.reply('视频不存在');
-        }
-        const stats = fs.statSync(path);
-        const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
-        if (videoSize > videoSizeLimit) {
-            e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制，\n改为上传群文件`);
-            await this.uploadGroupFile(e, path);
-        } else {
+        try {
+            // logger.info(videoSizeLimit);
+            const isLag = await this.isLagRangeDriver();
+            // 判断是否是拉格朗日
+            if (isLag === 1) {
+                // 构造拉格朗日适配器
+                const lagrange = new LagrangeAdapter(this.toolsConfig.lagrangeForwardWebSocket);
+                // 上传群文件
+                await lagrange.uploadGroupFile(e.user_id || e.sender.card, e.group_id, path);
+                // 上传完直接返回
+                return;
+            }
+            // 判断文件是否存在
+            if (!fs.existsSync(path)) {
+                return e.reply('视频不存在');
+            }
+            const stats = fs.statSync(path);
+            const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
+            if (videoSize > videoSizeLimit) {
+                e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
+                await this.uploadGroupFile(e, path);
+            } else {
+                e.reply(segment.video(path));
+            }
+        } catch (err) {
+            logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${err}`);
+            e.reply(`上传发生错误，R插件正在为你采用备用策略，请稍等，如果发不出来请再次尝试！`);
             e.reply(segment.video(path));
         }
     }
