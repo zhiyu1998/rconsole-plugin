@@ -1340,7 +1340,6 @@ export class tools extends plugin {
 
     // 油管解析
     async sy2b(e) {
-        let videoSizeLimit = 30
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
@@ -1360,7 +1359,7 @@ export class tools extends plugin {
             const title = execSync(`yt-dlp --get-title ${url} ${isOversea ? "" : `--proxy ${this.myProxy}`}`)
             e.reply(`识别：油管，视频下载中请耐心等待 \n${title}`);
             await this.dy2b(path, url, isOversea);
-            this.sendVideoToUpload(e, `${path}/temp.mp4`, videoSizeLimit)
+            this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             console.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
@@ -2101,7 +2100,9 @@ export class tools extends plugin {
                 return e.reply('视频不存在');
             }
             const stats = fs.statSync(path);
-            const videoSize = (stats.size / (1024 * 1024)).toFixed(2);
+            const videoSize = Math.floor(stats.size / (1024 * 1024));
+            logger.info(typeof videoSize);
+            logger.info(typeof videoSizeLimit);
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path);
