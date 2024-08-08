@@ -2101,8 +2101,6 @@ export class tools extends plugin {
             }
             const stats = fs.statSync(path);
             const videoSize = Math.floor(stats.size / (1024 * 1024));
-            logger.info(typeof videoSize);
-            logger.info(typeof videoSizeLimit);
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path);
