@@ -182,10 +182,6 @@ export class tools extends plugin {
                     fnc: "linkShareSummary"
                 },
                 {
-                    reg: "#(RPT|rpt)$",
-                    fnc: "pictureTranslate"
-                },
-                {
                     reg: "(y.qq.com)",
                     fnc: "qqMusic"
                 },
@@ -1679,46 +1675,6 @@ export class tools extends plugin {
         const stats = estimateReadingTime(kimiAns);
         e.reply(`当前 ${name} 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`)
         const Msg = await this.makeForwardMsg(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]);
-        await e.reply(Msg);
-        return true;
-    }
-
-    // 图片翻译和总结
-    async pictureTranslate(e) {
-        // 判断是否有总结的条件
-        if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
-            e.reply(`没有配置 Kimi，无法为您总结！${HELP_DOC}`)
-            return true;
-        }
-        // logger.info(Bot.pickGroup(e.group_id, true))
-        const curGroup = Bot.pickGroup(e.group_id, true);
-        const curGroupMessages = await curGroup.getChatHistory(e.message_seq, 1);
-        const groupMessage = curGroupMessages.pop()?.message;
-        // logger.info(groupMessage)
-        let refImgUrl;
-        for (let itemMessage of groupMessage) {
-            if (itemMessage.type === 'reply') {
-                const imgMessage = await curGroup.getMsg(itemMessage.id);
-                // logger.info(imgMessage)
-                refImgUrl = imgMessage.message.pop()?.url;
-                break;
-            }
-        }
-        if (refImgUrl === undefined || refImgUrl == null) {
-            e.reply("无法检测到图片，请重试！");
-            return
-        }
-        const builder = await new OpenaiBuilder()
-            .setBaseURL(this.aiBaseURL)
-            .setApiKey(this.aiApiKey)
-            .setModel(this.aiModel)
-            .setPrompt(IMAGE_TRANSLATION_PROMPT)
-            .build();
-        e.reply(`识别：图片翻译，请稍等...`, true, {recallMsg: 60});
-        const refImgDownloadPath = this.getCurDownloadPath(e);
-        await downloadImg(refImgUrl, refImgDownloadPath, "demo.png");
-        const {ans: kimiAns, model} = await builder.openai_pic(`${refImgDownloadPath}/demo.png`);
-        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${model}」联合为您识别内容：`, kimiAns]);
         await e.reply(Msg);
         return true;
     }

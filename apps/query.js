@@ -39,10 +39,6 @@ export class query extends plugin {
                     fnc: "cospro",
                 },
                 {
-                    reg: "^#搜书(.*)$",
-                    fnc: "searchBook",
-                },
-                {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
                 },
