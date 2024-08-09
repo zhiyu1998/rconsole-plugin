@@ -13,7 +13,7 @@
 
 > 📢 推荐 TG 个人互联网分享频道（分享日常冲浪互联网看到好玩的网站、app应用）：[RrOrange和朋友们](https://t.me/RrOrangeAndFriends)
 ## 🗃️ 文件架构 & 🌟 特征
-🗃️ 文件结构：
+### 🗃️ 文件结构：
 ```
 ├─.github
 │  └─ISSUE_TEMPLATE
@@ -36,7 +36,7 @@
 
 
 
-🌟 特征：
+### 🌟 特征：
 
 - 📦 开箱即用，git 到 Yunzai就可以使用
 - 🚀 速度巨快，考虑单线程、多线程，用户可以联合 `BBDown`、`Aria2`
@@ -71,7 +71,7 @@ git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-pl
 
 
 ```shell
-pnpm i -P --prefix ./plugins/rconsole-plugin/
+pnpm i --filter=rconsole-plugin
 ```
 
 
