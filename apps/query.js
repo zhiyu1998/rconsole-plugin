@@ -8,8 +8,6 @@ import axios from "axios";
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 // 配置文件
 import config from "../model/index.js";
-// 书库
-import { getYiBook, getZBook, getZHelper } from "../utils/books.js";
 
 export class query extends plugin {
 
@@ -192,41 +190,6 @@ export class query extends plugin {
             user_id: this.e.user_id,
         }));
         e.reply(await Bot.makeForwardMsg(images));
-        return true;
-    }
-
-    // 搜书
-    async searchBook(e) {
-        let keyword = e.msg.replace(/#|搜书/g, "").trim();
-        if (!keyword) {
-            e.reply("请输入书名，例如：#搜书 非暴力沟通");
-            return true;
-        }
-
-        // 集成易书、zBook
-        const searchBookFunc = async () => {
-            try {
-                const bookList = await Promise.allSettled([
-                    getYiBook(e, keyword),
-                    getZBook(e, keyword),
-                ]);
-                // 压缩直链结果
-                const combineRet = bookList
-                    .filter(item => item.status === "fulfilled" && item.value && item.value.length > 0)
-                    .flatMap(item => {
-                        return item.value.flat();
-                    });
-                combineRet.length > 0 && await e.reply(await Bot.makeForwardMsg(combineRet));
-                // ZHelper 特殊处理
-                const zHelper = await getZHelper(e, keyword);
-                zHelper.length > 1 &&
-                e.reply(await Bot.makeForwardMsg(zHelper));
-            } catch (err) {
-                logger.error(err);
-                e.reply("部分搜书正在施工🚧");
-            }
-        }
-        await this.limitUserUse(e, searchBookFunc);
         return true;
     }
 
