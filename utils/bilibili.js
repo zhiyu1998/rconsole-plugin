@@ -2,6 +2,7 @@ import fs from "node:fs";
 import axios from 'axios'
 import child_process from 'node:child_process'
 import util from "util";
+import path from "path";
 import {
     BILI_BVID_TO_CID,
     BILI_DYNAMIC,
@@ -11,7 +12,7 @@ import {
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
 import { mkdirIfNotExists } from "./file.js";
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 import qrcode from "qrcode"
 
 const biliHeaders = {
@@ -25,15 +26,21 @@ const biliHeaders = {
  * @param url                       下载链接
  * @param fullFileName              文件名
  * @param progressCallback          下载进度
- * @param isAria2                   是否使用aria2
+ * @param biliDownloadMethod        下载方式 {BILI_DOWNLOAD_METHOD}
  * @param videoDownloadConcurrency  视频下载并发
  * @returns {Promise<any>}
  */
-export async function downloadBFile(url, fullFileName, progressCallback, isAria2 = false, videoDownloadConcurrency = 1) {
-    if (isAria2) {
+export async function downloadBFile(url, fullFileName, progressCallback, biliDownloadMethod = 0, videoDownloadConcurrency = 1) {
+    if (biliDownloadMethod === 0) {
+        // 原生
+        return normalDownloadBFile(url, fullFileName, progressCallback);
+    }
+    if (biliDownloadMethod === 1) {
+        // 性能 Aria2
         return aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency);
     } else {
-        return normalDownloadBFile(url, fullFileName, progressCallback);
+        // 轻量
+        return axelDownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency);
     }
 }
 
@@ -42,7 +49,7 @@ export async function downloadBFile(url, fullFileName, progressCallback, isAria2
  * @param url
  * @param fullFileName
  * @param progressCallback
- * @returns {Promise<any>}
+ * @returns {Promise<{fullFileName: string, totalLen: number}>}
  */
 async function normalDownloadBFile(url, fullFileName, progressCallback) {
     return axios
@@ -80,7 +87,7 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
  * @param fullFileName
  * @param progressCallback
  * @param videoDownloadConcurrency
- * @returns {Promise<void>}
+ * @returns {Promise<{fullFileName: string, totalLen: number}>}
  */
 async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     return new Promise((resolve, reject) => {
@@ -93,8 +100,8 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
             '--console-log-level=warn', // 减少日志 verbosity
             '--download-result=hide',   // 隐藏下载结果概要
             '--header', 'referer: https://www.bilibili.com', // 添加自定义标头
-            `--max-connection-per-server=${videoDownloadConcurrency}`, // 每个服务器的最大连接数
-            `--split=${videoDownloadConcurrency}`,               // 分成 6 个部分进行下载
+            `--max-connection-per-server=${ videoDownloadConcurrency }`, // 每个服务器的最大连接数
+            `--split=${ videoDownloadConcurrency }`,               // 分成 6 个部分进行下载
             url
         ];
 
@@ -117,7 +124,7 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
 
         // 处理aria2c的stderr以捕获错误
         aria2c.stderr.on('data', (data) => {
-            console.error(`aria2c error: ${data}`);
+            console.error(`aria2c error: ${ data }`);
         });
 
         // 处理进程退出
@@ -125,7 +132,65 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
             if (code === 0) {
                 resolve({ fullFileName, totalLen });
             } else {
-                reject(new Error(`aria2c exited with code ${code}`));
+                reject(new Error(`aria2c exited with code ${ code }`));
+            }
+        });
+    });
+}
+
+/**
+ * 使用 C 语言写的轻量级下载工具 Axel 进行下载
+ * @param url
+ * @param fullFileName
+ * @param progressCallback
+ * @param videoDownloadConcurrency
+ * @returns {Promise<{fullFileName: string, totalLen: number}>}
+ */
+async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
+    return new Promise((resolve, reject) => {
+        // 构建路径
+        fullFileName = path.resolve(fullFileName);
+
+        // 构建 -H 参数
+        const headerParams = Object.entries(biliHeaders).map(
+            ([key, value]) => `--header="${ key }: ${ value }"`
+        ).join(' ');
+
+        let command = '';
+        let downloadTool = 'wget';
+        if (videoDownloadConcurrency === 1) {
+            // wget 命令
+            command = `${ downloadTool } -O ${ fullFileName } ${ headerParams } '${ url }'`;
+        } else {
+            // AXEL 命令行
+            downloadTool = 'axel';
+            command = `${ downloadTool } -n ${ videoDownloadConcurrency } -o ${ fullFileName } ${ headerParams } '${ url }'`;
+        }
+
+        // 执行命令
+        const axel = exec(command);
+        logger.info(`[R插件][axel/wget] 执行命令：${ downloadTool } 下载方式为：${ downloadTool === 'wget' ? '单线程' : '多线程' }`);
+
+        axel.stdout.on('data', (data) => {
+            const match = data.match(/(\d+)%/);
+            if (match) {
+                const progress = parseInt(match[1], 10) / 100;
+                progressCallback?.(progress);
+            }
+        });
+
+        axel.stderr.on('data', (data) => {
+            logger.info(`[R插件][${ downloadTool }]: ${ data }`);
+        });
+
+        axel.on('close', (code) => {
+            if (code === 0) {
+                resolve({
+                    fullFileName,
+                    totalLen: fs.statSync(fullFileName).size,
+                });
+            } else {
+                reject(new Error(`[R插件][${ downloadTool }] 错误：${ code }`));
             }
         });
     });
@@ -270,7 +335,7 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA) {
         fetch(BILI_PLAY_STREAM.replace("{bvid}", bvid).replace("{cid}", cid), {
             headers: {
                 // SESSDATA 字段
-                Cookie: `SESSDATA=${SESSDATA}`
+                Cookie: `SESSDATA=${ SESSDATA }`
             }
         })
             .then(res => res.json())
@@ -362,7 +427,8 @@ export async function getDynamic(dynamicId, SESSDATA) {
  *             refresh_token
  *         }>}
  */
-export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime = 10, hook = () => {}) {
+export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime = 10, hook = () => {
+}) {
     try {
         const resp = await axios.get(BILI_SCAN_CODE_GENERATE, { ...biliHeaders });
         // 保存扫码的地址、扫码登录秘钥

@@ -1,7 +1,7 @@
 import path from "path";
 import model from "./model/index.js";
 import _ from "lodash";
-import { BILI_CDN_SELECT_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD } from "./constants/constant.js";
 
 const _path = process.cwd() + "/plugins/rconsole-plugin";
 export function supportGuoba() {
@@ -140,12 +140,14 @@ export function supportGuoba() {
                     }
                 },
                 {
-                    field: "tools.biliUseAria2",
-                    label: "使用Aria2下载",
+                    field: "tools.biliDownloadMethod",
+                    label: "bili下载方式",
                     bottomHelpMessage:
-                        "【默认不开启】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后更加强劲，宽带直接拉满，Debian和Ubuntu用户直接使用命令安装：apt-get install aria2",
-                    component: "Switch",
-                    required: false,
+                        "哔哩哔哩的下载方式：默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_DOWNLOAD_METHOD,
+                    }
                 },
                 {
                     field: "tools.douyinCookie",

@@ -210,7 +210,7 @@ export class tools extends plugin {
         // 加载 BBDown 的CDN配置
         this.biliCDN = this.toolsConfig.biliCDN;
         // 加载哔哩哔哩是否使用Aria2
-        this.biliUseAria2 = this.toolsConfig.biliUseAria2;
+        this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -629,7 +629,7 @@ export class tools extends plugin {
                 // 下载视频
                 await startBBDown(url, path, {
                     biliSessData: this.biliSessData,
-                    biliUseAria2: this.biliUseAria2,
+                    biliUseAria2: this.biliDownloadMethod === 1,
                     biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
                 });
                 // 发送视频
@@ -1768,7 +1768,7 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
-                this.biliUseAria2,
+                this.biliDownloadMethod,
                 this.videoDownloadConcurrency
             ),
             downloadBFile(
@@ -1781,7 +1781,7 @@ export class tools extends plugin {
                         }),
                     1000,
                 ),
-                this.biliUseAria2,
+                this.biliDownloadMethod,
                 this.videoDownloadConcurrency
             ),
         ]).then(data => {

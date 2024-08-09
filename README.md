@@ -301,6 +301,21 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 - Linux教程：https://pwa.sspai.com/post/83345
 - Windows教程：https://github.com/nilaoda/BBDown/issues/305
 
+### 📺 关于使用 哔哩哔哩 下载方式
+
+- 轻量
+
+```shell
+apt install wget
+apt install axel
+```
+
+- 稳定（无须安装任何东西）
+
+- 性能
+```shell
+apt install aria2
+```
 
 ##  🤺 R插件交流群
 <img src="./img/qq.webp" width="30%" height="30%">

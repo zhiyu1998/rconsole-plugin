@@ -127,3 +127,9 @@ export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '阿卡迈（海外）', value: 4 , sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai')},
     { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') }
 ]);
+
+export const BILI_DOWNLOAD_METHOD = Object.freeze([
+    { label: '稳定（原生）', value: 0 },
+    { label: '性能（Aria2）', value: 1 },
+    { label: '轻量（axel/wget）', value: 2 }
+]);
