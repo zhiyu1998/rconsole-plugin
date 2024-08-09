@@ -25,10 +25,11 @@ export function checkBBDown() {
  * 使用BBDown下载
  * @param videoUrl      视频链接
  * @param downloadDir   下载目录
- * @param biliSessData  cookie
- * @param biliUseAria2  使用Aria2
+ * @param BBDownOptions  BBDown选项（目前仅支持session登录、使用Aria2下载、CDN）
  */
-export function startBBDown(videoUrl, downloadDir, biliSessData, biliUseAria2) {
+export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
+    const { biliSessData, biliUseAria2, biliCDN } = BBDownOptions;
+
     return new Promise((resolve, reject) => {
         // logger.info(videoUrl);
         // 解析URL并提取参数p（页数）
@@ -44,7 +45,8 @@ export function startBBDown(videoUrl, downloadDir, biliSessData, biliUseAria2) {
         urlObj.search = newParams.toString();
         videoUrl = urlObj.toString();
         // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
-        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''}`;
+        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
+        logger.info(command);
         // logger.info(command);
         // 直接调用BBDown，因为它已经在系统路径中
         exec(command, (error, stdout, stderr) => {

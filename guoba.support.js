@@ -1,6 +1,7 @@
 import path from "path";
 import model from "./model/index.js";
 import _ from "lodash";
+import { BILI_CDN_SELECT_LIST } from "./constants/constant.js";
 
 const _path = process.cwd() + "/plugins/rconsole-plugin";
 export function supportGuoba() {
@@ -128,6 +129,15 @@ export function supportGuoba() {
                         "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后下载更强劲，并且一劳永逸！",
                     component: "Switch",
                     required: false,
+                },
+                {
+                    field: "tools.biliCDN",
+                    label: "强制使用CDN",
+                    bottomHelpMessage: "BBDown强制使用CDN：【只影响开启后的BBDown，一定程度可以影响BBDown速度】哔哩哔哩的CDN地址更换，如果不需要默认不使用，如果选择了其他的CDN将会使用",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_CDN_SELECT_LIST,
+                    }
                 },
                 {
                     field: "tools.biliUseAria2",

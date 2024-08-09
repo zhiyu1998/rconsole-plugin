@@ -23,12 +23,12 @@ import {
 } from "../utils/bilibili.js";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import {
+    BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
     HELP_DOC,
-    IMAGE_TRANSLATION_PROMPT,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     SUMMARY_PROMPT,
@@ -43,7 +43,8 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq, saveJsonToFile,
+    retryAxiosReq,
+    saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString
@@ -73,7 +74,6 @@ import {
     WEISHI_VIDEO_INFO,
     XHS_REQ_LINK
 } from "../constants/tools.js";
-import { processTikTokUrl } from "../utils/tiktok.js";
 import { getDS } from "../utils/mihoyo.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { mid2id } from "../utils/weibo.js";
@@ -207,6 +207,8 @@ export class tools extends plugin {
         this.biliDuration = this.toolsConfig.biliDuration;
         // 加载哔哩哔哩是否使用BBDown
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
+        // 加载 BBDown 的CDN配置
+        this.biliCDN = this.toolsConfig.biliCDN;
         // 加载哔哩哔哩是否使用Aria2
         this.biliUseAria2 = this.toolsConfig.biliUseAria2;
         // 加载抖音Cookie
@@ -625,7 +627,11 @@ export class tools extends plugin {
                 // 删除之前的文件
                 await checkAndRemoveFile(`${ tempPath }.mp4`);
                 // 下载视频
-                await startBBDown(url, path, this.biliSessData, this.biliUseAria2);
+                await startBBDown(url, path, {
+                    biliSessData: this.biliSessData,
+                    biliUseAria2: this.biliUseAria2,
+                    biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
+                });
                 // 发送视频
                 return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
             }
