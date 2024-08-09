@@ -118,11 +118,12 @@ export const SUMMARY_CONTENT_ESTIMATOR_PATTERNS = [
     { reg: /(?:https?:\/\/)?(www\.)chinadaily.com.cn\/a\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'ChinaDaily' }
 ];
 
+const BILI_CDN_TEMPLATE = "upos-sz-mirror{}.bilivideo.com";
 export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '不使用', value: 0, sign: '' },
-    { label: '腾讯CDN【推荐】', value: 1, sign: 'upos-sz-mirrorcos.bilivideo.com' },
-    { label: '百度CDN', value: 2, sign: 'upos-sz-mirrorbd.bilivideo.com' },
-    { label: '华为CDN', value: 3, sign: 'upos-sz-mirrorhw.bilivideo.com' },
-    { label: '阿卡迈（海外）', value: 4 , sign: 'upos-sz-mirrorakamai.bilivideo.com'},
-    { label: 'HK-CDN', value: 5, sign: 'upos-sz-mirroraliov.bilivideo.com' }
+    { label: '腾讯CDN【推荐】', value: 1, sign: BILI_CDN_TEMPLATE.replace('{}', 'cos') },
+    { label: '百度CDN', value: 2, sign: BILI_CDN_TEMPLATE.replace('{}', 'bd') },
+    { label: '华为CDN', value: 3, sign: BILI_CDN_TEMPLATE.replace('{}', 'hw') },
+    { label: '阿卡迈（海外）', value: 4 , sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai')},
+    { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') }
 ]);
