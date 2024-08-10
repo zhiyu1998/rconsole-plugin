@@ -581,18 +581,20 @@ export class tools extends plugin {
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
+        // 封装总结
+        const Msg = await this.makeForwardMsg(e, [`「R插件 x B站」联合为您总结内容：`, summary]);
         // 不提取音乐，正常处理
         if (isLimitDuration) {
             // 加入图片
-            biliInfo.unshift(segment.image(pic))
+            biliInfo.unshift(segment.image(pic));
             // 限制视频解析
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`)
-            summary && biliInfo.push(`\n${ summary }`);
+            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`);
+            summary && (await e.reply(Msg));
             e.reply(biliInfo);
             return true;
         } else {
-            summary && biliInfo.push(`\n${ summary }`);
+            summary && (await e.reply(Msg));
             e.reply(biliInfo);
         }
 
@@ -746,7 +748,7 @@ export class tools extends plugin {
      * @param bvid 稿件
      * @param cid 视频 cid
      * @param up_mid UP主 mid
-     * @return {Promise<void>}
+     * @return {Promise<string>}
      */
     async getBiliSummary(bvid, cid, up_mid) {
         // 这个有点用，但不多
