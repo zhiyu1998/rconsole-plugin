@@ -582,7 +582,11 @@ export class tools extends plugin {
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 封装总结
-        const Msg = await this.makeForwardMsg(e, [`「R插件 x B站」联合为您总结内容：`, summary]);
+        const Msg = await Bot.makeForwardMsg([{
+            message: { type: "text", text: summary },
+            nickname: e.sender.card || e.user_id,
+            user_id: e.user_id,
+        }]);
         // 不提取音乐，正常处理
         if (isLimitDuration) {
             // 加入图片
@@ -1682,7 +1686,13 @@ export class tools extends plugin {
         // 计算阅读时间
         const stats = estimateReadingTime(kimiAns);
         e.reply(`当前 ${ name } 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
-        const Msg = await this.makeForwardMsg(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]);
+        const Msg = await Bot.makeForwardMsg([`「R插件 x ${ model }」联合为您总结内容：`, kimiAns].map(item => {
+            return {
+                message: { type: "text", text: item },
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            };
+        }));
         await e.reply(Msg);
         return true;
     }
@@ -2091,46 +2101,5 @@ export class tools extends plugin {
         } else {
             await e.group.sendFile(path);
         }
-    }
-
-    async makeForwardMsg(e, msg = [], dec = '') {
-        let userInfo = {
-            nickname: e.nickname,
-            user_id: e.user_id
-        }
-
-        let forwardMsg = []
-        msg.forEach(v => {
-            forwardMsg.push({
-                ...userInfo,
-                message: v
-            })
-        })
-
-        if (e.isGroup) {
-            forwardMsg = await e.group.makeForwardMsg(forwardMsg)
-        } else if (e.friend) {
-            forwardMsg = await e.friend.makeForwardMsg(forwardMsg)
-        } else {
-            return false
-        }
-
-        if (dec) {
-            if (typeof (forwardMsg.data) === 'object') {
-                let detail = forwardMsg.data?.meta?.detail
-                if (detail) {
-                    detail.news = [{ text: dec }]
-                }
-            } else {
-                forwardMsg.data = forwardMsg.data
-                    .replace('<?xml version="1.0" encoding="utf-8"?>', '<?xml version="1.0" encoding="utf-8" ?>')
-                    .replace(/\n/g, '')
-                    .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-                    .replace(/___+/, `<title color="#777777" size="26">${ dec }</title>`)
-            }
-
-        }
-
-        return forwardMsg
     }
 }
