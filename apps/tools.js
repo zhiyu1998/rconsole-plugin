@@ -82,6 +82,7 @@ import path from "path";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { checkBBDown, startBBDown } from "../utils/bbdown-util.js";
+import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
     /**
@@ -582,11 +583,7 @@ export class tools extends plugin {
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 封装总结
-        const Msg = await Bot.makeForwardMsg([{
-            message: { type: "text", text: summary },
-            nickname: e.sender.card || e.user_id,
-            user_id: e.user_id,
-        }]);
+        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary]));
         // 不提取音乐，正常处理
         if (isLimitDuration) {
             // 加入图片
@@ -1687,13 +1684,7 @@ export class tools extends plugin {
         // 计算阅读时间
         const stats = estimateReadingTime(kimiAns);
         e.reply(`当前 ${ name } 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
-        const Msg = await Bot.makeForwardMsg([`「R插件 x ${ model }」联合为您总结内容：`, kimiAns].map(item => {
-            return {
-                message: { type: "text", text: item },
-                nickname: e.sender.card || e.user_id,
-                user_id: e.user_id,
-            };
-        }));
+        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
         await e.reply(Msg);
         return true;
     }
