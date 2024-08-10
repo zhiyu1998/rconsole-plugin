@@ -888,6 +888,8 @@ export class tools extends plugin {
         const twitterUrl = reg.exec(e.msg)[0];
         // 检测
         const isOversea = await this.isOverseasServer();
+        logger.info(!isOversea);
+        logger.info(!(await testProxy(this.proxyAddr, this.proxyPort)));
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析小蓝鸟");
             return false;
@@ -915,18 +917,17 @@ export class tools extends plugin {
         axios.get(videoUrl, config).then(resp => {
             const url = resp.data.data?.url;
             if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
+                logger.info(url);
                 if (isOversea) {
                     // 海外直接下载
                     e.reply(segment.image(url));
                 } else {
                     // 非海外使用🪜下载
-                    const proxy = this.proxyAddr;
-                    const port = this.proxyPort;
                     const localPath = this.getCurDownloadPath(e);
-                    downloadImg(url, localPath, "", isOversea, {}, {
-                        proxyAddr: proxy,
-                        proxyPort: port
-                    }).then(_ => {
+                    downloadImg(url, localPath, "", !isOversea, {}, {
+                        proxyAddr: this.proxyAddr,
+                        proxyPort: this.proxyPort
+                    }).then(async _ => {
                         e.reply(segment.image(fs.readFileSync(localPath + "/" + url.split("/").pop())));
                     });
                 }
@@ -1868,12 +1869,7 @@ export class tools extends plugin {
         // 构造代理参数
         const proxyOption = {
             ...(isProxy && {
-                httpAgent: tunnel.httpOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
-                httpsAgent: tunnel.httpsOverHttp({
-                    proxy: { host: this.proxyAddr, port: this.proxyPort },
-                }),
+                httpAgent: new HttpsProxyAgent(`http://${ this.proxyAddr }:${ this.proxyPort }`),
             }),
         }
 

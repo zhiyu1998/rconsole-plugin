@@ -326,23 +326,13 @@ export function truncateString(inputString, maxLength = 50) {
  * @returns {Promise<Boolean>}
  */
 export async function testProxy(host='127.0.0.1', port=7890) {
-    // 配置代理服务器
-    const proxyOptions = {
-        host: host,
-        port: port,
-        // 如果你的代理服务器需要认证
-        // auth: 'username:password', // 取消注释并提供实际的用户名和密码
-    };
-
     // 创建一个代理隧道
-    const httpsAgent = tunnel.httpsOverHttp({
-        proxy: proxyOptions
-    });
+    const httpsAgent = new HttpsProxyAgent(`http://${host}:${port}`);
 
     try {
         // 通过代理服务器发起请求
         await axios.get('https://www.google.com', { httpsAgent });
-        logger.mark('[R插件][梯子测试模块] 检测到梯子');
+        logger.mark(logger.yellow('[R插件][梯子测试模块] 检测到梯子'));
         return true;
     } catch (error) {
         logger.error('[R插件][梯子测试模块] 检测不到梯子');
