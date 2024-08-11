@@ -1,14 +1,16 @@
-import path from "path";
-import model from "./model/index.js";
 import _ from "lodash";
+import path from "path";
 import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD } from "./constants/constant.js";
+import model from "./model/config.js";
 
-const _path = process.cwd() + "/plugins/rconsole-plugin";
+const pluginName = `rconsole-plugin`;
+
+const _path = process.cwd() + `/plugins/${pluginName}`;
 export function supportGuoba() {
     return {
         pluginInfo: {
             name: "R插件",
-            title: "rconsole-plugin",
+            title: pluginName,
             author: "@zhiyu",
             authorLink: "https://gitee.com/kyrzy0416",
             link: "https://gitee.com/kyrzy0416/rconsole-plugin",
@@ -261,9 +263,8 @@ export function supportGuoba() {
                 for (let [key, value] of Object.entries(data)) {
                     _.set(config, key, value);
                 }
-                // TODO 目前只有一个文件的配置，暂时这样写
                 config = _.merge({}, model.getConfig("tools"), config.tools);
-                model.saveSet("tools", config);
+                model.saveAllConfig("tools", config);
                 return Result.ok({}, "保存成功~");
             },
         },

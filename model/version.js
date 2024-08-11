@@ -1,6 +1,6 @@
-import base from './base.js'
+import Base from './base.js'
 
-export default class Version extends base {
+export default class Version extends Base {
     constructor (e) {
         super(e)
         this.model = 'version'

@@ -7,7 +7,7 @@ import axios from "axios";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 // 配置文件
-import config from "../model/index.js";
+import config from "../model/config.js";
 
 export class query extends plugin {
 

@@ -1,8 +1,8 @@
-import base from './base.js'
-import config from './index.js'
+import Base from './base.js'
+import config from './config.js'
 import cfg from '../../../lib/config/config.js'
 
-export default class Help extends base {
+export default class Help extends Base {
     constructor(e) {
         super(e)
         this.model = 'help'

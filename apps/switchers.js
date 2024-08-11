@@ -1,4 +1,4 @@
-import config from "../model/index.js";
+import config from "../model/config.js";
 import schedule from 'node-schedule';
 import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE } from "../constants/constant.js";
 import { deleteFolderRecursive, readCurrentDir } from "../utils/file.js";

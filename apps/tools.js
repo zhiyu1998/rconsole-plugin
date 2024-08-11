@@ -1,26 +1,13 @@
-// 主库
-import fetch from "node-fetch";
-import fs from "node:fs";
-import { Buffer } from 'node:buffer';
-// 其他库
 import axios from "axios";
-import _ from "lodash";
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { exec, execSync } from "child_process";
-import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
-import {
-    downloadBFile,
-    filterBiliDescLink,
-    getBiliAudio,
-    getBiliVideoWithSession,
-    getDownloadUrl,
-    getDynamic,
-    getScanCodeData,
-    getVideoInfo,
-    m4sToMp3,
-    mergeFileToMp4
-} from "../utils/bilibili.js";
-import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import _ from "lodash";
+import fetch from "node-fetch";
+import { Buffer } from 'node:buffer';
+import fs from "node:fs";
+import PQueue from 'p-queue';
+import path from "path";
+import querystring from "querystring";
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
@@ -35,27 +22,6 @@ import {
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
-import {
-    checkCommandExists,
-    cleanFilename,
-    downloadAudio,
-    downloadImg,
-    estimateReadingTime,
-    formatBiliInfo,
-    retryAxiosReq,
-    saveJsonToFile,
-    secondsToTime,
-    testProxy,
-    truncateString
-} from "../utils/common.js";
-import config from "../model/index.js";
-import Translate from "../utils/trans-strategy.js";
-import * as aBogus from "../utils/a-bogus.cjs";
-import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
-import { av2BV } from "../utils/bilibili-bv-av-convert.js";
-import querystring from "querystring";
-import PQueue from 'p-queue';
-import { getWbi } from "../utils/biliWbi.js";
 import {
     BILI_STREAM_INFO,
     BILI_SUMMARY,
@@ -73,14 +39,45 @@ import {
     WEISHI_VIDEO_INFO,
     XHS_REQ_LINK
 } from "../constants/tools.js";
-import { getDS } from "../utils/mihoyo.js";
-import GeneralLinkAdapter from "../utils/general-link-adapter.js";
-import { mid2id } from "../utils/weibo.js";
-import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
-import path from "path";
-import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { contentEstimator } from "../utils/link-share-summary-util.js";
+import config from "../model/config.js";
+import * as aBogus from "../utils/a-bogus.cjs";
+import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import { checkBBDown, startBBDown } from "../utils/bbdown-util.js";
+import { av2BV } from "../utils/bilibili-bv-av-convert.js";
+import {
+    downloadBFile,
+    filterBiliDescLink,
+    getBiliAudio,
+    getBiliVideoWithSession,
+    getDownloadUrl,
+    getDynamic,
+    getScanCodeData,
+    getVideoInfo,
+    m4sToMp3,
+    mergeFileToMp4
+} from "../utils/bilibili.js";
+import { getWbi } from "../utils/biliWbi.js";
+import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
+import {
+    checkCommandExists,
+    cleanFilename,
+    downloadAudio,
+    downloadImg,
+    estimateReadingTime,
+    formatBiliInfo,
+    retryAxiosReq,
+    secondsToTime,
+    testProxy,
+    truncateString
+} from "../utils/common.js";
+import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
+import GeneralLinkAdapter from "../utils/general-link-adapter.js";
+import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
+import { contentEstimator } from "../utils/link-share-summary-util.js";
+import { getDS } from "../utils/mihoyo.js";
+import { OpenaiBuilder } from "../utils/openai-builder.js";
+import Translate from "../utils/trans-strategy.js";
+import { mid2id } from "../utils/weibo.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
