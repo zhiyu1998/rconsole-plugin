@@ -579,7 +579,10 @@ export class tools extends plugin {
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 封装总结
-        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary]));
+        let Msg = '';
+        if (!_.isEmpty(summary)) {
+            Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary]));
+        }
         // 不提取音乐，正常处理
         if (isLimitDuration) {
             // 加入图片
@@ -587,11 +590,11 @@ export class tools extends plugin {
             // 限制视频解析
             const durationInMinutes = (curDuration / 60).toFixed(0);
             biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`);
-            summary && (await e.reply(Msg));
+            Msg && (await e.reply(Msg));
             e.reply(biliInfo);
             return true;
         } else {
-            summary && (await e.reply(Msg));
+            Msg && (await e.reply(Msg));
             e.reply(biliInfo);
         }
 
