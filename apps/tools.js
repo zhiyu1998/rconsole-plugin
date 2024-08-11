@@ -1270,11 +1270,12 @@ export class tools extends plugin {
                     // 文章
                     if (!videoUrl) return true
                     try {
+                        // wb 视频只能强制使用 1，由群友@非酋提出
                         this.downloadVideo(videoUrl, false, {
                             "User-Agent": COMMON_USER_AGENT,
                             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                             "referer": "https://weibo.com/",
-                        }).then(path => {
+                        }, 1).then(path => {
                             this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                         });
                     } catch (err) {
