@@ -8,7 +8,6 @@ class RConfig extends Base{
     constructor(e) {
         super(e);
         this.configPath = `./plugins/${RConfig.pluginName}/config/`;
-        this.change = new Map();
         this.previousContent = new Map(); // 存储每个文件之前的内容
     }
 
@@ -39,7 +38,6 @@ class RConfig extends Base{
         const yaml = YAML.parse(fs.readFileSync(file, 'utf8'));
 
         if (isWatch) {
-            this.change.set(name);
             this.previousContent.set(name, yaml); // 保存初始内容
             this.watch(file, name);
         }
