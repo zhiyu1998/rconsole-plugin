@@ -1848,14 +1848,12 @@ export class tools extends plugin {
      * @param numThreads
      * @returns {Promise<void>}
      */
-    async downloadVideo(url, isProxy = false, headers = null, numThreads = 1) {
+    async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency) {
         // 构造群信息参数
         const { groupPath, target } = this.getGroupPathAndTarget.call(this);
         await mkdirIfNotExists(groupPath);
         // 构造header部分内容
         const userAgent = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
-        // 用户设置优先策略，逻辑解释：如果使用了这个函数优先查看用户是否设置了大于1的线程，如果设置了优先使用，没设置就开发者设定的函数设置
-        numThreads = this.videoDownloadConcurrency !== 1 ? this.videoDownloadConcurrency : numThreads;
 
         // 构造代理参数
         const proxyOption = {
