@@ -1,5 +1,5 @@
 /**
- * 将只有string的数组转换为原生的 {Bot.makeForwardMsg}
+ * 将只有 text 类型的数组转换为原生的 {Bot.makeForwardMsg}
  * @param e
  * @param textArray {string[]}
  */

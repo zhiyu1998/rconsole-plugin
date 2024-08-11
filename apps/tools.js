@@ -5,7 +5,6 @@ import { Buffer } from 'node:buffer';
 // 其他库
 import axios from "axios";
 import _ from "lodash";
-import tunnel from "tunnel";
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { exec, execSync } from "child_process";
 import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
