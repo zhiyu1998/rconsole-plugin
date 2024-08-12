@@ -23,6 +23,7 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
+    BILI_ONLINE,
     BILI_STREAM_INFO,
     BILI_SUMMARY,
     DY_COMMENT,
@@ -537,7 +538,7 @@ export class tools extends plugin {
             return true;
         }
         // 只提取音乐处理
-        if (e.msg !== undefined && e.msg.includes("音乐")) {
+        if (e.msg !== undefined && e.msg.startsWith("音乐")) {
             e.reply("识别：哔哩哔哩音乐，正在提取请稍候...")
             return await this.biliMusic(e, url);
         }
@@ -573,8 +574,10 @@ export class tools extends plugin {
         };
         // 过滤简介中的一些链接
         const filteredDesc = await filterBiliDescLink(desc);
+        // 拼接在线人数
+        const onlineTotal = await this.biliOnlineTotal(bvid, cid);
         // 格式化数据
-        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
+        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }\n🏄‍♂️️ 当前视频有 ${onlineTotal.total} 人在观看，其中 ${onlineTotal.count} 人在网页端观看`;
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
@@ -652,6 +655,21 @@ export class tools extends plugin {
             // 错误处理
             logger.error('[R插件][哔哩哔哩视频发送]下载错误，具体原因为:', err);
             e.reply("解析失败，请重试一下");
+        }
+    }
+
+    /**
+     * 获取在线人数
+     * @param bvid
+     * @param cid
+     * @returns {Promise<{total: *, count: *}>}
+     */
+    async biliOnlineTotal(bvid, cid) {
+        const onlineResp = await axios.get(BILI_ONLINE.replace("{0}", bvid).replace("{1}", cid));
+        const online = onlineResp.data.data;
+        return {
+            total: online.total,
+            count: online.count
         }
     }
 
