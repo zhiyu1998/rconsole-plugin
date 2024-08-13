@@ -2061,7 +2061,7 @@ export class tools extends plugin {
             return true;
         }
         // 如果有就取出来
-        return (await redis.get(REDIS_YUNZAI_ISOVERSEA)).os;
+        return (await redisGetKey(REDIS_YUNZAI_ISOVERSEA)).os;
     }
 
     /**
