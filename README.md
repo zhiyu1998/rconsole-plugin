@@ -337,6 +337,12 @@ apt install aria2
 #查询R信任用户
 ```
 
+<img src="./img/aircraft1.webp" width="30%" height="30%">
+
+<img src="./img/aircraft2.webp" width="30%" height="30%">
+
+<img src="./img/aircraft3.webp" width="30%" height="30%">
+
 5. 开始使用！
 
 ##  🤺 R插件交流群
