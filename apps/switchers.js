@@ -57,9 +57,16 @@ export class switchers extends plugin {
      */
     async setOversea(e) {
         // 查看当前设置
-        let os = (await redisExistAndGetKey(REDIS_YUNZAI_ISOVERSEA)).os;
+        let os = (await redisGetKey(REDIS_YUNZAI_ISOVERSEA))?.os;
+        // 如果是第一次
+        if (os === undefined) {
+            await redisSetKey(REDIS_YUNZAI_ISOVERSEA, {
+                os: false,
+            });
+            os = false;
+        }
         // 设置
-        os = ~os
+        os = ~os;
         await redisSetKey(REDIS_YUNZAI_ISOVERSEA, {
             os: os,
         });
@@ -74,7 +81,14 @@ export class switchers extends plugin {
      */
     async setLagrange(e) {
         // 查看当前设置
-        let driver = (await redisExistAndGetKey(REDIS_YUNZAI_LAGRANGE)).driver;
+        let driver = (await redisExistAndGetKey(REDIS_YUNZAI_LAGRANGE))?.driver;
+        // 如果是第一次
+        if (driver === undefined) {
+            await redisSetKey({
+                driver: 1,
+            })
+            driver = 1;
+        }
         // 异常检测，之前算法出现问题，如果出现异常就检测纠正
         if (driver === -1) {
             driver = 1;
