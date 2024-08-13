@@ -2090,7 +2090,7 @@ export class tools extends plugin {
             return false;
         }
         const whiteList = await redisGetKey(REDOS_YUNZAI_WHITELIST);
-        return whiteList.includes(userId);
+        return whiteList.includes(userId) || whiteList.includes(userId.toString());
     }
 
     /**
