@@ -139,3 +139,40 @@ function getMimeType(filePath) {
     const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
     return mimeTypes[ext] || 'application/octet-stream';
 }
+
+/**
+ * 获取文件夹中的图片和视频文件
+ * @param {string} folderPath - 要检测的文件夹路径
+ * @returns {Promise<Object>} 包含图片和视频文件名的对象
+ */
+export async function getMediaFiles(folderPath) {
+    return new Promise((resolve, reject) => {
+        // 定义图片和视频的扩展名
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+        const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'];
+
+        // 初始化存储图片和视频的数组
+        const images = [];
+        const videos = [];
+
+        // 读取文件夹中的所有文件
+        fs.readdir(folderPath, (err, files) => {
+            if (err) {
+                return reject('无法读取文件夹: ' + err);
+            }
+
+            files.forEach(file => {
+                const ext = path.extname(file).toLowerCase();
+
+                if (imageExtensions.includes(ext)) {
+                    images.push(file);
+                } else if (videoExtensions.includes(ext)) {
+                    videos.push(file);
+                }
+            });
+
+            // 返回包含图片和视频的对象
+            resolve({ images, videos });
+        });
+    });
+}

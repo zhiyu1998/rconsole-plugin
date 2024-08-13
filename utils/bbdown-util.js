@@ -1,25 +1,4 @@
 import { exec } from 'child_process';
-import os from 'os';
-
-/**
- * 检测 BBDown 是否存在
- */
-export function checkBBDown() {
-    // 根据操作系统选择命令
-    return new Promise((resolve, reject) => {
-        const command = os.platform() === 'win32' ? 'where BBDown' : 'which BBDown';
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                logger.error(`[R插件][BBDown]未找到: ${stderr || error.message}`);
-                resolve(false);
-                return;
-            }
-            logger.info(`[R插件][BBDown]找到: ${stdout.trim()}`);
-            resolve(true);
-        });
-    });
-}
 
 /**
  * 使用BBDown下载

@@ -14,9 +14,9 @@ import {
     COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
-    HELP_DOC,
+    HELP_DOC, MESSAGE_RECALL_TIME,
     REDIS_YUNZAI_ISOVERSEA,
-    REDIS_YUNZAI_LAGRANGE,
+    REDIS_YUNZAI_LAGRANGE, REDOS_YUNZAI_WHITELIST,
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
@@ -43,7 +43,7 @@ import {
 import config from "../model/config.js";
 import * as aBogus from "../utils/a-bogus.cjs";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
-import { checkBBDown, startBBDown } from "../utils/bbdown-util.js";
+import { startBBDown } from "../utils/bbdown-util.js";
 import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import {
     downloadBFile,
@@ -61,6 +61,7 @@ import { getWbi } from "../utils/biliWbi.js";
 import { getBodianAudio, getBodianMusicInfo, getBodianMv } from "../utils/bodian.js";
 import {
     checkCommandExists,
+    checkToolInCurEnv,
     cleanFilename,
     downloadAudio,
     downloadImg,
@@ -71,14 +72,17 @@ import {
     testProxy,
     truncateString
 } from "../utils/common.js";
-import { checkAndRemoveFile, deleteFolderRecursive, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, deleteFolderRecursive, getMediaFiles, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
+import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
+import { startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
+import { dy2b } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
@@ -186,6 +190,10 @@ export class tools extends plugin {
                 {
                     reg: "(qishui.douyin.com)",
                     fnc: "qishuiMusic"
+                },
+                {
+                    reg: "(t.me)",
+                    fnc: "aircraft"
                 }
             ],
         });
@@ -626,7 +634,7 @@ export class tools extends plugin {
         // 检测是否开启BBDown
         if (this.biliUseBBDown) {
             // 检测环境的 BBDown
-            const isExistBBDown = await checkBBDown();
+            const isExistBBDown = await checkToolInCurEnv("BBDown");
             // 存在 BBDown
             if (isExistBBDown) {
                 // 删除之前的文件
@@ -897,6 +905,10 @@ export class tools extends plugin {
 
     // 使用现有api解析小蓝鸟
     async twitter_x(e) {
+        if (!(await this.isTrustUser(e.user_id))) {
+            e.reply("你没有权限使用此命令");
+            return;
+        }
         // 配置参数及解析
         const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
         const twitterUrl = reg.exec(e.msg)[0];
@@ -1340,28 +1352,6 @@ export class tools extends plugin {
         return true
     }
 
-    /**
-     * yt-dlp工具类
-     * @returns {Promise<void>}
-     * @param path      下载路径
-     * @param url       下载链接
-     * @param isOversea 是否是海外用户
-     */
-    async dy2b(path, url, isOversea) {
-        return new Promise((resolve, reject) => {
-            const command = `yt-dlp ${ isOversea ? "" : `--proxy ${ this.myProxy }` } -P ${ path } -o "temp.%(ext)s" --merge-output-format "mp4"  ${ url }`;
-            exec(command, (error, stdout) => {
-                if (error) {
-                    console.error(`Error executing command: ${ error }`);
-                    reject(error);
-                } else {
-                    console.log(`Command output: ${ stdout }`);
-                    resolve(stdout);
-                }
-            });
-        });
-    }
-
     // 油管解析
     async sy2b(e) {
         const isOversea = await this.isOverseasServer();
@@ -1382,7 +1372,7 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.mp4")
             const title = execSync(`yt-dlp --get-title ${ url } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
             e.reply(`识别：油管，视频下载中请耐心等待 \n${ title }`);
-            await this.dy2b(path, url, isOversea);
+            await dy2b(path, url, isOversea);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             console.error(error);
@@ -1697,7 +1687,7 @@ export class tools extends plugin {
             .setModel(this.aiModel)
             .setPrompt(SUMMARY_PROMPT)
             .build();
-        e.reply(`识别：${ name }，正在为您总结，请稍等...`, true, { recallMsg: 60 });
+        e.reply(`识别：${ name }，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
         const { ans: kimiAns, model } = await builder.kimi(summaryLink);
         // 计算阅读时间
         const stats = estimateReadingTime(kimiAns);
@@ -1768,6 +1758,48 @@ export class tools extends plugin {
         }).catch(err => {
             logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
         });
+        return true;
+    }
+
+    // TG下载
+    async aircraft(e) {
+        if (!(await this.isTrustUser(e.user_id))) {
+            e.reply("你没有权限使用此命令");
+            return;
+        }
+        const isOversea = await this.isOverseasServer();
+        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
+            e.reply("检测到没有梯子，无法解析小飞机");
+            return false;
+        }
+        const urlRex = /(?:https?:\/\/)?t\.me\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        // 检查当前环境
+        const isExistTdl = await checkToolInCurEnv("tdl");
+        if (!isExistTdl) {
+            e.reply(`未检测到必要的环境，无法解析小飞机${HELP_DOC}`);
+            return;
+        }
+        const url = urlRex.exec(e.msg)[0];
+        const tgSavePath = this.getCurDownloadPath(e);
+        await startTDL(url, tgSavePath, isOversea, this.myProxy);
+        e.reply(`识别：小飞机（学习版）`);
+        const mediaFiles = await getMediaFiles(tgSavePath);
+        if (mediaFiles.images.length > 0) {
+            const imagesData = mediaFiles.images.map(item => {
+                const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                return {
+                    message: segment.image(fileContent),
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            })
+            e.reply(await Bot.makeForwardMsg(imagesData), true, { recallMsg: MESSAGE_RECALL_TIME });
+        } else if (mediaFiles.videos.length > 0) {
+            for (const item of mediaFiles.videos) {
+                await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
+            }
+        }
+        await deleteFolderRecursive(tgSavePath);
         return true;
     }
 
@@ -2021,17 +2053,14 @@ export class tools extends plugin {
      */
     async isOverseasServer() {
         // 如果第一次使用没有值就设置
-        if (!(await redis.exists(REDIS_YUNZAI_ISOVERSEA))) {
-            await redis.set(
-                REDIS_YUNZAI_ISOVERSEA,
-                JSON.stringify({
-                    os: false,
-                }),
-            );
+        if (!(await redisExistKey(REDIS_YUNZAI_ISOVERSEA))) {
+            await redisSetKey(REDIS_YUNZAI_ISOVERSEA, {
+                os: false,
+            })
             return true;
         }
         // 如果有就取出来
-        return JSON.parse((await redis.get(REDIS_YUNZAI_ISOVERSEA))).os;
+        return (await redis.get(REDIS_YUNZAI_ISOVERSEA)).os;
     }
 
     /**
@@ -2040,17 +2069,28 @@ export class tools extends plugin {
      */
     async isLagRangeDriver() {
         // 如果第一次使用没有值就设置
-        if (!(await redis.exists(REDIS_YUNZAI_LAGRANGE))) {
-            await redis.set(
-                REDIS_YUNZAI_LAGRANGE,
-                JSON.stringify({
-                    driver: 0,
-                }),
-            );
+        if (!(await redisExistKey(REDIS_YUNZAI_LAGRANGE))) {
+            await redisSetKey(REDIS_YUNZAI_LAGRANGE, {
+                driver: 0,
+            });
             return true;
         }
         // 如果有就取出来
-        return JSON.parse((await redis.get(REDIS_YUNZAI_LAGRANGE))).driver;
+        return (await redisGetKey(REDIS_YUNZAI_LAGRANGE)).driver;
+    }
+
+    /**
+     * 判断当前用户是否是信任用户
+     * @param userId
+     * @returns {Promise<boolean>}
+     */
+    async isTrustUser(userId) {
+        // 如果不存在则返回
+        if (!(await redisExistKey(REDOS_YUNZAI_WHITELIST))) {
+            return false;
+        }
+        const whiteList = await redisGetKey(REDOS_YUNZAI_WHITELIST);
+        return whiteList.includes(userId);
     }
 
     /**

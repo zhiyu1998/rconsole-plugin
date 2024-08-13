@@ -80,6 +80,9 @@
     - icon: spotify
       title: "Spotify"
       desc: 解析Spotify音乐
+    - icon: telegram
+      title: "小飞机（学习版）"
+      desc: 解析小飞机
 - group: 其他指令
   list:
     - icon: update

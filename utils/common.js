@@ -1,12 +1,13 @@
-import schedule from "node-schedule";
-import common from "../../../lib/common/common.js";
 import axios from "axios";
-import fs from "node:fs";
-import fetch from "node-fetch";
-import { mkdirIfNotExists } from "./file.js";
-import { TEN_THOUSAND } from "../constants/constant.js";
 import { exec } from "child_process";
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import fetch from "node-fetch";
+import schedule from "node-schedule";
+import fs from "node:fs";
+import os from "os";
+import common from "../../../lib/common/common.js";
+import { TEN_THOUSAND } from "../constants/constant.js";
+import { mkdirIfNotExists } from "./file.js";
 
 /**
  * 请求模板
@@ -454,4 +455,26 @@ export function cleanFilename(filename) {
     filename = filename.trim();
 
     return filename;
+}
+
+/**
+ * 检测当前环境是否存在某个命令
+ * @param someCommand
+ * @returns {Promise<boolean>}
+ */
+export function checkToolInCurEnv(someCommand) {
+    // 根据操作系统选择命令
+    return new Promise((resolve, reject) => {
+        const command = os.platform() === 'win32' ? `where ${someCommand}` : `which ${someCommand}`;
+
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][checkTool]未找到${someCommand}: ${stderr || error.message}`);
+                resolve(false);
+                return;
+            }
+            logger.info(`[R插件][checkTool]找到${someCommand}: ${stdout.trim()}`);
+            resolve(true);
+        });
+    });
 }

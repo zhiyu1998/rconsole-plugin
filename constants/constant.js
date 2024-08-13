@@ -80,6 +80,12 @@ export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
  */
 export const REDIS_YUNZAI_LAGRANGE = "Yz:rconsole:tools:lagrange";
 
+/**
+ * 某些功能的解析白名单
+ * @type {string}
+ */
+export const REDOS_YUNZAI_WHITELIST = "Yz:rconsole:tools:whitelist";
+
 export const TWITTER_BEARER_TOKEN = "";
 
 /**
@@ -133,3 +139,9 @@ export const BILI_DOWNLOAD_METHOD = Object.freeze([
     { label: '性能（Aria2）', value: 1 },
     { label: '轻量（axel/wget）', value: 2 }
 ]);
+
+/**
+ * 消息撤回时间
+ * @type {number}
+ */
+export const MESSAGE_RECALL_TIME = 60;

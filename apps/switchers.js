@@ -1,7 +1,8 @@
 import config from "../model/config.js";
 import schedule from 'node-schedule';
-import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE } from "../constants/constant.js";
+import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE, REDOS_YUNZAI_WHITELIST } from "../constants/constant.js";
 import { deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
+import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 
 //自动清理定时
 const autotime = config.getConfig("tools").autoclearTrashtime
@@ -30,6 +31,21 @@ export class switchers extends plugin {
                     fnc: "clearTrash",
                     permission: "master",
                 },
+                {
+                    reg: "^#设置R信任用户(.*)",
+                    fnc: "setWhiteList",
+                    permission: "master",
+                },
+                {
+                    reg: "^#R信任用户$",
+                    fnc: "getWhiteList",
+                    permission: "master",
+                },
+                {
+                    reg: "^#查询R信任用户(.*)",
+                    fnc: "searchWhiteList",
+                    permission: "master",
+                }
             ]
         });
     }
@@ -41,45 +57,42 @@ export class switchers extends plugin {
      */
     async setOversea(e) {
         // 查看当前设置
-        let os;
-        if ((await redis.exists(REDIS_YUNZAI_ISOVERSEA))) {
-            os = JSON.parse(await redis.get(REDIS_YUNZAI_ISOVERSEA)).os;
-        }
+        let os = (await redisExistAndGetKey(REDIS_YUNZAI_ISOVERSEA)).os;
         // 设置
         os = ~os
-        await redis.set(
-            REDIS_YUNZAI_ISOVERSEA,
-            JSON.stringify({
-                os: os,
-            }),
-        );
+        await redisSetKey(REDIS_YUNZAI_ISOVERSEA, {
+            os: os,
+        });
         e.reply(`当前服务器：${ os ? '海外服务器' : '国内服务器' }`)
         return true;
     }
 
+    /**
+     * 设置拉格朗日
+     * @param e
+     * @returns {Promise<boolean>}
+     */
     async setLagrange(e) {
         // 查看当前设置
-        let driver;
-        if ((await redis.exists(REDIS_YUNZAI_LAGRANGE))) {
-            driver = JSON.parse(await redis.get(REDIS_YUNZAI_LAGRANGE)).driver;
-        }
+        let driver = (await redisExistAndGetKey(REDIS_YUNZAI_LAGRANGE)).driver;
         // 异常检测，之前算法出现问题，如果出现异常就检测纠正
         if (driver === -1) {
             driver = 1;
         }
         // 设置
         driver ^= 1;
-        await redis.set(
-            REDIS_YUNZAI_LAGRANGE,
-            JSON.stringify({
-                driver: driver,
-            }),
-        );
+        await redisSetKey({
+            driver: driver,
+        })
         e.reply(`当前驱动：${ driver ? '拉格朗日' : '其他驱动' }`)
         return true;
     }
 
-    //手动清理垃圾
+    /**
+     * 手动清理垃圾
+     * @param e
+     * @returns {Promise<void>}
+     */
     async clearTrash(e) {
         try {
             const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
@@ -89,6 +102,88 @@ export class switchers extends plugin {
         } catch (err) {
             e.reply(`手动清理垃圾时发生错误: ${ err.message }`);
         }
+    }
+
+    /**
+     * 设置解析信任用户
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async setWhiteList(e) {
+        let trustUserId;
+        // 判断是不是回复用户命令
+        if (e?.reply_id !== undefined) {
+            trustUserId = (await e.getReply()).user_id;
+        } else {
+            // 如果不是回复就看发送内容
+            trustUserId = e.msg.replace("#设置R信任用户", "");
+        }
+        // 用户ID检测
+        if (trustUserId == null || trustUserId === "") {
+            e.reply("无效的R信任用户");
+            return;
+        }
+        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        // 不存在就创建
+        if (whiteList == null) {
+            whiteList = [];
+        }
+        // 重复检测
+        if (whiteList.includes(trustUserId)) {
+            e.reply("R信任用户已存在，无须添加!");
+            return;
+        }
+        whiteList = [...whiteList, trustUserId];
+        // 放置到Redis里
+        await redisSetKey(REDOS_YUNZAI_WHITELIST, whiteList);
+        e.reply(`成功添加R信任用户：${ trustUserId }`);
+    }
+
+    /**
+     * 获取信任用户名单
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async getWhiteList(e) {
+        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        if (whiteList == null) {
+            whiteList = [];
+        }
+        const message = `R信任用户列表：${ whiteList.join(",\n") }`;
+        if (this.e.isGroup) {
+            await Bot.pickUser(this.e.user_id).sendMsg(await this.e.runtime.common.makeForwardMsg(this.e, message));
+            await this.reply('R插件的信任用户名单已发送至您的私信了~');
+        } else {
+            await e.reply(await makeForwardMsg(this.e, message));
+        }
+    }
+
+    /**
+     * 查询某个用户是否是信任用户
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async searchWhiteList(e) {
+        let trustUserId;
+        // 判断是不是回复用户命令
+        if (e?.reply_id !== undefined) {
+            trustUserId = (await e.getReply()).user_id;
+        } else {
+            // 如果不是回复就看发送内容
+            trustUserId = e.msg.replace("#设置R信任用户", "");
+        }
+        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        if (whiteList == null) {
+            e.reply("R插件当前没有任何信任用户！");
+            return;
+        }
+        const isInWhiteList = whiteList.includes(trustUserId);
+        if (isInWhiteList) {
+            e.reply(`✅ ${trustUserId}已经是R插件的信任用户哦~`);
+        } else {
+            e.reply(`⚠️ ${trustUserId}不是R插件的信任用户哦~`);
+        }
+        return true;
     }
 }
 
