@@ -30,3 +30,21 @@ export async function startTDL(url, curPath, isOversea, proxyAddr, videoDownload
         })
     })
 }
+
+export async function saveTDL(urk, isOversea, proxyAddr) {
+    return new Promise((resolve, reject) => {
+        const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
+        const command = `tdl forward --from ${urk} ${proxyStr}`
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(`[R插件][TDL]执行出错: ${error.message}`);
+                return;
+            }
+            if (stderr) {
+                reject(`[R插件][TDL]错误信息: ${stderr}`);
+                return;
+            }
+            resolve(stdout);
+        })
+    })
+}

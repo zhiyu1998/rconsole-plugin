@@ -79,7 +79,7 @@ import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
-import { startTDL } from "../utils/tdl-util.js";
+import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { dy2b } from "../utils/yt-dlp-util.js";
@@ -1780,6 +1780,12 @@ export class tools extends plugin {
             return;
         }
         const url = urlRex.exec(e.msg)[0];
+        if (e.msg.startsWith("保存")) {
+            // 发送文件到 SaveMessages
+            await saveTDL(url, isOversea, this.myProxy);
+            e.reply("文件已保存到 Save Messages！");
+            return true;
+        }
         e.reply(`识别：小飞机（学习版）`);
         const tgSavePath = `${this.getCurDownloadPath(e)}/tg`;
         // 如果没有文件夹则创建
