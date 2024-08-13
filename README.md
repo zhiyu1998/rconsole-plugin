@@ -317,6 +317,28 @@ apt install axel
 apt install aria2
 ```
 
+### 关于小飞机解析
+
+1. 下载 `Release`
+
+> https://github.com/iyear/tdl
+
+2. 放到环境变量，Linux用户可以直接解压放到`/usr/local/bin`下
+
+3. 登录，官方提供了三种登录方式
+
+![aircraft.webp](img%2Faircraft.webp)
+
+4. 添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
+
+```shell
+#设置R信任用户
+#R信任用户
+#查询R信任用户
+```
+
+5. 开始使用！
+
 ##  🤺 R插件交流群
 <img src="./img/qq.webp" width="30%" height="30%">
 
