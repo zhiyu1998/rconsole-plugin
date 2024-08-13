@@ -1780,10 +1780,14 @@ export class tools extends plugin {
             return;
         }
         const url = urlRex.exec(e.msg)[0];
-        const tgSavePath = `${this.getCurDownloadPath(e)}/tg`;
-        await mkdirIfNotExists(tgSavePath);
-        await startTDL(url, tgSavePath, isOversea, this.myProxy);
         e.reply(`识别：小飞机（学习版）`);
+        const tgSavePath = `${this.getCurDownloadPath(e)}/tg`;
+        // 如果没有文件夹则创建
+        await mkdirIfNotExists(tgSavePath);
+        // 删除之前的文件
+        await deleteFolderRecursive(tgSavePath);
+        await startTDL(url, tgSavePath, isOversea, this.myProxy, this.videoDownloadConcurrency);
+        // 过滤当前文件
         const mediaFiles = await getMediaFiles(tgSavePath);
         if (mediaFiles.images.length > 0) {
             const imagesData = mediaFiles.images.map(item => {
@@ -1800,7 +1804,6 @@ export class tools extends plugin {
                 await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
             }
         }
-        await deleteFolderRecursive(tgSavePath);
         return true;
     }
 
