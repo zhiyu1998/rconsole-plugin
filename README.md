@@ -327,7 +327,7 @@ apt install aria2
 
 3. 登录，官方提供了三种登录方式
 
-![aircraft.webp](img%2Faircraft.webp)
+<img src="./img/aircraft.webp" width="30%" height="30%">
 
 4. 添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
 
