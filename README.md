@@ -317,7 +317,7 @@ apt install axel
 apt install aria2
 ```
 
-### 关于小飞机解析
+### ✈️ 关于小飞机解析
 
 1. 下载 `Release`
 
