@@ -1781,6 +1781,7 @@ export class tools extends plugin {
         }
         const url = urlRex.exec(e.msg)[0];
         const tgSavePath = `${this.getCurDownloadPath(e)}/tg`;
+        await mkdirIfNotExists(tgSavePath);
         await startTDL(url, tgSavePath, isOversea, this.myProxy);
         e.reply(`识别：小飞机（学习版）`);
         const mediaFiles = await getMediaFiles(tgSavePath);
