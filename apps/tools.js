@@ -192,7 +192,7 @@ export class tools extends plugin {
                     fnc: "qishuiMusic"
                 },
                 {
-                    reg: "(t.me)",
+                    reg: "https:\/\/t\.me\/.*",
                     fnc: "aircraft"
                 }
             ],
