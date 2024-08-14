@@ -192,7 +192,7 @@ export class tools extends plugin {
                     fnc: "qishuiMusic"
                 },
                 {
-                    reg: "https:\/\/t\.me\/.*",
+                    reg: "https:\\/\\/t\\.me\\/(?:c\\/\\d+\\/\\d+\\/\\d+|c\\/\\d+\\/\\d+|\\w+\\/\\d+\\/\\d+|\\w+\\/\\d+\\?\\w+=\\d+|\\w+\\/\\d+)",
                     fnc: "aircraft"
                 }
             ],
