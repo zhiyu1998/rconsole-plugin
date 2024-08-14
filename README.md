@@ -193,7 +193,10 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 示例：
 ![rbq2](./img/rbq2.webp)
 
+[返回目录](#-qa)
+
 ### 🎵 douyin问题
+
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
 
 👍 **推荐方案** ：via 视频教程（由群友 `@麦满分` 录制）：https://thumbsnap.com/rKxUGKqp
@@ -242,10 +245,14 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 3. 扫码后自动获取ck
 
+[返回目录](#-qa)
+
 ### ✖️ 小蓝鸟问题
 **2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
 
 > 2024/2/26 目前的替代方案：使用第三方解析，但是无法解析组图，只能解析单个图片，望周知！
+
+[返回目录](#-qa)
 
 ### ☀️ 拉格朗日配置
 
@@ -280,6 +287,8 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 <img src="./img/lagrange.webp" width="30%" height="30%">
 
+[返回目录](#-qa)
+
 ### 微信文章总结 （完全免费总结）
 
 官方Kimi API 暂时没有看到可以联网搜索的选项，所以选用开源的[kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
@@ -304,6 +313,8 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 ![wxkimi](./img/wxkimi.webp)
 
+[返回目录](#-qa)
+
 ### 🍠 小红书的 Cookie 问题
 
 小红书导出 cookie 最佳实践，由群友 `@辰` 提供解决方案：
@@ -322,10 +333,14 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 ![](./img/xhs-ck-export.webp)
 
+[返回目录](#-qa)
+
 ### 📺 关于使用 BBDown 下载
 
 - Linux教程：https://pwa.sspai.com/post/83345
 - Windows教程：https://github.com/nilaoda/BBDown/issues/305
+
+[返回目录](#-qa)
 
 ### ⬇️ 关于使用下载方式
 
@@ -342,6 +357,8 @@ apt install axel
 ```shell
 apt install aria2
 ```
+
+[返回目录](#-qa)
 
 ### ✈️ 关于小飞机解析
 
@@ -371,14 +388,21 @@ apt install aria2
 
 5. 开始使用！
 
+[返回目录](#-qa)
+
 ### 🐧 关于使用 ICQQ
 
 👍 群友`@非酋`推荐（经过大量测试得出）：icqq建议设置 `27MB` 转群文件
 
+[返回目录](#-qa)
+
 ### 🧑‍🌾 关于百度翻译
+
 【可选】相关配置(apps/tools.js)：
 > `百度翻译`api:https://fanyi-api.baidu.com/doc/21  
 > 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
+
+[返回目录](#-qa)
 
 ### 🪄 关于魔法
 
@@ -389,7 +413,10 @@ apt install aria2
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
+[返回目录](#-qa)
+
 ##  🤺 R插件交流群
+
 <img src="./img/qq.webp" width="30%" height="30%">
 
 >  扫码不行就输入：575663150
