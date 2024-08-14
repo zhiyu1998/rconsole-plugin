@@ -13,7 +13,7 @@ import {
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     COMMON_USER_AGENT,
     DIVIDING_LINE,
-    douyinTypeMap,
+    douyinTypeMap, DOWNLOAD_WAIT_DETECT_FILE_TIME,
     HELP_DOC, MESSAGE_RECALL_TIME,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE, REDOS_YUNZAI_WHITELIST,
@@ -1939,6 +1939,10 @@ export class tools extends plugin {
         // 如果是用户设置了单线程，则不分片下载
         if (numThreads === 1) {
             return await this.downloadVideoWithSingleThread(downloadVideoParams);
+        } else if (numThreads !== 1 && this.biliDownloadMethod === 1) {
+            return await this.downloadVideoWithAria2(downloadVideoParams, numThreads);
+        } else if (numThreads !== 1 && this.biliDownloadMethod === 2) {
+            return await this.downloadVideoUseAxel(downloadVideoParams, numThreads);
         } else {
             return await this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
         }
@@ -2027,6 +2031,148 @@ export class tools extends plugin {
     }
 
     /**
+     * 使用Aria2进行多线程下载
+     * @param downloadVideoParams
+     * @param numThreads
+     * @returns {Promise<unknown>}
+     */
+    async downloadVideoWithAria2(downloadVideoParams, numThreads) {
+        const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+
+        // 构造aria2c命令参数
+        const aria2cArgs = [
+            `"${url}"`,
+            `--out="temp.mp4"`,
+            `--dir="${groupPath}"`,
+            `--user-agent="${userAgent}"`,
+            `--max-connection-per-server=${ numThreads }`, // 每个服务器的最大连接数
+            `--split=${ numThreads }`,               // 分成 6 个部分进行下载
+        ];
+
+        // 如果有自定义头信息
+        if (headers) {
+            for (const [key, value] of Object.entries(headers)) {
+                aria2cArgs.push(`--header="${key}: ${value}"`);
+            }
+        }
+
+        // 如果使用代理
+        if (proxyOption && proxyOption.httpAgent) {
+            const proxyUrl = proxyOption.httpAgent.proxy.href;
+            aria2cArgs.push(`--all-proxy="${proxyUrl}"`);
+        }
+
+        try {
+            await checkAndRemoveFile(target);
+            logger.mark(`开始下载: ${url}`);
+
+            // 执行aria2c命令
+            const command = `aria2c ${aria2cArgs.join(' ')}`;
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    logger.error(`下载视频发生错误！\ninfo:${stderr}`);
+                    throw error;
+                } else {
+                    logger.mark(`下载完成: ${url}`);
+                }
+            });
+
+            // 监听文件生成完成
+            let count = 0;
+            return new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    logger.info(logger.red(`[R插件][Aria2] 没有检测到文件！重试第${ count + 1 }次`));
+                    count += 1;
+                    if (fs.existsSync(target)) {
+                        logger.info("[R插件][Aria2] 检测到文件！");
+                        clearInterval(checkInterval);
+                        resolve(groupPath);
+                    }
+                    if (count === 6) {
+                        logger.error(`[R插件][Aria2] 下载视频发生错误！`);
+                        clearInterval(checkInterval);
+                        reject();
+                    }
+                }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
+            });
+        } catch (err) {
+            logger.error(`下载视频发生错误！\ninfo:${err}`);
+            throw err;
+        }
+    }
+
+    /**
+     * 使用Axel进行多线程下载
+     * @param downloadVideoParams
+     * @param numThreads
+     * @returns {Promise<unknown>}
+     */
+    async downloadVideoUseAxel(downloadVideoParams, numThreads) {
+        const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+
+        // 构造axel命令参数
+        const axelArgs = [
+            `-n ${numThreads}`,
+            `-o "${target}"`,
+            `-U "${userAgent}"`,
+            url
+        ];
+
+        // 如果有自定义头信息
+        if (headers) {
+            for (const [key, value] of Object.entries(headers)) {
+                axelArgs.push(`-H "${key}: ${value}"`);
+            }
+        }
+
+        // 如果使用代理
+        if (proxyOption && proxyOption.httpAgent) {
+            const proxyUrl = proxyOption.httpAgent.proxy.href;
+            axelArgs.push(`--proxy="${proxyUrl}"`);
+        }
+
+        try {
+            await checkAndRemoveFile(target);
+            logger.mark(`开始下载: ${url}`);
+
+
+            // 执行axel命令
+            const command = `axel ${axelArgs.join(' ')}`;
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    logger.error(`下载视频发生错误！\ninfo:${stderr}`);
+                    throw error;
+                } else {
+                    logger.mark(`下载完成: ${url}`);
+                }
+            });
+
+            let count = 0;
+            // 监听文件生成完成
+            return new Promise((resolve, reject) => {
+                const checkInterval = setInterval(() => {
+                    logger.info(logger.red(`[R插件][Aria2] 没有检测到文件！重试第${ count + 1 }次`));
+                    count += 1;
+                    if (fs.existsSync(target)) {
+                        logger.info("[R插件][Axel] 检测到文件！");
+                        clearInterval(checkInterval);
+                        logger.info(`[R插件][Axel] 下载到${groupPath}`);
+                        resolve(groupPath);
+                    }
+                    if (count === 6) {
+                        logger.error(`[R插件][Axel] 下载视频发生错误！`);
+                        clearInterval(checkInterval);
+                        reject();
+                    }
+                }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
+            });
+        } catch (err) {
+            logger.error(`下载视频发生错误！\ninfo:${err}`);
+            throw err;
+        }
+    }
+
+    /**
      * 单线程下载视频
      * @link {downloadVideo}
      * @returns {Promise<unknown>}
@@ -2100,7 +2246,7 @@ export class tools extends plugin {
             return false;
         }
         const whiteList = await redisGetKey(REDOS_YUNZAI_WHITELIST);
-        return whiteList.includes(userId) || whiteList.includes(userId.toString());
+        return whiteList.includes(userId.toString()) || whiteList.includes(userId);
     }
 
     /**

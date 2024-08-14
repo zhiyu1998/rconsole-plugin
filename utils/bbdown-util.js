@@ -24,7 +24,7 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
         urlObj.search = newParams.toString();
         videoUrl = urlObj.toString();
         // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
-        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=\"' + biliSessData + '\"' : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
+        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
         logger.info(command);
         // logger.info(command);
         // 直接调用BBDown，因为它已经在系统路径中
