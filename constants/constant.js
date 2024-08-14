@@ -150,4 +150,4 @@ export const MESSAGE_RECALL_TIME = 60;
  * 针对 Aria2 和 Alex 的下载检测文件时间
  * @type {number}
  */
-export const DOWNLOAD_WAIT_DETECT_FILE_TIME = 2000;
+export const DOWNLOAD_WAIT_DETECT_FILE_TIME = 3000;
