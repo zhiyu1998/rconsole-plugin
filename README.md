@@ -345,6 +345,10 @@ apt install aria2
 
 5. 开始使用！
 
+### 🐧 关于使用 ICQQ
+
+👍 群友推荐：icqq建议设置 `27MB` 转群文件
+
 ##  🤺 R插件交流群
 <img src="./img/qq.webp" width="30%" height="30%">
 
