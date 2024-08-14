@@ -910,59 +910,56 @@ export class tools extends plugin {
             return;
         }
         // 配置参数及解析
-        const reg = /https?:\/\/x.com\/[0-9-a-zA-Z_]{1,20}\/status\/([0-9]*)/;
+        const reg = /https:\/\/x\.com\/[\w]+\/status\/\d+(\/photo\/\d+)?/;
         const twitterUrl = reg.exec(e.msg)[0];
         // 检测
         const isOversea = await this.isOverseasServer();
-        logger.info(!isOversea);
-        logger.info(!(await testProxy(this.proxyAddr, this.proxyPort)));
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析小蓝鸟");
             return false;
         }
         // 提取视频
-        const videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
+        let videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
         e.reply("识别：小蓝鸟学习版");
         const config = {
             headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept': 'ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'Accept-Encoding': 'gzip, deflate',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Pragma': 'no-cache',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
+                'Host': '47.99.158.118',
+                'Proxy-Connection': 'keep-alive',
                 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': COMMON_USER_AGENT,
             },
             timeout: 10000 // 设置超时时间
         }
 
-        axios.get(videoUrl, config).then(resp => {
-            const url = resp.data.data?.url;
-            if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
-                logger.info(url);
-                if (isOversea) {
-                    // 海外直接下载
-                    e.reply(segment.image(url));
-                } else {
-                    // 非海外使用🪜下载
-                    const localPath = this.getCurDownloadPath(e);
-                    downloadImg(url, localPath, "", !isOversea, {}, {
-                        proxyAddr: this.proxyAddr,
-                        proxyPort: this.proxyPort
-                    }).then(async _ => {
-                        e.reply(segment.image(fs.readFileSync(localPath + "/" + url.split("/").pop())));
-                    });
-                }
+        let resp = await axios.get(videoUrl, config);
+        if (resp.data.data == null) {
+            videoUrl += '/photo/1';
+            logger.info(videoUrl);
+            resp = await axios.get(videoUrl, config);
+        }
+        const url = resp.data.data?.url;
+        if (url && (url.endsWith(".jpg") || url.endsWith(".png"))) {
+            if (isOversea) {
+                // 海外直接下载
+                e.reply(segment.image(url));
             } else {
-                this.downloadVideo(url, !isOversea).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
+                // 非海外使用🪜下载
+                const localPath = this.getCurDownloadPath(e);
+                downloadImg(url, localPath, "", !isOversea, {}, {
+                    proxyAddr: this.proxyAddr,
+                    proxyPort: this.proxyPort
+                }).then(async _ => {
+                    e.reply(segment.image(fs.readFileSync(localPath + "/" + url.split("/").pop())));
                 });
             }
-        });
+        } else {
+            this.downloadVideo(url, !isOversea).then(path => {
+                e.reply(segment.video(path + "/temp.mp4"));
+            });
+        }
         return true;
     }
 
