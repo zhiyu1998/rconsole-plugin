@@ -159,7 +159,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ```
 
 ##  🐤 Q&A
-### B站扫码登录
+### 📺 B站扫码登录
 命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
 
 ![rbq](./img/rbq.webp)
@@ -347,17 +347,14 @@ apt install aria2
 
 ### 🐧 关于使用 ICQQ
 
-👍 群友推荐：icqq建议设置 `27MB` 转群文件
+👍 群友`@非酋`推荐（经过大量测试得出）：icqq建议设置 `27MB` 转群文件
 
-##  🤺 R插件交流群
-<img src="./img/qq.webp" width="30%" height="30%">
-
->  扫码不行就输入：575663150
-
-## 🧑‍🌾 进阶内容
+### 🧑‍🌾 关于百度翻译
 【可选】相关配置(apps/tools.js)：
 > `百度翻译`api:https://fanyi-api.baidu.com/doc/21  
 > 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
+
+### 🪄 关于魔法
 
 > (非必要不更改)更改魔法在`config/tools.yaml` 或 [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)的配置位置：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
@@ -366,6 +363,10 @@ apt install aria2
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
+##  🤺 R插件交流群
+<img src="./img/qq.webp" width="30%" height="30%">
+
+>  扫码不行就输入：575663150
 
 ## 📦 业务
 ![help](./img/help.webp)
