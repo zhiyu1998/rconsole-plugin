@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://gitee.com/kyrzy0416/rconsole-plugin">
-    <img width="200" src="./img/logo.webp">
+    <img width="200" src="https://alist.rrorangedev.net/Kua/PicGo/logo.webp">
   </a>
 </p>
 
@@ -8,7 +8,7 @@
 <div align="center">
     <h1>R-plugin</h1>
     写给朋友们用的<a href="https://gitee.com/Le-niao/Yunzai-Bot" target="_blank">Yunzai-Bot</a>插件，插件的各种业务来源于周围人
-<img src="./img/github-contribution-grid-snake.svg">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/github-contribution-grid-snake.svg">
 </div>
 
 > 📢 推荐 TG 个人互联网分享频道（分享日常冲浪互联网看到好玩的网站、app应用）：[RrOrange和朋友们](https://t.me/RrOrangeAndFriends)
@@ -47,15 +47,15 @@
 
 
 ## 🧏 ‍使用实例
-![help](./img/example.webp)
+![help](https://alist.rrorangedev.net/Kua/PicGo/example.webp)
 
-![xhs](./img/example2.webp)
+![xhs](https://alist.rrorangedev.net/Kua/PicGo/example2.webp)
 
-![y2b](./img/example3.webp)
+![y2b](https://alist.rrorangedev.net/Kua/PicGo/example3.webp)
 
-![mys](./img/example4.webp)
+![mys](https://alist.rrorangedev.net/Kua/PicGo/example4.webp)
 
-![zy](./img/example5.webp)
+![zy](https://alist.rrorangedev.net/Kua/PicGo/example5.webp)
 
 ## 📔 使用说明
 
@@ -139,11 +139,11 @@ apt-get install atomicparsley
 > 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
 > [#I7KQVY](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY)
 
-<img src="./img/example6.webp" alt="小程序解析" width="50%" height="50%" />
+<img src="https://alist.rrorangedev.net/Kua/PicGo/example6.webp" alt="小程序解析" width="50%" height="50%" />
 
 5. 【可选】对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA，或者[【推荐】扫码登录](https://gitee.com/kyrzy0416/rconsole-plugin#b%E7%AB%99%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95)
 
-<img src="./img/example7.webp" alt="小程序解析" width="50%" height="50%" />
+<img src="https://alist.rrorangedev.net/Kua/PicGo/example7.webp" alt="小程序解析" width="50%" height="50%" />
 
 6. 【可选】增加视频的时长限制（默认8分钟(60 * 8 = 480)）：
 - 在config/tools.yaml里设置`biliDuration`
@@ -188,10 +188,10 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ### 📺 B站扫码登录
 命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
 
-![rbq](./img/rbq.webp)
+![rbq](https://alist.rrorangedev.net/Kua/PicGo/rbq.webp)
 
 示例：
-![rbq2](./img/rbq2.webp)
+![rbq2](https://alist.rrorangedev.net/Kua/PicGo/rbq2.webp)
 
 [👉 返回目录](#-qa)
 
@@ -208,7 +208,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 2. F12进入控制台，打开`网络/network`
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
 
-<img src="./img/dy_ck.webp" alt="小程序解析" width="50%" height="50%" />
+<img src="https://alist.rrorangedev.net/Kua/PicGo/dy_ck.webp" alt="小程序解析" width="50%" height="50%" />
 
 **备用方案1** ：
 
@@ -233,7 +233,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 - passport_assist_user
 - ttwid
 
-<img src="./img/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
+<img src="https://alist.rrorangedev.net/Kua/PicGo/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
 
 **备用方案2** （由`@重装小兔`提供）
 
@@ -285,7 +285,7 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 
 2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
 
-<img src="./img/lagrange.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/lagrange.webp" width="30%" height="30%">
 
 [👉 返回目录](#-qa)
 
@@ -311,7 +311,7 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 3. 开始游玩
 
-![wxkimi](./img/wxkimi.webp)
+![wxkimi](https://alist.rrorangedev.net/Kua/PicGo/wxkimi.webp)
 
 [👉 返回目录](#-qa)
 
@@ -331,7 +331,7 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 2. 进入小红书 - 注册 - 点击 `Cookie-Editor` 的导出 `Header String`
 
-![](./img/xhs-ck-export.webp)
+![](https://alist.rrorangedev.net/Kua/PicGo/xhs-ck-export.webp)
 
 [👉 返回目录](#-qa)
 
@@ -370,7 +370,7 @@ apt install aria2
 
 3. 登录，官方提供了三种登录方式
 
-<img src="./img/aircraft.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/aircraft.webp" width="30%" height="30%">
 
 4. 添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
 
@@ -380,11 +380,13 @@ apt install aria2
 #查询R信任用户
 ```
 
-<img src="./img/aircraft1.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/aircraft1.webp" width="30%" height="30%">
 
-<img src="./img/aircraft2.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/aircraft2.webp" width="30%" height="30%">
 
-<img src="./img/aircraft3.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/aircraft3.webp" width="30%" height="30%">
+
+<img src="https://alist.rrorangedev.net/Kua/PicGo/PixPin_2024-08-15_08-59-42.png" width="30%" height="30%">
 
 5. 开始使用！
 
@@ -417,12 +419,12 @@ apt install aria2
 
 ##  🤺 R插件交流群
 
-<img src="./img/qq.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/Kua/PicGo/qq.webp" width="30%" height="30%">
 
 >  扫码不行就输入：575663150
 
 ## 📦 业务
-![help](./img/help.webp)
+![help](https://alist.rrorangedev.net/Kua/PicGo/help.webp)
 
 ## 📝 计划功能
 - [x] YouTube解析（这个可能要🕊一久）

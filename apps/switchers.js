@@ -45,6 +45,11 @@ export class switchers extends plugin {
                     reg: "^#查询R信任用户(.*)",
                     fnc: "searchWhiteList",
                     permission: "master",
+                },
+                {
+                    reg: "^#删除R信任用户(.*)",
+                    fnc: "deleteWhiteList",
+                    permission: "master",
                 }
             ]
         });
@@ -198,6 +203,31 @@ export class switchers extends plugin {
             e.reply(`⚠️ ${trustUserId}不是R插件的信任用户哦~`);
         }
         return true;
+    }
+
+    async deleteWhiteList(e) {
+        let trustUserId;
+        // 判断是不是回复用户命令
+        if (e?.reply_id !== undefined) {
+            trustUserId = (await e.getReply()).user_id;
+        } else {
+            // 如果不是回复就看发送内容
+            trustUserId = e.msg.replace("#设置R信任用户", "");
+        }
+        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        if (whiteList == null) {
+            e.reply("R插件当前没有任何信任用户：");
+            return;
+        }
+        // 重复检测
+        if (!whiteList.includes(trustUserId)) {
+            e.reply("R信任用户不存在，无须删除！");
+            return;
+        }
+        whiteList = whiteList.filter((item) => item !== trustUserId);
+        // 放置到Redis里
+        await redisSetKey(REDOS_YUNZAI_WHITELIST, whiteList);
+        e.reply(`成功删除R信任用户：${ trustUserId }`);
     }
 }
 
