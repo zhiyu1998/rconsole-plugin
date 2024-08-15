@@ -937,7 +937,7 @@ export class tools extends plugin {
                         proxyAddr: this.proxyAddr,
                         proxyPort: this.proxyPort
                     },
-                    numThread: 1,
+                    downloadMethod: this.biliDownloadMethod,
                 })
                 e.reply(segment.image(xImgPath));
             }
@@ -1047,7 +1047,7 @@ export class tools extends plugin {
                         img: item.urlDefault,
                         dir: downloadPath,
                         fileName: `${index}.png`,
-                        numThread: 1,
+                        downloadMethod: this.biliDownloadMethod,
                     }));
                 }
                 // 等待所有图片下载完成
@@ -1265,7 +1265,7 @@ export class tools extends plugin {
                             headersExt: {
                                 "Referer": "http://blog.sina.com.cn/",
                             },
-                            numThread: 1,
+                            downloadMethod: this.biliDownloadMethod,
                         }).then(async (filePath) => {
                             // 格式化为消息对象
                             return {

@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "os";
 import common from "../../../lib/common/common.js";
 import path from 'path';
-import { COMMON_USER_AGENT, TEN_THOUSAND } from "../constants/constant.js";
+import { BILI_DOWNLOAD_METHOD, COMMON_USER_AGENT, TEN_THOUSAND } from "../constants/constant.js";
 import { mkdirIfNotExists } from "./file.js";
 
 /**
@@ -204,7 +204,7 @@ export async function downloadImg({
                                       isProxy = false,
                                       headersExt = {},
                                       proxyInfo = {},
-                                      numThread = 1,
+                                      downloadMethod = 0,
                                   }) {
     const downloadImgParams = {
         img,
@@ -213,12 +213,11 @@ export async function downloadImg({
         isProxy,
         headersExt,
         proxyInfo,
-        numThread,
     }
-    logger.info(logger.yellow(`[R插件][图片下载] 当前使用线程数：${ numThread }`));
-    if (numThread === 1) {
+    logger.info(logger.yellow(`[R插件][图片下载] 当前使用的方法：${ BILI_DOWNLOAD_METHOD[downloadMethod].label }`));
+    if (downloadMethod === 0) {
         return normalDownloadImg(downloadImgParams);
-    } else if (numThread > 1) {
+    } else if (downloadMethod === 1) {
         return downloadImgWithAria2(downloadImgParams);
     }
 }
