@@ -161,7 +161,7 @@ function getMimeType(filePath) {
  * @param {string} folderPath - 要检测的文件夹路径
  * @returns {Promise<Object>} 包含图片和视频文件名的对象
  */
-export async function getMediaFiles(folderPath) {
+export async function getMediaFilesAndOthers(folderPath) {
     return new Promise((resolve, reject) => {
         // 定义图片和视频的扩展名
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
@@ -170,6 +170,7 @@ export async function getMediaFiles(folderPath) {
         // 初始化存储图片和视频的数组
         const images = [];
         const videos = [];
+        const others = [];
 
         // 读取文件夹中的所有文件
         fs.readdir(folderPath, (err, files) => {
@@ -184,11 +185,13 @@ export async function getMediaFiles(folderPath) {
                     images.push(file);
                 } else if (videoExtensions.includes(ext)) {
                     videos.push(file);
+                } else {
+                    others.push(file);
                 }
             });
 
             // 返回包含图片和视频的对象
-            resolve({ images, videos });
+            resolve({ images, videos, others });
         });
     });
 }

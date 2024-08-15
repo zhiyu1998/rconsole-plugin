@@ -72,7 +72,7 @@ import {
     testProxy,
     truncateString
 } from "../utils/common.js";
-import { checkAndRemoveFile, deleteFolderRecursive, getMediaFiles, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
@@ -1791,7 +1791,7 @@ export class tools extends plugin {
         await deleteFolderRecursive(tgSavePath);
         await startTDL(url, tgSavePath, isOversea, this.myProxy, this.videoDownloadConcurrency);
         // 过滤当前文件
-        const mediaFiles = await getMediaFiles(tgSavePath);
+        const mediaFiles = await getMediaFilesAndOthers(tgSavePath);
         if (mediaFiles.images.length > 0) {
             const imagesData = mediaFiles.images.map(item => {
                 const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
@@ -1805,6 +1805,10 @@ export class tools extends plugin {
         } else if (mediaFiles.videos.length > 0) {
             for (const item of mediaFiles.videos) {
                 await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
+            }
+        } else {
+            for (let other of mediaFiles.others) {
+                await this.uploadGroupFile(e, `${ tgSavePath }/${ other }`);
             }
         }
         return true;
