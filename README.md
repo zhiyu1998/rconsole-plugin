@@ -386,7 +386,7 @@ apt install aria2
 
 <img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft3.webp" width="30%" height="30%">
 
-<img src="https://alist.rrorangedev.net/Kua/PicGo/PixPin_2024-08-15_08-59-42.png" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft4.webp" width="30%" height="30%">
 
 5. 开始使用！
 
