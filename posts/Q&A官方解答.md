@@ -15,7 +15,6 @@ tags:
 示例：
 ![rbq2](https://alist.rrorangedev.net/d/Kua/PicGo/rbq2.webp)
 
-[👉 返回目录](#-qa)
 
 ### 🎵 douyin问题
 
@@ -30,7 +29,7 @@ tags:
 2. F12进入控制台，打开`网络/network`
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/dy_ck.webp" alt="小程序解析" width="50%" height="50%" />
+![](https://alist.rrorangedev.net/d/Kua/PicGo/dy_ck.webp)
 
 **备用方案1** ：
 
@@ -55,7 +54,7 @@ tags:
 - passport_assist_user
 - ttwid
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/douyin_cookie.webp" alt="小程序解析" width="50%" height="50%" />
+![](https://alist.rrorangedev.net/d/Kua/PicGo/douyin_cookie.webp)
 
 **备用方案2** （由`@重装小兔`提供）
 
@@ -67,14 +66,14 @@ tags:
 
 3. 扫码后自动获取ck
 
-[👉 返回目录](#-qa)
+
 
 ### ✖️ 小蓝鸟问题
 **2024-2-5**，修复小蓝鸟的时候看到free计划已经[没有给查看Tweet的api](https://developer.twitter.com/en/portal/products/basic)，原先[使用的库也出现了403报错](https://github.com/PLhery/node-twitter-api-v2)，开通会员要100美元，不值得。目前暂停更新，后续有方案和精力再更新！
 
 > 2024/2/26 目前的替代方案：使用第三方解析，但是无法解析组图，只能解析单个图片，望周知！
 
-[👉 返回目录](#-qa)
+
 
 ### ☀️ 拉格朗日配置
 
@@ -107,9 +106,9 @@ tags:
 
 2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/lagrange.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/lagrange.webp)
 
-[👉 返回目录](#-qa)
+
 
 ### 微信文章总结 （完全免费总结）
 
@@ -128,14 +127,12 @@ aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonsh
 aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
 ```
 
-- aiBaseURL：你服务器的地址部署的`kimi-free-api`，例如：http://localhost:8000
+- aiBaseURL：你服务器的地址部署的`kimi-free-api`，例如：`http://localhost:8000`
 - aiApiKey：kimi 的 `refresh_token` （F12 -> 应用（Application） -> Local Storage -> `https://kimi.moonshot.cn` -> 找到）
 
 3. 开始游玩
 
 ![wxkimi](https://alist.rrorangedev.net/d/Kua/PicGo/wxkimi.webp)
-
-[👉 返回目录](#-qa)
 
 ### 🍠 小红书的 Cookie 问题
 
@@ -155,14 +152,10 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 ![](https://alist.rrorangedev.net/d/Kua/PicGo/xhs-ck-export.webp)
 
-[👉 返回目录](#-qa)
-
 ### 📺 关于使用 BBDown 下载
 
 - Linux教程：https://pwa.sspai.com/post/83345
 - Windows教程：https://github.com/nilaoda/BBDown/issues/305
-
-[👉 返回目录](#-qa)
 
 ### ⬇️ 关于使用下载方式
 
@@ -180,8 +173,6 @@ apt install axel
 apt install aria2
 ```
 
-[👉 返回目录](#-qa)
-
 ### ✈️ 关于小飞机解析
 
 1. 下载 `Release`
@@ -192,7 +183,7 @@ apt install aria2
 
 3. 登录，官方提供了三种登录方式
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft.webp)
 
 4. 添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
 
@@ -202,31 +193,25 @@ apt install aria2
 #查询R信任用户
 ```
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft1.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft1.webp)
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft2.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft2.webp)
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft3.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft3.webp)
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/aircraft4.webp" width="30%" height="30%">
+![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft4.web)
 
 5. 开始使用！
-
-[👉 返回目录](#-qa)
 
 ### 🐧 关于使用 ICQQ
 
 👍 群友`@非酋`推荐（经过大量测试得出）：icqq建议设置 `27MB` 转群文件
-
-[👉 返回目录](#-qa)
 
 ### 🧑‍🌾 关于百度翻译
 
 【可选】相关配置(apps/tools.js)：
 > `百度翻译`api:https://fanyi-api.baidu.com/doc/21  
 > 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！
-
-[👉 返回目录](#-qa)
 
 ### 🪄 关于魔法
 
@@ -237,4 +222,3 @@ apt install aria2
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
-[👉 返回目录](#-qa)
