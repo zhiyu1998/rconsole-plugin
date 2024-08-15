@@ -22,9 +22,9 @@ onContentUpdated(() => {
   }
   deleteChild(element);
   const gitalk = new Gitalk({
-    clientID: "a8430bf8a0464113ee24",
-    clientSecret: "df4cbf03c4ceca8a39076e6b7a0fb878e55534e2",
-    repo: "blog-comments",
+    clientID: "Ov23liv9aVm87nfluiEg",
+    clientSecret: "195d2bf0371f86923f87e64d8d9bdb205f2c357c",
+    repo: "rconsole-gittalk",
     owner: "zhiyu1998",
     admin: ["zhiyu1998"],
     id: location.pathname.substring(0, 50), // Ensure uniqueness and length less than 50
