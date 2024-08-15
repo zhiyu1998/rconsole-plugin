@@ -5,11 +5,14 @@
     </h1>
     <p class="description">
       专门为朋友们写的Yunzai-Bot插件，专注图片视频分享、生活、健康和学习的插件！
+      <br />
+      https://github.com/zhiyu1998/rconsole-plugin
     </p>
   </div>
 </template>
 
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+</script>
 <style scoped>
 .shareCard {
   display: flex;
