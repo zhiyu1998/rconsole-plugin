@@ -1566,7 +1566,7 @@ export class tools extends plugin {
         // 匹配名字
         const freyrName = message.includes("spotify") ? "Spotify" : "Apple Music";
         // 找到R插件保存目录
-        const currentWorkingDirectory = path.resolve(this.defaultPath);
+        const currentWorkingDirectory = path.resolve(this.getCurDownloadPath(e));
         // 如果没有文件夹就创建一个
         await mkdirIfNotExists(currentWorkingDirectory + "/am")
         // 检测是否存在框架
@@ -1597,7 +1597,7 @@ export class tools extends plugin {
         // 判断是否是海外服务器
         const isOversea = await this.isOverseasServer();
         // 国内服务器解决方案
-        if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
+        if (!isOversea) {
             // 临时接口
             const url = await this.musicTempApi(e, `${ title } ${ artist }`, freyrName);
             // 下载音乐
@@ -1610,35 +1610,16 @@ export class tools extends plugin {
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
             });
-            return true;
-        }
-        e.reply(`识别：${ freyrName }，${ title }--${ artist }`);
-        // 检查目录是否存在
-        const musicPath = currentWorkingDirectory + "/am/" + artist + "/" + album;
-        const that = this;
-        // 找到音频文件
-        if (fs.existsSync(musicPath)) {
-            logger.info('目录存在。正在获取.m4a文件...');
-
-            // 读取目录中的所有文件和文件夹
-            fs.readdir(musicPath, (err, files) => {
-                if (err) {
-                    e.reply(`${ freyrName }解析出错，请查看日志！`)
-                    logger.error('读取目录时出错:', err);
-                    return;
-                }
-
-                // 过滤出以.m4a结尾的文件
-                const m4aFiles = files.filter(file => path.extname(file).toLowerCase() === '.m4a');
-
-                // 打印出所有.m4a文件
-                logger.info('找到以下.m4a文件:');
-                m4aFiles.forEach(file => {
-                    that.uploadGroupFile(e, path.join(musicPath, file));
-                });
-            });
         } else {
-            e.reply(`下载失败！没有找到${ freyrName }下载下来文件！`);
+            // freyr 逻辑
+            e.reply(`识别：${ freyrName }，${ title }--${ artist }`);
+            // 检查目录是否存在
+            const musicPath = currentWorkingDirectory + "/am/" + artist + "/" + album;
+            // 找到音频文件
+            const mediaFiles = await getMediaFilesAndOthers(musicPath);
+            for (let other of mediaFiles.others) {
+                await this.uploadGroupFile(e, `${musicPath}/${other}`);
+            }
         }
         // 计数
         tools.#amCount += 1;
