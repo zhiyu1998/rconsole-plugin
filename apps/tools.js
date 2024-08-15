@@ -13,10 +13,13 @@ import {
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     COMMON_USER_AGENT,
     DIVIDING_LINE,
-    douyinTypeMap, DOWNLOAD_WAIT_DETECT_FILE_TIME,
-    HELP_DOC, MESSAGE_RECALL_TIME,
+    douyinTypeMap,
+    DOWNLOAD_WAIT_DETECT_FILE_TIME,
+    HELP_DOC,
+    MESSAGE_RECALL_TIME,
     REDIS_YUNZAI_ISOVERSEA,
-    REDIS_YUNZAI_LAGRANGE, REDOS_YUNZAI_WHITELIST,
+    REDIS_YUNZAI_LAGRANGE,
+    REDOS_YUNZAI_WHITELIST,
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
@@ -82,7 +85,7 @@ import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js"
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
-import { dy2b } from "../utils/yt-dlp-util.js";
+import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
@@ -433,35 +436,13 @@ export class tools extends plugin {
         // 下载逻辑
         const path = this.getCurDownloadPath(e);
         await checkAndRemoveFile(path + "/temp.mp4");
-        const title = execSync(`yt-dlp --get-title ${ cleanedTiktokUrl } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
+        const title = ytDlpGetTilt(url, isOversea, this.myProxy);
         e.reply(`识别：TikTok，视频下载中请耐心等待 \n${ title }`);
-        await this.tiktokHelper(path, cleanedTiktokUrl, isOversea);
+        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy);
         await this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         return true;
     }
 
-
-    /**
-     * yt-dlp for tiktok 工具
-     * @returns {Promise<void>}
-     * @param path      下载路径
-     * @param url       下载链接
-     * @param isOversea 是否是海外用户
-     */
-    async tiktokHelper(path, url, isOversea) {
-        return new Promise((resolve, reject) => {
-            const command = `yt-dlp ${ isOversea ? "" : `--proxy ${ this.myProxy }` } -P ${ path } -o "temp.%(ext)s" ${ url }`;
-            exec(command, (error, stdout) => {
-                if (error) {
-                    console.error(`Error executing command: ${ error }`);
-                    reject(error);
-                } else {
-                    console.log(`Command output: ${ stdout }`);
-                    resolve(stdout);
-                }
-            });
-        });
-    }
 
     // 哔哩哔哩扫码登录
     async biliScan(e) {
@@ -585,7 +566,7 @@ export class tools extends plugin {
         // 拼接在线人数
         const onlineTotal = await this.biliOnlineTotal(bvid, cid);
         // 格式化数据
-        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }\n🏄‍♂️️ 当前视频有 ${onlineTotal.total} 人在观看，其中 ${onlineTotal.count} 人在网页端观看`;
+        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
         let biliInfo = [`识别：哔哩哔哩：${ title }`, combineContent]
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
@@ -1367,9 +1348,9 @@ export class tools extends plugin {
             }
             const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
-            const title = execSync(`yt-dlp --get-title ${ url } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
+            const title = await ytDlpGetTilt(url, isOversea, this.myProxy);
             e.reply(`识别：油管，视频下载中请耐心等待 \n${ title }`);
-            await dy2b(path, url, isOversea, this.myProxy);
+            await ytDlpHelper(path, url, isOversea, this.myProxy, true);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             console.error(error);
@@ -1618,7 +1599,7 @@ export class tools extends plugin {
             // 找到音频文件
             const mediaFiles = await getMediaFilesAndOthers(musicPath);
             for (let other of mediaFiles.others) {
-                await this.uploadGroupFile(e, `${musicPath}/${other}`);
+                await this.uploadGroupFile(e, `${ musicPath }/${ other }`);
             }
         }
         // 计数
@@ -1754,7 +1735,7 @@ export class tools extends plugin {
         // 检查当前环境
         const isExistTdl = await checkToolInCurEnv("tdl");
         if (!isExistTdl) {
-            e.reply(`未检测到必要的环境，无法解析小飞机${HELP_DOC}`);
+            e.reply(`未检测到必要的环境，无法解析小飞机${ HELP_DOC }`);
             return;
         }
         const url = urlRex.exec(e.msg)[0];
@@ -1765,7 +1746,7 @@ export class tools extends plugin {
             return true;
         }
         e.reply(`识别：小飞机（学习版）`);
-        const tgSavePath = `${this.getCurDownloadPath(e)}/tg`;
+        const tgSavePath = `${ this.getCurDownloadPath(e) }/tg`;
         // 如果没有文件夹则创建
         await mkdirIfNotExists(tgSavePath);
         // 删除之前的文件
@@ -1775,7 +1756,7 @@ export class tools extends plugin {
         const mediaFiles = await getMediaFilesAndOthers(tgSavePath);
         if (mediaFiles.images.length > 0) {
             const imagesData = mediaFiles.images.map(item => {
-                const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                const fileContent = fs.readFileSync(`${ tgSavePath }/${ item }`);
                 return {
                     message: segment.image(fileContent),
                     nickname: e.sender.card || e.user_id,
@@ -1785,7 +1766,7 @@ export class tools extends plugin {
             e.reply(await Bot.makeForwardMsg(imagesData), true, { recallMsg: MESSAGE_RECALL_TIME });
         } else if (mediaFiles.videos.length > 0) {
             for (const item of mediaFiles.videos) {
-                await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
+                await this.sendVideoToUpload(e, `${ tgSavePath }/${ item }`);
             }
         } else {
             for (let other of mediaFiles.others) {
@@ -2023,10 +2004,10 @@ export class tools extends plugin {
 
         // 构造aria2c命令参数
         const aria2cArgs = [
-            `"${url}"`,
+            `"${ url }"`,
             `--out="temp.mp4"`,
-            `--dir="${groupPath}"`,
-            `--user-agent="${userAgent}"`,
+            `--dir="${ groupPath }"`,
+            `--user-agent="${ userAgent }"`,
             `--max-connection-per-server=${ numThreads }`, // 每个服务器的最大连接数
             `--split=${ numThreads }`,               // 分成 6 个部分进行下载
         ];
@@ -2034,28 +2015,28 @@ export class tools extends plugin {
         // 如果有自定义头信息
         if (headers) {
             for (const [key, value] of Object.entries(headers)) {
-                aria2cArgs.push(`--header="${key}: ${value}"`);
+                aria2cArgs.push(`--header="${ key }: ${ value }"`);
             }
         }
 
         // 如果使用代理
         if (proxyOption && proxyOption.httpAgent) {
             const proxyUrl = proxyOption.httpAgent.proxy.href;
-            aria2cArgs.push(`--all-proxy="${proxyUrl}"`);
+            aria2cArgs.push(`--all-proxy="${ proxyUrl }"`);
         }
 
         try {
             await checkAndRemoveFile(target);
-            logger.mark(`开始下载: ${url}`);
+            logger.mark(`开始下载: ${ url }`);
 
             // 执行aria2c命令
-            const command = `aria2c ${aria2cArgs.join(' ')}`;
+            const command = `aria2c ${ aria2cArgs.join(' ') }`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
-                    logger.error(`下载视频发生错误！\ninfo:${stderr}`);
+                    logger.error(`下载视频发生错误！\ninfo:${ stderr }`);
                     throw error;
                 } else {
-                    logger.mark(`下载完成: ${url}`);
+                    logger.mark(`下载完成: ${ url }`);
                 }
             });
 
@@ -2078,7 +2059,7 @@ export class tools extends plugin {
                 }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
             });
         } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${err}`);
+            logger.error(`下载视频发生错误！\ninfo:${ err }`);
             throw err;
         }
     }
@@ -2094,38 +2075,38 @@ export class tools extends plugin {
 
         // 构造axel命令参数
         const axelArgs = [
-            `-n ${numThreads}`,
-            `-o "${target}"`,
-            `-U "${userAgent}"`,
+            `-n ${ numThreads }`,
+            `-o "${ target }"`,
+            `-U "${ userAgent }"`,
             url
         ];
 
         // 如果有自定义头信息
         if (headers) {
             for (const [key, value] of Object.entries(headers)) {
-                axelArgs.push(`-H "${key}: ${value}"`);
+                axelArgs.push(`-H "${ key }: ${ value }"`);
             }
         }
 
         // 如果使用代理
         if (proxyOption && proxyOption.httpAgent) {
             const proxyUrl = proxyOption.httpAgent.proxy.href;
-            axelArgs.push(`--proxy="${proxyUrl}"`);
+            axelArgs.push(`--proxy="${ proxyUrl }"`);
         }
 
         try {
             await checkAndRemoveFile(target);
-            logger.mark(`开始下载: ${url}`);
+            logger.mark(`开始下载: ${ url }`);
 
 
             // 执行axel命令
-            const command = `axel ${axelArgs.join(' ')}`;
+            const command = `axel ${ axelArgs.join(' ') }`;
             exec(command, (error, stdout, stderr) => {
                 if (error) {
-                    logger.error(`下载视频发生错误！\ninfo:${stderr}`);
+                    logger.error(`下载视频发生错误！\ninfo:${ stderr }`);
                     throw error;
                 } else {
-                    logger.mark(`下载完成: ${url}`);
+                    logger.mark(`下载完成: ${ url }`);
                 }
             });
 
@@ -2138,7 +2119,7 @@ export class tools extends plugin {
                     if (fs.existsSync(target)) {
                         logger.info("[R插件][Axel] 检测到文件！");
                         clearInterval(checkInterval);
-                        logger.info(`[R插件][Axel] 下载到${groupPath}`);
+                        logger.info(`[R插件][Axel] 下载到${ groupPath }`);
                         resolve(groupPath);
                     }
                     if (count === 6) {
@@ -2149,7 +2130,7 @@ export class tools extends plugin {
                 }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
             });
         } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${err}`);
+            logger.error(`下载视频发生错误！\ninfo:${ err }`);
             throw err;
         }
     }
