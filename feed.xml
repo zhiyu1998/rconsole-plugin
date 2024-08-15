@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Thu, 15 Aug 2024 07:16:38 GMT</lastBuildDate>
+        <lastBuildDate>Thu, 15 Aug 2024 08:08:02 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -15,10 +15,32 @@
         <copyright>MIT License</copyright>
         <atom:link href="https://zhiyu1998.github.io/rconsole-plugin/feed.xml" rel="self" type="application/rss+xml"/>
         <item>
+            <title><![CDATA[最近的一些更新日志]]></title>
+            <link>https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html</link>
+            <guid>https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html</guid>
+            <pubDate>Thu, 15 Aug 2024 00:00:00 GMT</pubDate>
+            <description><![CDATA[R插件的最近更新]]></description>
+            <content:encoded><![CDATA[<h2>前言</h2>
+<p>只写一些比较重要的特性，具体可以看<code>commit</code></p>
+<blockquote>
+<p><a href="https://github.com/zhiyu1998/rconsole-plugin/commits/master/">https://github.com/zhiyu1998/rconsole-plugin/commits/master/</a></p>
+</blockquote>
+<h2>2024 年</h2>
+<h3>8月的一些特性</h3>
+<h4>1.8.0-beta</h4>
+<ul>
+<li>加入了<code>小飞机</code>的<code>文件上传</code></li>
+<li>加入了<code>Aria2</code>和<code>Axel</code>辅助下载</li>
+<li>加入<code>小飞机解析</code></li>
+</ul>
+]]></content:encoded>
+            <author>renzhiyu0416@gmail.com (zhiyu1998)</author>
+        </item>
+        <item>
             <title><![CDATA[Q&A官方解答]]></title>
             <link>https://zhiyu1998.github.io/rconsole-plugin/posts/Q&amp;A官方解答.html</link>
             <guid>https://zhiyu1998.github.io/rconsole-plugin/posts/Q&amp;A官方解答.html</guid>
-            <pubDate>Thu, 15 Aug 2024 00:00:00 GMT</pubDate>
+            <pubDate>Wed, 14 Aug 2024 00:00:00 GMT</pubDate>
             <description><![CDATA[R插件的问题解答]]></description>
             <content:encoded><![CDATA[<h2>🐤 Q&amp;A</h2>
 <h3>📺 B站扫码登录</h3>
