@@ -411,7 +411,7 @@ apt install aria2
 > (非必要不更改)更改魔法在`config/tools.yaml` 或 [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)的配置位置：  
 `proxyAddr: '127.0.0.1' # 魔法地址`  
 `proxyPort: '7890' # 魔法端口`
-
+ 
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
