@@ -1021,10 +1021,10 @@ export class tools extends plugin {
                 const cover = noteData.imageList?.[0].urlDefault;
                 e.reply([segment.image(cover), `识别：小红书, ${ title }\n${ desc }`]);
                 // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
-                // const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
+                const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
 
                 // 构造无水印
-                const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
+                // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
                 // 下载视频
                 this.downloadVideo(xhsVideoUrl).then(path => {
                     if (path === undefined) {
