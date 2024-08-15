@@ -1,3 +1,5 @@
+import { exec } from "child_process";
+
 /**
  * yt-dlp工具类
  * @returns {Promise<void>}
