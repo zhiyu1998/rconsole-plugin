@@ -81,25 +81,41 @@ export async function readCurrentDir(path) {
 
 /**
  * 拷贝文件
- * @param srcDir
- * @param destDir
+ * @param srcDir            源文件目录
+ * @param destDir           目标文件目录
+ * @param specificFiles     过滤文件，不填写就拷贝全部
  * @returns {Promise<*|null>}
  */
-export async function copyFiles(srcDir, destDir) {
+export async function copyFiles(srcDir, destDir, specificFiles = []) {
     try {
         await mkdirIfNotExists(destDir);
 
         const files = await readCurrentDir(srcDir);
 
-        for (const file of files) {
+        // 如果 specificFiles 数组为空，拷贝全部文件；否则只拷贝指定文件
+        const filesToCopy = specificFiles.length > 0
+            ? files.filter(file => specificFiles.includes(file))
+            : files;
+
+        logger.info(logger.yellow(`[R插件][拷贝文件] 正在将 ${srcDir} 的文件拷贝到 ${destDir} 中`));
+
+        // 用于保存拷贝了哪些文件
+        const copiedFiles = [];
+
+        for (const file of filesToCopy) {
             const srcFile = path.join(srcDir, file);
             const destFile = path.join(destDir, file);
             await fs.promises.copyFile(srcFile, destFile);
+            copiedFiles.push(file);
         }
+
+        logger.info(logger.yellow(`[R插件][拷贝文件] 拷贝完成`));
+
+        return copiedFiles
     } catch (error) {
         logger.error(error);
+        return [];
     }
-    return null;
 }
 
 /**
