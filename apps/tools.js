@@ -1369,7 +1369,7 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.mp4")
             const title = execSync(`yt-dlp --get-title ${ url } ${ isOversea ? "" : `--proxy ${ this.myProxy }` }`)
             e.reply(`识别：油管，视频下载中请耐心等待 \n${ title }`);
-            await dy2b(path, url, isOversea);
+            await dy2b(path, url, isOversea, this.myProxy);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             console.error(error);
