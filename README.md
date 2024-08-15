@@ -60,9 +60,9 @@ sudo apt-get install ffmpeg
 
 其他玩法见官方文档
 
-## ✍️ 官方文档
+## ✍️ 官方文档 & 其他玩法
 
-> https://zhiyu1998.github.io/rconsole-plugin/
+> [👉 点击进入](https://zhiyu1998.github.io/rconsole-plugin/)
 
 ##  🤺 R插件交流群
 
