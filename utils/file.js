@@ -10,7 +10,6 @@ export async function checkAndRemoveFile(file) {
     try {
         await fs.promises.access(file);
         await fs.promises.unlink(file);
-        logger.mark('文件已存在');
     } catch (err) {
         if (err.code !== 'ENOENT') {
             throw err;

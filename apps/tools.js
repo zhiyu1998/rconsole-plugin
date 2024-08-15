@@ -376,7 +376,7 @@ export class tools extends plugin {
                     // e.reply(segment.image(i.url_list[0]));
                 }
                 // console.log(no_watermark_image_list)
-                await this.reply(await Bot.makeForwardMsg(no_watermark_image_list));
+                await e.reply(await Bot.makeForwardMsg(no_watermark_image_list));
             }
             // 如果开启评论的就调用
             await this.douyinComment(e, douId, headers);
@@ -740,7 +740,7 @@ export class tools extends plugin {
                         user_id: e.user_id,
                     });
                 });
-                await this.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
+                await e.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
             } else {
                 e.reply(`识别：哔哩哔哩动态, 但是失败！`);
             }
@@ -929,12 +929,17 @@ export class tools extends plugin {
             } else {
                 // 非海外使用🪜下载
                 const localPath = this.getCurDownloadPath(e);
-                downloadImg(url, localPath, "", !isOversea, {}, {
-                    proxyAddr: this.proxyAddr,
-                    proxyPort: this.proxyPort
-                }).then(async _ => {
-                    e.reply(segment.image(fs.readFileSync(localPath + "/" + url.split("/").pop())));
-                });
+                const xImgPath = await downloadImg({
+                    img: url,
+                    dir: localPath,
+                    isProxy: !isOversea,
+                    proxyInfo: {
+                        proxyAddr: this.proxyAddr,
+                        proxyPort: this.proxyPort
+                    },
+                    numThread: this.videoDownloadConcurrency,
+                })
+                e.reply(segment.image(xImgPath));
             }
         } else {
             this.downloadVideo(url, !isOversea).then(path => {
@@ -1015,7 +1020,6 @@ export class tools extends plugin {
             const resJson = JSON.parse(res);
             const noteData = resJson.note.noteDetailMap[id].note;
             const { title, desc, type } = noteData;
-            let imgPromise = [];
             if (type === "video") {
                 // 封面
                 const cover = noteData.imageList?.[0].urlDefault;
@@ -1036,27 +1040,34 @@ export class tools extends plugin {
                 return true;
             } else if (type === "normal") {
                 e.reply(`识别：小红书, ${ title }\n${ desc }`);
-                noteData.imageList.map(async (item, index) => {
-                    imgPromise.push(downloadImg(item.urlDefault, downloadPath, index.toString()));
-                });
-            }
-            const paths = await Promise.all(imgPromise);
-            const imagesData = await Promise.all(
-                paths.map(async item => {
-                    const fileContent = await fs.promises.readFile(item);
+                const imagePromises = [];
+                // 使用 for..of 循环处理异步下载操作
+                for (let [index, item] of noteData.imageList.entries()) {
+                    imagePromises.push(downloadImg({
+                        img: item.urlDefault,
+                        dir: downloadPath,
+                        fileName: `${index}.png`,
+                        numThread: this.videoDownloadConcurrency,
+                    }));
+                }
+                // 等待所有图片下载完成
+                const paths = await Promise.all(imagePromises);
+
+                // 直接构造 imagesData 数组
+                const imagesData = await Promise.all(paths.map(async (item) => {
                     return {
-                        message: segment.image(fileContent),
+                        message: segment.image(await fs.promises.readFile(item)),
                         nickname: e.sender.card || e.user_id,
                         user_id: e.user_id,
                     };
-                }),
-            );
+                }));
 
-            // Reply with forward message
-            e.reply(await Bot.makeForwardMsg(imagesData));
+                // 回复带有转发消息的图片数据
+                e.reply(await Bot.makeForwardMsg(imagesData));
 
-            // Clean up files
-            await Promise.all(paths.map(item => fs.promises.unlink(item)));
+                // 批量删除下载的文件
+                await Promise.all(paths.map(item => fs.promises.rm(item, { force: true })));
+            }
         });
         return true;
     }
@@ -1244,33 +1255,37 @@ export class tools extends plugin {
             .then(async resp => {
                 const wbData = resp.data.data;
                 const { text, status_title, source, region_name, pics, page_info } = wbData;
-                e.reply(`识别：微博，${ text.replace(/<[^>]+>/g, '') }\n${ status_title }\n${ source }\t${ region_name }`);
+                e.reply(`识别：微博，${ text.replace(/<[^>]+>/g, '') }\n${ status_title }\n${ source }\t${ region_name ?? '' }`);
                 if (pics) {
-                    const removePath = [];
-                    // 图片
+                    // 下载图片并格式化消息
                     const imagesPromise = pics.map(item => {
-                        // 下载
-                        return downloadImg(item?.large.url || item.url, this.getCurDownloadPath(e), "", false, {
-                            "Referer": "http://blog.sina.com.cn/",
-                        });
-                    })
-                    const images = await Promise.all(imagesPromise).then(paths => {
-                        return paths.map(item => {
-                            // 记录删除的路径
-                            removePath.push(item);
-                            // 格式化发送图片
+                        return downloadImg({
+                            img: item?.large.url || item.url,
+                            dir: this.getCurDownloadPath(e),
+                            headersExt: {
+                                "Referer": "http://blog.sina.com.cn/",
+                            },
+                            numThread: this.videoDownloadConcurrency,
+                        }).then(async (filePath) => {
+                            // 格式化为消息对象
                             return {
-                                message: segment.image(fs.readFileSync(item)),
+                                message: segment.image(await fs.promises.readFile(filePath)),
                                 nickname: e.sender.card || e.user_id,
                                 user_id: e.user_id,
-                            }
-                        })
-                    })
+                                // 返回路径以便后续删除
+                                filePath
+                            };
+                        });
+                    });
+
+                    // 等待所有图片处理完
+                    const images = await Promise.all(imagesPromise);
+
+                    // 回复合并的消息
                     await e.reply(await Bot.makeForwardMsg(images));
-                    // 发送完就删除
-                    removePath.forEach(async item => {
-                        checkAndRemoveFile(item);
-                    })
+
+                    // 并行删除文件
+                    await Promise.all(images.map(({ filePath }) => checkAndRemoveFile(filePath)));
                 }
                 if (page_info) {
                     // 视频

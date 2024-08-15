@@ -6,7 +6,8 @@ import schedule from "node-schedule";
 import fs from "node:fs";
 import os from "os";
 import common from "../../../lib/common/common.js";
-import { TEN_THOUSAND } from "../constants/constant.js";
+import path from 'path';
+import { COMMON_USER_AGENT, TEN_THOUSAND } from "../constants/constant.js";
 import { mkdirIfNotExists } from "./file.js";
 
 /**
@@ -127,21 +128,21 @@ export function generateRandomStr(randomlength = 16) {
 /**
  * 下载mp3
  * @param mp3Url    MP3地址
- * @param path      下载目录
+ * @param filePath      下载目录
  * @param title     音乐名
  * @param redirect  是否要重定向
  * @param audioType 建议填写 mp3 / m4a / flac 类型
  * @returns {Promise<unknown>}
  */
-export async function downloadAudio(mp3Url, path, title = "temp", redirect = "manual", audioType = "mp3") {
+export async function downloadAudio(mp3Url, filePath, title = "temp", redirect = "manual", audioType = "mp3") {
     // 如果没有目录就创建一个
-    await mkdirIfNotExists(path)
+    await mkdirIfNotExists(filePath)
 
     // 补充保存文件名
-    path += `/${ title }.${audioType}`;
-    if (fs.existsSync(path)) {
+    filePath += `/${ title }.${ audioType }`;
+    if (fs.existsSync(filePath)) {
         console.log(`音频已存在`);
-        fs.unlinkSync(path);
+        fs.unlinkSync(filePath);
     }
 
     // 发起请求
@@ -155,7 +156,7 @@ export async function downloadAudio(mp3Url, path, title = "temp", redirect = "ma
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch ${response.statusText}`);
+        throw new Error(`Failed to fetch ${ response.statusText }`);
     }
 
     try {
@@ -169,32 +170,78 @@ export async function downloadAudio(mp3Url, path, title = "temp", redirect = "ma
         });
 
         // 开始下载
-        const writer = fs.createWriteStream(path);
+        const writer = fs.createWriteStream(filePath);
 
         response.data.pipe(writer);
 
         return new Promise((resolve, reject) => {
-            writer.on('finish', () => resolve(path));
+            writer.on('finish', () => resolve(filePath));
             writer.on('error', reject);
         });
 
     } catch (error) {
-        console.error(`下载音乐失败，错误信息为: ${error.message}`);
+        console.error(`下载音乐失败，错误信息为: ${ error.message }`);
         throw error;
     }
 }
 
+
 /**
- * 下载一张网络图片(自动以url的最后一个为名字)
- * @param {string} img
- * @param {string} dir
- * @param {string} fileName
- * @param {boolean} isProxy
- * @param {Object} headersExt
- * @param {Object} proxyInfo 参数：proxyAddr=地址，proxyPort=端口
- * @returns {Promise<unknown>}
+ * 下载图片网关
+ * @param {Object} options 参数对象
+ * @param {string} options.img 图片的URL
+ * @param {string} options.dir 保存图片的目录
+ * @param {string} [options.fileName] 自定义文件名 (可选)
+ * @param {boolean} [options.isProxy] 是否使用代理 (可选)
+ * @param {Object} [options.headersExt] 自定义请求头 (可选)
+ * @param {Object} [options.proxyInfo] 代理信息 (可选)
+ * @returns {Promise<string>}
  */
-export async function downloadImg(img, dir, fileName = "", isProxy = false, headersExt = {}, proxyInfo = {}) {
+export async function downloadImg({
+                                      img,
+                                      dir,
+                                      fileName = "",
+                                      isProxy = false,
+                                      headersExt = {},
+                                      proxyInfo = {},
+                                      numThread = 1,
+                                  }) {
+    const downloadImgParams = {
+        img,
+        dir,
+        fileName,
+        isProxy,
+        headersExt,
+        proxyInfo,
+        numThread,
+    }
+    logger.info(logger.yellow(`[R插件][图片下载] 当前使用线程数：${ numThread }`));
+    if (numThread === 1) {
+        return normalDownloadImg(downloadImgParams);
+    } else if (numThread > 1) {
+        return downloadImgWithAria2(downloadImgParams);
+    }
+}
+
+/**
+ * 正常下载图片
+ * @param {Object} options 参数对象
+ * @param {string} options.img 图片的URL
+ * @param {string} options.dir 保存图片的目录
+ * @param {string} [options.fileName] 自定义文件名 (可选)
+ * @param {boolean} [options.isProxy] 是否使用代理 (可选)
+ * @param {Object} [options.headersExt] 自定义请求头 (可选)
+ * @param {Object} [options.proxyInfo] 代理信息 (可选)
+ * @returns {Promise<string>}
+ */
+async function normalDownloadImg({
+                                     img,
+                                     dir,
+                                     fileName = "",
+                                     isProxy = false,
+                                     headersExt = {},
+                                     proxyInfo = {}
+                                 }) {
     if (fileName === "") {
         fileName = img.split("/").pop();
     }
@@ -203,8 +250,7 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false, head
     const writer = fs.createWriteStream(filepath);
     const axiosConfig = {
         headers: {
-            "User-Agent":
-                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
+            "User-Agent": COMMON_USER_AGENT,
             ...headersExt
         },
         responseType: "stream",
@@ -233,9 +279,63 @@ export async function downloadImg(img, dir, fileName = "", isProxy = false, head
             });
         });
     } catch (err) {
-        logger.error(`图片下载失败, 原因：${err}`);
+        logger.error(`图片下载失败, 原因：${ err }`);
     }
 }
+
+/**
+ * 下载一张网络图片(使用aria2加速下载)
+ * @param {Object} options 参数对象
+ * @param {string} options.img 图片的URL
+ * @param {string} options.dir 保存图片的目录
+ * @param {string} [options.fileName] 自定义文件名 (可选)
+ * @param {boolean} [options.isProxy] 是否使用代理 (可选)
+ * @param {Object} [options.headersExt] 自定义请求头 (可选)
+ * @param {Object} [options.proxyInfo] 代理信息 (可选)
+ * @returns {Promise<unknown>}
+ */
+async function downloadImgWithAria2({
+                                        img,
+                                        dir,
+                                        fileName = "",
+                                        isProxy = false,
+                                        headersExt = {},
+                                        proxyInfo = {},
+                                        numThread = 1,
+                                    }) {
+    if (fileName === "") {
+        fileName = img.split("/").pop();
+    }
+    const filepath = path.resolve(dir, fileName);
+    await mkdirIfNotExists(dir);
+
+    // 构建 aria2c 命令
+    let aria2cCmd = `aria2c "${ img }" --dir="${ dir }" --out="${ fileName }" --max-connection-per-server=${numThread} --split=${numThread} --min-split-size=1M --continue`;
+
+    // 如果需要代理
+    if (isProxy) {
+        aria2cCmd += ` --all-proxy="http://${ proxyInfo.proxyAddr }:${ proxyInfo.proxyPort }"`;
+    }
+
+    // 添加自定义headers
+    if (headersExt && Object.keys(headersExt).length > 0) {
+        for (const [headerName, headerValue] of Object.entries(headersExt)) {
+            aria2cCmd += ` --header="${ headerName }: ${ headerValue }"`;
+        }
+    }
+
+    return new Promise((resolve, reject) => {
+        exec(aria2cCmd, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`图片下载失败, 原因：${ error.message }`);
+                reject(error);
+                return;
+            }
+            resolve(filepath);
+        });
+    });
+}
+
 
 /**
  * 千位数的数据处理
@@ -325,9 +425,9 @@ export function truncateString(inputString, maxLength = 50) {
  * 测试当前是否存在🪜
  * @returns {Promise<Boolean>}
  */
-export async function testProxy(host='127.0.0.1', port=7890) {
+export async function testProxy(host = '127.0.0.1', port = 7890) {
     // 创建一个代理隧道
-    const httpsAgent = new HttpsProxyAgent(`http://${host}:${port}`);
+    const httpsAgent = new HttpsProxyAgent(`http://${ host }:${ port }`);
 
     try {
         // 通过代理服务器发起请求
@@ -343,7 +443,7 @@ export async function testProxy(host='127.0.0.1', port=7890) {
 export function formatSeconds(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}分${remainingSeconds}秒`;
+    return `${ minutes }分${ remainingSeconds }秒`;
 }
 
 /**
@@ -362,7 +462,7 @@ export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) 
         return response.data;
     } catch (error) {
         if (retries > 0) {
-            logger.mark(`[R插件][重试模块]重试中... (${3 - retries + 1}/3) 次`);
+            logger.mark(`[R插件][重试模块]重试中... (${ 3 - retries + 1 }/3) 次`);
             await new Promise(resolve => setTimeout(resolve, delay));
             return retryAxiosReq(requestFunction, retries - 1, delay);
         } else {
@@ -406,7 +506,7 @@ export function estimateReadingTime(text, wpm = 200) {
  */
 export function checkCommandExists(command) {
     return new Promise((resolve, reject) => {
-        exec(`which ${command}`, (error, stdout, stderr) => {
+        exec(`which ${ command }`, (error, stdout, stderr) => {
             if (error) {
                 // Command not found
                 resolve(false);
@@ -465,15 +565,15 @@ export function cleanFilename(filename) {
 export function checkToolInCurEnv(someCommand) {
     // 根据操作系统选择命令
     return new Promise((resolve, reject) => {
-        const command = os.platform() === 'win32' ? `where ${someCommand}` : `which ${someCommand}`;
+        const command = os.platform() === 'win32' ? `where ${ someCommand }` : `which ${ someCommand }`;
 
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                logger.error(`[R插件][checkTool]未找到${someCommand}: ${stderr || error.message}`);
+                logger.error(`[R插件][checkTool]未找到${ someCommand }: ${ stderr || error.message }`);
                 resolve(false);
                 return;
             }
-            logger.info(`[R插件][checkTool]找到${someCommand}: ${stdout.trim()}`);
+            logger.info(`[R插件][checkTool]找到${ someCommand }: ${ stdout.trim() }`);
             resolve(true);
         });
     });
