@@ -1,0 +1,47 @@
+name: 🚀 部署文档
+
+on:
+  push:
+    branches:
+      # 确保这是你正在使用的分支名称
+      - docs
+
+jobs:
+  deploy-gh-pages:
+    name: CI&CD # 此任务（job）的名字
+    runs-on: ubuntu-latest # 运行环境
+    steps:
+      - uses: actions/checkout@master # 切换分支到main
+        with:
+          fetch-depth: 2
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v2.1.4 # 使用node环境
+        with:
+          node-version: '18.x' # 版本12
+
+      # - name: Cache node modules
+      #   id: cache # 缓存id
+      #   uses: actions/cache@v2
+      #   env:
+      #     cache-name: cache-node-modules # 缓存名字
+      #   with:
+      #     path: node_modules # 缓存路径
+      #     key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package.json') }} # 缓存标识
+
+      - name: Install pnpm
+        run: npm i pnpm -g
+
+      - name: Install Dependencies
+        # if: steps.cache.outputs.cache-hit != 'true' # 如果没有缓存的话
+        run: pnpm i # 安装依赖
+
+      - name: Build Packages
+        run: pnpm run build #  打包文件
+
+      - name: 👷部署文档
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          # 这是文档部署到的分支名称
+          branch: gh-pages
+          folder: ./.vitepress/dist
