@@ -81,10 +81,10 @@ export class switchers extends plugin {
      */
     async setLagrange(e) {
         // 查看当前设置
-        let driver = (await redisExistAndGetKey(REDIS_YUNZAI_LAGRANGE))?.driver;
+        let driver = (await redisGetKey(REDIS_YUNZAI_LAGRANGE))?.driver;
         // 如果是第一次
         if (driver === undefined) {
-            await redisSetKey({
+            await redisSetKey(REDIS_YUNZAI_LAGRANGE, {
                 driver: 1,
             })
             driver = 1;
@@ -95,7 +95,7 @@ export class switchers extends plugin {
         }
         // 设置
         driver ^= 1;
-        await redisSetKey({
+        await redisSetKey(REDIS_YUNZAI_LAGRANGE, {
             driver: driver,
         })
         e.reply(`当前驱动：${ driver ? '拉格朗日' : '其他驱动' }`)
