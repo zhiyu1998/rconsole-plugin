@@ -110,7 +110,7 @@ export const IMAGE_TRANSLATION_PROMPT = `Begin each of the following with a tria
  * 帮助文档提示
  * @type {string}
  */
-export const HELP_DOC = "\n文档：https://gitee.com/kyrzy0416/rconsole-plugin"
+export const HELP_DOC = "\n文档：https://zhiyu1998.github.io/rconsole-plugin/"
 
 /**
  * 总结内容评估器的正则
