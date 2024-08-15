@@ -6,7 +6,7 @@ import MarkdownIt from "markdown-it";
 import type { FeedOptions, Item } from "feed";
 import { Feed } from "feed";
 
-const DOMAIN = "https://clark-cui.top";
+const DOMAIN = "https://zhiyu1998.github.io/rconsole-plugin";
 const AUTHOR = {
   name: "zhiyu1998",
   email: "renzhiyu0416@gmail.com",
@@ -24,8 +24,8 @@ const OPTIONS: FeedOptions = {
     rss: DOMAIN + "/feed.xml",
   },
   author: AUTHOR,
-  image: "https://clark-cui.top/horse.svg",
-  favicon: "https://clark-cui.top/horse.svg",
+  image: "https://zhiyu1998.github.io/rconsole-plugin/horse.svg",
+  favicon: "https://zhiyu1998.github.io/rconsole-plugin/horse.svg",
 };
 
 const markdown = MarkdownIt({

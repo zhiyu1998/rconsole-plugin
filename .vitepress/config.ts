@@ -45,7 +45,7 @@ async function config() {
     themeConfig: {
       // repo: "clark-cui/homeSite",
       logo: "/horse.svg",
-      avator: "/avator.png",
+      avator: "/rconsole-plugin/avator.png",
       search: {
         provider: "local",
       },
@@ -69,7 +69,7 @@ async function config() {
         },
         {
           text: "🔥RSS",
-          link: "https://clark-cui.top/feed.xml",
+          link: "https://zhiyu1998.github.io/rconsole-plugin/feed.xml",
         },
       ],
       socialLinks: [
