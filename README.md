@@ -22,15 +22,15 @@
 
 
 ## 🧏 ‍使用实例
-![help](https://alist.rrorangedev.net/d/Kua/PicGo/example.webp)
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example.webp" alt="help" style="zoom: 80%;" />
 
-![xhs](https://alist.rrorangedev.net/d/Kua/PicGo/example2.webp)
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example2.webp" alt="xhs" style="zoom: 50%;" />
 
 ![y2b](https://alist.rrorangedev.net/d/Kua/PicGo/example3.webp)
 
-![mys](https://alist.rrorangedev.net/d/Kua/PicGo/example4.webp)
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example4.webp" alt="mys" style="zoom:52%;" />
 
-![zy](https://alist.rrorangedev.net/d/Kua/PicGo/example5.webp)
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example5.webp" alt="zy" style="zoom: 40%;" />
 
 ## 📔 必要安装
 
@@ -66,7 +66,7 @@ sudo apt-get install ffmpeg
 
 ##  🤺 R插件交流群
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/qq.webp" width="30%" height="30%">
+<img src="https://alist.rrorangedev.net/d/Kua/PicGo/qq.webp" style="zoom: 33%;" >
 
 >  扫码不行就输入：575663150
 
@@ -100,7 +100,18 @@ sudo apt-get install ffmpeg
 |       AO        | 26   |
 |       Chino        | 30   |
 
+
+
+## 🔗 相关链接
+
+- 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
+- TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
+- 听语惊花：[听语惊花 / Yunzai-Bot-lite](https://gitee.com/Nwflower/yunzai-bot-lite)
+- [插件库](https://gitee.com/yhArcadia/Yunzai-Bot-plugins-index)
+- [锅巴插件](https://gitee.com/guoba-yunzai/guoba-plugin)
+
 ## 🚀 声明
+
 * 文件借鉴了很多插件，精简个人认为可以精简的内容。
 * 素材来源于网络，仅供交流学习使用
 * 严禁用于任何商业用途和非法行为
