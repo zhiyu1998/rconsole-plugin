@@ -50,6 +50,16 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.identifyPrefix",
+                    label: "识别前缀",
+                    bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入识别前缀",
+                    },
+                },
+                {
                     field: "tools.translateAppId",
                     label: "百度翻译APP ID",
                     bottomHelpMessage: "使用百度翻译需要的APP ID（需要申请）",

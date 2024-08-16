@@ -2,6 +2,7 @@ defaultPath: './data/rcmp4/' # 保存视频的位置
 videoSizeLimit: 70 # 视频大小限制（单位MB），超过大小则转换成群文件上传
 proxyAddr: '127.0.0.1' # 魔法地址
 proxyPort: '7890' # 魔法端口
+identifyPrefix: '✅' # 识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩
 
 translateAppId: '' # 百度翻译APP ID
 translateSecret: '' # 百度翻译密匙
