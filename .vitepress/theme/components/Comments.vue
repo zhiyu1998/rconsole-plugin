@@ -2,6 +2,7 @@
   <div class="comments">
     <!-- params generate in https://giscus.app/zh-CN -->
     <Giscus
+        v-if="showComment"
         repo="zhiyu1998/rconsole-plugin"
         repo-id="R_kgDOLNdlcQ"
         category="Q&A"
@@ -19,6 +20,7 @@
   </div>
 </template>
 <script lang="ts" setup>
+import { ref, watch, nextTick, computed } from "vue";
 import { useData, useRoute } from "vitepress";
 import Giscus from "@giscus/vue";
 
@@ -27,6 +29,20 @@ const { isDark } = useData();
 
 const theme = computed(() => (isDark.value ? "dark_dimmed" : "light_high_contrast"));
 
+// language变化不会触发重新加载，这里v-if强制刷新
+const showComment = ref(true);
+watch(
+    () => route.path,
+    () => {
+      showComment.value = false;
+      nextTick(() => {
+        showComment.value = true;
+      });
+    },
+    {
+      immediate: true,
+    }
+);
 </script>
 <style scoped>
 .comments {
