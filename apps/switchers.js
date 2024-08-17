@@ -212,9 +212,12 @@ export class switchers extends plugin {
             trustUserId = (await e.getReply()).user_id;
         } else {
             // 如果不是回复就看发送内容
-            trustUserId = e.msg.replace("#设置R信任用户", "");
+            trustUserId = e.msg.replace("#删除R信任用户", "");
         }
-        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        // 校准不是string的用户
+        let whiteList = (await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST)).map(item =>
+            typeof item === 'string' ? item : item.toString()
+        );
         if (whiteList == null) {
             e.reply("R插件当前没有任何信任用户：");
             return;
