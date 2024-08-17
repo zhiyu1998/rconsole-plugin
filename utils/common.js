@@ -217,7 +217,7 @@ export async function downloadImg({
     logger.info(logger.yellow(`[R插件][图片下载] 当前使用的方法：${ BILI_DOWNLOAD_METHOD[downloadMethod].label }`));
     if (downloadMethod === 0) {
         return normalDownloadImg(downloadImgParams);
-    } else if (downloadMethod === 1) {
+    } else if (downloadMethod >= 1) {
         return downloadImgWithAria2(downloadImgParams);
     }
 }
