@@ -8,7 +8,7 @@
         category="General"
         category-id="DIC_kwDOLNdlcc4ChqqP"
         mapping="specific"
-        :term="term"
+        term="pathname"
         strict="1"
         reactions-enabled="1"
         emit-metadata="0"
@@ -28,7 +28,6 @@ import Giscus from "@giscus/vue";
 const route = useRoute();
 const { isDark } = useData();
 
-const term = computed(() => route.path.slice(-3));
 const theme = computed(() => (isDark.value ? "dark_dimmed" : "light_high_contrast"));
 const lang = computed(() => route.path.startsWith("/en") ? 'en' : 'zh-Hans');
 
