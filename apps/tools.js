@@ -171,7 +171,7 @@ export class tools extends plugin {
                     fnc: "pixivision"
                 },
                 {
-                    reg: "(isee.weishi.qq.com)",
+                    reg: "(weishi.qq.com)",
                     fnc: "weishi"
                 },
                 {
@@ -1452,15 +1452,17 @@ export class tools extends plugin {
 
     // 微视
     async weishi(e) {
-        // 拦截恶意链接 【后续如果有小程序检测可以删除这个逻辑】
-        if (!e.msg.includes('https://isee.weishi.qq.com/ws/app-pages/share/index.html')) {
-            e.reply("识别：微视，但无法完整检测到视频ID");
-            // 打个日志 方便后面出bug知道位置
-            logger.error("[R插件][微视] 无法检测链接")
-            return true;
-        }
+        let url = e.msg;
+        const urlRegex = /https?:\/\/video\.weishi\.qq\.com\/\S+/g;
+        // 执行匹配
+        url = url.match(urlRegex)[0];
+        // 消除短链接
+        await fetch(url, {
+            method: "HEAD"
+        }).then(resp => {
+            url = resp.url;
+        });
 
-        const url = e.msg;
         try {
             const idMatch = url.match(/id=(.*)&spid/);
             if (!idMatch || idMatch.length !== 2) {
