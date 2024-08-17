@@ -1,37 +1,54 @@
 <template>
-  <div id="gitalk-container"></div>
+  <div class="comments">
+    <!-- params generate in https://giscus.app/zh-CN -->
+    <Giscus
+        v-if="showComment"
+        repo="zhiyu1998/rconsole-plugin"
+        repo-id="R_kgDOLNdlcQ"
+        category="General"
+        category-id="DIC_kwDOLNdlcc4ChqqP"
+        mapping="specific"
+        :term="term"
+        strict="1"
+        reactions-enabled="1"
+        emit-metadata="0"
+        input-position="top"
+        :theme="theme"
+        :lang="lang"
+        loading="lazy"
+        crossorigin="anonymous"
+    />
+  </div>
 </template>
 <script lang="ts" setup>
-import "gitalk/dist/gitalk.css";
-import Gitalk from "gitalk";
-import { onContentUpdated, useRouter } from "vitepress";
+import { ref, watch, nextTick, computed } from "vue";
+import { useData, useRoute } from "vitepress";
+import Giscus from "@giscus/vue";
 
-// const { route, go } = useRouter();
-function deleteChild(element: HTMLDivElement | null) {
-  let child = element?.lastElementChild;
-  while (child) {
-    element?.removeChild(child);
-    child = element?.lastElementChild;
-  }
-}
-onContentUpdated(() => {
-  // reset gittalk element for update
-  const element = document.querySelector("#gitalk-container");
-  if (!element) {
-    return;
-  }
-  deleteChild(element);
-  const gitalk = new Gitalk({
-    clientID: "Ov23liv9aVm87nfluiEg",
-    clientSecret: "195d2bf0371f86923f87e64d8d9bdb205f2c357c",
-    repo: "rconsole-plugin",
-    owner: "zhiyu1998",
-    admin: ["zhiyu1998"],
-    id: location.pathname.substring(0, 50), // Ensure uniqueness and length less than 50
-    language: "zh-CN",
-    distractionFreeMode: true, // Facebook-like distraction free mode
-  });
-  gitalk.render("gitalk-container");
-});
+const route = useRoute();
+const { isDark } = useData();
+
+const term = computed(() => route.path.slice(-3));
+const theme = computed(() => (isDark.value ? "dark_dimmed" : "light_high_contrast"));
+const lang = computed(() => route.path.startsWith("/en") ? 'en' : 'zh-Hans');
+
+// language变化不会触发重新加载，这里v-if强制刷新
+const showComment = ref(true);
+watch(
+    () => route.path,
+    () => {
+      showComment.value = false;
+      nextTick(() => {
+        showComment.value = true;
+      });
+    },
+    {
+      immediate: true,
+    }
+);
 </script>
-<style scoped></style>
+<style scoped>
+.comments {
+  margin-top: 80px;
+}
+</style>
