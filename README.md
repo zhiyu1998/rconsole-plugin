@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://gitee.com/kyrzy0416/rconsole-plugin">
-    <img width="200" src="https://alist.rrorangedev.net/d/Kua/PicGo/logo.webp">
+    <img width="200" src="https://s2.loli.net/2024/08/19/ty5K6P3hsAaXC47.webp">
   </a>
 </p>
 
@@ -8,7 +8,7 @@
 <div align="center">
     <h1>R-plugin</h1>
     写给朋友们用的<a href="https://gitee.com/Le-niao/Yunzai-Bot" target="_blank">Yunzai-Bot</a>插件，插件的各种业务来源于周围人
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/github-contribution-grid-snake.svg">
+    <img src="https://cdn.z.wiki/autoupload/20240819/Zn2g/github-contribution-grid-snake.svg">
 </div>
 
 > 📢 推荐 TG 个人互联网分享频道（分享日常冲浪互联网看到好玩的网站、app应用）：[RrOrange和朋友们](https://t.me/RrOrangeAndFriends)
@@ -22,15 +22,15 @@
 
 
 ## 🧏 ‍使用实例
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example.webp" alt="help" style="zoom: 80%;" />
+<img src="https://s2.loli.net/2024/08/12/l8ISa1Gv76OHuML.webp" alt="help" style="zoom: 80%;" />
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example2.webp" alt="xhs" style="zoom: 50%;" />
+<img src="https://s2.loli.net/2024/08/12/Ojlh6Nr9SiRmvuB.webp" alt="xhs" style="zoom: 50%;" />
 
-![y2b](https://alist.rrorangedev.net/d/Kua/PicGo/example3.webp)
+![y2b](https://s2.loli.net/2024/08/12/MF4xyhESYZBzcwL.webp)
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example4.webp" alt="mys" style="zoom:52%;" />
+<img src="https://s2.loli.net/2024/08/12/nDpB6Y9yHvmtKjU.webp" alt="mys" style="zoom:52%;" />
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/example5.webp" alt="zy" style="zoom: 40%;" />
+<img src="https://s2.loli.net/2024/08/12/I5VWuASNFTmakw1.webp" alt="zy" style="zoom: 40%;" />
 
 ## 📔 必要安装
 
