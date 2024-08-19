@@ -540,7 +540,7 @@ export class tools extends plugin {
         if (url.includes("play\/ep") || url.includes("play\/ss")) {
             const ep = await this.biliEpInfo(url, e);
             // 如果使用了BBDown && 没有填写session 就放开下载
-            if (this.biliUseBBDown === true && _.isEmpty(this.biliSessData)) {
+            if (this.biliUseBBDown) {
                 // 加入队列
                 this.queue.add(async () => {
                     // 下载文件

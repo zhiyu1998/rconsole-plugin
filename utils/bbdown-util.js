@@ -23,8 +23,13 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
         // 这里如果有p参数就放置到url上，没有就相当于作了一次去跟踪参数的清除，也方便BBDown下载
         urlObj.search = newParams.toString();
         videoUrl = urlObj.toString();
+        let pParam = '-M \"temp\" \"-q 720P 高清, 480P 清晰, 360P 流畅\"';
+        // 如果不是番剧就常规逻辑
+        if (!(videoUrl.includes("play\/ep") || videoUrl.includes("play\/ss"))) {
+            pParam = pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"';
+        }
         // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
-        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pageParam ? '-p ' + pageParam + ' -M \"temp\"' : '-p 1' + ' -M \"temp\"'} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
+        const command = `BBDown ${videoUrl} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pParam} -F temp --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
         logger.info(command);
         // logger.info(command);
         // 直接调用BBDown，因为它已经在系统路径中
