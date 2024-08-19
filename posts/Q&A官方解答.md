@@ -10,10 +10,10 @@ tags:
 ### 📺 B站扫码登录
 命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
 
-![rbq](https://alist.rrorangedev.net/d/Kua/PicGo/rbq.webp)
+![rbq](https://s2.loli.net/2024/08/19/2ljBYQgSLUEXTKN.webp)
 
 示例：
-![rbq2](https://alist.rrorangedev.net/d/Kua/PicGo/rbq2.webp)
+![rbq2](https://s2.loli.net/2024/08/19/kqLVxKluECW4YGN.webp)
 
 
 ### 🎵 douyin问题
@@ -29,7 +29,7 @@ tags:
 2. F12进入控制台，打开`网络/network`
 3. 搜索`www.douyin.com`，把下面的一串cookie复制进去即可
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/dy_ck.webp)
+![](https://s2.loli.net/2024/08/19/E8SWgNZKlHmC6oi.webp)
 
 **备用方案1** ：
 
@@ -54,7 +54,7 @@ tags:
 - passport_assist_user
 - ttwid
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/douyin_cookie.webp)
+![](https://s2.loli.net/2024/08/19/2kUgsz1RntZmQje.webp)
 
 **备用方案2** （由`@重装小兔`提供）
 
@@ -106,7 +106,7 @@ tags:
 
 2. 在任意群里发送`#设置拉格朗日`，转换一下视频发送方式即可
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/lagrange.webp)
+![](https://s2.loli.net/2024/08/19/G5A72aojsUezKg1.webp)
 
 
 
@@ -132,7 +132,7 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 3. 开始游玩
 
-![wxkimi](https://alist.rrorangedev.net/d/Kua/PicGo/wxkimi.webp)
+![wxkimi](https://s2.loli.net/2024/08/19/7Yty51og3JGpBn2.webp)
 
 ### 🍠 小红书的 Cookie 问题
 
@@ -150,7 +150,7 @@ aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moon
 
 2. 进入小红书 - 注册 - 点击 `Cookie-Editor` 的导出 `Header String`
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/xhs-ck-export.webp)
+![](https://s2.loli.net/2024/08/19/5bWtgOeMlKSaZJH.webp)
 
 ### 📺 关于使用 BBDown 下载
 
@@ -183,7 +183,7 @@ apt install aria2
 
 3. 登录，官方提供了三种登录方式
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft.webp)
+![](https://s2.loli.net/2024/08/15/Nu63gMOUeWnBhob.webp)
 
 4. 添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
 
@@ -193,13 +193,13 @@ apt install aria2
 #查询R信任用户
 ```
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft1.webp)
+![](https://s2.loli.net/2024/08/15/uaJQOAYyVCg5vbF.webp)
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft2.webp)
+![](https://s2.loli.net/2024/08/15/Ul4kOw5SLjItWzu.webp)
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft3.webp)
+![](https://s2.loli.net/2024/08/15/zVTjAKYG28MbBuL.webp)
 
-![](https://alist.rrorangedev.net/d/Kua/PicGo/aircraft4.web)
+![](https://s2.loli.net/2024/08/15/QVmNrKnsJPlpX9S.webp)
 
 5. 开始使用！
 
