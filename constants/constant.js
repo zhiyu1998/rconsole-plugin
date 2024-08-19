@@ -66,7 +66,7 @@ export const XHS_NO_WATERMARK_HEADER = {
  * 分割线
  * @type {string}
  */
-export const DIVIDING_LINE = "\n━━━━━━━━━━{}━━━━━━━━━━"
+export const DIVIDING_LINE = "\n━━━{}━━━"
 
 /**
  * 保存判断机子是否是海外服务器的key
