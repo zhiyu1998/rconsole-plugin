@@ -26,8 +26,9 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
+    ANIME_SERIES_SEARCH_LINK,
     BILI_EP_INFO,
-    BILI_ONLINE,
+    BILI_ONLINE, BILI_SSID_INFO,
     BILI_STREAM_INFO,
     BILI_SUMMARY,
     DY_COMMENT,
@@ -519,9 +520,8 @@ export class tools extends plugin {
             return true;
         }
         // 处理番剧
-        if (url.includes("ep")) {
-            const ep = url.match(/\/ep(\d+)/)?.[1];
-            await this.biliEpInfo(ep, e);
+        if (url.includes("play\/ep") || url.includes("play\/ss")) {
+            await this.biliEpInfo(url, e);
             return true
         }
         // 处理专栏
@@ -615,11 +615,24 @@ export class tools extends plugin {
 
     /**
      * 获取哔哩哔哩番剧信息
-     * @param ep
+     * @param url
      * @param e
      * @returns {Promise<void>}
      */
-    async biliEpInfo(ep, e) {
+    async biliEpInfo(url, e) {
+        let ep;
+        // 处理ssid
+        if (url.includes("play\/ss")) {
+            const ssid = url.match(/\/ss(\d+)/)?.[1];
+            let resp = await (await fetch(BILI_SSID_INFO.replace("{}", ssid), {
+                headers: BILI_HEADER
+            })).json()
+            ep = (resp.result.main_section.episodes[0].share_url).replace("https://www.bilibili.com/bangumi/play/ep", "")
+        }
+        // 处理普通情况，上述情况无法处理的
+        if (_.isEmpty(ep)) {
+            ep = url.match(/\/ep(\d+)/)?.[1];
+        }
         const resp = await (await fetch(BILI_EP_INFO.replace("{}", ep), {
             headers: BILI_HEADER
         })).json();
@@ -636,6 +649,7 @@ export class tools extends plugin {
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
             `${ formatBiliInfo(dataProcessMap) }`,
+            `\n\n在线观看： ${ANIME_SERIES_SEARCH_LINK}${encodeURI(result.title)}`
         ], true)
     }
 
