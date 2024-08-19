@@ -906,7 +906,7 @@ export class tools extends plugin {
         }
         // 提取视频
         let videoUrl = GENERAL_REQ_LINK.link.replace("{}", twitterUrl);
-        e.reply(`${this.identifyPrefix} ：小蓝鸟学习版`);
+        e.reply(`${this.identifyPrefix} 识别：小蓝鸟学习版`);
         const config = {
             headers: {
                 'Accept': 'ext/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
