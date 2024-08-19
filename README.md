@@ -66,7 +66,7 @@ sudo apt-get install ffmpeg
 
 ##  🤺 R插件交流群
 
-<img src="https://alist.rrorangedev.net/d/Kua/PicGo/qq.webp" style="zoom: 33%;" >
+<img src="https://s2.loli.net/2024/08/12/8zhnvBCj5SgxukK.jpg" style="zoom: 33%;" >
 
 >  扫码不行就输入：575663150
 
