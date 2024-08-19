@@ -76,7 +76,7 @@ import {
     retryAxiosReq, saveJsonToFile,
     secondsToTime,
     testProxy,
-    truncateString
+    truncateString, urlTransformShortLink
 } from "../utils/common.js";
 import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
@@ -637,20 +637,22 @@ export class tools extends plugin {
             headers: BILI_HEADER
         })).json();
         const result = resp.result;
+        const { views, danmakus, likes, coins, favorites, favorite } = result.stat;
+        // 封装成可以format的数据
         const dataProcessMap = {
-            "播放": result.stat.views,
-            "弹幕": result.stat.danmakus,
-            "点赞": result.stat.likes,
-            "分享": result.stat.coins,
-            "追番": result.stat.favorites,
-            "收藏": result.stat.favorite,
+            "播放": views,
+            "弹幕": danmakus,
+            "点赞": likes,
+            "分享": coins,
+            "追番": favorites,
+            "收藏": favorite,
         };
         e.reply([
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
             `${ formatBiliInfo(dataProcessMap) }`,
-            `\n\n在线观看： ${ANIME_SERIES_SEARCH_LINK}${encodeURI(result.title)}`
-        ], true)
+            `\n\n在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + result.title) }`
+        ], true);
     }
 
     /**

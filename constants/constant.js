@@ -151,3 +151,9 @@ export const MESSAGE_RECALL_TIME = 60;
  * @type {number}
  */
 export const DOWNLOAD_WAIT_DETECT_FILE_TIME = 3000;
+
+/**
+ * 短链接接口
+ * @type {string}
+ */
+export const SHORT_LINKS = "https://smolurl.com/api/links";

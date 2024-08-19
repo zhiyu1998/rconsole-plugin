@@ -1,13 +1,13 @@
 import axios from "axios";
 import { exec } from "child_process";
+import https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import fetch from "node-fetch";
 import fs from "node:fs";
 import os from "os";
 import path from 'path';
-import { BILI_DOWNLOAD_METHOD, COMMON_USER_AGENT, TEN_THOUSAND } from "../constants/constant.js";
+import { BILI_DOWNLOAD_METHOD, COMMON_USER_AGENT, SHORT_LINKS, TEN_THOUSAND } from "../constants/constant.js";
 import { mkdirIfNotExists } from "./file.js";
-
 
 export function generateRandomStr(randomlength = 16) {
     const base_str = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789='
@@ -469,4 +469,25 @@ export function checkToolInCurEnv(someCommand) {
             resolve(true);
         });
     });
+}
+
+/**
+ * 转换短链接
+ * @param url
+ * @returns {Promise<string>}
+ */
+export async function urlTransformShortLink(url) {
+    const data = {
+        url: `${encodeURI(url)}`
+    };
+
+    const resp = await fetch(SHORT_LINKS, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    }).then(response => response.json());
+    return await resp.data.short_url;
 }
