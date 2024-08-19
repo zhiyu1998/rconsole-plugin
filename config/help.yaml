@@ -15,18 +15,9 @@
     - icon: pic1
       title: "#累了"
       desc: 疲惫往往是过度劳累
-    - icon: youthLearning
-      title: "#青年大学习"
-      desc: 青年大学习答案和截图
-    - icon: searchBook
-      title: "#搜书/#bookid"
-      desc: 基于zli的搜书功能
     - icon: zhubai
       title: "#竹白"
       desc: 基于竹白百科的搜索
-    - icon: 百科
-      title: "#百科/wiki xxx"
-      desc: 百度百科/搜狗百科
 - group: 工具类合集
   list:
     - icon: translate
@@ -47,7 +38,7 @@
     - icon: youtube
       title: "油管"
       desc: 油管学习版分享实时下载
-    - icon: 推特
+    - icon: twitter
       title: "小蓝鸟"
       desc: 推特学习版分享实时下载
     - icon: acfun

@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "tttgbnumber";
-  src: url("../../../../../resources/font/tttgbnumber.ttf");
+  font-family: "PermanentMarker";
+  src: url("../../font/PermanentMarker.ttf");
   font-weight: normal;
   font-style: normal;
 }
@@ -13,14 +13,14 @@
 }
 body {
   font-size: 16px;
-  font-family: "tttgbnumber";
+  font-family: "PermanentMarker", serif;
   transform: scale(1.5);
   transform-origin: 0 0;
   color: white;
 }
 .container {
   width: 536px;
-  background-image: url(../../img/bg.jpeg);
+  background-image: url(../../img/bg.jpg);
   background-size: 100%;
   padding: 10px 0 10px 0;
 }
@@ -78,5 +78,5 @@ body {
   text-align: center;
   font-size: 14px;
   color: white;
-  font-family: 'tttgbnumber';
+  font-family: 'PermanentMarker', serif;
 }
