@@ -15,7 +15,7 @@ import { mkdirIfNotExists } from "./file.js";
 import { exec, spawn } from 'child_process';
 import qrcode from "qrcode"
 
-const biliHeaders = {
+export const BILI_HEADER = {
     'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
     referer: 'https://www.bilibili.com',
@@ -56,7 +56,7 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
         .get(url, {
             responseType: 'stream',
             headers: {
-                ...biliHeaders
+                ...BILI_HEADER
             },
         })
         .then(({ data, headers }) => {
@@ -152,7 +152,7 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
         fullFileName = path.resolve(fullFileName);
 
         // 构建 -H 参数
-        const headerParams = Object.entries(biliHeaders).map(
+        const headerParams = Object.entries(BILI_HEADER).map(
             ([key, value]) => `--header="${ key }: ${ value }"`
         ).join(' ');
 
@@ -205,7 +205,7 @@ export async function getDownloadUrl(url) {
     return axios
         .get(url, {
             headers: {
-                ...biliHeaders
+                ...BILI_HEADER
             },
         })
         .then(({ data }) => {
@@ -275,7 +275,7 @@ export async function m4sToMp3(m4sUrl, path) {
         .get(m4sUrl, {
             responseType: 'stream',
             headers: {
-                ...biliHeaders
+                ...BILI_HEADER
             },
         }).then(async res => {
             // 如果没有目录就创建一个
@@ -394,7 +394,7 @@ export async function getDynamic(dynamicId, SESSDATA) {
     const dynamicApi = BILI_DYNAMIC.replace("{}", dynamicId);
     return axios.get(dynamicApi, {
         headers: {
-            ...biliHeaders,
+            ...BILI_HEADER,
             Cookie: `SESSDATA=${ SESSDATA }`
         },
     }).then(resp => {
@@ -430,7 +430,7 @@ export async function getDynamic(dynamicId, SESSDATA) {
 export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime = 10, hook = () => {
 }) {
     try {
-        const resp = await axios.get(BILI_SCAN_CODE_GENERATE, { ...biliHeaders });
+        const resp = await axios.get(BILI_SCAN_CODE_GENERATE, { ...BILI_HEADER });
         // 保存扫码的地址、扫码登录秘钥
         const { url: scanUrl, qrcode_key } = resp.data.data;
         await qrcode.toFile(qrcodeSavePath, scanUrl);
@@ -446,7 +446,7 @@ export async function getScanCodeData(qrcodeSavePath = 'qrcode.png', detectTime 
         hook();
         // 检测扫码情况默认 10s 检测一次，并且尝试3次，没扫就拜拜
         while (code !== 0 && attemptCount < maxAttempts) {
-            loginResp = await axios.get(BILI_SCAN_CODE_DETECT.replace("{}", qrcode_key), { ...biliHeaders });
+            loginResp = await axios.get(BILI_SCAN_CODE_DETECT.replace("{}", qrcode_key), { ...BILI_HEADER });
             code = loginResp.data.data.code;
             await new Promise(resolve => setTimeout(resolve, detectTime * 1000)); // Wait for detectTime seconds
         }

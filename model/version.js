@@ -10,13 +10,12 @@ export default class Version extends Base {
     async getData (versionData) {
         const version =
             (versionData && versionData.length && versionData[0].version) || '1.0.0'
-        let data = {
+        return {
             ...this.screenData,
             userId: version,
             quality: 100,
             saveId: version,
             versionData
         }
-        return data
     }
 }
