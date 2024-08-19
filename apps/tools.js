@@ -519,11 +519,6 @@ export class tools extends plugin {
             ]);
             return true;
         }
-        // 处理番剧
-        if (url.includes("play\/ep") || url.includes("play\/ss")) {
-            await this.biliEpInfo(url, e);
-            return true
-        }
         // 处理专栏
         if (e.msg !== undefined && e.msg.includes("read\/cv")) {
             this.linkShareSummary(e);
@@ -536,6 +531,22 @@ export class tools extends plugin {
                 return true;
             }
             url = this.biliDynamic(e, url, this.biliSessData);
+            return true;
+        }
+        // 创建文件，如果不存在，
+        const path = `${ this.getCurDownloadPath(e) }/`;
+        await mkdirIfNotExists(path);
+        // 处理番剧
+        if (url.includes("play\/ep") || url.includes("play\/ss")) {
+            const ep = await this.biliEpInfo(url, e);
+            // 如果使用了BBDown && 没有填写session 就放开下载
+            if (this.biliUseBBDown === true && _.isEmpty(this.biliSessData)) {
+                // 加入队列
+                this.queue.add(async () => {
+                    // 下载文件
+                    await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${ ep }`, path);
+                })
+            }
             return true;
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
@@ -601,10 +612,6 @@ export class tools extends plugin {
             e.reply(`${ this.identifyPrefix } 识别：哔哩哔哩音乐，正在提取请稍候...`)
             return await this.biliMusic(e, url);
         }
-
-        // 创建文件，如果不存在
-        const path = `${ this.getCurDownloadPath(e) }/`;
-        await mkdirIfNotExists(path);
         // 加入队列
         this.queue.add(async () => {
             // 下载文件
@@ -653,6 +660,7 @@ export class tools extends plugin {
             `${ formatBiliInfo(dataProcessMap) }`,
             `\n\n在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + result.title) }`
         ], true);
+        return ep;
     }
 
     /**
