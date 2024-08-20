@@ -73,7 +73,8 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq, saveJsonToFile,
+    retryAxiosReq,
+    saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString, urlTransformShortLink
@@ -309,7 +310,7 @@ export class tools extends plugin {
             const data = await retryAxiosReq(dyResponse)
             // logger.info(data)
             const item = await data.aweme_detail;
-            await saveJsonToFile(item);
+            // await saveJsonToFile(item);
             // 如果为null则退出
             if (item == null) {
                 e.reply("R插件无法识别到当前抖音内容，请换一个试试！");
