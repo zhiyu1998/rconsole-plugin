@@ -5,7 +5,7 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT, DIVIDING_LINE, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
 // 配置文件
 import config from "../model/config.js";
 import { redisExistAndGetKey } from "../utils/redis-util.js";
@@ -44,7 +44,7 @@ export class query extends plugin {
                     fnc: "zhubaiSearch",
                 },
                 {
-                    reg: "^#汇集番剧$",
+                    reg: "^#(r|R)番剧(.*)",
                     fnc: "myAnimeList",
                 }
             ],
@@ -231,20 +231,19 @@ export class query extends plugin {
     }
 
     async myAnimeList(e) {
+        const title = e.msg.replace(/^#([rR])番剧/, "").trim();
         const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
         if (animeList == null) {
             e.reply("暂无番剧信息");
             return;
         }
-        let forwardMsg = [];
-        for (let [key, value] of Object.entries(animeList)) {
-            forwardMsg.push({
-                message: { type: 'text', text: `《${key}》\n🪶 在线观看：${value.shortLink}\n🌸 在线观看：${value.shortLink2}` },
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            })
+        const findRes = Object.entries(animeList).find(([key, value]) => key.includes(title));
+        if (findRes == null) {
+            e.reply("未找到相关番剧");
+            return;
         }
-        e.reply(await Bot.makeForwardMsg(forwardMsg));
+        const { cover, shortLink, shortLink2 } = findRes[1];
+        e.reply([segment.image(cover), `《${findRes[0]}》\n\n🪶 在线观看： ${ shortLink }\n🌸 在线观看： ${ shortLink2 }\n${DIVIDING_LINE.replace("{}", "收录信息")}\n当前管理员已经收录了： ${ Object.keys(animeList).length } 个番剧`]);
         return true;
     }
 

@@ -662,7 +662,7 @@ export class tools extends plugin {
             "收藏": favorite,
         };
         // 截断标题，查看Redis中是否存在，避免频繁走网络连接
-        const { shortLink, shortLink2 } = await this.biliAnimeCacheDetect(result.title);
+        const { shortLink, shortLink2 } = await this.biliAnimeCacheDetect(result.title, result.cover);
         e.reply([
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
@@ -678,7 +678,7 @@ export class tools extends plugin {
      * @param title
      * @returns {Promise<{shortLink2: string, shortLink: string}|*>}
      */
-    async biliAnimeCacheDetect(title) {
+    async biliAnimeCacheDetect(title, cover) {
         const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
         if (animeList && animeList?.[title] !== undefined) {
             return animeList?.[title];
@@ -687,6 +687,7 @@ export class tools extends plugin {
         const shortLink2 = await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title);
         await redisExistAndInsertObject(REDIS_YUNZAI_ANIMELIST, {
             [title]: {
+                cover,
                 shortLink,
                 shortLink2
             }
