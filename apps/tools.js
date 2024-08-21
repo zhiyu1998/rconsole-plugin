@@ -616,7 +616,6 @@ export class tools extends plugin {
         }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.startsWith("音乐")) {
-            e.reply(`${ this.identifyPrefix } 识别：哔哩哔哩音乐，正在提取请稍候...`)
             return await this.biliMusic(e, url);
         }
         // 加入队列
