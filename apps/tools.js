@@ -16,10 +16,10 @@ import {
     douyinTypeMap,
     DOWNLOAD_WAIT_DETECT_FILE_TIME,
     HELP_DOC,
-    MESSAGE_RECALL_TIME,
+    MESSAGE_RECALL_TIME, REDIS_YUNZAI_ANIMELIST,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
-    REDOS_YUNZAI_WHITELIST,
+    REDIS_YUNZAI_WHITELIST,
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
@@ -85,7 +85,13 @@ import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
+import {
+    redisExistAndGetKey,
+    redisExistAndInsertObject,
+    redisExistKey,
+    redisGetKey,
+    redisSetKey
+} from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
@@ -655,14 +661,40 @@ export class tools extends plugin {
             "追番": favorites,
             "收藏": favorite,
         };
+        // 截断标题，查看Redis中是否存在，避免频繁走网络连接
+        const { shortLink, shortLink2 } = await this.biliAnimeCacheDetect(result.title);
         e.reply([
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
             `${ formatBiliInfo(dataProcessMap) }`,
-            `\n\n🪶 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + result.title) }`,
-            `\n🌸 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + result.title) }`
+            `\n\n🪶 在线观看： ${ shortLink }`,
+            `\n🌸 在线观看： ${ shortLink2 }`
         ], true);
         return ep;
+    }
+
+    /**
+     * 短链接缓存
+     * @param title
+     * @returns {Promise<{shortLink2: string, shortLink: string}|*>}
+     */
+    async biliAnimeCacheDetect(title) {
+        const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
+        if (animeList && animeList?.[title] !== undefined) {
+            return animeList?.[title];
+        }
+        const shortLink = await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + title);
+        const shortLink2 = await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title);
+        await redisExistAndInsertObject(REDIS_YUNZAI_ANIMELIST, {
+            [title]: {
+                shortLink,
+                shortLink2
+            }
+        });
+        return {
+            shortLink,
+            shortLink2
+        }
     }
 
     /**
@@ -2286,10 +2318,10 @@ export class tools extends plugin {
      */
     async isTrustUser(userId) {
         // 如果不存在则返回
-        if (!(await redisExistKey(REDOS_YUNZAI_WHITELIST))) {
+        if (!(await redisExistKey(REDIS_YUNZAI_WHITELIST))) {
             return false;
         }
-        const whiteList = await redisGetKey(REDOS_YUNZAI_WHITELIST);
+        const whiteList = await redisGetKey(REDIS_YUNZAI_WHITELIST);
         return whiteList.includes(userId.toString()) || whiteList.includes(userId);
     }
 

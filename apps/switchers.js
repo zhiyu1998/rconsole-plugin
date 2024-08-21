@@ -1,6 +1,6 @@
 import config from "../model/config.js";
 import schedule from 'node-schedule';
-import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE, REDOS_YUNZAI_WHITELIST } from "../constants/constant.js";
+import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE, REDIS_YUNZAI_WHITELIST } from "../constants/constant.js";
 import { deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
 import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 
@@ -142,7 +142,7 @@ export class switchers extends plugin {
             e.reply("无效的R信任用户");
             return;
         }
-        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        let whiteList = await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST);
         // 不存在就创建
         if (whiteList == null) {
             whiteList = [];
@@ -154,7 +154,7 @@ export class switchers extends plugin {
         }
         whiteList = [...whiteList, trustUserId];
         // 放置到Redis里
-        await redisSetKey(REDOS_YUNZAI_WHITELIST, whiteList);
+        await redisSetKey(REDIS_YUNZAI_WHITELIST, whiteList);
         e.reply(`成功添加R信任用户：${ trustUserId }`);
     }
 
@@ -164,7 +164,7 @@ export class switchers extends plugin {
      * @returns {Promise<void>}
      */
     async getWhiteList(e) {
-        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        let whiteList = await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST);
         if (whiteList == null) {
             whiteList = [];
         }
@@ -191,7 +191,7 @@ export class switchers extends plugin {
             // 如果不是回复就看发送内容
             trustUserId = e.msg.replace("#设置R信任用户", "");
         }
-        let whiteList = await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST);
+        let whiteList = await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST);
         if (whiteList == null) {
             e.reply("R插件当前没有任何信任用户！");
             return;
@@ -215,7 +215,7 @@ export class switchers extends plugin {
             trustUserId = e.msg.replace("#删除R信任用户", "");
         }
         // 校准不是string的用户
-        let whiteList = (await redisExistAndGetKey(REDOS_YUNZAI_WHITELIST)).map(item =>
+        let whiteList = (await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST)).map(item =>
             typeof item === 'string' ? item : item.toString()
         );
         if (whiteList == null) {
@@ -229,7 +229,7 @@ export class switchers extends plugin {
         }
         whiteList = whiteList.filter((item) => item !== trustUserId);
         // 放置到Redis里
-        await redisSetKey(REDOS_YUNZAI_WHITELIST, whiteList);
+        await redisSetKey(REDIS_YUNZAI_WHITELIST, whiteList);
         e.reply(`成功删除R信任用户：${ trustUserId }`);
     }
 }

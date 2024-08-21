@@ -84,7 +84,13 @@ export const REDIS_YUNZAI_LAGRANGE = "Yz:rconsole:tools:lagrange";
  * 某些功能的解析白名单
  * @type {string}
  */
-export const REDOS_YUNZAI_WHITELIST = "Yz:rconsole:tools:whitelist";
+export const REDIS_YUNZAI_WHITELIST = "Yz:rconsole:tools:whitelist";
+
+/**
+ * 番剧列表缓存
+ * @type {string}
+ */
+export const REDIS_YUNZAI_ANIMELIST = "Yz:rconsole:tools:anime";
 
 export const TWITTER_BEARER_TOKEN = "";
 

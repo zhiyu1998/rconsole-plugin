@@ -40,3 +40,19 @@ export async function redisExistAndGetKey(key) {
     }
     return null;
 }
+
+/**
+ * 在某个 key 的末尾插入一个对象
+ * @param key
+ * @param obj
+ * @returns {Promise<void>}
+ */
+export async function redisExistAndInsertObject(key, obj) {
+    let objs = await redisExistAndGetKey(key);
+    if (objs) {
+        objs = {...objs, ...obj};
+        await redis.set(key, JSON.stringify(objs));
+    } else {
+        await redis.set(key, JSON.stringify(obj));
+    }
+}
