@@ -5,9 +5,10 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
 // 配置文件
 import config from "../model/config.js";
+import { redisExistAndGetKey } from "../utils/redis-util.js";
 
 export class query extends plugin {
 
@@ -41,6 +42,10 @@ export class query extends plugin {
                 {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
+                },
+                {
+                    reg: "^#汇集番剧$",
+                    fnc: "myAnimeList",
                 }
             ],
         });
@@ -222,6 +227,24 @@ export class query extends plugin {
                     });
                 e.reply(await Bot.makeForwardMsg(content));
             });
+        return true;
+    }
+
+    async myAnimeList(e) {
+        const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
+        if (animeList == null) {
+            e.reply("暂无番剧信息");
+            return;
+        }
+        let forwardMsg = [];
+        for (let [key, value] of Object.entries(animeList)) {
+            forwardMsg.push({
+                message: { type: 'text', text: `《${key}》\n🪶 在线观看：${value.shortLink}\n🌸 在线观看：${value.shortLink2}` },
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            })
+        }
+        e.reply(await Bot.makeForwardMsg(forwardMsg));
         return true;
     }
 
