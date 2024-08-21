@@ -26,7 +26,7 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
-    ANIME_SERIES_SEARCH_LINK,
+    ANIME_SERIES_SEARCH_LINK, ANIME_SERIES_SEARCH_LINK2,
     BILI_EP_INFO,
     BILI_ONLINE, BILI_SSID_INFO,
     BILI_STREAM_INFO,
@@ -659,7 +659,8 @@ export class tools extends plugin {
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
             `${ formatBiliInfo(dataProcessMap) }`,
-            `\n\n在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + result.title) }`
+            `\n\n🪶 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + result.title) }`,
+            `\n🌸 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + result.title) }`
         ], true);
         return ep;
     }

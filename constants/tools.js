@@ -193,3 +193,9 @@ export const WEISHI_VIDEO_INFO = "https://h5.weishi.qq.com/webapp/json/weishi/WS
  * @type {string}
  */
 export const ANIME_SERIES_SEARCH_LINK = "https://ylu.cc/so.php?wd="
+
+/**
+ * 番剧搜索链接2
+ * @type {string}
+ */
+export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q="
