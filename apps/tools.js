@@ -38,7 +38,7 @@ import {
     MIYOUSHE_ARTICLE,
     NETEASE_API_CN,
     NETEASE_SONG_DOWNLOAD,
-    NETEASE_TEMP_API,
+    NETEASE_TEMP_API, QISHUI_MUSIC_TEMP_API,
     QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
@@ -1308,7 +1308,12 @@ export class tools extends plugin {
 
     // 临时接口
     async musicTempApi(e, title, musicType) {
-        let musicReqApi = musicType === "QQ音乐" ? QQ_MUSIC_TEMP_API : NETEASE_TEMP_API;
+        let musicReqApi = NETEASE_TEMP_API;
+        if (musicType === "QQ音乐") {
+            musicReqApi = QQ_MUSIC_TEMP_API;
+        } else if (musicType === "汽水音乐") {
+            musicReqApi = QISHUI_MUSIC_TEMP_API;
+        }
         // 临时接口，title经过变换后搜索到的音乐质量提升
         const vipMusicData = await axios.get(musicReqApi.replace("{}", title.replace("-", " ")), {
             headers: {
@@ -1316,9 +1321,9 @@ export class tools extends plugin {
             },
         });
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-        // ??后的内容是适配`QQ_MUSIC_TEMP_API`
-        const url = vipMusicData.data.mp3 ?? vipMusicData.data.data.url;
-        const cover = vipMusicData.data.img ?? vipMusicData.data.data.cover;
+        // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
+        const url = vipMusicData.data?.mp3 ?? vipMusicData.data?.data?.url ?? vipMusicData.data?.music;
+        const cover = vipMusicData.data?.img ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
         await e.reply([segment.image(cover), `${ this.identifyPrefix } 识别：${ musicType }，${ messageTitle }`]);
         return url;
     }
