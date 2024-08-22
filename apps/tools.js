@@ -1906,7 +1906,7 @@ export class tools extends plugin {
         const top = postList[0];
         const { title, content } = top;
         let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
-        if (content.length > 0) {
+        if (content && content.length > 0) {
             sendContent = [sendContent]
             for (let contentElement of content) {
                 if (contentElement?.cdn_src !== undefined) {
