@@ -1918,21 +1918,31 @@ export class tools extends plugin {
         }
         e.reply(sendContent, true);
         const others = postList.slice(1);
-        const reply = others.map(item => {
-            if (item?.content?.[0]?.cdn_src !== undefined) {
-                return {
-                    message: segment.image(item?.content?.[0]?.cdn_src),
+        const reply = others.flatMap(item => {
+            if (!item.content || item.content.length === 0) return [];
+
+            return item.content.map(floor => {
+                const commonData = {
                     nickname: e.sender.card || e.user_id,
                     user_id: e.user_id,
+                };
+
+                if (floor?.cdn_src) {
+                    return {
+                        ...commonData,
+                        message: segment.image(floor.cdn_src)
+                    };
+                } else if (floor?.text) {
+                    return {
+                        ...commonData,
+                        message: { type: 'text', text: floor.text || '-' }
+                    };
                 }
-            } else if (item?.content?.[0]?.text !== undefined) {
-                return {
-                    message: { type: 'text', text: item?.content?.[0].text || '-'},
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                }
-            }
+
+                return null;
+            }).filter(Boolean); // 过滤掉 null 的值
         });
+
         e.reply(await Bot.makeForwardMsg(reply));
         return true;
     }
