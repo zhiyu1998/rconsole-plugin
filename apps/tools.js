@@ -34,7 +34,7 @@ import {
     DY_COMMENT,
     DY_INFO,
     DY_TOUTIAO_INFO,
-    GENERAL_REQ_LINK,
+    GENERAL_REQ_LINK, HIBI_API_SERVICE,
     MIYOUSHE_ARTICLE,
     NETEASE_API_CN,
     NETEASE_SONG_DOWNLOAD,
@@ -157,7 +157,7 @@ export class tools extends plugin {
                     fnc: "bodianMusic",
                 },
                 {
-                    reg: "(kuaishou.com|ixigua.com|h5.pipix.com|h5.pipigx.com|tieba.baidu.com|s.xsj.qq.com|m.okjike.com)",
+                    reg: "(kuaishou.com|ixigua.com|h5.pipix.com|h5.pipigx.com|s.xsj.qq.com|m.okjike.com)",
                     fnc: "general",
                 },
                 {
@@ -207,6 +207,10 @@ export class tools extends plugin {
                 {
                     reg: "https:\\/\\/t\\.me\\/(?:c\\/\\d+\\/\\d+\\/\\d+|c\\/\\d+\\/\\d+|\\w+\\/\\d+\\/\\d+|\\w+\\/\\d+\\?\\w+=\\d+|\\w+\\/\\d+)",
                     fnc: "aircraft"
+                },
+                {
+                    reg: "tieba.baidu.com",
+                    fnc: "tieba"
                 }
             ],
         });
@@ -1886,6 +1890,50 @@ export class tools extends plugin {
                 await this.uploadGroupFile(e, `${ tgSavePath }/${ other }`);
             }
         }
+        return true;
+    }
+
+    async tieba(e) {
+        const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(e.msg)?.[0];
+        const id = /\/p\/([A-Za-z0-9]+)/.exec(msg)?.[1];
+        const hibi = HIBI_API_SERVICE + `/tieba/post_detail?tid=${ id }`;
+        const hibiResp = await fetch(hibi, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+            }
+        });
+        const postList = (await hibiResp.json()).post_list;
+        const top = postList[0];
+        const { title, content } = top;
+        let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
+        if (content?.[0]?.cdn_src !== undefined) {
+            sendContent = [sendContent]
+            for (let contentElement of content) {
+                if (contentElement?.cdn_src !== undefined) {
+                    sendContent.unshift(segment.image(contentElement.cdn_src));
+                } else if (contentElement?.text !== undefined) {
+                    sendContent.push(`\n\n📝 简介：${contentElement.text}`);
+                }
+            }
+        }
+        e.reply(sendContent, true);
+        const others = postList.slice(1);
+        const reply = others.map(item => {
+            if (item?.content?.[0]?.cdn_src !== undefined) {
+                return {
+                    message: segment.image(item?.content?.[0]?.cdn_src),
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }
+            } else if (item?.content?.[0]?.text !== undefined) {
+                return {
+                    message: { type: 'text', text: item?.content?.[0].text || '-'},
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }
+            }
+        });
+        e.reply(await Bot.makeForwardMsg(reply));
         return true;
     }
 

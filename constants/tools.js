@@ -199,3 +199,9 @@ export const ANIME_SERIES_SEARCH_LINK = "https://ylu.cc/so.php?wd="
  * @type {string}
  */
 export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q="
+
+/**
+ * HIBI API
+ * @type {string}
+ */
+export const HIBI_API_SERVICE = "https://hibi.moecube.com/api";
