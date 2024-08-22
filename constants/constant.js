@@ -127,6 +127,7 @@ export const SUMMARY_CONTENT_ESTIMATOR_PATTERNS = [
     { reg: /(?:https?:\/\/)?arxiv.org\/[a-zA-Z\d._?%&+\-=\/#]*/, name: 'ArXiv论文' },
     { reg: /(?:https?:\/\/)?sspai.com\/[a-zA-Z\d._?%&+\-=\/#]*/, name: '少数派' },
     { reg: /(?:https?:\/\/)?www\.bilibili\.com\/read\/[A-Za-z\d._?%&+\-=\/#]*/, name: '哔哩哔哩专栏' },
+    { reg: /(?:https?:\/\/)?www\.zhihu\.com\/question\/[A-Za-z\d._?%&+\-=\/#]*/, name: '知乎问题' },
     { reg: /(?:https?:\/\/)?(www\.)chinadaily.com.cn\/a\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'ChinaDaily' }
 ];
 
