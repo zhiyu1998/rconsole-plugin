@@ -1899,8 +1899,10 @@ export class tools extends plugin {
     }
 
     async tieba(e) {
+        // 提取链接和ID
         const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(e.msg)?.[0];
         const id = /\/p\/([A-Za-z0-9]+)/.exec(msg)?.[1];
+        // 获取帖子详情
         const hibi = HIBI_API_SERVICE + `/tieba/post_detail?tid=${ id }`;
         const hibiResp = await fetch(hibi, {
             headers: {
@@ -1908,9 +1910,12 @@ export class tools extends plugin {
             }
         });
         const postList = (await hibiResp.json()).post_list;
+        // 获取楼主的消息
         const top = postList[0];
+        // 提取标题和内容
         const { title, content } = top;
         let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
+        // 如果内容中有图片、文本或视频，它会将它们添加到 sendContent 消息中
         if (content && content.length > 0) {
             sendContent = [sendContent]
             for (const { cdn_src, text, link } of content) {
@@ -1932,7 +1937,9 @@ export class tools extends plugin {
             }
         }
         e.reply(sendContent, true);
+        // 切除楼主的消息
         const others = postList.slice(1);
+        // 贴吧楼层的消息处理：如果响应中有其他帖子，代码创建一条转发消息，包含其他帖子的内容，并回复原始消息
         const reply = others.flatMap(item => {
             if (!item.content || item.content.length === 0) return [];
 
