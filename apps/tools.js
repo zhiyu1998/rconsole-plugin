@@ -1913,23 +1913,21 @@ export class tools extends plugin {
         let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
         if (content && content.length > 0) {
             sendContent = [sendContent]
-            for (let contentElement of content) {
-                logger.info(contentElement);
-                if (contentElement?.cdn_src !== undefined) {
-                    // 图片
-                    sendContent.unshift(segment.image(contentElement.cdn_src));
-                }
-                if (contentElement?.text !== undefined) {
-                    // 普通文字
-                    sendContent.push(`\n\n📝 简介：${contentElement.text}`);
-                }
-                if (contentElement?.link !== undefined) {
-                    // 视频
+            for (const { cdn_src, text, link } of content) {
+                logger.info({ cdn_src, text, link }); // 可以一次性输出多个属性
+
+                // 处理图片
+                if (cdn_src) sendContent.unshift(segment.image(cdn_src));
+
+                // 处理文本
+                if (text) sendContent.push(`\n\n📝 简介：${text}`);
+
+                // 处理视频
+                if (link) {
                     this.queue.add(async () => {
-                        await this.downloadVideo(contentElement?.link).then(filePath => {
-                            this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
-                        });
-                    })
+                        const filePath = await this.downloadVideo(link);
+                        this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
+                    });
                 }
             }
         }
