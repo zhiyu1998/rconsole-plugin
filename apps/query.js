@@ -303,11 +303,14 @@ export class query extends plugin {
             } else {
                 aiBuilder = await builder.kimi(`我现在需要一个Linux命令去完成：“${ order }”，你能否帮助我查询到相关的一些命令用法和示例，内容简洁明了即可`);
             }
-            const { ans: kimiAns, model } = aiBuilder;
-            const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
-            await e.reply(Msg);
+            // 如果填了写 AI 才总结
+            if (this.aiApiKey && this.aiBaseURL) {
+                const { ans: kimiAns, model } = aiBuilder;
+                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
+                await e.reply(Msg);
+            }
         } catch (err) {
-            e.reply(`暂时无法查询到更多详细内容如果需要，可配置AI！${HELP_DOC}`);
+            e.reply(`暂时无法查询到当前命令！`);
         }
         return true;
     }
