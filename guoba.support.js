@@ -25,7 +25,7 @@ export function supportGuoba() {
             icon: 'mdi:stove',
             // 图标颜色，例：#FF0000 或 rgb(255, 0, 0)
             iconColor: '#d19f56',
-            iconPath: path.join(_path, "resources/img/rank/top.png"),
+            iconPath: path.join(_path, "resources/img/rank/logo.png"),
         },
         configInfo: {
             schemas: [
