@@ -1842,7 +1842,7 @@ export class tools extends plugin {
         return true;
     }
 
-    // TG下载
+    // 小飞机下载
     async aircraft(e) {
         if (!(await this.isTrustUser(e.user_id))) {
             e.reply("你没有权限使用此命令");
@@ -1898,6 +1898,7 @@ export class tools extends plugin {
         return true;
     }
 
+    // 贴吧
     async tieba(e) {
         // 提取链接和ID
         const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(e.msg)?.[0];
