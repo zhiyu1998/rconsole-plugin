@@ -5,7 +5,13 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT, DIVIDING_LINE, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
+import {
+    CAT_LIMIT,
+    COMMON_USER_AGENT,
+    DIVIDING_LINE,
+    HELP_DOC,
+    REDIS_YUNZAI_ANIMELIST
+} from "../constants/constant.js";
 import { LINUX_AI_PROMPT, LINUX_QUERY } from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
@@ -301,7 +307,7 @@ export class query extends plugin {
             const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
             await e.reply(Msg);
         } catch (err) {
-            e.reply("暂时无法查询到当前命令！");
+            e.reply(`暂时无法查询到更多详细内容如果需要，可配置AI！${HELP_DOC}`);
         }
         return true;
     }
