@@ -6,9 +6,13 @@ import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import axios from "axios";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT, DIVIDING_LINE, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
+import { LINUX_AI_PROMPT, LINUX_QUERY } from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
+import { estimateReadingTime } from "../utils/common.js";
+import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistAndGetKey } from "../utils/redis-util.js";
+import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
 
@@ -46,6 +50,10 @@ export class query extends plugin {
                 {
                     reg: "^#(r|R)番剧(.*)",
                     fnc: "myAnimeList",
+                },
+                {
+                    reg: "^#(linux|Linux)(.*)",
+                    fnc: "linuxQuery"
                 }
             ],
         });
@@ -53,6 +61,12 @@ export class query extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 视频保存路径
         this.defaultPath = this.toolsConfig.defaultPath;
+        // ai接口
+        this.aiBaseURL = this.toolsConfig.aiBaseURL;
+        // ai api key
+        this.aiApiKey = this.toolsConfig.aiApiKey;
+        // ai模型
+        this.aiModel = this.toolsConfig.aiModel;
     }
 
     async doctor(e) {
@@ -243,7 +257,7 @@ export class query extends plugin {
             return;
         }
         let forwardMsg = [{
-            message: { type: 'text', text: `当前管理员已经收录了： ${ Object.keys(animeList).length } 个番剧`},
+            message: { type: 'text', text: `当前管理员已经收录了： ${ Object.keys(animeList).length } 个番剧` },
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }];
@@ -257,6 +271,38 @@ export class query extends plugin {
         }
 
         e.reply(await Bot.makeForwardMsg(forwardMsg));
+        return true;
+    }
+
+    async linuxQuery(e) {
+        const order = e.msg.replace(/^#([lL])inux/, "").trim();
+        const resp = await fetch(LINUX_QUERY.replace("{}", order), {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36"
+            }
+        })
+        const linuxOrderData = await resp.json()
+        try {
+            const builder = await new OpenaiBuilder()
+                .setBaseURL(this.aiBaseURL)
+                .setApiKey(this.aiApiKey)
+                .setModel(this.aiModel)
+                .setPrompt(LINUX_AI_PROMPT)
+                .build();
+            let aiBuilder;
+            if (linuxOrderData?.data) {
+                const { linux, content, link } = linuxOrderData.data;
+                e.reply(`识别：Linux命令 <${ linux }>\n\n功能：${ content }`);
+                aiBuilder = await builder.kimi(`能否帮助根据${ link }网站的Linux命令内容返回一些常见的用法，内容简洁明了即可`)
+            } else {
+                aiBuilder = await builder.kimi(`我现在需要一个Linux命令去完成：“${ order }”，你能否帮助我查询到相关的一些命令用法和示例，内容简洁明了即可`);
+            }
+            const { ans: kimiAns, model } = aiBuilder;
+            const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
+            await e.reply(Msg);
+        } catch (err) {
+            e.reply("暂时无法查询到当前命令！");
+        }
         return true;
     }
 
