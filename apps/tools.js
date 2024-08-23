@@ -1914,10 +1914,22 @@ export class tools extends plugin {
         if (content && content.length > 0) {
             sendContent = [sendContent]
             for (let contentElement of content) {
+                logger.info(contentElement);
                 if (contentElement?.cdn_src !== undefined) {
+                    // 图片
                     sendContent.unshift(segment.image(contentElement.cdn_src));
-                } else if (contentElement?.text !== undefined) {
+                }
+                if (contentElement?.text !== undefined) {
+                    // 普通文字
                     sendContent.push(`\n\n📝 简介：${contentElement.text}`);
+                }
+                if (contentElement?.link !== undefined) {
+                    // 视频
+                    this.queue.add(async () => {
+                        await this.downloadVideo(contentElement?.link).then(filePath => {
+                            this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
+                        });
+                    })
                 }
             }
         }
