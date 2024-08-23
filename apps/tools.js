@@ -1916,6 +1916,7 @@ export class tools extends plugin {
         // 提取标题和内容
         const { title, content } = top;
         let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
+        let extractImages = [];
         // 如果内容中有图片、文本或视频，它会将它们添加到 sendContent 消息中
         if (content && content.length > 0) {
             sendContent = [sendContent]
@@ -1923,7 +1924,7 @@ export class tools extends plugin {
                 logger.info({ cdn_src, text, link }); // 可以一次性输出多个属性
 
                 // 处理图片
-                if (cdn_src) sendContent.unshift(segment.image(cdn_src));
+                if (cdn_src) extractImages.push(segment.image(cdn_src));
 
                 // 处理文本
                 if (text) sendContent.push(`\n\n📝 简介：${text}`);
@@ -1938,6 +1939,11 @@ export class tools extends plugin {
             }
         }
         e.reply(sendContent, true);
+        extractImages && e.reply(Bot.makeForwardMsg(extractImages.map(item => ({
+            message: item,
+            nickname: e.sender.card || e.user_id,
+            user_id: e.user_id,
+        }))));
         // 切除楼主的消息
         const others = postList.slice(1);
         // 贴吧楼层的消息处理：如果响应中有其他帖子，代码创建一条转发消息，包含其他帖子的内容，并回复原始消息
