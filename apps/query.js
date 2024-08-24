@@ -75,7 +75,7 @@ export class query extends plugin {
                 const title = this.removeTag(element.title);
                 const thumbnail = element?.thumbnail || element?.auditDoctor?.thumbnail;
                 const doctor = `\n\n👨‍⚕️ 医生信息：${ element?.auditDoctor?.name } - ${ element?.auditDoctor?.clinicProfessional } - ${ element?.auditDoctor?.eduProfessional } - ${ element?.auditDoctor?.institutionName } - ${ element?.auditDoctor?.institutionLevel } - ${ element?.auditDoctor?.departmentName }`
-                const template = `📌 ${ title } - ${ element.secondTitle }${element?.auditDoctor ? doctor : ''}\n\n📝 简介：${ element.introduction }`;
+                const template = `📌 ${ title } - ${ element.secondTitle }${ element?.auditDoctor ? doctor : '' }\n\n📝 简介：${ element.introduction }`;
                 if (thumbnail) {
                     msg.push({
                         message: [segment.image(thumbnail), { type: "text", text: template, }],
