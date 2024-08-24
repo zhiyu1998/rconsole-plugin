@@ -51,8 +51,23 @@ export async function redisExistAndInsertObject(key, obj) {
     let objs = await redisExistAndGetKey(key);
     if (objs) {
         objs = {...objs, ...obj};
-        await redis.set(key, JSON.stringify(objs));
+        await redisSetKey(key, objs);
     } else {
-        await redis.set(key, JSON.stringify(obj));
+        await redisSetKey(key, obj);
+    }
+}
+
+/**
+ * 更新Redis中某个对象的值
+ * @param key
+ * @param updateKey
+ * @param updateObj
+ * @returns {Promise<void>}
+ */
+export async function redisExistAndUpdateObject(key, updateKey, updateObj) {
+    let objs = await redisExistAndGetKey(key);
+    if (Object.keys(objs).includes(updateKey)) {
+        objs[updateKey] = updateObj;
+        await redisSetKey(key, objs);
     }
 }

@@ -17,7 +17,12 @@ import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/q
 import config from "../model/config.js";
 import { estimateReadingTime } from "../utils/common.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistAndGetKey, redisExistAndInsertObject, redisSetKey } from "../utils/redis-util.js";
+import {
+    redisExistAndGetKey,
+    redisExistAndInsertObject,
+    redisExistAndUpdateObject,
+    redisSetKey
+} from "../utils/redis-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
@@ -322,13 +327,70 @@ export class query extends plugin {
                 const { ans: kimiAns, model } = aiBuilder;
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
                 await e.reply(Msg);
+                // 提取AI返回的内容并进行解析
+                if (linuxOrderData.content.trim() === '') {
+                    const parsedData = this.parseAiResponse(order, kimiAns);
+                    await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
+                    e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
+                }
             }
         } catch (err) {
             e.reply(`暂时无法查询到当前命令！`);
+            logger.error(logger.red(`[R插件][linux]: ${ err }`));
         }
         return true;
     }
 
+    /**
+     * AI响应解析函数
+     * @param order
+     * @param aiResponse
+     * @returns {{linux, link: string, content: (*|string)}}
+     */
+    parseAiResponse(order, aiResponse) {
+        // 检查 aiResponse 是否为有效字符串
+        if (!aiResponse || typeof aiResponse !== 'string') {
+            return {
+                linux: order,
+                content: '',
+                link: `https://www.linuxcool.com/${order}` // 默认参考链接
+            };
+        }
+
+        // 初始化保存数据的对象
+        let parsedData = {
+            linux: order,
+            content: '',
+            link: `https://www.linuxcool.com/${order}`  // 默认参考链接
+        };
+
+        // 清理多余的换行符，避免意外的分隔问题
+        const lines = aiResponse.split('\n').map(line => line.trim()).filter(line => line);
+
+        // 遍历每一行查找命令相关的描述
+        lines.forEach(line => {
+            // 允许命令带有可选的路径，修改正则表达式以适应路径变化
+            const match = line.match(/[`'“](.+?)[`'”]\s*[:：—-]?\s*(.*)/);
+
+            if (match) {
+                logger.info(match)
+                const command = match[1].trim();  // 提取命令部分
+                const description = match[2].trim();  // 提取描述部分// 同样忽略路径
+
+                // 如果命令和参数部分匹配，保存描述
+                if (command.includes(order)) {
+                    parsedData.content = description;
+                }
+            }
+        });
+
+        // 如果没有找到具体的描述内容，则给出默认提示
+        if (!parsedData.content) {
+            parsedData.content = '暂时无法解析该命令的具体描述。';
+        }
+
+        return parsedData;
+    }
     // 删除标签
     removeTag(title) {
         const titleRex = /<[^>]+>/g;
