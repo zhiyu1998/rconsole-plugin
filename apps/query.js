@@ -296,7 +296,7 @@ export class query extends plugin {
             });
             linuxOrderData = (await resp.json()).data;
             // 如果缓存里没有就保存一份到缓存里
-            await redisExistAndInsertObject(REDIS_YUNZAI_LINUX, { [order]: linuxOrderData });
+            linuxOrderData && await redisExistAndInsertObject(REDIS_YUNZAI_LINUX, { [order]: linuxOrderData });
         } else {
             // 在缓存里就取出
             linuxOrderData = linuxInRedis[order];
