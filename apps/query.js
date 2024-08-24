@@ -12,12 +12,12 @@ import {
     HELP_DOC,
     REDIS_YUNZAI_ANIMELIST
 } from "../constants/constant.js";
-import { LINUX_AI_PROMPT, LINUX_QUERY } from "../constants/query.js";
+import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
 import { estimateReadingTime } from "../utils/common.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistAndGetKey } from "../utils/redis-util.js";
+import { redisExistAndGetKey, redisExistAndInsertObject, redisSetKey } from "../utils/redis-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
@@ -282,12 +282,25 @@ export class query extends plugin {
 
     async linuxQuery(e) {
         const order = e.msg.replace(/^#([lL])inux/, "").trim();
-        const resp = await fetch(LINUX_QUERY.replace("{}", order), {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36"
-            }
-        })
-        const linuxOrderData = await resp.json()
+        // 查询 Redis 中是否存在这个命令如果存在直接返回没有的话就发起网络请求
+        const linuxInRedis = await redisExistAndGetKey(REDIS_YUNZAI_LINUX)
+        let linuxOrderData;
+        // 判断这个命令是否在缓存里
+        const isOrderInRedis = linuxInRedis && Object.keys(linuxInRedis).includes(order);
+        if (!isOrderInRedis) {
+            // 没有在缓存里，直接发起网络请求
+            const resp = await fetch(LINUX_QUERY.replace("{}", order), {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36"
+                }
+            });
+            linuxOrderData = (await resp.json()).data;
+            // 如果缓存里没有就保存一份到缓存里
+            await redisExistAndInsertObject(REDIS_YUNZAI_LINUX, { [order]: linuxOrderData });
+        } else {
+            // 在缓存里就取出
+            linuxOrderData = linuxInRedis[order];
+        }
         try {
             const builder = await new OpenaiBuilder()
                 .setBaseURL(this.aiBaseURL)
@@ -296,8 +309,9 @@ export class query extends plugin {
                 .setPrompt(LINUX_AI_PROMPT)
                 .build();
             let aiBuilder;
-            if (linuxOrderData?.data) {
-                const { linux, content, link } = linuxOrderData.data;
+            if (linuxOrderData) {
+                const { linux, content, link } = linuxOrderData;
+                // 发送消息
                 e.reply(`识别：Linux命令 <${ linux }>\n\n功能：${ content }`);
                 aiBuilder = await builder.kimi(`能否帮助根据${ link }网站的Linux命令内容返回一些常见的用法，内容简洁明了即可`)
             } else {
