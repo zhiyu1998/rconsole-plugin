@@ -3,8 +3,6 @@
 import axios from "axios";
 import fetch from "node-fetch";
 import _ from "lodash";
-// 爬虫库
-import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
 import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
@@ -75,21 +73,6 @@ export class query extends plugin {
             const promises = res.map(async element => {
                 const title = this.removeTag(element.title);
                 const template = `${ title }\n标签：${ element.secondTitle }\n介绍：${ element.introduction }`;
-
-                if (title === keyword) {
-                    const browser = await puppeteer.browserInit();
-                    const page = await browser.newPage();
-                    await page.goto(`https://www.dayi.org.cn/drug/${ element.id }`);
-                    const buff = await page.screenshot({
-                        fullPage: true,
-                        type: "jpeg",
-                        omitBackground: false,
-                        quality: 90,
-                    });
-                    await e.reply(segment.image(buff));
-                    browser.close();
-                }
-
                 return {
                     message: {
                         type: "text",
