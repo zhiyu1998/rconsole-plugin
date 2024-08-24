@@ -1623,12 +1623,11 @@ export class tools extends plugin {
             const imgSrcRegex = /<img [^>]*src="([^"]*)"[^>]*\/>/gi;
             let match;
             const imgSrcs = [];
-
             while ((match = imgSrcRegex.exec(html)) !== null) {
                 imgSrcs.push(match[1]); // Adds the content of the src attribute to the array
             }
 
-            const images = imgSrcs.filter(item => item.startsWith("http://bd-tbfile.izuiyou.com/img/view/id"))
+            const images = imgSrcs.filter(item => item.includes("\/img\/view\/id"))
 
             // Construct the response object
             const shortVideoInfo = {
@@ -1639,7 +1638,7 @@ export class tools extends plugin {
                 images,
             };
 
-            e.reply([segment.image(shortVideoInfo.cover), `${ this.identifyPrefix } 识别：最右，${ shortVideoInfo.authorName }\n${ shortVideoInfo.title }`])
+            e.reply(`${ this.identifyPrefix } 识别：最右，${ shortVideoInfo.authorName }\n${ shortVideoInfo.title }`)
 
             if (shortVideoInfo.images.length > 0) {
                 const replyImages = shortVideoInfo.images.map(item => {
