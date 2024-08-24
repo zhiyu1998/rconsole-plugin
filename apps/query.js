@@ -70,19 +70,29 @@ export class query extends plugin {
             const res = await fetch(url)
                 .then(resp => resp.json())
                 .then(resp => resp.list);
-            const promises = res.map(async element => {
+            let msg = [];
+            for (let element of res) {
                 const title = this.removeTag(element.title);
-                const template = `${ title }\n标签：${ element.secondTitle }\n介绍：${ element.introduction }`;
-                return {
-                    message: {
-                        type: "text",
-                        text: template,
-                    },
-                    nickname: Bot.nickname,
-                    user_id: Bot.user_id,
-                };
-            });
-            const msg = await Promise.all(promises);
+                const thumbnail = element?.thumbnail || element?.auditDoctor?.thumbnail;
+                const doctor = `\n\n👨‍⚕️ 医生信息：${ element?.auditDoctor?.name } - ${ element?.auditDoctor?.clinicProfessional } - ${ element?.auditDoctor?.eduProfessional } - ${ element?.auditDoctor?.institutionName } - ${ element?.auditDoctor?.institutionLevel } - ${ element?.auditDoctor?.departmentName }`
+                const template = `📌 ${ title } - ${ element.secondTitle }${element?.auditDoctor ? doctor : ''}\n\n📝 简介：${ element.introduction }`;
+                if (thumbnail) {
+                    msg.push({
+                        message: [segment.image(thumbnail), { type: "text", text: template, }],
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    });
+                } else {
+                    msg.push({
+                        message: {
+                            type: "text",
+                            text: template,
+                        },
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    })
+                }
+            }
             e.reply(await Bot.makeForwardMsg(msg));
         } catch (err) {
             logger.error(err);
@@ -291,7 +301,7 @@ export class query extends plugin {
             return {
                 linux: order,
                 content: '',
-                link: `https://www.linuxcool.com/${order}` // 默认参考链接
+                link: `https://www.linuxcool.com/${ order }` // 默认参考链接
             };
         }
 
@@ -299,7 +309,7 @@ export class query extends plugin {
         let parsedData = {
             linux: order,
             content: '',
-            link: `https://www.linuxcool.com/${order}`  // 默认参考链接
+            link: `https://www.linuxcool.com/${ order }`  // 默认参考链接
         };
 
         // 清理多余的换行符，避免意外的分隔问题
@@ -329,6 +339,7 @@ export class query extends plugin {
 
         return parsedData;
     }
+
     // 删除标签
     removeTag(title) {
         const titleRex = /<[^>]+>/g;
