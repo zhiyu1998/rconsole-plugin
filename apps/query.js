@@ -48,10 +48,6 @@ export class query extends plugin {
                     fnc: "zhubaiSearch",
                 },
                 {
-                    reg: "^#(r|R)番剧(.*)",
-                    fnc: "myAnimeList",
-                },
-                {
                     reg: "^#(linux|Linux)(.*)",
                     fnc: "linuxQuery"
                 }
@@ -241,36 +237,6 @@ export class query extends plugin {
                     });
                 e.reply(await Bot.makeForwardMsg(content));
             });
-        return true;
-    }
-
-    async myAnimeList(e) {
-        const title = e.msg.replace(/^#([rR])番剧/, "").trim();
-        const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
-        if (animeList == null) {
-            e.reply("暂无番剧信息");
-            return;
-        }
-        const findRes = Object.entries(animeList).filter(([key, value]) => key.includes(title));
-        if (findRes == null) {
-            e.reply("未找到相关番剧");
-            return;
-        }
-        let forwardMsg = [{
-            message: { type: 'text', text: `当前管理员已经收录了： ${ Object.keys(animeList).length } 个番剧` },
-            nickname: this.e.sender.card || this.e.user_id,
-            user_id: this.e.user_id,
-        }];
-        for (let item of findRes) {
-            const { cover, shortLink, shortLink2 } = item[1];
-            forwardMsg.push({
-                message: [segment.image(cover), `《${ item[0] }》\n\n🪶 在线观看： ${ shortLink }\n🌸 在线观看： ${ shortLink2 }`],
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            });
-        }
-
-        e.reply(await Bot.makeForwardMsg(forwardMsg));
         return true;
     }
 

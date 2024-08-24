@@ -670,35 +670,10 @@ export class tools extends plugin {
             segment.image(resp.result.cover),
             `${ this.identifyPrefix }识别：哔哩哔哩番剧，${ result.title }\n🎯 评分: ${ result?.rating?.score ?? '-' } / ${ result?.rating?.count ?? '-' }\n📺 ${ result.new_ep.desc }, ${ result.seasons[0].new_ep.index_show }\n`,
             `${ formatBiliInfo(dataProcessMap) }`,
-            `\n\n🪶 在线观看： ${ shortLink }`,
-            `\n🌸 在线观看： ${ shortLink2 }`
+            `\n\n🪶 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + title) }`,
+            `\n🌸 在线观看： ${ await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title) }`
         ], true);
         return ep;
-    }
-
-    /**
-     * 短链接缓存
-     * @param title
-     * @returns {Promise<{shortLink2: string, shortLink: string}|*>}
-     */
-    async biliAnimeCacheDetect(title, cover) {
-        const animeList = await redisExistAndGetKey(REDIS_YUNZAI_ANIMELIST)
-        if (animeList && animeList?.[title] !== undefined) {
-            return animeList?.[title];
-        }
-        const shortLink = await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + title);
-        const shortLink2 = await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title);
-        await redisExistAndInsertObject(REDIS_YUNZAI_ANIMELIST, {
-            [title]: {
-                cover,
-                shortLink,
-                shortLink2
-            }
-        });
-        return {
-            shortLink,
-            shortLink2
-        }
     }
 
     /**
