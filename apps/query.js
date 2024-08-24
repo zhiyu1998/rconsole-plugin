@@ -375,7 +375,7 @@ export class query extends plugin {
 
         // 如果没有找到具体的描述内容，则给出默认提示
         if (!parsedData.content) {
-            parsedData.content = '暂时无法解析该命令的具体描述。';
+            parsedData.content = '';
         }
 
         return parsedData;
