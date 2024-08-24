@@ -328,11 +328,9 @@ export class query extends plugin {
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
                 await e.reply(Msg);
                 // 提取AI返回的内容并进行解析
-                if (linuxInRedis[order].content.trim() === '') {
-                    const parsedData = this.parseAiResponse(order, kimiAns);
-                    await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
-                    e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
-                }
+                const parsedData = this.parseAiResponse(order, kimiAns);
+                await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
+                e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
             }
         } catch (err) {
             e.reply(`暂时无法查询到当前命令！`);
