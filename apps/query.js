@@ -1,28 +1,17 @@
 // 主库
-import fetch from "node-fetch";
-// 爬虫库
-import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // http库
 import axios from "axios";
+import fetch from "node-fetch";
+import _ from "lodash";
+// 爬虫库
+import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 // 常量
-import {
-    CAT_LIMIT,
-    COMMON_USER_AGENT,
-    DIVIDING_LINE,
-    HELP_DOC,
-    REDIS_YUNZAI_ANIMELIST
-} from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
 import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
-import { estimateReadingTime } from "../utils/common.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import {
-    redisExistAndGetKey,
-    redisExistAndInsertObject,
-    redisExistAndUpdateObject,
-    redisSetKey
-} from "../utils/redis-util.js";
+import { redisExistAndGetKey, redisExistAndInsertObject, redisExistAndUpdateObject } from "../utils/redis-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
@@ -328,9 +317,11 @@ export class query extends plugin {
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
                 await e.reply(Msg);
                 // 提取AI返回的内容并进行解析
-                const parsedData = this.parseAiResponse(order, kimiAns);
-                await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
-                e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
+                if (_.isEmpty(linuxInRedis[order]?.content.trim())) {
+                    const parsedData = this.parseAiResponse(order, kimiAns);
+                    await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
+                    e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
+                }
             }
         } catch (err) {
             e.reply(`暂时无法查询到当前命令！`);
