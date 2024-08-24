@@ -16,7 +16,7 @@ import {
     douyinTypeMap,
     DOWNLOAD_WAIT_DETECT_FILE_TIME,
     HELP_DOC,
-    MESSAGE_RECALL_TIME, REDIS_YUNZAI_ANIMELIST,
+    MESSAGE_RECALL_TIME,
     REDIS_YUNZAI_ISOVERSEA,
     REDIS_YUNZAI_LAGRANGE,
     REDIS_YUNZAI_WHITELIST,
@@ -26,19 +26,23 @@ import {
     XHS_NO_WATERMARK_HEADER,
 } from "../constants/constant.js";
 import {
-    ANIME_SERIES_SEARCH_LINK, ANIME_SERIES_SEARCH_LINK2,
+    ANIME_SERIES_SEARCH_LINK,
+    ANIME_SERIES_SEARCH_LINK2,
     BILI_EP_INFO,
-    BILI_ONLINE, BILI_SSID_INFO,
+    BILI_ONLINE,
+    BILI_SSID_INFO,
     BILI_STREAM_INFO,
     BILI_SUMMARY,
     DY_COMMENT,
     DY_INFO,
     DY_TOUTIAO_INFO,
-    GENERAL_REQ_LINK, HIBI_API_SERVICE,
+    GENERAL_REQ_LINK,
+    HIBI_API_SERVICE,
     MIYOUSHE_ARTICLE,
     NETEASE_API_CN,
     NETEASE_SONG_DOWNLOAD,
-    NETEASE_TEMP_API, QISHUI_MUSIC_TEMP_API,
+    NETEASE_TEMP_API,
+    QISHUI_MUSIC_TEMP_API,
     QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
@@ -74,10 +78,10 @@ import {
     estimateReadingTime,
     formatBiliInfo,
     retryAxiosReq,
-    saveJsonToFile,
     secondsToTime,
     testProxy,
-    truncateString, urlTransformShortLink
+    truncateString,
+    urlTransformShortLink
 } from "../utils/common.js";
 import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
@@ -85,13 +89,7 @@ import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import {
-    redisExistAndGetKey,
-    redisExistAndInsertObject,
-    redisExistKey,
-    redisGetKey,
-    redisSetKey
-} from "../utils/redis-util.js";
+import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";

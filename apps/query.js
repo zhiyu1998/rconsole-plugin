@@ -1,10 +1,10 @@
 // 主库
 // http库
 import axios from "axios";
-import fetch from "node-fetch";
 import _ from "lodash";
+import fetch from "node-fetch";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT, REDIS_YUNZAI_ANIMELIST } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
