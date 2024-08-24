@@ -291,7 +291,7 @@ export class query extends plugin {
             // 没有在缓存里，直接发起网络请求
             const resp = await fetch(LINUX_QUERY.replace("{}", order), {
                 headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36"
+                    "User-Agent": COMMON_USER_AGENT
                 }
             });
             linuxOrderData = (await resp.json()).data;
