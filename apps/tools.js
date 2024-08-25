@@ -90,7 +90,7 @@ import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
-import { saveTDL, startTDL } from "../utils/tdl-util.js";
+import { saveTDL, startTDL, uploadTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
@@ -2409,6 +2409,14 @@ export class tools extends plugin {
             }
             const stats = fs.statSync(path);
             const videoSize = Math.floor(stats.size / (1024 * 1024));
+            // 顺便发送一份到小飞机
+            if (e.msg.startsWith("上传飞机")) {
+                this.queue.add(async () => {
+                    await uploadTDL(path, this.isOverseasServer(), this.proxyAddr);
+                    e.reply("✈️ 已发送一份到您的小飞机收藏夹了！");
+                })
+            }
+            // 正常发送视频
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制：${ videoSizeLimit }MB，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path);
