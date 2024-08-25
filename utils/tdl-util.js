@@ -14,16 +14,16 @@ export async function startTDL(url, curPath, isOversea, proxyAddr, videoDownload
     return new Promise((resolve, reject) => {
         curPath = path.resolve(curPath);
         const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
-        const concurrencyStr = videoDownloadConcurrency > 1 ? `-t ${videoDownloadConcurrency} -s 524288 -l ${videoDownloadConcurrency}` : '';
-        const command = `tdl dl -u ${url} -d ${curPath} ${concurrencyStr} ${proxyStr}`
-        logger.mark(`[R插件][TDL] ${command}`);
+        const concurrencyStr = videoDownloadConcurrency > 1 ? `-t ${ videoDownloadConcurrency } -s 524288 -l ${ videoDownloadConcurrency }` : '';
+        const command = `tdl dl -u ${ url } -d ${ curPath } ${ concurrencyStr } ${ proxyStr }`
+        logger.mark(`[R插件][TDL] ${ command }`);
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                reject(`[R插件][TDL]执行出错: ${error.message}`);
+                reject(`[R插件][TDL]执行出错: ${ error.message }`);
                 return;
             }
             if (stderr) {
-                reject(`[R插件][TDL]错误信息: ${stderr}`);
+                reject(`[R插件][TDL]错误信息: ${ stderr }`);
                 return;
             }
             resolve(stdout);
@@ -41,14 +41,14 @@ export async function startTDL(url, curPath, isOversea, proxyAddr, videoDownload
 export async function saveTDL(url, isOversea, proxyAddr) {
     return new Promise((resolve, reject) => {
         const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
-        const command = `tdl forward --from ${url} ${proxyStr}`
+        const command = `tdl forward --from ${ url } ${ proxyStr }`
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                reject(`[R插件][TDL保存]执行出错: ${error.message}`);
+                reject(`[R插件][TDL保存]执行出错: ${ error.message }`);
                 return;
             }
             if (stderr) {
-                reject(`[R插件][TDL保存]错误信息: ${stderr}`);
+                reject(`[R插件][TDL保存]错误信息: ${ stderr }`);
                 return;
             }
             resolve(stdout);
@@ -64,17 +64,19 @@ export async function saveTDL(url, isOversea, proxyAddr) {
  * @returns {Promise<void>}
  */
 export async function uploadTDL(filePath, isOversea, proxyAddr) {
-    const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
-    const command = `tdl up -p ${ filePath } ${ proxyStr }`;
-    exec(command, (error, stdout, stderr) => {
-        if (error) {
-            reject(`[R插件][TDL上传]执行出错: ${error.message}`);
-            return;
-        }
-        if (stderr) {
-            reject(`[R插件][TDL上传]错误信息: ${stderr}`);
-            return;
-        }
-        resolve(stdout);
+    return new Promise((resolve, reject) => {
+        const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
+        const command = `tdl up -p ${ filePath } ${ proxyStr }`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(`[R插件][TDL上传]执行出错: ${ error.message }`);
+                return;
+            }
+            if (stderr) {
+                reject(`[R插件][TDL上传]错误信息: ${ stderr }`);
+                return;
+            }
+            resolve(stdout);
+        })
     })
 }
