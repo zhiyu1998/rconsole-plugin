@@ -1762,7 +1762,7 @@ export class tools extends plugin {
         const llmCrawler = await fetch(PearAPI_CRAWLER.replace("{}", summaryLink));
         const content = (await llmCrawler.json())?.data;
         const titleMatch = content.match(/Title:\s*(.*?)\n/)?.[1];
-        e.reply(`${ this.identifyPrefix } 识别：${ name } - ${titleMatch}，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
+        e.reply(`${ this.identifyPrefix } 识别：${ name } - ${titleMatch}，正在为您总结，请稍等...`, true);
         const deepseekFreeSummary = await fetch(PearAPI_DEEPSEEK, {
             method: "POST",
             headers: {
