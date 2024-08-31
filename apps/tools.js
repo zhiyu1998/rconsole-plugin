@@ -41,7 +41,7 @@ import {
     MIYOUSHE_ARTICLE,
     NETEASE_API_CN,
     NETEASE_SONG_DOWNLOAD,
-    NETEASE_TEMP_API,
+    NETEASE_TEMP_API, PearAPI_CRAWLER, PearAPI_DEEPSEEK,
     QISHUI_MUSIC_TEMP_API,
     QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
@@ -1728,12 +1728,13 @@ export class tools extends plugin {
 
     // 链接总结
     async linkShareSummary(e) {
+        const { name, summaryLink } = contentEstimator(e.msg);
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
-            e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
+            // e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
+            await this.tempSummary(name, summaryLink, e);
             return true;
         }
-        const { name, summaryLink } = contentEstimator(e.msg);
         const builder = await new OpenaiBuilder()
             .setBaseURL(this.aiBaseURL)
             .setApiKey(this.aiApiKey)
@@ -1750,7 +1751,41 @@ export class tools extends plugin {
         return true;
     }
 
-    // q q m u s i c 解析
+    /**
+     * 临时AI接口
+     * @param name
+     * @param summaryLink
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async tempSummary(name, summaryLink, e) {
+        const llmCrawler = await fetch(PearAPI_CRAWLER.replace("{}", summaryLink));
+        const content = (await llmCrawler.json())?.data;
+        const titleMatch = content.match(/Title:\s*(.*?)\n/)?.[1];
+        e.reply(`${ this.identifyPrefix } 识别：${ name } - ${titleMatch}，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
+        const deepseekFreeSummary = await fetch(PearAPI_DEEPSEEK, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": SUMMARY_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": content,
+                    }]
+            }),
+        });
+        const summary = (await deepseekFreeSummary.json())?.message;
+        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x DeepSeek」联合为您总结内容：`, summary]));
+        await e.reply(Msg);
+    }
+
+// q q m u s i c 解析
     async qqMusic(e) {
         // case1:　Taylor Swift/Bleachers《Anti-Hero (Feat. Bleachers) (Explicit)》 https://c6.y.qq.com/base/fcgi-bin/u?__=lg19lFgQerbo @QQ音乐
         /** case 2:
@@ -1887,7 +1922,7 @@ export class tools extends plugin {
         const top = postList[0];
         // 提取标题和内容
         const { title, content } = top;
-        let sendContent = `${this.identifyPrefix}识别：贴吧，${ title }`
+        let sendContent = `${ this.identifyPrefix }识别：贴吧，${ title }`
         let extractImages = [];
         // 如果内容中有图片、文本或视频，它会将它们添加到 sendContent 消息中
         if (content && content.length > 0) {
@@ -1899,13 +1934,13 @@ export class tools extends plugin {
                 if (cdn_src) extractImages.push(segment.image(cdn_src));
 
                 // 处理文本
-                if (text) sendContent.push(`\n\n📝 简介：${text}`);
+                if (text) sendContent.push(`\n\n📝 简介：${ text }`);
 
                 // 处理视频
                 if (link) {
                     this.queue.add(async () => {
                         const filePath = await this.downloadVideo(link);
-                        this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
+                        this.sendVideoToUpload(e, `${ filePath }/temp.mp4`);
                     });
                 }
             }

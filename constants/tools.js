@@ -211,3 +211,15 @@ export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q="
  * @type {string}
  */
 export const HIBI_API_SERVICE = "https://hibi.moecube.com/api";
+
+/**
+ * 临时 AI LLM爬虫
+ * @type {string}
+ */
+export const PearAPI_CRAWLER = "https://api.pearktrue.cn/api/llmreader/?url={}&type=json";
+
+/**
+ * 临时 AI 总结
+ * @type {string}
+ */
+export const PearAPI_DEEPSEEK = "https://api.pearktrue.cn/api/deepseek/"
