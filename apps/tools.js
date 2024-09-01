@@ -191,7 +191,7 @@ export class tools extends plugin {
                     fnc: "freyr"
                 },
                 {
-                    reg: "(mp.weixin|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com)",
+                    reg: "(^#总结一下(http|https):\/\/.*|mp.weixin|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com)",
                     fnc: "linkShareSummary"
                 },
                 {
@@ -1728,7 +1728,15 @@ export class tools extends plugin {
 
     // 链接总结
     async linkShareSummary(e) {
-        const { name, summaryLink } = contentEstimator(e.msg);
+        let name, summaryLink;
+
+        if (e.msg.startsWith("#总结一下")) {
+            name = "网页总结";
+            summaryLink = e.msg.replace("#总结一下", ""); // 如果需要进一步处理 summaryLink，可以在这里添加相关逻辑
+        } else {
+            ({ name: name, summaryLink: summaryLink } = contentEstimator(e.msg));
+        }
+
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
             // e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
@@ -1745,7 +1753,8 @@ export class tools extends plugin {
         const { ans: kimiAns, model } = await builder.kimi(summaryLink);
         // 计算阅读时间
         const stats = estimateReadingTime(kimiAns);
-        e.reply(`当前 ${ name } 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
+        const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
+        e.reply(`《${ titleMatch }》 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`)
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
         await e.reply(Msg);
         return true;
@@ -1760,7 +1769,7 @@ export class tools extends plugin {
      */
     async tempSummary(name, summaryLink, e) {
         const llmCrawler = await fetch(PearAPI_CRAWLER.replace("{}", summaryLink));
-        const content = (await llmCrawler.json())?.data;
+        const content = await (await llmCrawler.json())?.data;
         const titleMatch = content.match(/Title:\s*(.*?)\n/)?.[1];
         e.reply(`${ this.identifyPrefix } 识别：${ name } - ${titleMatch}，正在为您总结，请稍等...`, true);
         const deepseekFreeSummary = await fetch(PearAPI_DEEPSEEK, {
