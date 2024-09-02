@@ -83,7 +83,14 @@ import {
     truncateString,
     urlTransformShortLink
 } from "../utils/common.js";
-import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
+import { extractKeyframes } from "../utils/ffmpeg-util.js";
+import {
+    checkAndRemoveFile,
+    deleteFolderRecursive,
+    getMediaFilesAndOthers,
+    mkdirIfNotExists,
+    readCurrentDir
+} from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
@@ -2459,6 +2466,21 @@ export class tools extends plugin {
                     await uploadTDL(path, this.isOverseasServer(), this.proxyAddr);
                     e.reply("✈️ 已发送一份到您的小飞机收藏夹了！");
                 })
+            } else if (e.msg.startsWith("预览视频")) {
+                // 预览视频逻辑
+                const keyframesPath = this.getCurDownloadPath(e) + "keyframes";
+                await mkdirIfNotExists(keyframesPath);
+                await extractKeyframes(path, keyframesPath);
+                const keyframes = await readCurrentDir(keyframesPath);
+                // logger.info(keyframes);
+                e.reply(Bot.makeForwardMsg(keyframes.map(keyframe => {
+                    return {
+                        message: segment.image(keyframesPath + "/" + keyframe),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                })))
+                return;
             }
             // 正常发送视频
             if (videoSize > videoSizeLimit) {
