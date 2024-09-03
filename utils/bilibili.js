@@ -1,8 +1,10 @@
-import fs from "node:fs";
 import axios from 'axios'
+import { exec, spawn } from 'child_process';
 import child_process from 'node:child_process'
-import util from "util";
+import fs from "node:fs";
 import path from "path";
+import qrcode from "qrcode"
+import util from "util";
 import {
     BILI_BVID_TO_CID,
     BILI_DYNAMIC,
@@ -12,8 +14,6 @@ import {
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
 import { mkdirIfNotExists } from "./file.js";
-import { exec, spawn } from 'child_process';
-import qrcode from "qrcode"
 
 export const BILI_HEADER = {
     'User-Agent':

@@ -1,5 +1,3 @@
-// 主库
-// http库
 import axios from "axios";
 import _ from "lodash";
 import fetch from "node-fetch";

@@ -1,6 +1,5 @@
 import axios from "axios";
 import { exec } from "child_process";
-import https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import fetch from "node-fetch";
 import fs from "node:fs";
@@ -478,7 +477,7 @@ export function checkToolInCurEnv(someCommand) {
  */
 export async function urlTransformShortLink(url) {
     const data = {
-        url: `${encodeURI(url)}`
+        url: `${ encodeURI(url) }`
     };
 
     const resp = await fetch(SHORT_LINKS, {
