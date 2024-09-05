@@ -199,32 +199,20 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
 /**
  * 获取下载链接
  * @param url
+ * @param SESSDATA
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url) {
-    return axios
-        .get(url, {
-            headers: {
-                ...BILI_HEADER
-            },
-        })
-        .then(({ data }) => {
-            const info = JSON.parse(
-                data.match(/<script>window\.__playinfo__=({.*})<\/script><script>/)?.[1],
-            );
-            // 自动绕过解析不了的mcdn视频链接
-            const videoUrl = selectAndAvoidMCdnUrl(info?.data?.dash?.video?.[0]?.baseUrl, info?.data?.dash?.video?.[0]?.backupUrl);
-            // 自动绕过解析不了的mcdn音频链接
-            const audioUrl = selectAndAvoidMCdnUrl(info?.data?.dash?.audio?.[0]?.baseUrl, info?.data?.dash?.audio?.[0]?.backupUrl);
-
-            const title = data.match(/title="(.*?)"/)?.[1]?.replaceAll?.(/\\|\/|:|\*|\?|"|<|>|\|/g, '');
-
-            if (videoUrl && audioUrl) {
-                return { videoUrl, audioUrl, title };
-            }
-
-            return Promise.reject('获取下载地址失败');
-        });
+export async function getDownloadUrl(url, SESSDATA) {
+    const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    const dash = await getBiliVideoWithSession(videoId, "", SESSDATA);
+    // 获取关键信息
+    const { video, audio } = dash;
+    const videoData = video?.[0];
+    const audioData = audio?.[0];
+    // 提取信息
+    const { height, frameRate, baseUrl: videoBaseUrl } = videoData;
+    const { baseUrl: audioBaseUrl } = audioData;
+    return { videoUrl: videoBaseUrl, audioUrl: audioBaseUrl };
 }
 
 /**

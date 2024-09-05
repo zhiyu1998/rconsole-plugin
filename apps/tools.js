@@ -615,16 +615,6 @@ export class tools extends plugin {
             Msg && (await e.reply(Msg));
             e.reply(biliInfo);
         }
-        // 处理下载逻辑
-        if (e.msg !== undefined && e.msg.startsWith("下载")) {
-            // 检测是否扫码了，如果没有扫码数据终止下载
-            if (_.isEmpty(this.biliSessData)) {
-                e.reply("检测到没有填写biliSessData，下载终止！");
-                return true;
-            }
-            await this.downloadBiliVideo(e, url, this.biliSessData);
-            return true;
-        }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.startsWith("音乐")) {
             return await this.biliMusic(e, url);
@@ -716,7 +706,7 @@ export class tools extends plugin {
         // =================默认下载方式=====================
         try {
             // 获取下载链接
-            const data = await getDownloadUrl(url);
+            const data = await getDownloadUrl(url, this.biliSessData);
 
             await this.downBili(tempPath, data.videoUrl, data.audioUrl);
 
@@ -742,50 +732,6 @@ export class tools extends plugin {
             total: online.total,
             count: online.count
         }
-    }
-
-    /**
-     * 下载哔哩哔哩最高画质视频
-     * @param e         交互事件
-     * @param url       下载链接
-     * @param SESSDATA  ck
-     * @returns {Promise<boolean>}
-     */
-    async downloadBiliVideo(e, url, SESSDATA) {
-        const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
-        const dash = await getBiliVideoWithSession(videoId, "", SESSDATA);
-        // 限制时长，防止下载大视频卡死。暂时这样设计
-        const curDuration = dash.duration;
-        const isLimitDuration = curDuration > this.biliDuration;
-        if (isLimitDuration) {
-            const durationInMinutes = (curDuration / 60).toFixed(0);
-            e.reply(`当前视频（${ videoId }）时长为 ${ durationInMinutes } 分钟，大于管理员设置的时长 ${ this.biliDuration / 60 } 分钟`);
-            return true;
-        }
-        // 获取关键信息
-        const { video, audio } = dash;
-        const videoData = video?.[0];
-        const audioData = audio?.[0];
-        // 提取信息
-        const { height, frameRate, baseUrl: videoBaseUrl } = videoData;
-        const { baseUrl: audioBaseUrl } = audioData;
-        e.reply(`正在下载${ height }p ${ Math.trunc(frameRate) }帧数 视频，请稍候...`);
-        const path = `${ this.getCurDownloadPath(e) }/`;
-        const that = this;
-        // 添加下载任务到并发队列
-        this.queue.add(() =>
-            that.downBili(`${ path }temp`, videoBaseUrl, audioBaseUrl)
-                .then(_ => {
-                    that.sendVideoToUpload(e, `${ path }temp.mp4`);
-                })
-                .catch(err => {
-                    logger.error(`[R插件][B站下载引擎] ${ err }`);
-                    e.reply("解析失败，请重试一下");
-                })
-        );
-        logger.mark(`[R插件][B站下载引擎] 当前下载队列大小${ this.queue.size }`);
-
-        return true;
     }
 
     // 下载哔哩哔哩音乐
