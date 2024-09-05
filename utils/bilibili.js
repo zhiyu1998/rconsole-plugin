@@ -210,9 +210,11 @@ export async function getDownloadUrl(url, SESSDATA) {
     const videoData = video?.[0];
     const audioData = audio?.[0];
     // 提取信息
-    const { height, frameRate, baseUrl: videoBaseUrl } = videoData;
-    const { baseUrl: audioBaseUrl } = audioData;
-    return { videoUrl: videoBaseUrl, audioUrl: audioBaseUrl };
+    const { backupUrl: videoBackupUrl, baseUrl: videoBaseUrl } = videoData;
+    const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl);
+    const { backupUrl: audioBackupUrl,baseUrl: audioBaseUrl } = audioData;
+    const audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
+    return { videoUrl, audioUrl };
 }
 
 /**
