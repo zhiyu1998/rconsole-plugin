@@ -272,7 +272,7 @@ export class tools extends plugin {
     // 翻译插件
     async trans(e) {
         const languageReg = /翻(.)/s;
-        const msg = e.msg.trim();
+        let msg = e.msg.trim();
         const language = languageReg.exec(msg);
         if (!(language[1] in transMap)) {
             e.reply(
@@ -280,7 +280,16 @@ export class tools extends plugin {
             );
             return;
         }
-        const place = msg.slice(1 + language[1].length)
+        let place = msg.slice(1 + language[1].length)
+        if (_.isEmpty(place)) {
+            const reply = await e?.getReply();
+            if (reply !== undefined) {
+                logger.info(reply);
+                place = reply.message.find(item => item.text !== undefined).text;
+            } else {
+                return;
+            }
+        }
         // 如果没有百度那就Google
         const translateResult = await this.translateEngine.translate(place, language[1]);
         e.reply(translateResult.trim(), true);
