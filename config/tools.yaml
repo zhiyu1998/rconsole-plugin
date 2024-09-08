@@ -4,7 +4,7 @@ proxyAddr: '127.0.0.1' # 魔法地址
 proxyPort: '7890' # 魔法端口
 identifyPrefix: '✅' # 识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩
 
-deeplApiUrls: 'https://deeplx.papercar.top/translate,https://deeplx.llleman.com/translate'
+deeplApiUrls: 'https://deeplx.papercar.top/translate,https://deeplx.llleman.com/translate,https://dlx.bitjss.com/translate,https://free-deepl.speedcow.top/translate,https://deeplx.keyrotate.com/translate'
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
