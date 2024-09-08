@@ -60,23 +60,13 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "tools.translateAppId",
-                    label: "百度翻译APP ID",
-                    bottomHelpMessage: "使用百度翻译需要的APP ID（需要申请）",
+                    field: "tools.deeplApiUrls",
+                    label: "DeeplX API地址集合",
+                    bottomHelpMessage: "可以参考：https://github.com/OwO-Network/DeepLX，进行搭建，也可以使用内置",
                     component: "Input",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入APP ID",
-                    },
-                },
-                {
-                    field: "tools.translateSecret",
-                    label: "百度翻译密匙",
-                    bottomHelpMessage: "使用百度翻译需要的密匙（需要申请）",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入密匙",
+                        placeholder: "请输入DeeplX API地址集合",
                     },
                 },
                 {

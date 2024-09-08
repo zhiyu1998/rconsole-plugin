@@ -1,5 +1,4 @@
-import { transMap, tencentTransMap } from "../constants/constant.js";
-import md5 from "md5";
+import { tencentTransMap } from "../constants/constant.js";
 import fetch from "node-fetch";
 import _ from 'lodash'
 
@@ -10,7 +9,7 @@ class TranslateStrategy {
     }
 }
 
-// 百度翻译策略
+// 企鹅翻译策略
 class TencentTranslateStrategy extends TranslateStrategy {
     constructor(config) {
         super();
@@ -79,19 +78,35 @@ class TencentTranslateStrategy extends TranslateStrategy {
     }
 }
 
-// 百度翻译策略
-class BaiduTranslateStrategy extends TranslateStrategy {
+// Deepl翻译策略
+class DeeplTranslateStrategy extends TranslateStrategy {
     constructor(config) {
         super();
         this.config = config;
+        this.deeplUrls = this.config.deeplApiUrls.includes(",") ? this.config.deeplApiUrls.split(",") : [this.config.deeplApiUrls];
     }
 
     async translate(query, targetLanguage) {
-        const url = `http://api.fanyi.baidu.com/api/trans/vip/translate?from=auto&to=${ transMap[targetLanguage] }&appid=${ this.config.translateAppId }&salt=rconsole&sign=${ md5(this.config.translateAppId + query + "rconsole" + this.config.translateSecret) }&q=${ query }`;
+        const url = this.deeplUrls[Math.floor(Math.random() * this.deeplUrls.length)];
+        logger.info(`[R插件][Deepl翻译]：当前使用的API：${url}`);
         try {
-            const response = await fetch(url);
+            const source_lang = await new TencentTranslateStrategy(this.config).detectLanguage(query);
+            logger.info(`[R插件][Deepl翻译]：检测到的源语言：${source_lang}`);
+            const response = await fetch(url, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...this.commonHeaders
+                },
+                body: JSON.stringify({
+                    text: query,
+                    source_lang,
+                    target_lang: tencentTransMap[targetLanguage]
+                }),
+
+            });
             const data = await response.json();
-            return data.trans_result[0].dst;
+            return data.data;
         } catch (error) {
             logger.error("Error translating text:", error);
             return "翻译失败";
@@ -107,9 +122,9 @@ export default class Translate {
     }
 
     selectStrategy() {
-        if (!_.isEmpty(this.config.translateAppId) && !_.isEmpty(this.config.translateSecret)) {
-            logger.info("[R插件][翻译策略]：当前选择 百度翻译")
-            return new BaiduTranslateStrategy(this.config);
+        if (!_.isEmpty(this.config.deeplApiUrls)) {
+            logger.info("[R插件][翻译策略]：当前选择 Deepl翻译")
+            return new DeeplTranslateStrategy(this.config);
         } else {
             logger.info("[R插件][翻译策略]：当前选择 企鹅翻译")
             return new TencentTranslateStrategy(this.config);

@@ -61,7 +61,6 @@ import {
     downloadBFile,
     filterBiliDescLink,
     getBiliAudio,
-    getBiliVideoWithSession,
     getDownloadUrl,
     getDynamic,
     getScanCodeData,
@@ -253,8 +252,7 @@ export class tools extends plugin {
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
         this.translateEngine = new Translate({
-            translateAppId: this.toolsConfig.translateAppId,
-            translateSecret: this.toolsConfig.translateSecret,
+            deeplApiUrls: this.toolsConfig.deeplApiUrls,
             proxy: this.myProxy,
         });
         // 并发队列
@@ -284,7 +282,6 @@ export class tools extends plugin {
         if (_.isEmpty(place)) {
             const reply = await e?.getReply();
             if (reply !== undefined) {
-                logger.info(reply);
                 place = reply.message.find(item => item.text !== undefined).text;
             } else {
                 return;
