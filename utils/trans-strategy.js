@@ -118,7 +118,7 @@ class DeeplTranslateStrategy extends TranslateStrategy {
 export default class Translate {
     constructor(config) {
         this.config = config;
-        this.strategy = this.selectStrategy();
+        this.strategy = null;
     }
 
     selectStrategy() {
@@ -133,7 +133,7 @@ export default class Translate {
 
     async translate(query, targetLanguage) {
         if (!this.strategy) {
-            throw new Error("无翻译策略可用");
+            this.strategy = this.selectStrategy();
         }
         return this.strategy.translate(query, targetLanguage);
     }
