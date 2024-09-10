@@ -7,6 +7,94 @@ tags:
 ---
 
 ##  🐤 Q&A
+
+### 🛠️ 使用方法（基础）
+
+1.【必要】下载插件
+```shell
+# 国内
+git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
+# 海外
+git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
+```
+
+2.【必要】在`Yunzai-Bot / Miao-Yunzai`目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）、用于拉格朗日（ws）、用于识图（openai）
+
+
+```shell
+pnpm i --filter=rconsole-plugin
+```
+
+
+### 🎬 视频解析使用说明
+
+3.【可选】要使用`视频解析`功能要下载插件【推荐ubuntu系统】
+```shell
+# ubuntu
+sudo apt-get install ffmpeg
+# 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
+# Windows 参考：https://www.jianshu.com/p/5015a477de3c
+````
+
+### 🎥 油管和Tiktok使用说明
+
+`油管解析`需要 `yt-dlp` 的依赖才能完成解析（三选一）：
+```shell
+# 三选一
+# ubuntu （国内 or 国外，且安装了snap）
+snap install yt-dlp
+# debian 海外
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# debian 国内
+curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# archlinux
+sudo pacman -Syu yt-dlp
+```
+
+`Tiktok解析`需要将`yt-dlp`升级到`最新版本`，如果不会可以按照下面的教程（Linux），Windows换个文件应该就可以：
+```shell
+# 1. 去官方下载最新版本：https://github.com/yt-dlp/yt-dlp/releases
+# 2. 把yt-dlp放在Linux某个位置，比如/home/YtDlpHome/yt-dlp
+# 3. 删除之前的yt-dlp，删除之前可以看看是不是最新版本
+
+# 查看最新版本
+yt-dlp --version
+# 如果你是 apt 安装需要卸载
+apt remove yt-dlp
+
+# 4. 将/home/YtDlpHome/yt-dlp添加到环境变量（下面二选一）
+vim ~/.bashrc  # 如果你使用 bash
+vim ~/.zshrc   # 如果你使用 zsh
+
+# 5. 添加到最后一行
+export PATH="/home/YtDlpHome:$PATH"
+
+# 6. 刷新环境变量即可
+source ~/.bashrc  # 如果你使用 bash
+source ~/.zshrc   # 如果你使用 zsh
+```
+
+### 🍏 Apple Music 和 Spotify 使用说明
+
+`AM解析`和`Spotify解析`需要使用两个依赖`freyr`、`atomicparsley`，现在只以Debian系统为例：
+
+```shell
+npm install -g freyr
+# 或者你有yarn的话可以使用
+yarn global add freyr
+# 接着安装它的依赖
+apt-get install atomicparsley
+```
+
+
+### 📺 B站总结
+
+对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA，或者[【推荐】扫码登录](https://gitee.com/kyrzy0416/rconsole-plugin#b%E7%AB%99%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95)
+
+<img src="https://s2.loli.net/2024/08/19/MH6f1AuEKgPIUOB.webp" alt="小程序解析" width="50%" height="50%" />
+
 ### 📺 B站扫码登录
 命令：`#RBQ`，来自2024/4/1 才子 `Mix` 的命名
 
@@ -15,6 +103,22 @@ tags:
 示例：
 ![rbq2](https://s2.loli.net/2024/08/19/kqLVxKluECW4YGN.webp)
 
+### ⏳ 视频时长限制说明
+
+增加视频的时长限制（默认8分钟(60 * 8 = 480)）：
+- 在config/tools.yaml里设置`biliDuration`
+- 锅巴设置
+
+### 🔄 R插件版本回退方法（慎重）
+
+下载指定版本的R插件：
+如果你觉得当前版本的功能出现了问题，那么可以下载指定版本的插件，比如`1.5.1`：
+```shell
+# 删除当前的R插件
+rm -rf ./plugins/rconsole-plugin/
+# 克隆指定版本的R插件稳定版本
+git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
+```
 
 ### 🎵 douyin问题
 
@@ -110,7 +214,7 @@ tags:
 
 
 
-### 微信文章总结 （完全免费总结）
+### 🗂️ 微信文章总结 （完全免费总结）
 
 官方Kimi API 暂时没有看到可以联网搜索的选项，所以选用开源的[kimi-free-api](https://github.com/LLM-Red-Team/kimi-free-api)
 
@@ -222,3 +326,14 @@ apt install aria2
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
+### 📱 关于小程序
+
+小程序解析适配了：
+* 喵崽：[Yoimiya / Miao-Yunzai](https://gitee.com/yoimiya-kokomi/Miao-Yunzai)
+* TRSS：[时雨◎星空 / Yunzai](https://gitee.com/TimeRainStarSky/Yunzai)
+* 听语惊花：[听语惊花 / Yunzai-Bot-lite](https://gitee.com/Nwflower/yunzai-bot-lite)
+
+> 如果解析有问题参考issue：[#I6MFF7](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7)
+> [#I7KQVY](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY)
+
+<img src="https://s2.loli.net/2024/08/19/uo1J35V4vMDUSbN.webp" alt="小程序解析" width="50%" height="50%" />
