@@ -2,7 +2,7 @@ import axios from "axios";
 import _ from "lodash";
 import fetch from "node-fetch";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT, SUMMARY_PROMPT } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 import {
     LINUX_AI_PROMPT,
     LINUX_QUERY,
