@@ -2,12 +2,25 @@ import axios from "axios";
 import _ from "lodash";
 import fetch from "node-fetch";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
-import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
+import { CAT_LIMIT, COMMON_USER_AGENT, SUMMARY_PROMPT } from "../constants/constant.js";
+import {
+    LINUX_AI_PROMPT,
+    LINUX_QUERY,
+    RDOC_AI_PROMPT,
+    RDOC_LINK,
+    REDIS_YUNZAI_LINUX,
+    REDIS_YUNZAI_RDOC
+} from "../constants/query.js";
 // 配置文件
 import config from "../model/config.js";
+import { deepSeekChat, llmRead } from "../utils/llm-util.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistAndGetKey, redisExistAndInsertObject, redisExistAndUpdateObject } from "../utils/redis-util.js";
+import {
+    redisExistAndGetKey,
+    redisExistAndInsertObject,
+    redisExistAndUpdateObject,
+    redisSetKey
+} from "../utils/redis-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
@@ -46,6 +59,10 @@ export class query extends plugin {
                 {
                     reg: "^#(linux|Linux)(.*)",
                     fnc: "linuxQuery"
+                },
+                {
+                    reg: "^#R文档(.*)",
+                    fnc: "intelligentDoc",
                 }
             ],
         });
@@ -336,6 +353,42 @@ export class query extends plugin {
         }
 
         return parsedData;
+    }
+
+    async intelligentDoc(e) {
+        const question = e.msg.replace("#R文档", "").trim();
+        const rPluginDocument = await redisExistAndGetKey(REDIS_YUNZAI_RDOC);
+        if (question === "") {
+            e.reply("请输入要查询的文档内容！\n例如：#R文档 如何玩转BBDown");
+            return;
+        } else if (question === "更新" || rPluginDocument?.content === undefined) {
+            e.reply("更新文档中...");
+            const content = await llmRead(RDOC_LINK);
+            logger.info(content);
+            await redisSetKey(REDIS_YUNZAI_RDOC, {
+                content
+            })
+            e.reply("文档更新完成！");
+        }
+        let kimiAns, model = "DeepSeek";
+        if (this.aiBaseURL && this.aiApiKey) {
+            const builder = await new OpenaiBuilder()
+                .setBaseURL(this.aiBaseURL)
+                .setApiKey(this.aiApiKey)
+                .setModel(this.aiModel)
+                .setPrompt(rPluginDocument)
+                .build();
+            const kimiResp = await builder.kimi(RDOC_AI_PROMPT.replace("{}", question));
+            kimiAns = kimiResp.ans;
+            model = kimiResp.model;
+        } else {
+            logger.info(RDOC_AI_PROMPT.replace("{}", question));
+            kimiAns = await deepSeekChat(RDOC_AI_PROMPT.replace("{}", question), rPluginDocument.content);
+            logger.info(kimiAns)
+        }
+        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
+        await e.reply(Msg);
+        return;
     }
 
     // 删除标签

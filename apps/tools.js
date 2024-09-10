@@ -42,8 +42,6 @@ import {
     NETEASE_API_CN,
     NETEASE_SONG_DOWNLOAD,
     NETEASE_TEMP_API,
-    PearAPI_CRAWLER,
-    PearAPI_DEEPSEEK,
     QISHUI_MUSIC_TEMP_API,
     QQ_MUSIC_TEMP_API,
     TWITTER_TWEET_INFO,
@@ -95,6 +93,7 @@ import {
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
+import { deepSeekChat, llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
@@ -1729,28 +1728,10 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async tempSummary(name, summaryLink, e) {
-        const llmCrawler = await fetch(PearAPI_CRAWLER.replace("{}", summaryLink));
-        const content = await (await llmCrawler.json())?.data;
+        const content = await llmRead(summaryLink);
         const titleMatch = content.match(/Title:\s*(.*?)\n/)?.[1];
         e.reply(`${ this.identifyPrefix } 识别：${ name } - ${ titleMatch }，正在为您总结，请稍等...`, true);
-        const deepseekFreeSummary = await fetch(PearAPI_DEEPSEEK, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": SUMMARY_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": content,
-                    }]
-            }),
-        });
-        const summary = (await deepseekFreeSummary.json())?.message;
+        const summary = await deepSeekChat(content, SUMMARY_PROMPT);
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x DeepSeek」联合为您总结内容：`, summary]));
         await e.reply(Msg);
     }
