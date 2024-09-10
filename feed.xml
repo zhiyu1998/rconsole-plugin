@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Mon, 19 Aug 2024 03:05:18 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 10 Sep 2024 07:21:27 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -43,11 +43,88 @@
             <pubDate>Wed, 14 Aug 2024 00:00:00 GMT</pubDate>
             <description><![CDATA[R插件的问题解答]]></description>
             <content:encoded><![CDATA[<h2>🐤 Q&amp;A</h2>
+<h3>🛠️ 使用方法（基础）</h3>
+<p>1.【必要】下载插件</p>
+<pre><code class="language-shell"># 国内
+git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
+# 海外
+git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
+</code></pre>
+<p>2.【必要】在<code>Yunzai-Bot / Miao-Yunzai</code>目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）、用于拉格朗日（ws）、用于识图（openai）</p>
+<pre><code class="language-shell">pnpm i --filter=rconsole-plugin
+</code></pre>
+<h3>🎬 视频解析使用说明</h3>
+<p>3.【可选】要使用<code>视频解析</code>功能要下载插件【推荐ubuntu系统】</p>
+<pre><code class="language-shell"># ubuntu
+sudo apt-get install ffmpeg
+# 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
+# Windows 参考：https://www.jianshu.com/p/5015a477de3c
+</code></pre>
+<h3>🎥 油管和Tiktok使用说明</h3>
+<p><code>油管解析</code>需要 <code>yt-dlp</code> 的依赖才能完成解析（三选一）：</p>
+<pre><code class="language-shell"># 三选一
+# ubuntu （国内 or 国外，且安装了snap）
+snap install yt-dlp
+# debian 海外
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# debian 国内
+curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
+chmod a+rx ~/.local/bin/yt-dlp
+# archlinux
+sudo pacman -Syu yt-dlp
+</code></pre>
+<p><code>Tiktok解析</code>需要将<code>yt-dlp</code>升级到<code>最新版本</code>，如果不会可以按照下面的教程（Linux），Windows换个文件应该就可以：</p>
+<pre><code class="language-shell"># 1. 去官方下载最新版本：https://github.com/yt-dlp/yt-dlp/releases
+# 2. 把yt-dlp放在Linux某个位置，比如/home/YtDlpHome/yt-dlp
+# 3. 删除之前的yt-dlp，删除之前可以看看是不是最新版本
+
+# 查看最新版本
+yt-dlp --version
+# 如果你是 apt 安装需要卸载
+apt remove yt-dlp
+
+# 4. 将/home/YtDlpHome/yt-dlp添加到环境变量（下面二选一）
+vim ~/.bashrc  # 如果你使用 bash
+vim ~/.zshrc   # 如果你使用 zsh
+
+# 5. 添加到最后一行
+export PATH=&quot;/home/YtDlpHome:$PATH&quot;
+
+# 6. 刷新环境变量即可
+source ~/.bashrc  # 如果你使用 bash
+source ~/.zshrc   # 如果你使用 zsh
+</code></pre>
+<h3>🍏 Apple Music 和 Spotify 使用说明</h3>
+<p><code>AM解析</code>和<code>Spotify解析</code>需要使用两个依赖<code>freyr</code>、<code>atomicparsley</code>，现在只以Debian系统为例：</p>
+<pre><code class="language-shell">npm install -g freyr
+# 或者你有yarn的话可以使用
+yarn global add freyr
+# 接着安装它的依赖
+apt-get install atomicparsley
+</code></pre>
+<h3>📺 B站总结</h3>
+<p>对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA，或者<a href="https://gitee.com/kyrzy0416/rconsole-plugin#b%E7%AB%99%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95">【推荐】扫码登录</a></p>
+<img src="https://s2.loli.net/2024/08/19/MH6f1AuEKgPIUOB.webp" alt="小程序解析" width="50%" height="50%" />
 <h3>📺 B站扫码登录</h3>
 <p>命令：<code>#RBQ</code>，来自2024/4/1 才子 <code>Mix</code> 的命名</p>
 <p><img src="https://s2.loli.net/2024/08/19/2ljBYQgSLUEXTKN.webp" alt="rbq"></p>
 <p>示例：<br>
 <img src="https://s2.loli.net/2024/08/19/kqLVxKluECW4YGN.webp" alt="rbq2"></p>
+<h3>⏳ 视频时长限制说明</h3>
+<p>增加视频的时长限制（默认8分钟(60 * 8 = 480)）：</p>
+<ul>
+<li>在config/tools.yaml里设置<code>biliDuration</code></li>
+<li>锅巴设置</li>
+</ul>
+<h3>🔄 R插件版本回退方法（慎重）</h3>
+<p>下载指定版本的R插件：<br>
+如果你觉得当前版本的功能出现了问题，那么可以下载指定版本的插件，比如<code>1.5.1</code>：</p>
+<pre><code class="language-shell"># 删除当前的R插件
+rm -rf ./plugins/rconsole-plugin/
+# 克隆指定版本的R插件稳定版本
+git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
+</code></pre>
 <h3>🎵 douyin问题</h3>
 <p>由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：</p>
 <p>👍 <strong>推荐方案</strong> ：via 视频教程（由群友 <code>@麦满分</code> 录制）：<a href="https://thumbsnap.com/rKxUGKqp">https://thumbsnap.com/rKxUGKqp</a></p>
@@ -137,7 +214,7 @@
 <li>在任意群里发送<code>#设置拉格朗日</code>，转换一下视频发送方式即可</li>
 </ol>
 <p><img src="https://s2.loli.net/2024/08/19/G5A72aojsUezKg1.webp" alt=""></p>
-<h3>微信文章总结 （完全免费总结）</h3>
+<h3>🗂️ 微信文章总结 （完全免费总结）</h3>
 <p>官方Kimi API 暂时没有看到可以联网搜索的选项，所以选用开源的<a href="https://github.com/LLM-Red-Team/kimi-free-api">kimi-free-api</a></p>
 <ol>
 <li>部署 kimi-free-api</li>
@@ -251,6 +328,18 @@ apt install axel
 <p>海外服务器示例：<br>
 直接发送<code>#设置海外解析</code></p>
 </blockquote>
+<h3>📱 关于小程序</h3>
+<p>小程序解析适配了：</p>
+<ul>
+<li>喵崽：<a href="https://gitee.com/yoimiya-kokomi/Miao-Yunzai">Yoimiya / Miao-Yunzai</a></li>
+<li>TRSS：<a href="https://gitee.com/TimeRainStarSky/Yunzai">时雨◎星空 / Yunzai</a></li>
+<li>听语惊花：<a href="https://gitee.com/Nwflower/yunzai-bot-lite">听语惊花 / Yunzai-Bot-lite</a></li>
+</ul>
+<blockquote>
+<p>如果解析有问题参考issue：<a href="https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7">#I6MFF7</a><br>
+<a href="https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY">#I7KQVY</a></p>
+</blockquote>
+<img src="https://s2.loli.net/2024/08/19/uo1J35V4vMDUSbN.webp" alt="小程序解析" width="50%" height="50%" />
 ]]></content:encoded>
             <author>renzhiyu0416@gmail.com (zhiyu1998)</author>
         </item>
@@ -307,96 +396,6 @@ apt install axel
 <p><img src="https://s2.loli.net/2024/08/12/MF4xyhESYZBzcwL.webp" alt="y2b"></p>
 <img src="https://s2.loli.net/2024/08/12/nDpB6Y9yHvmtKjU.webp" alt="mys" style="zoom:52%;" />
 <img src="https://s2.loli.net/2024/08/12/I5VWuASNFTmakw1.webp" alt="zy" style="zoom: 40%;" />
-<h2>📔 使用说明</h2>
-<p>1.【必要】下载插件</p>
-<pre><code class="language-shell"># 国内
-git clone https://gitee.com/kyrzy0416/rconsole-plugin.git ./plugins/rconsole-plugin/
-# 海外
-git clone https://github.com/zhiyu1998/rconsole-plugin.git ./plugins/rconsole-plugin/
-</code></pre>
-<p>2.【必要】在<code>Yunzai-Bot / Miao-Yunzai</code>目录下安装axios(0.27.2)、魔法工具（tunnel）、二维码处理工具（qrcode）、高性能下载队列（p-queue）、用于拉格朗日（ws）、用于识图（openai）</p>
-<pre><code class="language-shell">pnpm i --filter=rconsole-plugin
-</code></pre>
-<p>3.【可选】要使用<code>视频解析</code>功能要下载插件【推荐ubuntu系统】</p>
-<pre><code class="language-shell"># ubuntu
-sudo apt-get install ffmpeg
-# 其他linux参考（群友推荐）：https://gitee.com/baihu433/ffmpeg
-# Windows 参考：https://www.jianshu.com/p/5015a477de3c
-</code></pre>
-<p><code>油管解析</code>需要 <code>yt-dlp</code> 的依赖才能完成解析（三选一）：</p>
-<pre><code class="language-shell"># 三选一
-# ubuntu （国内 or 国外，且安装了snap）
-snap install yt-dlp
-# debian 海外
-curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
-chmod a+rx ~/.local/bin/yt-dlp
-# debian 国内
-curl -L https://ghproxy.net/https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o ~/.local/bin/yt-dlp
-chmod a+rx ~/.local/bin/yt-dlp
-# archlinux
-sudo pacman -Syu yt-dlp
-</code></pre>
-<p><code>Tiktok解析</code>需要将<code>yt-dlp</code>升级到<code>最新版本</code>，如果不会可以按照下面的教程（Linux），Windows换个文件应该就可以：</p>
-<pre><code class="language-shell"># 1. 去官方下载最新版本：https://github.com/yt-dlp/yt-dlp/releases
-# 2. 把yt-dlp放在Linux某个位置，比如/home/YtDlpHome/yt-dlp
-# 3. 删除之前的yt-dlp，删除之前可以看看是不是最新版本
-
-# 查看最新版本
-yt-dlp --version
-# 如果你是 apt 安装需要卸载
-apt remove yt-dlp
-
-# 4. 将/home/YtDlpHome/yt-dlp添加到环境变量（下面二选一）
-vim ~/.bashrc  # 如果你使用 bash
-vim ~/.zshrc   # 如果你使用 zsh
-
-# 5. 添加到最后一行
-export PATH=&quot;/home/YtDlpHome:$PATH&quot;
-
-# 6. 刷新环境变量即可
-source ~/.bashrc  # 如果你使用 bash
-source ~/.zshrc   # 如果你使用 zsh
-</code></pre>
-<p><code>AM解析</code>和<code>Spotify解析</code>需要使用两个依赖<code>freyr</code>、<code>atomicparsley</code>，现在只以Debian系统为例：</p>
-<pre><code class="language-shell">npm install -g freyr
-# 或者你有yarn的话可以使用
-yarn global add freyr
-# 接着安装它的依赖
-apt-get install atomicparsley
-</code></pre>
-<ol start="4">
-<li>【可选】小程序解析适配了：</li>
-</ol>
-<ul>
-<li>喵崽：<a href="https://gitee.com/yoimiya-kokomi/Miao-Yunzai">Yoimiya / Miao-Yunzai</a></li>
-<li>TRSS：<a href="https://gitee.com/TimeRainStarSky/Yunzai">时雨◎星空 / Yunzai</a></li>
-<li>听语惊花：<a href="https://gitee.com/Nwflower/yunzai-bot-lite">听语惊花 / Yunzai-Bot-lite</a></li>
-</ul>
-<blockquote>
-<p>如果解析有问题参考issue：<a href="https://gitee.com/kyrzy0416/rconsole-plugin/issues/I6MFF7">#I6MFF7</a><br>
-<a href="https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY">#I7KQVY</a></p>
-</blockquote>
-<img src="https://s2.loli.net/2024/08/19/uo1J35V4vMDUSbN.webp" alt="小程序解析" width="50%" height="50%" />
-<ol start="5">
-<li>【可选】对哔哩哔哩解析进行总结：需要填写哔哩哔哩的SESSDATA，或者<a href="https://gitee.com/kyrzy0416/rconsole-plugin#b%E7%AB%99%E6%89%AB%E7%A0%81%E7%99%BB%E5%BD%95">【推荐】扫码登录</a></li>
-</ol>
-<img src="https://s2.loli.net/2024/08/19/MH6f1AuEKgPIUOB.webp" alt="小程序解析" width="50%" height="50%" />
-<ol start="6">
-<li>【可选】增加视频的时长限制（默认8分钟(60 * 8 = 480)）：</li>
-</ol>
-<ul>
-<li>在config/tools.yaml里设置<code>biliDuration</code></li>
-<li>锅巴设置</li>
-</ul>
-<ol start="7">
-<li>【可选 &amp; 慎重】下载指定版本的R插件：<br>
-如果你觉得当前版本的功能出现了问题，那么可以下载指定版本的插件，比如<code>1.5.1</code>：</li>
-</ol>
-<pre><code class="language-shell"># 删除当前的R插件
-rm -rf ./plugins/rconsole-plugin/
-# 克隆指定版本的R插件稳定版本
-git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
-</code></pre>
 <h2>🤺 R插件交流群</h2>
 <img src="https://s2.loli.net/2024/08/12/8zhnvBCj5SgxukK.jpg" width="30%" height="30%">
 <blockquote>
