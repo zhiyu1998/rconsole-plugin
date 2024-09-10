@@ -362,9 +362,13 @@ export class query extends plugin {
             e.reply("请输入要查询的文档内容！\n例如：#R文档 如何玩转BBDown");
             return;
         } else if (question === "更新" || rPluginDocument?.content === undefined) {
+            // 权限判定
+            if (!e.isMaster) {
+                e.reply("请让管理员发送以进行初始化，或者让管理员进行更新！");
+                return;
+            }
             e.reply("更新文档中...");
             const content = await llmRead(RDOC_LINK);
-            logger.info(content);
             await redisSetKey(REDIS_YUNZAI_RDOC, {
                 content
             })
@@ -384,7 +388,6 @@ export class query extends plugin {
         } else {
             logger.info(RDOC_AI_PROMPT.replace("{}", question));
             kimiAns = await deepSeekChat(RDOC_AI_PROMPT.replace("{}", question), rPluginDocument.content);
-            logger.info(kimiAns)
         }
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
         await e.reply(Msg);
