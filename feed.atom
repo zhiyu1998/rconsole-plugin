@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-09-10T07:21:27.171Z</updated>
+    <updated>2024-09-10T14:07:44.831Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -42,9 +42,9 @@
         </author>
     </entry>
     <entry>
-        <title type="html"><![CDATA[Q&A官方解答]]></title>
-        <id>https://zhiyu1998.github.io/rconsole-plugin/posts/Q&amp;A官方解答.html</id>
-        <link href="https://zhiyu1998.github.io/rconsole-plugin/posts/Q&amp;A官方解答.html"/>
+        <title type="html"><![CDATA[QA官方解答]]></title>
+        <id>https://zhiyu1998.github.io/rconsole-plugin/posts/QA官方解答.html</id>
+        <link href="https://zhiyu1998.github.io/rconsole-plugin/posts/QA官方解答.html"/>
         <updated>2024-08-14T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[R插件的问题解答]]></summary>
         <content type="html"><![CDATA[<h2>🐤 Q&amp;A</h2>
