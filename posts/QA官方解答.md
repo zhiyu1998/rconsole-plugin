@@ -1,5 +1,5 @@
 ---
-title: Q&A官方解答
+title: QA官方解答
 description: R插件的问题解答
 date: 2024-08-14
 tags:
