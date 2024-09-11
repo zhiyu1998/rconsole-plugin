@@ -1,9 +1,26 @@
 import fs from "node:fs";
 import path from "path";
 
+// 常量提取
+const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.pdf': 'application/pdf',
+    '.txt': 'text/plain',
+    // 添加其他文件类型和MIME类型的映射
+};
+
+// 通用错误处理函数
+function handleError(err) {
+    logger.error(err);
+    throw err;
+}
+
 /**
  * 检查文件是否存在并且删除
- * @param file
+ * @param {string} file - 文件路径
  * @returns {Promise<void>}
  */
 export async function checkAndRemoveFile(file) {
@@ -12,14 +29,14 @@ export async function checkAndRemoveFile(file) {
         await fs.promises.unlink(file);
     } catch (err) {
         if (err.code !== 'ENOENT') {
-            throw err;
+            handleError(err);
         }
     }
 }
 
 /**
  * 创建文件夹，如果不存在
- * @param dir
+ * @param {string} dir - 文件夹路径
  * @returns {Promise<void>}
  */
 export async function mkdirIfNotExists(dir) {
@@ -29,15 +46,15 @@ export async function mkdirIfNotExists(dir) {
         if (err.code === 'ENOENT') {
             await fs.promises.mkdir(dir, { recursive: true });
         } else {
-            throw err;
+            handleError(err);
         }
     }
 }
 
 /**
  * 删除文件夹下所有文件
+ * @param {string} folderPath - 文件夹路径
  * @returns {Promise<number>}
- * @param folderPath
  */
 export async function deleteFolderRecursive(folderPath) {
     try {
@@ -58,37 +75,34 @@ export async function deleteFolderRecursive(folderPath) {
         await Promise.allSettled(actions);
         return files.length;
     } catch (error) {
-        logger.error(error);
+        handleError(error);
         return 0;
     }
 }
 
 /**
  * 读取当前文件夹的所有文件和文件夹
- * @param path      路径
- * @param printTree 是否打印树状图
- * @returns {Promise<*>} 返回一个包含文件名的数组
+ * @param {string} dirPath - 路径
+ * @returns {Promise<string[]>} 返回一个包含文件名的数组
  */
-export async function readCurrentDir(path) {
+export async function readCurrentDir(dirPath) {
     try {
-        const files = await fs.promises.readdir(path);
-        return files;
+        return await fs.promises.readdir(dirPath);
     } catch (err) {
-        logger.error(err);
+        handleError(err);
     }
 }
 
 /**
  * 拷贝文件
- * @param srcDir            源文件目录
- * @param destDir           目标文件目录
- * @param specificFiles     过滤文件，不填写就拷贝全部
- * @returns {Promise<*|null>}
+ * @param {string} srcDir - 源文件目录
+ * @param {string} destDir - 目标文件目录
+ * @param {string[]} [specificFiles=[]] - 过滤文件，不填写就拷贝全部
+ * @returns {Promise<string[]>} 拷贝的文件列表
  */
 export async function copyFiles(srcDir, destDir, specificFiles = []) {
     try {
         await mkdirIfNotExists(destDir);
-
         const files = await readCurrentDir(srcDir);
 
         // 如果 specificFiles 数组为空，拷贝全部文件；否则只拷贝指定文件
@@ -112,46 +126,34 @@ export async function copyFiles(srcDir, destDir, specificFiles = []) {
 
         return copiedFiles
     } catch (error) {
-        logger.error(error);
+        handleError(error);
         return [];
     }
 }
 
 /**
  * 转换路径图片为base64格式
- * @param filePath  图片路径
- * @return {Promise<string>}
+ * @param {string} filePath - 图片路径
+ * @returns {Promise<string>} Base64字符串
  */
 export async function toBase64(filePath) {
     try {
-        // 读取文件数据
-        const fileData = await fs.readFileSync(filePath);
-        // 将文件数据转换为Base64字符串
+        const fileData = await fs.promises.readFile(filePath);
         const base64Data = fileData.toString('base64');
         // 返回Base64字符串
         return `data:${getMimeType(filePath)};base64,${base64Data}`;
     } catch (error) {
-        throw new Error(`读取文件时出错: ${error.message}`);
+        handleError(error);
     }
 }
 
 /**
  * 辅助函数：根据文件扩展名获取MIME类型
- * @param filePath
- * @return {*|string}
+ * @param {string} filePath - 文件路径
+ * @returns {string} MIME类型
  */
 function getMimeType(filePath) {
-    const mimeTypes = {
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.png': 'image/png',
-        '.gif': 'image/gif',
-        '.pdf': 'application/pdf',
-        '.txt': 'text/plain',
-        // 添加其他文件类型和MIME类型的映射
-    };
-
-    const ext = filePath.substring(filePath.lastIndexOf('.')).toLowerCase();
+    const ext = path.extname(filePath).toLowerCase();
     return mimeTypes[ext] || 'application/octet-stream';
 }
 
@@ -161,8 +163,8 @@ function getMimeType(filePath) {
  * @returns {Promise<Object>} 包含图片和视频文件名的对象
  */
 export async function getMediaFilesAndOthers(folderPath) {
-    return new Promise((resolve, reject) => {
-        // 定义图片和视频的扩展名
+    try {
+        const files = await fs.promises.readdir(folderPath);
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
         const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'];
 
@@ -171,26 +173,19 @@ export async function getMediaFilesAndOthers(folderPath) {
         const videos = [];
         const others = [];
 
-        // 读取文件夹中的所有文件
-        fs.readdir(folderPath, (err, files) => {
-            if (err) {
-                return reject('无法读取文件夹: ' + err);
+        files.forEach(file => {
+            const ext = path.extname(file).toLowerCase();
+            if (imageExtensions.includes(ext)) {
+                images.push(file);
+            } else if (videoExtensions.includes(ext)) {
+                videos.push(file);
+            } else {
+                others.push(file);
             }
-
-            files.forEach(file => {
-                const ext = path.extname(file).toLowerCase();
-
-                if (imageExtensions.includes(ext)) {
-                    images.push(file);
-                } else if (videoExtensions.includes(ext)) {
-                    videos.push(file);
-                } else {
-                    others.push(file);
-                }
-            });
-
-            // 返回包含图片和视频的对象
-            resolve({ images, videos, others });
         });
-    });
+
+        return { images, videos, others };
+    } catch (err) {
+        handleError(err);
+    }
 }
