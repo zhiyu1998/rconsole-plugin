@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import { promises as fs } from "fs";
 import path from "path";
 
 // 常量提取
@@ -14,7 +14,7 @@ const mimeTypes = {
 
 // 通用错误处理函数
 function handleError(err) {
-    logger.error(err);
+    logger.error(`错误: ${err.message}\n堆栈: ${err.stack}`);
     throw err;
 }
 
@@ -25,8 +25,9 @@ function handleError(err) {
  */
 export async function checkAndRemoveFile(file) {
     try {
-        await fs.promises.access(file);
-        await fs.promises.unlink(file);
+        await fs.access(file);
+        await fs.unlink(file);
+        logger.info(`文件 ${file} 删除成功。`);
     } catch (err) {
         if (err.code !== 'ENOENT') {
             handleError(err);
@@ -41,10 +42,11 @@ export async function checkAndRemoveFile(file) {
  */
 export async function mkdirIfNotExists(dir) {
     try {
-        await fs.promises.access(dir);
+        await fs.access(dir);
     } catch (err) {
         if (err.code === 'ENOENT') {
-            await fs.promises.mkdir(dir, { recursive: true });
+            await fs.mkdir(dir, { recursive: true });
+            logger.info(`目录 ${dir} 创建成功。`);
         } else {
             handleError(err);
         }
@@ -61,18 +63,16 @@ export async function deleteFolderRecursive(folderPath) {
         const files = await readCurrentDir(folderPath);
         const actions = files.map(async (file) => {
             const curPath = path.join(folderPath, file);
-
-            const stat = await fs.promises.lstat(curPath);
+            const stat = await fs.lstat(curPath);
             if (stat.isDirectory()) {
-                // recurse
                 return deleteFolderRecursive(curPath);
             } else {
-                // delete file
-                return fs.promises.unlink(curPath);
+                return fs.unlink(curPath);
             }
         });
 
         await Promise.allSettled(actions);
+        logger.info(`文件夹 ${folderPath} 中的所有文件删除成功。`);
         return files.length;
     } catch (error) {
         handleError(error);
@@ -87,7 +87,7 @@ export async function deleteFolderRecursive(folderPath) {
  */
 export async function readCurrentDir(dirPath) {
     try {
-        return await fs.promises.readdir(dirPath);
+        return await fs.readdir(dirPath);
     } catch (err) {
         handleError(err);
     }
@@ -105,26 +105,24 @@ export async function copyFiles(srcDir, destDir, specificFiles = []) {
         await mkdirIfNotExists(destDir);
         const files = await readCurrentDir(srcDir);
 
-        // 如果 specificFiles 数组为空，拷贝全部文件；否则只拷贝指定文件
         const filesToCopy = specificFiles.length > 0
             ? files.filter(file => specificFiles.includes(file))
             : files;
 
-        logger.info(logger.yellow(`[R插件][拷贝文件] 正在将 ${srcDir} 的文件拷贝到 ${destDir} 中`));
+        logger.info(`[R插件][拷贝文件] 正在将 ${srcDir} 的文件拷贝到 ${destDir} 中`);
 
-        // 用于保存拷贝了哪些文件
         const copiedFiles = [];
 
         for (const file of filesToCopy) {
             const srcFile = path.join(srcDir, file);
             const destFile = path.join(destDir, file);
-            await fs.promises.copyFile(srcFile, destFile);
+            await fs.copyFile(srcFile, destFile);
             copiedFiles.push(file);
         }
 
-        logger.info(logger.yellow(`[R插件][拷贝文件] 拷贝完成`));
+        logger.info(`[R插件][拷贝文件] 拷贝完成`);
 
-        return copiedFiles
+        return copiedFiles;
     } catch (error) {
         handleError(error);
         return [];
@@ -138,9 +136,8 @@ export async function copyFiles(srcDir, destDir, specificFiles = []) {
  */
 export async function toBase64(filePath) {
     try {
-        const fileData = await fs.promises.readFile(filePath);
+        const fileData = await fs.readFile(filePath);
         const base64Data = fileData.toString('base64');
-        // 返回Base64字符串
         return `data:${getMimeType(filePath)};base64,${base64Data}`;
     } catch (error) {
         handleError(error);
@@ -164,11 +161,10 @@ function getMimeType(filePath) {
  */
 export async function getMediaFilesAndOthers(folderPath) {
     try {
-        const files = await fs.promises.readdir(folderPath);
+        const files = await fs.readdir(folderPath);
         const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
         const videoExtensions = ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm'];
 
-        // 初始化存储图片和视频的数组
         const images = [];
         const videos = [];
         const others = [];
