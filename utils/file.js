@@ -14,7 +14,7 @@ const mimeTypes = {
 
 // 通用错误处理函数
 function handleError(err) {
-    logger.error(`错误: ${err.message}\n堆栈: ${err.stack}`);
+    logger.error(`错误: ${ err.message }\n堆栈: ${ err.stack }`);
     throw err;
 }
 
@@ -27,7 +27,7 @@ export async function checkAndRemoveFile(file) {
     try {
         await fs.access(file);
         await fs.unlink(file);
-        logger.info(`文件 ${file} 删除成功。`);
+        logger.info(`文件 ${ file } 删除成功。`);
     } catch (err) {
         if (err.code !== 'ENOENT') {
             handleError(err);
@@ -46,7 +46,7 @@ export async function mkdirIfNotExists(dir) {
     } catch (err) {
         if (err.code === 'ENOENT') {
             await fs.mkdir(dir, { recursive: true });
-            logger.info(`目录 ${dir} 创建成功。`);
+            logger.info(`目录 ${ dir } 创建成功。`);
         } else {
             handleError(err);
         }
@@ -72,7 +72,7 @@ export async function deleteFolderRecursive(folderPath) {
         });
 
         await Promise.allSettled(actions);
-        logger.info(`文件夹 ${folderPath} 中的所有文件删除成功。`);
+        logger.info(`文件夹 ${ folderPath } 中的所有文件删除成功。`);
         return files.length;
     } catch (error) {
         handleError(error);
@@ -109,7 +109,7 @@ export async function copyFiles(srcDir, destDir, specificFiles = []) {
             ? files.filter(file => specificFiles.includes(file))
             : files;
 
-        logger.info(`[R插件][拷贝文件] 正在将 ${srcDir} 的文件拷贝到 ${destDir} 中`);
+        logger.info(`[R插件][拷贝文件] 正在将 ${ srcDir } 的文件拷贝到 ${ destDir } 中`);
 
         const copiedFiles = [];
 
@@ -138,7 +138,7 @@ export async function toBase64(filePath) {
     try {
         const fileData = await fs.readFile(filePath);
         const base64Data = fileData.toString('base64');
-        return `data:${getMimeType(filePath)};base64,${base64Data}`;
+        return `data:${ getMimeType(filePath) };base64,${ base64Data }`;
     } catch (error) {
         handleError(error);
     }
