@@ -8,13 +8,24 @@ import path from 'path';
 import { BILI_DOWNLOAD_METHOD, COMMON_USER_AGENT, SHORT_LINKS, TEN_THOUSAND } from "../constants/constant.js";
 import { mkdirIfNotExists } from "./file.js";
 
+/**
+ * 生成随机字符串
+ *
+ * @param {number} [randomlength=16] 生成的字符串长度，默认为16
+ * @returns {string} 生成的随机字符串
+ *
+ * @description
+ * 此函数生成一个指定长度的随机字符串。
+ * 字符串由大小写字母、数字和等号组成。
+ * 使用 Array.from 和箭头函数来创建随机字符数组，然后用 join 方法连接。
+ *
+ * @example
+ * const randomString = generateRandomStr(); // 生成默认长度16的随机字符串
+ * const randomString20 = generateRandomStr(20); // 生成长度为20的随机字符串
+ */
 export function generateRandomStr(randomlength = 16) {
-    const base_str = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789='
-    let random_str = ''
-    for (let i = 0; i < randomlength; i++) {
-        random_str += base_str.charAt(Math.floor(Math.random() * base_str.length))
-    }
-    return random_str
+    const base_str = 'ABCDEFGHIGKLMNOPQRSTUVWXYZabcdefghigklmnopqrstuvwxyz0123456789=';
+    return Array.from({ length: randomlength }, () => base_str.charAt(Math.floor(Math.random() * base_str.length))).join('');
 }
 
 /**
@@ -33,22 +44,8 @@ export async function downloadAudio(mp3Url, filePath, title = "temp", redirect =
     // 补充保存文件名
     filePath += `/${ title }.${ audioType }`;
     if (fs.existsSync(filePath)) {
-        console.log(`音频已存在`);
+        logger.info(`音频已存在`);
         fs.unlinkSync(filePath);
-    }
-
-    // 发起请求
-    const response = await fetch(mp3Url, {
-        headers: {
-            "User-Agent":
-                "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36",
-        },
-        responseType: "stream",
-        redirect: redirect,
-    });
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch ${ response.statusText }`);
     }
 
     try {
@@ -72,11 +69,10 @@ export async function downloadAudio(mp3Url, filePath, title = "temp", redirect =
         });
 
     } catch (error) {
-        console.error(`下载音乐失败，错误信息为: ${ error.message }`);
+        logger.error(`下载音乐失败，错误信息为: ${ error.message }`);
         throw error;
     }
 }
-
 
 /**
  * 下载图片网关
@@ -183,6 +179,7 @@ async function normalDownloadImg({
  * @param {boolean} [options.isProxy] 是否使用代理 (可选)
  * @param {Object} [options.headersExt] 自定义请求头 (可选)
  * @param {Object} [options.proxyInfo] 代理信息 (可选)
+ * @param {number} [options.numThread] 线程数 (可选)
  * @returns {Promise<unknown>}
  */
 async function downloadImgWithAria2({
@@ -226,7 +223,6 @@ async function downloadImgWithAria2({
         });
     });
 }
-
 
 /**
  * 千位数的数据处理
@@ -299,17 +295,9 @@ export function containsChineseOrPunctuation(str) {
  * @returns {*|string}
  */
 export function truncateString(inputString, maxLength = 50) {
-    if (maxLength === 0 || maxLength === -1) {
-        return inputString;
-    } else if (inputString.length <= maxLength) {
-        return inputString;
-    } else {
-        // 截取字符串，保留前面 maxLength 个字符
-        let truncatedString = inputString.substring(0, maxLength);
-        // 添加省略号
-        truncatedString += '...';
-        return truncatedString;
-    }
+    return maxLength === 0 || maxLength === -1 || inputString.length <= maxLength
+        ? inputString
+        : inputString.substring(0, maxLength) + '...';
 }
 
 /**
@@ -391,20 +379,23 @@ export function estimateReadingTime(text, wpm = 200) {
 }
 
 /**
- * 检查是否存在某个命令
- * @param command
+ * 检测当前环境是否存在某个命令
+ * @param someCommand
  * @returns {Promise<boolean>}
  */
-export function checkCommandExists(command) {
+export function checkToolInCurEnv(someCommand) {
+    // 根据操作系统选择命令
     return new Promise((resolve, reject) => {
-        exec(`which ${ command }`, (error, stdout, stderr) => {
+        const command = os.platform() === 'win32' ? `where ${ someCommand }` : `which ${ someCommand }`;
+
+        exec(command, (error, stdout, stderr) => {
             if (error) {
-                // Command not found
+                logger.error(`[R插件][命令环境检测]未找到${ someCommand }: ${ stderr || error.message }`);
                 resolve(false);
-            } else {
-                // Command found
-                resolve(true);
+                return;
             }
+            logger.info(`[R插件][命令环境检测]找到${ someCommand }: ${ stdout.trim() }`);
+            resolve(true);
         });
     });
 }
@@ -446,28 +437,6 @@ export function cleanFilename(filename) {
     filename = filename.trim();
 
     return filename;
-}
-
-/**
- * 检测当前环境是否存在某个命令
- * @param someCommand
- * @returns {Promise<boolean>}
- */
-export function checkToolInCurEnv(someCommand) {
-    // 根据操作系统选择命令
-    return new Promise((resolve, reject) => {
-        const command = os.platform() === 'win32' ? `where ${ someCommand }` : `which ${ someCommand }`;
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                logger.error(`[R插件][checkTool]未找到${ someCommand }: ${ stderr || error.message }`);
-                resolve(false);
-                return;
-            }
-            logger.info(`[R插件][checkTool]找到${ someCommand }: ${ stdout.trim() }`);
-            resolve(true);
-        });
-    });
 }
 
 /**
