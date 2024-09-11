@@ -242,11 +242,11 @@ function autoclear(time) {
     schedule.scheduleJob(time, async function () {
         try {
             const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
-            console.log(`自动清理垃圾完成:\n` +
+            logger.info(`自动清理垃圾完成:\n` +
                 `- 清理了${ dataClearFileLen }个垃圾文件\n` +
                 `- 清理了${ rTempFileLen }个群临时文件`);
         } catch (err) {
-            console.error(`自动清理垃圾时发生错误: ${ err.message }`);
+            logger.error(`自动清理垃圾时发生错误: ${ err.message }`);
         }
     });
 }
