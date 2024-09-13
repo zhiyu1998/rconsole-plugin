@@ -234,6 +234,14 @@ export class tools extends plugin {
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
         this.biliDuration = this.toolsConfig.biliDuration;
+        // 加载是否显示哔哩哔哩的封面
+        this.biliDisplayCover = this.toolsConfig.biliDisplayCover;
+        // 加载是否显示哔哩哔哩的视频信息
+        this.biliDisplayInfo = this.toolsConfig.biliDisplayInfo;
+        // 加载是否显示哔哩哔哩的简介
+        this.biliDisplayIntro = this.toolsConfig.biliDisplayIntro;
+        // 加载是否显示哔哩哔哩的在线人数
+        this.biliDisplayOnline = this.toolsConfig.biliDisplayOnline;
         // 加载哔哩哔哩是否使用BBDown
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载 BBDown 的CDN配置
@@ -574,33 +582,14 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
-        const { title, pic, desc, duration, dynamic, stat, bvid, aid, cid, owner, pages } = videoInfo;
-        // 视频信息
-        let { view, danmaku, reply, favorite, coin, share, like } = stat;
+        const { duration, bvid, cid, owner, pages } = videoInfo;
         // 限制时长 & 考虑分页视频情况
         const query = querystring.parse(url);
         const curPage = query?.p || 0;
         const curDuration = pages?.[curPage]?.duration || duration;
         const isLimitDuration = curDuration > this.biliDuration
-        // 构造一个可扩展的Map
-        const dataProcessMap = {
-            "点赞": like,
-            "硬币": coin,
-            "收藏": favorite,
-            "分享": share,
-            "总播放量": view,
-            "弹幕数量": danmaku,
-            "评论": reply
-        };
-        // 过滤简介中的一些链接
-        const filteredDesc = await filterBiliDescLink(desc);
-        // 拼接在线人数
-        const onlineTotal = await this.biliOnlineTotal(bvid, cid);
-        // 格式化数据
-        const combineContent = `\n${ formatBiliInfo(dataProcessMap) }\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
-        let biliInfo = [`${ this.identifyPrefix } 识别：哔哩哔哩：${ title }`, combineContent]
-        // 加入图片
-        biliInfo.unshift(segment.image(pic));
+        // 动态构造哔哩哔哩信息
+        let biliInfo = await this.constructBiliInfo(videoInfo);
         // 总结
         const summary = await this.getBiliSummary(bvid, cid, owner.mid);
         // 封装总结
@@ -629,6 +618,52 @@ export class tools extends plugin {
             await this.biliDownloadStrategy(e, url, path);
         })
         return true;
+    }
+
+    /**
+     * 构造哔哩哔哩信息
+     * @param videoInfo
+     * @returns {Promise<(string|string)[]>}
+     */
+    async constructBiliInfo(videoInfo) {
+        const { title, desc, bvid, cid, pic } = videoInfo;
+        // 视频信息
+        const { view, danmaku, reply, favorite, coin, share, like } = videoInfo.stat;
+        // 构造一个可扩展的Map
+        const dataProcessMap = {
+            "点赞": like,
+            "硬币": coin,
+            "收藏": favorite,
+            "分享": share,
+            "总播放量": view,
+            "弹幕数量": danmaku,
+            "评论": reply
+        };
+        // 过滤简介中的一些链接
+        const filteredDesc = await filterBiliDescLink(desc);
+        // 拼接在线人数
+        const onlineTotal = await this.biliOnlineTotal(bvid, cid);
+        // 格式化数据
+        let combineContent = "";
+        // 是否显示信息
+        if (this.biliDisplayInfo) {
+            combineContent += `\n${ formatBiliInfo(dataProcessMap) }`;
+        }
+        // 是否显示简介
+        if (this.biliDisplayIntro) {
+            combineContent += `\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
+        }
+        // 是否显示在线人数
+        if (this.biliDisplayOnline) {
+            combineContent += `\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
+        }
+        let biliInfo = [`${ this.identifyPrefix } 识别：哔哩哔哩：${ title }`, combineContent]
+        // 是否显示封面
+        if (this.biliDisplayCover) {
+            // 加入图片
+            biliInfo.unshift(segment.image(pic));
+        }
+        return biliInfo;
     }
 
     /**

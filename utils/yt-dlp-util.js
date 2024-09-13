@@ -7,7 +7,7 @@ import { exec, execSync } from "child_process";
  * @returns {string|string}
  */
 function constructProxyParam(isOversea, proxy) {
-    return isOversea ? "" : `--proxy ${ proxy }`;
+    return isOversea ? "" : `--proxy ${proxy}`;
 }
 
 /**
@@ -18,7 +18,7 @@ function constructProxyParam(isOversea, proxy) {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-title ${ constructProxyParam(isOversea, proxy) } ${ url }`);
+    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url}`);
 }
 
 /**
@@ -33,7 +33,9 @@ export function ytDlpGetTilt(url, isOversea, proxy) {
 export async function ytDlpHelper(path, url, isOversea, proxy, merge = false) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
-        const command = `yt-dlp ${ constructProxyParam(isOversea, proxy) } -P ${ path } -o "temp.%(ext)s" ${ mergeOption } ${ url }`;
+        // 添加 -f 参数来限制视频质量
+        const qualityOption = '-f "bestvideo[height<=720]+bestaudio/best[height<=720]"';
+        const command = `yt-dlp ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${mergeOption} ${qualityOption} ${url}`;
 
         exec(command, (error, stdout) => {
             if (error) {

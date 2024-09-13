@@ -125,6 +125,38 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.biliDisplayCover",
+                    label: "是否显示封面",
+                    bottomHelpMessage:
+                        "默认显示，哔哩哔哩是否显示封面",
+                    component: "Switch",
+                    required: true,
+                },
+                {
+                    field: "tools.biliDisplayInfo",
+                    label: "是否显示相关信息",
+                    bottomHelpMessage:
+                        "默认显示，哔哩哔哩是否显示相关信息（点赞、硬币、收藏、分享、播放数、弹幕数、评论数）",
+                    component: "Switch",
+                    required: true,
+                },
+                {
+                    field: "tools.biliDisplayIntro",
+                    label: "是否显示简介",
+                    bottomHelpMessage:
+                        "默认显示，哔哩哔哩是否显示简介",
+                    component: "Switch",
+                    required: true,
+                },
+                {
+                    field: "tools.biliDisplayOnline",
+                    label: "是否显示在线人数",
+                    bottomHelpMessage:
+                        "默认显示，哔哩哔哩是否显示在线人数",
+                    component: "Switch",
+                    required: true,
+                },
+                {
                     field: "tools.biliUseBBDown",
                     label: "使用BBDown下载",
                     bottomHelpMessage:
