@@ -629,32 +629,32 @@ export class tools extends plugin {
         const { title, desc, bvid, cid, pic } = videoInfo;
         // 视频信息
         const { view, danmaku, reply, favorite, coin, share, like } = videoInfo.stat;
-        // 构造一个可扩展的Map
-        const dataProcessMap = {
-            "点赞": like,
-            "硬币": coin,
-            "收藏": favorite,
-            "分享": share,
-            "总播放量": view,
-            "弹幕数量": danmaku,
-            "评论": reply
-        };
-        // 过滤简介中的一些链接
-        const filteredDesc = await filterBiliDescLink(desc);
-        // 拼接在线人数
-        const onlineTotal = await this.biliOnlineTotal(bvid, cid);
         // 格式化数据
         let combineContent = "";
         // 是否显示信息
         if (this.biliDisplayInfo) {
+            // 构造一个可扩展的Map
+            const dataProcessMap = {
+                "点赞": like,
+                "硬币": coin,
+                "收藏": favorite,
+                "分享": share,
+                "总播放量": view,
+                "弹幕数量": danmaku,
+                "评论": reply
+            };
             combineContent += `\n${ formatBiliInfo(dataProcessMap) }`;
         }
         // 是否显示简介
         if (this.biliDisplayIntro) {
+            // 过滤简介中的一些链接
+            const filteredDesc = await filterBiliDescLink(desc);
             combineContent += `\n📝 简介：${ truncateString(filteredDesc, this.toolsConfig.biliIntroLenLimit || BILI_DEFAULT_INTRO_LEN_LIMIT) }`;
         }
         // 是否显示在线人数
         if (this.biliDisplayOnline) {
+            // 拼接在线人数
+            const onlineTotal = await this.biliOnlineTotal(bvid, cid);
             combineContent += `\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
         }
         let biliInfo = [`${ this.identifyPrefix } 识别：哔哩哔哩：${ title }`, combineContent]
