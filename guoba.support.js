@@ -157,6 +157,14 @@ export function supportGuoba() {
                     required: true,
                 },
                 {
+                    field: "tools.biliDisplaySummary",
+                    label: "是否显示总结",
+                    bottomHelpMessage:
+                        "默认不显示，哔哩哔哩是否显示总结",
+                    component: "Switch",
+                    required: true,
+                },
+                {
                     field: "tools.biliUseBBDown",
                     label: "使用BBDown下载",
                     bottomHelpMessage:

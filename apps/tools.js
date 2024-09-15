@@ -242,6 +242,8 @@ export class tools extends plugin {
         this.biliDisplayIntro = this.toolsConfig.biliDisplayIntro;
         // 加载是否显示哔哩哔哩的在线人数
         this.biliDisplayOnline = this.toolsConfig.biliDisplayOnline;
+        // 加载是否显示哔哩哔哩的总结
+        this.biliDisplaySummary = this.toolsConfig.biliDisplaySummary;
         // 加载哔哩哔哩是否使用BBDown
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载 BBDown 的CDN配置
@@ -591,21 +593,18 @@ export class tools extends plugin {
         // 动态构造哔哩哔哩信息
         let biliInfo = await this.constructBiliInfo(videoInfo);
         // 总结
-        const summary = await this.getBiliSummary(bvid, cid, owner.mid);
-        // 封装总结
-        let Msg = '';
-        if (!_.isEmpty(summary)) {
-            Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary]));
+        if (this.biliDisplaySummary) {
+            const summary = await this.getBiliSummary(bvid, cid, owner.mid);
+            // 封装总结
+            summary && e.reply(await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary])));
         }
         // 限制视频解析
         if (isLimitDuration) {
             const durationInMinutes = (curDuration / 60).toFixed(0);
             biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`);
-            Msg && (await e.reply(Msg));
             e.reply(biliInfo);
             return true;
         } else {
-            Msg && (await e.reply(Msg));
             e.reply(biliInfo);
         }
         // 只提取音乐处理

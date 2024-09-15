@@ -4,7 +4,7 @@ proxyAddr: '127.0.0.1' # 魔法地址
 proxyPort: '7890' # 魔法端口
 identifyPrefix: '' # 识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩
 
-deeplApiUrls: 'https://deeplx.papercar.top/translate,https://deeplx.llleman.com/translate,https://dlx.bitjss.com/translate,https://free-deepl.speedcow.top/translate,https://deeplx.keyrotate.com/translate'
+deeplApiUrls: 'http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate'
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
@@ -13,6 +13,7 @@ biliDisplayCover: true # 是否显示哔哩哔哩的封面
 biliDisplayInfo: true # 是否显示哔哩哔哩的视频信息
 biliDisplayIntro: true # 是否显示哔哩哔哩的简介
 biliDisplayOnline: true # 是否显示哔哩哔哩的在线人数
+biliDisplaySummary: false # 是否显示哔哩哔哩的总结
 biliUseBBDown: false # 是否使用BBDown，默认不开启，开启后使用强劲的BBDown下载最高画质
 biliCDN: 0 # 哔哩哔哩 CDN，默认为0表示不使用
 biliDownloadMethod: 0 # 哔哩哔哩的下载方式：0默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载
