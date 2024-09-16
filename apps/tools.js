@@ -1248,7 +1248,7 @@ export class tools extends plugin {
             // 获取歌曲信息
             let title = await axios.get(AUTO_NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
                 const song = res.data.songs[0];
-                return `${ song?.name }-${ song?.ar?.[0].name }`.replace(/[\/\?<>\\:\*\|".… ]/g, "");
+                return cleanFilename(`${ song?.name }-${ song?.ar?.[0].name }`);
             });
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
             if (!isOversea || url == null) {

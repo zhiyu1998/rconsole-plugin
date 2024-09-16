@@ -427,14 +427,11 @@ export function saveJsonToFile(jsonData, filename = "data.json") {
  * @returns {string}
  */
 export function cleanFilename(filename) {
-    // 去除省略号（…）
-    filename = filename.replace(/…/g, '');
-    // 删除括号及其内容
-    filename = filename.replace(/\(|\)/g, '');
-    // 删除反斜杠
-    filename = filename.replace(/\//g, '');
-
-    filename = filename.trim();
+    // 1. 去除特殊字符
+    // 2. 去除特定词汇
+    filename = filename.replace(/[\/\?<>\\:\*\|".…《》()]/g, '')
+        .replace(/电影|主题曲/g, '')
+        .trim();
 
     return filename;
 }
