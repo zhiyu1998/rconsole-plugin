@@ -1291,7 +1291,7 @@ export class tools extends plugin {
         });
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.mp3 ?? vipMusicData.data?.data?.url ?? vipMusicData.data?.music;
+        const url = vipMusicData.data?.mp3 ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
         const cover = vipMusicData.data?.img ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
         await e.reply([segment.image(cover), `${ this.identifyPrefix } 识别：${ musicType }，${ messageTitle }`]);
         return url;

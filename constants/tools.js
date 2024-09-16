@@ -174,7 +174,7 @@ export const NETEASE_TEMP_API = "https://api.lolimi.cn/API/wydg/api.php?msg={}&n
  * 下载VIP的临时接口2
  * @type {string}
  */
-export const QQ_MUSIC_TEMP_API = "https://api.lolimi.cn/API/yiny/?word={}&n=1&q=8"
+export const QQ_MUSIC_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_qqmusic.php?gm={}&n=1&type=json"
 
 /**
  * 下载VIP的临时接口3
