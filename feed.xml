@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Tue, 10 Sep 2024 14:07:44 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 17 Sep 2024 07:35:09 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -43,6 +43,11 @@
             <pubDate>Wed, 14 Aug 2024 00:00:00 GMT</pubDate>
             <description><![CDATA[R插件的问题解答]]></description>
             <content:encoded><![CDATA[<h2>🐤 Q&amp;A</h2>
+<h3>📢 太子专用的 AI 文档问答</h3>
+<p>命令是：<code>#R文档 xxx</code>，比如：<code>#R文档 如何使用yt-dlp</code></p>
+<p><img src="https://s2.loli.net/2024/09/17/dxMhfTZr4jw6CzX.png" alt=""></p>
+<p>示例回答：<br>
+<img src="https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png" alt=""></p>
 <h3>🛠️ 使用方法（基础）</h3>
 <p>1.【必要】下载插件</p>
 <pre><code class="language-shell"># 国内
@@ -280,7 +285,7 @@ apt install axel
 </ul>
 <pre><code class="language-shell">apt install aria2
 </code></pre>
-<h3>✈️ 关于小飞机解析</h3>
+<h3>✈️ 关于小飞机 &amp; X解析</h3>
 <ol>
 <li>下载 <code>Release</code></li>
 </ol>
@@ -297,11 +302,12 @@ apt install axel
 </ol>
 <p><img src="https://s2.loli.net/2024/08/15/Nu63gMOUeWnBhob.webp" alt=""></p>
 <ol start="4">
-<li>添加信任用户（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令</li>
+<li>X、小飞机涉及添加信任用户问题（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令</li>
 </ol>
 <pre><code class="language-shell">#设置R信任用户
 #R信任用户
 #查询R信任用户
+#删除R信任用户
 </code></pre>
 <p><img src="https://s2.loli.net/2024/08/15/uaJQOAYyVCg5vbF.webp" alt=""></p>
 <p><img src="https://s2.loli.net/2024/08/15/Ul4kOw5SLjItWzu.webp" alt=""></p>
@@ -318,7 +324,7 @@ apt install axel
 <p><code>百度翻译</code>api:<a href="https://fanyi-api.baidu.com/doc/21">https://fanyi-api.baidu.com/doc/21</a><br>
 注册完填入方式参考上方注释url (config/tools.yaml)；另外，有群友反馈百度翻译需要充钱才能使用！</p>
 </blockquote>
-<h3>🪄 关于魔法</h3>
+<h3>🪄 关于 魔法 &amp;&amp; 海外服务器 问题</h3>
 <blockquote>
 <p>(非必要不更改)更改魔法在<code>config/tools.yaml</code> 或 <a href="https://gitee.com/guoba-yunzai/guoba-plugin">锅巴插件</a>的配置位置：<br>
 <code>proxyAddr: '127.0.0.1' # 魔法地址</code><br>
