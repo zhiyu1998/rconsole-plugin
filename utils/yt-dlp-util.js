@@ -33,9 +33,8 @@ export function ytDlpGetTilt(url, isOversea, proxy) {
 export async function ytDlpHelper(path, url, isOversea, proxy, merge = false) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
-        // 添加 -f 参数来限制视频质量
-        const qualityOption = '-f "bestvideo[height<=720]+bestaudio/best[height<=720]"';
-        const command = `yt-dlp ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${mergeOption} ${qualityOption} ${url}`;
+
+        const command = `yt-dlp ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${mergeOption} ${url}`;
 
         exec(command, (error, stdout) => {
             if (error) {
