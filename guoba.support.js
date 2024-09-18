@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST } from "./constants/constant.js";
 import model from "./model/config.js";
 
 const pluginName = `rconsole-plugin`;
@@ -189,6 +189,16 @@ export function supportGuoba() {
                     component: "Select",
                     componentProps: {
                         options: BILI_DOWNLOAD_METHOD,
+                    }
+                },
+                {
+                    field: "tools.biliResolution",
+                    label: "bili最高分辨率",
+                    bottomHelpMessage:
+                        "哔哩哔哩的最高分辨率（目前仅适用于开启BBDown后），默认为1080p，可以自行根据服务器进行调整",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_RESOLUTION_LIST,
                     }
                 },
                 {

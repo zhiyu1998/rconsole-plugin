@@ -177,6 +177,16 @@ export const BILI_DOWNLOAD_METHOD = Object.freeze([
     { label: '轻量（axel/wget）', value: 2 }
 ]);
 
+export const BILI_RESOLUTION_LIST = Object.freeze([
+    { label: '4K 超清', value: 0 },
+    { label: '1080P 60帧', value: 1 },
+    { label: '1080P 高码率', value: 2 },
+    { label: '1080P 高清', value: 3 },
+    { label: '720P 高清', value: 4 },
+    { label: '480P 清晰', value: 5 },
+    { label: '360P 流畅', value: 6 },
+]);
+
 /**
  * 消息撤回时间
  * @type {number}

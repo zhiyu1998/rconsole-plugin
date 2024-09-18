@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "path";
 import qrcode from "qrcode"
 import util from "util";
+import { BILI_RESOLUTION_LIST } from "../constants/constant.js";
 import {
     BILI_BVID_TO_CID,
     BILI_DYNAMIC,
@@ -542,4 +543,17 @@ function replaceP2PUrl(url) {
     } catch (e) {
         return url;
     }
+}
+
+/**
+ * 拼接分辨率，例如："720P 高清, 480P 清晰, 360P 流畅"
+ * @param selectedValue
+ * @returns {*}
+ */
+export function getResolutionLabels(selectedValue) {
+    // 过滤出 value 大于等于 selectedValue 的所有对象
+    const filteredResolutions = BILI_RESOLUTION_LIST.filter(resolution => resolution.value >= selectedValue);
+
+    // 将这些对象的 label 拼接成一个字符串
+    return filteredResolutions.map(resolution => resolution.label).join(', ');
 }

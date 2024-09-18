@@ -250,6 +250,8 @@ export class tools extends plugin {
         this.biliCDN = this.toolsConfig.biliCDN;
         // 加载哔哩哔哩是否使用Aria2
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
+        // 加载哔哩哔哩最高分辨率
+        this.biliResolution = this.toolsConfig.biliResolution;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -735,6 +737,7 @@ export class tools extends plugin {
                     biliSessData: this.biliSessData,
                     biliUseAria2: this.biliDownloadMethod === 1,
                     biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
+                    biliResolution: this.biliResolution,
                 });
                 // 发送视频
                 return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
