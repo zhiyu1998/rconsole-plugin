@@ -412,7 +412,7 @@ export class query extends plugin {
             return;
         }
         await e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`, false, { recallMsg: MESSAGE_RECALL_TIME });
-        if (resp.data.screenshots) {
+        if (resp.data?.screenshots === null) {
             e.reply("没有找到相关媒体");
             return;
         }
