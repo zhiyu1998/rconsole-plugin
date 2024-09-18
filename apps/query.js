@@ -412,6 +412,10 @@ export class query extends plugin {
             return;
         }
         await e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`, false, { recallMsg: MESSAGE_RECALL_TIME });
+        if (resp.data.screenshots) {
+            e.reply("没有找到相关媒体");
+            return;
+        }
         const screenshots = resp.data.screenshots.map(item => {
             const screenshot = item.screenshot;
             return {
