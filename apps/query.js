@@ -402,7 +402,11 @@ export class query extends plugin {
         const tag = e.msg.replace(/#验车/g, "");
 
         const reqUrl = `https://whatslink.info/api/v1/link?url=${tag}`;
-        const resp = await axios.get(reqUrl);
+        const resp = await axios.get(reqUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+            }
+        });
         if (!resp.data) {
             e.reply("没有找到相关磁力");
             return;
