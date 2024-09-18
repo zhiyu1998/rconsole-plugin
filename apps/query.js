@@ -407,7 +407,7 @@ export class query extends plugin {
             e.reply("没有找到相关磁力");
             return;
         }
-        e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`);
+        await e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`, false, { recallMsg: MESSAGE_RECALL_TIME });
         const screenshots = resp.data.screenshots.map(item => {
             const screenshot = item.screenshot;
             return {
