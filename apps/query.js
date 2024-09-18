@@ -2,7 +2,7 @@ import axios from "axios";
 import _ from "lodash";
 import fetch from "node-fetch";
 // 常量
-import { CAT_LIMIT, COMMON_USER_AGENT, MESSAGE_RECALL_TIME } from "../constants/constant.js";
+import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 import {
     LINUX_AI_PROMPT,
     LINUX_QUERY,
@@ -63,10 +63,6 @@ export class query extends plugin {
                 {
                     reg: "^#R文档(.*)",
                     fnc: "intelligentDoc",
-                },
-                {
-                    reg: '^#验车(.*?)',
-                    fnc: 'yc'
                 }
             ],
         });
@@ -396,35 +392,6 @@ export class query extends plugin {
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
         await e.reply(Msg);
         return;
-    }
-
-    async yc(e) {
-        const tag = e.msg.replace(/#验车/g, "");
-
-        const reqUrl = `https://whatslink.info/api/v1/link?url=${tag}`;
-        const resp = await axios.get(reqUrl, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-            }
-        });
-        if (!resp.data) {
-            e.reply("没有找到相关磁力");
-            return;
-        }
-        await e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`, false, { recallMsg: MESSAGE_RECALL_TIME });
-        if (resp.data?.screenshots === null) {
-            e.reply("没有找到相关媒体");
-            return;
-        }
-        const screenshots = resp.data.screenshots.map(item => {
-            const screenshot = item.screenshot;
-            return {
-                message: segment.image(screenshot),
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            }
-        });
-        e.reply(Bot.makeForwardMsg(screenshots), false, { recallMsg: MESSAGE_RECALL_TIME });
     }
 
     // 删除标签
