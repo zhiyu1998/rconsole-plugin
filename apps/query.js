@@ -401,13 +401,11 @@ export class query extends plugin {
 
     async rso(e) {
         const question = e.msg.replace("#Rso", "").replace("#rso", "").trim();
-        logger.info(question);
         const resp = await fetch(BING_SEARCH.replace("{}", question), {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
             }
         });
-        logger.info(await resp);
         const respJson = (await resp.json()).data;
         const constructSearchRes = textArrayToMakeForward(e, respJson.map(item =>
             `标题：《${ item.title }》\n📝 简要：${ item.abstract }\n➡️链接：${ item.href }`
