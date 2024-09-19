@@ -181,10 +181,6 @@ export class tools extends plugin {
                     fnc: "weibo",
                 },
                 {
-                    reg: "(pixivision.net)",
-                    fnc: "pixivision"
-                },
-                {
                     reg: "(weishi.qq.com)",
                     fnc: "weishi"
                 },
