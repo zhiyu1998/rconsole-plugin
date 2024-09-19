@@ -4,12 +4,6 @@
  */
 export const LINUX_QUERY = "https://api.pearktrue.cn/api/linux/?keyword={}";
 
-/**
- * 必应搜索
- * @type {string}
- */
-export const BING_SEARCH = "https://api.pearktrue.cn/api/bingsearch/?search={}";
-
 export const RDOC_LINK = "https://gitee.com/kyrzy0416/rconsole-plugin/raw/docs/posts/QA%E5%AE%98%E6%96%B9%E8%A7%A3%E7%AD%94.md";
 
 export const LINUX_AI_PROMPT = "- Role: Linux命令专家\n" +
