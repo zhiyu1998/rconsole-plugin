@@ -39,7 +39,7 @@ export class OpenaiBuilder {
         // 创建客户端
         this.client = axios.create({
             baseURL: this.baseURL,
-            timeout: 10000,
+            timeout: 100000,
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": "Bearer " + this.apiKey
@@ -65,7 +65,7 @@ export class OpenaiBuilder {
         });
         return {
             "model": "月之暗面 Kimi",
-            "ans": completion.choices[0].message.content
+            "ans": completion.data.choices[0].message.content
         }
     }
 }
