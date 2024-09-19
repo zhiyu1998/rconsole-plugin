@@ -96,7 +96,7 @@ import { deepSeekChat, llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
-import { saveTDL, startTDL, uploadTDL } from "../utils/tdl-util.js";
+import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
@@ -394,11 +394,9 @@ export class tools extends plugin {
                 // logger.info(resUrl);
                 const path = `${ this.getCurDownloadPath(e) }/temp.mp4`;
                 // 加入队列
-                this.queue.add(async () => {
-                    await this.downloadVideo(resUrl).then(() => {
-                        this.sendVideoToUpload(e, path)
-                    });
-                })
+                await this.downloadVideo(resUrl).then(() => {
+                    this.sendVideoToUpload(e, path)
+                });
             } else if (urlType === "image") {
                 // 发送描述
                 e.reply(`${ this.identifyPrefix } 识别：抖音, ${ item.desc }`);
@@ -575,11 +573,8 @@ export class tools extends plugin {
             const ep = await this.biliEpInfo(url, e);
             // 如果使用了BBDown && 没有填写session 就放开下载
             if (this.biliUseBBDown) {
-                // 加入队列
-                this.queue.add(async () => {
-                    // 下载文件
-                    await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${ ep }`, path);
-                })
+                // 下载文件
+                await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${ ep }`, path);
             }
             return true;
         }
@@ -613,11 +608,8 @@ export class tools extends plugin {
         if (e.msg !== undefined && e.msg.startsWith("音乐")) {
             return await this.biliMusic(e, url);
         }
-        // 加入队列
-        this.queue.add(async () => {
-            // 下载文件
-            await this.biliDownloadStrategy(e, url, path);
-        })
+        // 下载文件
+        await this.biliDownloadStrategy(e, url, path);
         return true;
     }
 
@@ -721,43 +713,45 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async biliDownloadStrategy(e, url, path) {
-        // =================以下是调用BBDown的逻辑=====================
-        // 下载视频和音频
-        const tempPath = `${ path }temp`;
-        // 检测是否开启BBDown
-        if (this.biliUseBBDown) {
-            // 检测环境的 BBDown
-            const isExistBBDown = await checkToolInCurEnv("BBDown");
-            // 存在 BBDown
-            if (isExistBBDown) {
-                // 删除之前的文件
-                await checkAndRemoveFile(`${ tempPath }.mp4`);
-                // 下载视频
-                await startBBDown(url, path, {
-                    biliSessData: this.biliSessData,
-                    biliUseAria2: this.biliDownloadMethod === 1,
-                    biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
-                    biliResolution: this.biliResolution,
-                });
-                // 发送视频
-                return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
+        return this.queue.add(async () => {
+            // =================以下是调用BBDown的逻辑=====================
+            // 下载视频和音频
+            const tempPath = `${ path }temp`;
+            // 检测是否开启BBDown
+            if (this.biliUseBBDown) {
+                // 检测环境的 BBDown
+                const isExistBBDown = await checkToolInCurEnv("BBDown");
+                // 存在 BBDown
+                if (isExistBBDown) {
+                    // 删除之前的文件
+                    await checkAndRemoveFile(`${ tempPath }.mp4`);
+                    // 下载视频
+                    await startBBDown(url, path, {
+                        biliSessData: this.biliSessData,
+                        biliUseAria2: this.biliDownloadMethod === 1,
+                        biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
+                        biliResolution: this.biliResolution,
+                    });
+                    // 发送视频
+                    return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
+                }
+                e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
             }
-            e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
-        }
-        // =================默认下载方式=====================
-        try {
-            // 获取下载链接
-            const data = await getDownloadUrl(url, this.biliSessData);
+            // =================默认下载方式=====================
+            try {
+                // 获取下载链接
+                const data = await getDownloadUrl(url, this.biliSessData);
 
-            await this.downBili(tempPath, data.videoUrl, data.audioUrl);
+                await this.downBili(tempPath, data.videoUrl, data.audioUrl);
 
-            // 上传视频
-            return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
-        } catch (err) {
-            // 错误处理
-            logger.error('[R插件][哔哩哔哩视频发送]下载错误，具体原因为:', err);
-            e.reply("解析失败，请重试一下");
-        }
+                // 上传视频
+                return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
+            } catch (err) {
+                // 错误处理
+                logger.error('[R插件][哔哩哔哩视频发送]下载错误，具体原因为:', err);
+                e.reply("解析失败，请重试一下");
+            }
+        })
     }
 
     /**
@@ -1928,10 +1922,8 @@ export class tools extends plugin {
 
                 // 处理视频
                 if (link) {
-                    this.queue.add(async () => {
-                        const filePath = await this.downloadVideo(link);
-                        this.sendVideoToUpload(e, `${ filePath }/temp.mp4`);
-                    });
+                    const filePath = await this.downloadVideo(link);
+                    this.sendVideoToUpload(e, `${ filePath }/temp.mp4`);
                 }
             }
         }
@@ -1981,7 +1973,7 @@ export class tools extends plugin {
 
         const tag = e.msg.replace(/#验车/g, "");
 
-        const reqUrl = `https://whatslink.info/api/v1/link?url=${tag}`;
+        const reqUrl = `https://whatslink.info/api/v1/link?url=${ tag }`;
         const resp = await axios.get(reqUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
@@ -2100,7 +2092,7 @@ export class tools extends plugin {
      * @param isProxy
      * @param headers
      * @param numThreads
-     * @returns {Promise<void>}
+     * @returns {Promise<string>}
      */
     async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency) {
         // 构造群信息参数
@@ -2129,17 +2121,19 @@ export class tools extends plugin {
             target,
             groupPath,
         }
-
-        // 如果是用户设置了单线程，则不分片下载
-        if (numThreads === 1) {
-            return await this.downloadVideoWithSingleThread(downloadVideoParams);
-        } else if (numThreads !== 1 && this.biliDownloadMethod === 1) {
-            return await this.downloadVideoWithAria2(downloadVideoParams, numThreads);
-        } else if (numThreads !== 1 && this.biliDownloadMethod === 2) {
-            return await this.downloadVideoUseAxel(downloadVideoParams, numThreads);
-        } else {
-            return await this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
-        }
+        logger.info(`[R插件][视频下载]：当前队列长度为 ${ this.queue.size + 1 }`);
+        return await this.queue.add(async () => {
+            // 如果是用户设置了单线程，则不分片下载
+            if (numThreads === 1) {
+                await this.downloadVideoWithSingleThread(downloadVideoParams);
+            } else if (numThreads !== 1 && this.biliDownloadMethod === 1) {
+                await this.downloadVideoWithAria2(downloadVideoParams, numThreads);
+            } else if (numThreads !== 1 && this.biliDownloadMethod === 2) {
+                await this.downloadVideoUseAxel(downloadVideoParams, numThreads);
+            } else {
+                await this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
+            }
+        });
     }
 
     /**
@@ -2468,14 +2462,8 @@ export class tools extends plugin {
             }
             const stats = fs.statSync(path);
             const videoSize = Math.floor(stats.size / (1024 * 1024));
-            // 顺便发送一份到小飞机
-            if (e.msg.startsWith("上传飞机")) {
-                this.queue.add(async () => {
-                    await uploadTDL(path, this.isOverseasServer(), this.proxyAddr);
-                    e.reply("✈️ 已发送一份到您的小飞机收藏夹了！");
-                })
-            } else if (e.msg.startsWith("预览视频")) {
-                // 预览视频逻辑
+            // 预览视频逻辑
+            if (e.msg.startsWith("预览视频")) {
                 const keyframesPath = this.getCurDownloadPath(e) + "keyframes";
                 await mkdirIfNotExists(keyframesPath);
                 await extractKeyframes(path, keyframesPath);
