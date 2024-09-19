@@ -2,10 +2,10 @@
   version: 1.9.0,
   data:
     [
+      新增<span class="cmd">rso搜索</span>功能,
       优化<span class="cmd">队列下载和GPT</span>功能,
       新增<span class="cmd">哔哩哔哩下载分辨率设置</span>功能,
       新增<span class="cmd">自定义识别</span>功能,
-      修正<span class="cmd">油管分辨率降低到720P</span>功能,
       支持<span class="cmd">锅巴</span>插件，方便查看和修改配置,
       输入<span class="cmd">#R帮助</span>获取插件帮助,
       输入<span class="cmd">#R更新</span>更新插件,

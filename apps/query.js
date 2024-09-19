@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
 import {
+    BING_SEARCH,
     LINUX_AI_PROMPT,
     LINUX_QUERY,
     RDOC_AI_PROMPT,
@@ -63,6 +64,10 @@ export class query extends plugin {
                 {
                     reg: "^#R文档(.*)",
                     fnc: "intelligentDoc",
+                },
+                {
+                    ret: "^#(R|r)so(.*)",
+                    fnc: "rso",
                 }
             ],
         });
@@ -391,6 +396,23 @@ export class query extends plugin {
         }
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
         await e.reply(Msg);
+        return;
+    }
+
+    async rso(e) {
+        const question = e.msg.replace("#Rso", "").replace("#rso", "").trim();
+        logger.info(question);
+        const resp = await fetch(BING_SEARCH.replace("{}", question), {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+            }
+        });
+        logger.info(await resp);
+        const respJson = (await resp.json()).data;
+        const constructSearchRes = textArrayToMakeForward(e, respJson.map(item =>
+            `标题：《${ item.title }》\n📝 简要：${ item.abstract }\n➡️链接：${ item.href }`
+        ));
+        await e.reply(Bot.makeForwardMsg(constructSearchRes));
         return;
     }
 
