@@ -1052,6 +1052,9 @@ export class tools extends plugin {
             || /(http:|https:)\/\/www\.xiaohongshu\.com\/explore\/(\w+)/.exec(
                 e.msg,
             )?.[0]
+            || /(http:|https:)\/\/www\.xiaohongshu\.com\/discovery\/item\/(\w+)/.exec(
+                e.msg,
+            )?.[0]
         // 注入ck
         XHS_NO_WATERMARK_HEADER.cookie = this.xiaohongshuCookie;
         // 解析短号
