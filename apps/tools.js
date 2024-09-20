@@ -1404,6 +1404,7 @@ export class tools extends plugin {
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
                 const url = adapter.video;
                 this.downloadVideo(url).then(path => {
+                    logger.info(path);
                     this.sendVideoToUpload(e, `${ path }/temp.mp4`)
                 });
             } else {
@@ -2125,13 +2126,13 @@ export class tools extends plugin {
         return await this.queue.add(async () => {
             // 如果是用户设置了单线程，则不分片下载
             if (numThreads === 1) {
-                await this.downloadVideoWithSingleThread(downloadVideoParams);
+                return this.downloadVideoWithSingleThread(downloadVideoParams);
             } else if (numThreads !== 1 && this.biliDownloadMethod === 1) {
-                await this.downloadVideoWithAria2(downloadVideoParams, numThreads);
+                return this.downloadVideoWithAria2(downloadVideoParams, numThreads);
             } else if (numThreads !== 1 && this.biliDownloadMethod === 2) {
-                await this.downloadVideoUseAxel(downloadVideoParams, numThreads);
+                return this.downloadVideoUseAxel(downloadVideoParams, numThreads);
             } else {
-                await this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
+                return this.downloadVideoWithMultiThread(downloadVideoParams, numThreads);
             }
         });
     }
