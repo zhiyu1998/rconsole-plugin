@@ -1300,17 +1300,18 @@ export class tools extends plugin {
     // 微博解析
     async weibo(e) {
         let weiboId;
+        const weiboUrl = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
         // 对已知情况进行判断
-        if (e.msg.includes("m.weibo.cn")) {
+        if (weiboUrl.includes("m.weibo.cn")) {
             // https://m.weibo.cn/detail/4976424138313924
-            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(e.msg)?.[0] || /(?<=m.weibo.cn\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(e.msg)?.[0];
-        } else if (e.msg.includes("weibo.com\/tv\/show") && e.msg.includes("mid=")) {
+            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(weiboUrl)?.[0] || /(?<=m.weibo.cn\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(weiboUrl)?.[0];
+        } else if (weiboUrl.includes("weibo.com\/tv\/show") && weiboUrl.includes("mid=")) {
             // https://weibo.com/tv/show/1034:5007449447661594?mid=5007452630158934
-            weiboId = /(?<=mid=)[A-Za-z\d]+/.exec(e.msg)?.[0];
+            weiboId = /(?<=mid=)[A-Za-z\d]+/.exec(weiboUrl)?.[0];
             weiboId = mid2id(weiboId);
-        } else if (e.msg.includes("weibo.com")) {
+        } else if (weiboUrl.includes("weibo.com")) {
             // https://weibo.com/1707895270/5006106478773472
-            weiboId = /(?<=weibo.com\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(e.msg)?.[0];
+            weiboId = /(?<=weibo.com\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(weiboUrl)?.[0];
         }
         // 无法获取id就结束
         if (!weiboId) {
