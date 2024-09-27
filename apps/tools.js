@@ -1433,7 +1433,7 @@ export class tools extends plugin {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
              // 检测操作系统平台
-            const isWindows = process.platform === 'win32';
+            const isWindows = process.platform === 'win32'; 
 
             // 匹配并转义 URL 中的 & 符号（仅对 Windows 进行转义）
             let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&') ||
