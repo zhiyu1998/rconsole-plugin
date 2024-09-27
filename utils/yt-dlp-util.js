@@ -18,7 +18,7 @@ function constructProxyParam(isOversea, proxy) {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url}`);
+    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url} --encoding utf8`);
 }
 
 /**
