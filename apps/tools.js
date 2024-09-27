@@ -1432,7 +1432,12 @@ export class tools extends plugin {
         try {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
-            let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, '^&') || url2Rex.exec(e.msg)?.[0]?.replace(/&/g, '^&');
+             // 检测操作系统平台
+            const isWindows = process.platform === 'win32'; 
+
+            // 匹配并转义 URL 中的 & 符号（仅对 Windows 进行转义）
+            let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&') ||
+                url2Rex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&');
             // 适配 YouTube Music
             if (url.includes("music")) {
                 // https://music.youtube.com/watch?v=F4sRtMoIgUs&si=7ZYrHjlI3fHAha0F

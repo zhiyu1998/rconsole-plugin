@@ -18,7 +18,7 @@ function constructProxyParam(isOversea, proxy) {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url}`);
+    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url} --encoding utf8`);
 }
 
 /**
@@ -34,7 +34,7 @@ export async function ytDlpHelper(path, url, isOversea, proxy, merge = false) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
 
-        const command = `yt-dlp ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${mergeOption} ${url}`;
+        const command = `yt-dlp -f "bv[height<=720][ext=mp4]+ba[ext=m4a]" ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
 
         exec(command, (error, stdout) => {
             if (error) {
