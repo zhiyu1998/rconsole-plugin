@@ -17,6 +17,22 @@ tags:
 示例回答：
 ![](https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png)
 
+如果要进行文档更新，可以使用：`#R文档 更新`
+
+![](https://s2.loli.net/2024/09/28/AsvmJLpylbZQoex.png)
+
+### ♻️ 关于更新问题
+
+请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie
+
+✅ 正确演示：
+
+> ![](https://s2.loli.net/2024/09/28/BIcV4XM5J1TroYg.png)
+
+❌ 错误演示：
+
+> #强制更新rconsole-plugin
+
 ### 🛠️ 使用方法（基础）
 
 1.【必要】下载插件
@@ -286,7 +302,7 @@ apt install axel
 apt install aria2
 ```
 
-### ✈️ 关于小飞机 & X解析
+### ✈️ 关于小飞机 & X 解析 & 验车 权限问题
 
 1. 下载 `Release`
 
@@ -298,7 +314,7 @@ apt install aria2
 
 ![](https://s2.loli.net/2024/08/15/Nu63gMOUeWnBhob.webp)
 
-4. X、小飞机涉及添加信任用户问题（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
+4. `X 解析`、`小飞机`、`验车`涉及添加信任用户问题（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令
 
 ```shell
 #设置R信任用户
@@ -316,6 +332,14 @@ apt install aria2
 ![](https://s2.loli.net/2024/08/15/QVmNrKnsJPlpX9S.webp)
 
 5. 开始使用！
+
+### 👀 关于 weibo 问题汇总
+
+关于issue提出了相关：[希望文档里加入微博使用说明](https://github.com/zhiyu1998/rconsole-plugin/issues/19)
+
+出现：`解析失败：无法获取到wb的id` 代表什么
+
+> 就是没有数据，识别不到
 
 ### 🐧 关于使用 ICQQ
 
