@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Tue, 17 Sep 2024 07:35:09 GMT</lastBuildDate>
+        <lastBuildDate>Sat, 28 Sep 2024 07:22:47 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -26,8 +26,13 @@
 <p><a href="https://github.com/zhiyu1998/rconsole-plugin/commits/master/">https://github.com/zhiyu1998/rconsole-plugin/commits/master/</a></p>
 </blockquote>
 <h2>2024 年</h2>
+<h3>9月的一些更新</h3>
+<ul>
+<li>修复了 <code>wb</code></li>
+<li>修复了 <code>ytb</code> 在 <code>Windows</code> 端乱码</li>
+<li>更新了帮助页面</li>
+</ul>
 <h3>8月的一些特性</h3>
-<h4>1.8.0-beta</h4>
 <ul>
 <li>加入了<code>小飞机</code>的<code>文件上传</code></li>
 <li>加入了<code>Aria2</code>和<code>Axel</code>辅助下载</li>
@@ -48,6 +53,18 @@
 <p><img src="https://s2.loli.net/2024/09/17/dxMhfTZr4jw6CzX.png" alt=""></p>
 <p>示例回答：<br>
 <img src="https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png" alt=""></p>
+<p>如果要进行文档更新，可以使用：<code>#R文档 更新</code></p>
+<p><img src="https://s2.loli.net/2024/09/28/AsvmJLpylbZQoex.png" alt=""></p>
+<h3>♻️ 关于更新问题</h3>
+<p>请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie</p>
+<p>✅ 正确演示：</p>
+<blockquote>
+<p><img src="https://s2.loli.net/2024/09/28/BIcV4XM5J1TroYg.png" alt=""></p>
+</blockquote>
+<p>❌ 错误演示：</p>
+<blockquote>
+<p>#强制更新rconsole-plugin</p>
+</blockquote>
 <h3>🛠️ 使用方法（基础）</h3>
 <p>1.【必要】下载插件</p>
 <pre><code class="language-shell"># 国内
@@ -285,7 +302,7 @@ apt install axel
 </ul>
 <pre><code class="language-shell">apt install aria2
 </code></pre>
-<h3>✈️ 关于小飞机 &amp; X解析</h3>
+<h3>✈️ 关于小飞机 &amp; X 解析 &amp; 验车 权限问题</h3>
 <ol>
 <li>下载 <code>Release</code></li>
 </ol>
@@ -302,7 +319,7 @@ apt install axel
 </ol>
 <p><img src="https://s2.loli.net/2024/08/15/Nu63gMOUeWnBhob.webp" alt=""></p>
 <ol start="4">
-<li>X、小飞机涉及添加信任用户问题（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令</li>
+<li><code>X 解析</code>、<code>小飞机</code>、<code>验车</code>涉及添加信任用户问题（下面分别是设置、查看所有、查看特定信任用户），⚠️ 使用引用的方法去使用命令</li>
 </ol>
 <pre><code class="language-shell">#设置R信任用户
 #R信任用户
@@ -316,6 +333,12 @@ apt install axel
 <ol start="5">
 <li>开始使用！</li>
 </ol>
+<h3>👀 关于 weibo 问题汇总</h3>
+<p>关于issue提出了相关：<a href="https://github.com/zhiyu1998/rconsole-plugin/issues/19">希望文档里加入微博使用说明</a></p>
+<p>出现：<code>解析失败：无法获取到wb的id</code> 代表什么</p>
+<blockquote>
+<p>就是没有数据，识别不到</p>
+</blockquote>
 <h3>🐧 关于使用 ICQQ</h3>
 <p>👍 群友<code>@非酋</code>推荐（经过大量测试得出）：icqq建议设置 <code>27MB</code> 转群文件</p>
 <h3>🧑‍🌾 关于百度翻译</h3>
