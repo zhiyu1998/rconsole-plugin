@@ -164,11 +164,12 @@ export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app"
 export const NETEASE_API_CN = 'https://www.markingchen.ink';
 
 /**
- * 下载VIP的临时接口 (感谢桑帛云API，如果站长能看到)
- * 备用：另外一个兜底策略：https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm={搜索内容}&n=1&type=json
+ * 下载VIP的临时接口
+ * 备用：https://api.lolimi.cn/API/wydg/api.php?msg={}&n=1
+ * 备用2: http://kilz.top/api/wangyi_music.php?msg={}&n=1
  * @type {string}
  */
-export const NETEASE_TEMP_API = "https://api.lolimi.cn/API/wydg/api.php?msg={}&n=1"
+export const NETEASE_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm={}&n=1&type=json"
 
 /**
  * 下载VIP的临时接口2

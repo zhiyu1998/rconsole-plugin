@@ -1291,8 +1291,8 @@ export class tools extends plugin {
         });
         const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.mp3 ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
-        const cover = vipMusicData.data?.img ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
+        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
+        const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
         await e.reply([segment.image(cover), `${ this.identifyPrefix } 识别：${ musicType }，${ messageTitle }`]);
         return url;
     }
@@ -1433,7 +1433,7 @@ export class tools extends plugin {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
              // 检测操作系统平台
-            const isWindows = process.platform === 'win32'; 
+            const isWindows = process.platform === 'win32';
 
             // 匹配并转义 URL 中的 & 符号（仅对 Windows 进行转义）
             let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&') ||
