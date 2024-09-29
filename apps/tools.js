@@ -149,7 +149,7 @@ export class tools extends plugin {
                     fnc: "twitter_x",
                 },
                 {
-                    reg: "(acfun.cn)",
+                    reg: "(acfun.cn|^ac[1-9]{8}$)",
                     fnc: "acfun",
                 },
                 {
@@ -1024,6 +1024,9 @@ export class tools extends plugin {
         // 适配手机分享：https://m.acfun.cn/v/?ac=32838812&sid=d2b0991bd6ad9c09
         if (inputMsg.includes("m.acfun.cn")) {
             inputMsg = `https://www.acfun.cn/v/ac${ /ac=([^&?]*)/.exec(inputMsg)[1] }`;
+        } else if (inputMsg.includes("ac")) {
+            // 如果是
+            inputMsg = "https://www.acfun.cn/v/" + /ac\d+/.exec(inputMsg)[0];
         }
 
         parseUrl(inputMsg).then(res => {
