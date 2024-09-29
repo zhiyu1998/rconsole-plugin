@@ -34,14 +34,17 @@ export async function ytDlpHelper(path, url, isOversea, proxy, merge = false) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
 
-        const command = `yt-dlp -f "bv[height<=720][ext=mp4]+ba[ext=m4a]" ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+        const fParam = url.includes("youtu") ? `-f "bv[height<=720][ext=mp4]+ba[ext=m4a]"` : "";
+
+        const command = `yt-dlp ${fParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+
+        logger.info(`[R插件][yt-dlp审计] ${command}`)
 
         exec(command, (error, stdout) => {
             if (error) {
-                console.error(`Error executing command: ${error}`);
+                logger.error(`[R插件][yt-dlp审计] 执行命令时出错: ${error}`);
                 reject(error);
             } else {
-                console.log(`Command output: ${stdout}`);
                 resolve(stdout);
             }
         });
