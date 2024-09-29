@@ -149,7 +149,7 @@ export class tools extends plugin {
                     fnc: "twitter_x",
                 },
                 {
-                    reg: "(acfun.cn|^ac[1-9]{8}$)",
+                    reg: "(acfun.cn|^ac[0-9]{8}$)",
                     fnc: "acfun",
                 },
                 {
