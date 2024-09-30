@@ -29,12 +29,13 @@ export function ytDlpGetTilt(url, isOversea, proxy) {
  * @param isOversea  是否是海外用户
  * @param proxy      代理地址
  * @param merge      是否合并输出为 mp4 格式 (仅适用于视频合并需求)
+ * @param graphics   YouTube画质参数
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, merge = false) {
+export async function ytDlpHelper(path, url, isOversea, proxy, merge = false, graphics) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
 
-        const fParam = url.includes("youtu") ? `-f "bv[height<=720][ext=mp4]+ba[ext=m4a]"` : "";
+        const fParam = url.includes("youtu") ? `-f "bv${graphics}[ext=mp4]+ba[ext=m4a]"` : "";
 
         const command = `yt-dlp ${fParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
 

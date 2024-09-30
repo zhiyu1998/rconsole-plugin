@@ -254,6 +254,8 @@ export class tools extends plugin {
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
         this.biliResolution = this.toolsConfig.biliResolution;
+        // 加载油管下载画质选项
+        this.YouTubeGraphicsOptions = this.toolsConfig.YouTubeGraphicsOptions
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -1524,6 +1526,11 @@ export class tools extends plugin {
             // 匹配并转义 URL 中的 & 符号（仅对 Windows 进行转义）
             let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&') ||
                 url2Rex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&');
+            //非最高画质，就按照设定的来
+            let graphics = ""
+            if (this.YouTubeGraphicsOptions != 0) {
+                graphics = `[height<=${this.YouTubeGraphicsOptions}]`
+            }
             // 适配 YouTube Music
             if (url.includes("music")) {
                 // https://music.youtube.com/watch?v=F4sRtMoIgUs&si=7ZYrHjlI3fHAha0F
@@ -1533,7 +1540,7 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.mp4")
             const title = await ytDlpGetTilt(url, isOversea, this.myProxy);
             e.reply(`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n${ title }`);
-            await ytDlpHelper(path, url, isOversea, this.myProxy, true);
+            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             console.error(error);
