@@ -362,7 +362,7 @@ export class tools extends plugin {
                 const dySendContent = `${ this.identifyPrefix }识别：抖音直播，${ title }`
                 e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${ user_count_str }人正在观看`]);
                 // 下载10s的直播流
-                this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1);
+                await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1);
                 return;
             }
             const item = await data.aweme_detail;
@@ -456,8 +456,9 @@ export class tools extends plugin {
      * @param stream_url
      * @param second
      */
-    sendStreamSegment(e, stream_url, second = 10) {
-        const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`
+    async sendStreamSegment(e, stream_url, second = 10) {
+        const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`;
+        await checkAndRemoveFile(outputFilePath);
         const file = fs.createWriteStream(outputFilePath);
         axios.get(stream_url, {
             responseType: 'stream'
