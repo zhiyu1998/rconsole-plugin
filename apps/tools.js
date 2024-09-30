@@ -34,7 +34,7 @@ import {
     BILI_STREAM_INFO,
     BILI_SUMMARY,
     DY_COMMENT,
-    DY_INFO,
+    DY_INFO, DY_LIVE_INFO,
     DY_TOUTIAO_INFO,
     GENERAL_REQ_LINK,
     HIBI_API_SERVICE,
@@ -128,7 +128,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "(v.douyin.com)",
+                    reg: "(v.douyin.com|live.douyin.com)",
                     fnc: "douyin",
                 },
                 {
@@ -305,16 +305,27 @@ export class tools extends plugin {
 
     // 抖音解析
     async douyin(e) {
-        const urlRex = /(http:|https:)\/\/v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const douUrl = urlRex.exec(e.msg.trim())[0];
-
-        const res = await this.douyinRequest(douUrl);
-        // 当前版本需要填入cookie
-        if (_.isEmpty(this.douyinCookie)) {
-            e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
+        const urlRex = /(http:\/\/|https:\/\/)(v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/;
+        // 检测无效链接，例如：v.douyin.com
+        if (!urlRex.test(e.msg)) {
+            e.reply(`检测到这是一个无效链接，无法解析抖音${HELP_DOC}`);
             return;
         }
-        const douId = /note\/(\d+)/g.exec(res)?.[1] || /video\/(\d+)/g.exec(res)?.[1];
+        // 获取链接
+        let douUrl = urlRex.exec(e.msg.trim())[0];
+        if (douUrl.includes("v.douyin.com")) {
+            douUrl = await this.douyinRequest(douUrl)
+        }
+        // 获取 ID
+        const douId = /note\/(\d+)/g.exec(douUrl)?.[1] ||
+            /video\/(\d+)/g.exec(douUrl)?.[1] ||
+            /live.douyin.com\/(\d+)/.exec(douUrl)?.[1] ||
+            /live\/(\d+)/.exec(douUrl)?.[1];
+        // 当前版本需要填入cookie
+        if (_.isEmpty(this.douyinCookie) || _.isEmpty(douId)) {
+            e.reply(`检测到没有Cookie 或者 这是一个无效链接，无法解析抖音${HELP_DOC}`);
+            return;
+        }
         // 以下是更新了很多次的抖音API历史，且用且珍惜
         // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
         // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
@@ -325,7 +336,7 @@ export class tools extends plugin {
             Referer: "https://www.douyin.com/",
             cookie: this.douyinCookie,
         };
-        const dyApi = DY_INFO.replace("{}", douId);
+        const dyApi = douUrl.includes("live") ? DY_LIVE_INFO.replaceAll("{}", douId) : DY_INFO.replace("{}", douId);
         // a-bogus参数
         const abParam = aBogus.generate_a_bogus(
             new URLSearchParams(new URL(dyApi).search).toString(),
@@ -333,7 +344,7 @@ export class tools extends plugin {
         );
         // const param = resp.data.result[0].paramsencode;
         const resDyApi = `${dyApi}&a_bogus=${abParam}`;
-        headers['Referer'] = `https://www.douyin.com/video/${douId}`
+        headers['Referer'] = `https://www.douyin.com/`
         // 定义一个dy请求
         const dyResponse = () => axios.get(resDyApi, {
             headers,
@@ -341,7 +352,15 @@ export class tools extends plugin {
         // 如果失败进行3次重试
         try {
             const data = await retryAxiosReq(dyResponse)
-            // logger.info(data)
+            // saveJsonToFile(data);
+            // 直播数据逻辑
+            if (douUrl.includes("live")) {
+                const item = await data.data.data?.[0];
+                const { title, cover, user_count_str } = item;
+                const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`
+                e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                return;
+            }
             const item = await data.aweme_detail;
             // await saveJsonToFile(item);
             // 如果为null则退出

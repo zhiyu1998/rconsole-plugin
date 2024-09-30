@@ -113,6 +113,13 @@ export const DY_COMMENT = "https://www.douyin.com/aweme/v1/web/comment/list/?dev
  */
 export const DY_TOUTIAO_INFO = "https://aweme.snssdk.com/aweme/v1/play/?video_id={}&ratio=1080p&line=0"
 
+
+/**
+ * DY 直播信息
+ * @type {string}
+ */
+export const DY_LIVE_INFO = "https://live.douyin.com/webcast/room/web/enter/?device_platform=webapp&aid=6383&channel=channel_pc_web&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=124.0&browser_online=true&engine_name=Gecko&engine_version=122.0.0.0&os_name=Windows&os_version=10&cpu_core_num=12&device_memory=8&platform=PC&web_rid={}&room_id_str={}";
+
 /**
  * X API
  * @type {string}
