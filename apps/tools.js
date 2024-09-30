@@ -1520,12 +1520,15 @@ export class tools extends plugin {
         try {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
+            //移除链接中的不需要的参数
+            function removeParams(url) {
+                return url.replace(/&list=[^&]*/g, '').replace(/&start_radio=[^&]*/g, '').replace(/&index=[^&]*/g, '');
+            }
             // 检测操作系统平台
             const isWindows = process.platform === 'win32';
 
             // 匹配并转义 URL 中的 & 符号（仅对 Windows 进行转义）
-            let url = urlRex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&') ||
-                url2Rex.exec(e.msg)?.[0]?.replace(/&/g, isWindows ? '^&' : '&');
+            let url = removeParams(urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0]).replace(/&/g, isWindows ? '^&' : '&')
             //非最高画质，就按照设定的来
             let graphics = ""
             if (this.YouTubeGraphicsOptions != 0) {
