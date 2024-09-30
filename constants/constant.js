@@ -187,6 +187,12 @@ export const BILI_RESOLUTION_LIST = Object.freeze([
     { label: '360P 流畅', value: 6 },
 ]);
 
+export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
+    { label: 'Best', value: 0 },
+    { label: '1080P 高清', value: 1080 },
+    { label: '720P 高清', value: 720 },
+    { label: '480P 清晰', value: 480 },
+]);
 /**
  * 消息撤回时间
  * @type {number}

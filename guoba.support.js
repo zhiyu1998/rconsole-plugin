@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, YOUTUBE_GRAPHICS_LIST } from "./constants/constant.js";
 import model from "./model/config.js";
 
 const pluginName = `rconsole-plugin`;
@@ -199,6 +199,16 @@ export function supportGuoba() {
                     component: "Select",
                     componentProps: {
                         options: BILI_RESOLUTION_LIST,
+                    }
+                },
+                {
+                    field: "tools.YouTubeGraphicsOptions",
+                    label: "YouTube最高分辨率",
+                    bottomHelpMessage:
+                        "油管下载的最高分辨率（默认720p，请根据自己魔法流量和服务器承载能力进行调整）",
+                    component: "Select",
+                    componentProps: {
+                        options: YOUTUBE_GRAPHICS_LIST,
                     }
                 },
                 {
