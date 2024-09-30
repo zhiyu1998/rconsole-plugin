@@ -75,7 +75,7 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq,
+    retryAxiosReq, saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString,
@@ -542,12 +542,17 @@ export class tools extends plugin {
             // logger.info(streamId)
             // 提取相关信息
             const liveData = await this.getBiliStream(streamId);
-            // logger.info(liveData);
-            const { title, user_cover, keyframe, description, tags } = liveData.data.data;
+            // saveJsonToFile(liveData.data);
+            const { title, user_cover, keyframe, description, tags, live_time, parent_area_name, area_name } = liveData.data.data;
             e.reply([
                 segment.image(user_cover),
                 segment.image(keyframe),
-                `${this.identifyPrefix}识别：哔哩哔哩直播，${title}${description ? `\n\n简述：${description}\n` : ''}${tags ? `标签：${tags}\n` : ''}`
+                [`${ this.identifyPrefix }识别：哔哩哔哩直播，${ title }`,
+                    `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
+                    `${ tags ? `🔖 标签：${ tags }` : '' }`,
+                    `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
+                    `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
+                ].filter(item => item.trim() !== "").join("\n")
             ]);
             return true;
         }
