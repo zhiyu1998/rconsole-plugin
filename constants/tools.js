@@ -62,6 +62,13 @@ export const BILI_SCAN_CODE_DETECT = "https://passport.bilibili.com/x/passport-l
 export const BILI_STREAM_INFO = "https://api.live.bilibili.com/room/v1/Room/get_info"
 
 /**
+ * 根据真实直播间号获取直播视频流
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/live/live_stream.md
+ * @type {string}
+ */
+export const BILI_STREAM_FLV = "https://api.live.bilibili.com/room/v1/Room/playUrl"
+
+/**
  * 获取视频在线人数_web端
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/online.md
  * @type {string}
