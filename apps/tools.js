@@ -356,9 +356,30 @@ export class tools extends plugin {
             // 直播数据逻辑
             if (douUrl.includes("live")) {
                 const item = await data.data.data?.[0];
-                const { title, cover, user_count_str } = item;
+                const { title, cover, user_count_str, stream_url } = item;
                 const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`
                 e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                // 下载10s的直播流
+                const outputFilePath = `${this.getCurDownloadPath(e)}/stream_10s.flv`
+                const file = fs.createWriteStream(outputFilePath);
+                axios.get(stream_url?.flv_pull_url?.FULL_HD1, {
+                    responseType: 'stream'
+                }).then(response => {
+                    logger.info("正在下载直播流...");
+                    // 将流数据写入文件
+                    response.data.pipe(file);
+
+                    // 设置 10 秒后停止下载
+                    setTimeout(() => {
+                        logger.info('直播下载10秒钟到，停止下载。');
+                        response.data.destroy(); // 销毁流
+                        e.reply(segment.video(outputFilePath));
+                        file.close(); // 关闭文件流
+                    }, 10000); // 10秒 = 10000毫秒
+                }).catch(error => {
+                    console.error('下载失败:', error.message);
+                    fs.unlink(outputFilePath, () => {}); // 下载失败时删除文件
+                });
                 return;
             }
             const item = await data.aweme_detail;
