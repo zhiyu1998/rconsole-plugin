@@ -481,11 +481,18 @@ export class tools extends plugin {
      * @param second
      */
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
-        const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`;
+        const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${second}s.flv`;
         await checkAndRemoveFile(outputFilePath);
 
+        // 创建一个取消令牌
+        const CancelToken = axios.CancelToken;
+        const source = CancelToken.source();
+
         try {
-            const response = await axios.get(stream_url, { responseType: 'stream' });
+            const response = await axios.get(stream_url, {
+                responseType: 'stream',
+                cancelToken: source.token,
+            });
             logger.info("[R插件][发送直播流] 正在下载直播流...");
 
             const file = fs.createWriteStream(outputFilePath);
@@ -493,13 +500,28 @@ export class tools extends plugin {
 
             // 设置 streamDuration 秒后停止下载
             setTimeout(async () => {
-                logger.info(`[R插件][发送直播流] 直播下载 ${ this.streamDuration } 秒钟到，停止下载！`);
-                response.data.destroy(); // 销毁流
+                logger.info(`[R插件][发送直播流] 直播下载 ${ second } 秒钟到，停止下载！`);
+                // 取消请求
+                source.cancel('下载时间到，停止请求');
+                response.data.unpipe(file); // 取消管道连接
+                file.end(); // 结束写入
                 await this.sendVideoToUpload(e, outputFilePath);
-                file.close();
             }, second * 1000);
+
+            // 监听请求被取消的情况
+            response.data.on('error', (err) => {
+                if (axios.isCancel(err)) {
+                    logger.info('请求已取消:', err.message);
+                } else {
+                    logger.error('下载过程中发生错误:', err.message);
+                }
+            });
         } catch (error) {
-            logger.error(`下载失败: ${ error.message }`);
+            if (axios.isCancel(error)) {
+                logger.info('请求已取消:', error.message);
+            } else {
+                logger.error(`下载失败: ${ error.message }`);
+            }
             await fs.promises.unlink(outputFilePath); // 下载失败时删除文件
         }
     }
