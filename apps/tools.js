@@ -717,13 +717,13 @@ export class tools extends plugin {
      */
     async biliArticle(e) {
         const cvid = e.msg.match(/read\/cv(\d+)/)?.[1];
-        logger.info(BILI_ARTICLE_INFO.replace("{}", cvid));
         const articleResp = await fetch(BILI_ARTICLE_INFO.replace("{}", cvid), {
-            headers: BILI_HEADER
+            headers: {
+                ...BILI_HEADER
+            }
         });
         const articleData = (await articleResp.json()).data;
-        const { title, author_name, origin_image_urls } = articleData;
-        e.reply(`${ this.identifyPrefix }识别：哔哩哔哩专栏，${ title }-${ author_name }\n`);
+        const { origin_image_urls } = articleData;
         if (origin_image_urls) {
             await e.reply(Bot.makeForwardMsg(origin_image_urls.map(item => {
                 return {
