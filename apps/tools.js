@@ -8,8 +8,6 @@ import fs from "node:fs";
 import PQueue from 'p-queue';
 import path from "path";
 import querystring from "querystring";
-import { pipeline } from 'stream';
-import { promisify } from 'util';
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
