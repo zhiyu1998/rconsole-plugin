@@ -36,7 +36,8 @@ import {
     BILI_SUMMARY,
     DY_COMMENT,
     DY_INFO,
-    DY_LIVE_INFO, DY_LIVE_INFO_2,
+    DY_LIVE_INFO,
+    DY_LIVE_INFO_2,
     DY_TOUTIAO_INFO,
     GENERAL_REQ_LINK,
     HIBI_API_SERVICE,
@@ -77,20 +78,13 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq, saveJsonToFile,
+    retryAxiosReq,
     secondsToTime,
     testProxy,
     truncateString,
     urlTransformShortLink
 } from "../utils/common.js";
-import { extractKeyframes } from "../utils/ffmpeg-util.js";
-import {
-    checkAndRemoveFile,
-    deleteFolderRecursive,
-    getMediaFilesAndOthers,
-    mkdirIfNotExists,
-    readCurrentDir
-} from "../utils/file.js";
+import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
@@ -498,10 +492,10 @@ export class tools extends plugin {
             response.data.pipe(file);
 
             // 设置 10 秒后停止下载
-            setTimeout(() => {
-                logger.info(`[R插件][发送直播流] 直播下载 ${this.streamDuration} 秒钟到，停止下载！`);
+            setTimeout(async () => {
+                logger.info(`[R插件][发送直播流] 直播下载 ${ this.streamDuration } 秒钟到，停止下载！`);
                 response.data.destroy(); // 销毁流
-                e.reply(segment.video(outputFilePath));
+                await this.sendVideoToUpload(e, outputFilePath);
                 file.close(); // 关闭文件流
             }, second * 1000); // 10秒 = 10000毫秒
         }).catch(error => {
@@ -1549,10 +1543,12 @@ export class tools extends plugin {
         try {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
+
             //移除链接中的不需要的参数
             function removeParams(url) {
                 return url.replace(/&list=[^&]*/g, '').replace(/&start_radio=[^&]*/g, '').replace(/&index=[^&]*/g, '');
             }
+
             // 检测操作系统平台
             const isWindows = process.platform === 'win32';
 
@@ -1561,7 +1557,7 @@ export class tools extends plugin {
             //非最高画质，就按照设定的来
             let graphics = ""
             if (this.YouTubeGraphicsOptions != 0) {
-                graphics = `[height<=${this.YouTubeGraphicsOptions}]`
+                graphics = `[height<=${ this.YouTubeGraphicsOptions }]`
             }
             // 适配 YouTube Music
             if (url.includes("music")) {
@@ -2619,22 +2615,6 @@ export class tools extends plugin {
             }
             const stats = fs.statSync(path);
             const videoSize = Math.floor(stats.size / (1024 * 1024));
-            // 预览视频逻辑
-            if (e.msg.startsWith("预览视频")) {
-                const keyframesPath = this.getCurDownloadPath(e) + "keyframes";
-                await mkdirIfNotExists(keyframesPath);
-                await extractKeyframes(path, keyframesPath);
-                const keyframes = await readCurrentDir(keyframesPath);
-                // logger.info(keyframes);
-                e.reply(Bot.makeForwardMsg(keyframes.map(keyframe => {
-                    return {
-                        message: segment.image(keyframesPath + "/" + keyframe),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    };
-                })))
-                return;
-            }
             // 正常发送视频
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制：${ videoSizeLimit }MB，\n改为上传群文件`);
