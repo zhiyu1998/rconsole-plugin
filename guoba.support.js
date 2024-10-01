@@ -70,6 +70,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.streamDuration",
+                    label: "解析直播时长",
+                    bottomHelpMessage:
+                        "解析直播（目前涉及哔哩哔哩、抖音）时长，单位：秒（默认：10秒），建议时间为10~60，不然也没人看",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入最大解析直播时长",
+                    },
+                },
+                {
                     field: "tools.defaultPath",
                     label: "视频暂存位置",
                     bottomHelpMessage:

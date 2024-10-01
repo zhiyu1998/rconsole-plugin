@@ -36,7 +36,7 @@ import {
     BILI_SUMMARY,
     DY_COMMENT,
     DY_INFO,
-    DY_LIVE_INFO,
+    DY_LIVE_INFO, DY_LIVE_INFO_2,
     DY_TOUTIAO_INFO,
     GENERAL_REQ_LINK,
     HIBI_API_SERVICE,
@@ -77,7 +77,7 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq,
+    retryAxiosReq, saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString,
@@ -99,6 +99,7 @@ import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
+import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
@@ -232,6 +233,8 @@ export class tools extends plugin {
         this.myProxy = `http://${ this.proxyAddr }:${ this.proxyPort }`;
         // 加载识别前缀
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
+        // 加载直播录制时长
+        this.streamDuration = this.toolsConfig.streamDuration;
         // 加载哔哩哔哩配置
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
@@ -317,14 +320,18 @@ export class tools extends plugin {
         }
         // 获取链接
         let douUrl = urlRex.exec(e.msg.trim())[0];
+        let ttwid = '';
         if (douUrl.includes("v.douyin.com")) {
-            douUrl = await this.douyinRequest(douUrl)
+            const { location, ttwidValue } = await this.douyinRequest(douUrl);
+            ttwid = ttwidValue;
+            douUrl = location
         }
         // 获取 ID
         const douId = /note\/(\d+)/g.exec(douUrl)?.[1] ||
             /video\/(\d+)/g.exec(douUrl)?.[1] ||
             /live.douyin.com\/(\d+)/.exec(douUrl)?.[1] ||
-            /live\/(\d+)/.exec(douUrl)?.[1];
+            /live\/(\d+)/.exec(douUrl)?.[1] ||
+            /webcast.amemv.com\/douyin\/webcast\/reflow\/(\d+)/.exec(douUrl)?.[1];
         // 当前版本需要填入cookie
         if (_.isEmpty(this.douyinCookie) || _.isEmpty(douId)) {
             e.reply(`检测到没有Cookie 或者 这是一个无效链接，无法解析抖音${ HELP_DOC }`);
@@ -340,7 +347,28 @@ export class tools extends plugin {
             Referer: "https://www.douyin.com/",
             cookie: this.douyinCookie,
         };
-        const dyApi = douUrl.includes("live") ? DY_LIVE_INFO.replaceAll("{}", douId) : DY_INFO.replace("{}", douId);
+        let dyApi;
+        if (douUrl.includes("live.douyin.com")) {
+            // 第一类直播类型
+            dyApi = DY_LIVE_INFO.replaceAll("{}", douId)
+        } else if (douUrl.includes("webcast.amemv.com")) {
+            // 第二类直播类型，这里必须使用客户端的 fetch 请求
+            dyApi = DY_LIVE_INFO_2.replace("{}", douId) + `&verifyFp=${ genVerifyFp() }` + `&msToken=${ ttwid }`;
+            const webcastResp = await fetch(dyApi);
+            const webcastData = await webcastResp.json();
+            const item = webcastData.data.room;
+            logger.info(item);
+            const { title, cover, user_count, stream_url } = item;
+            const dySendContent = `${ this.identifyPrefix }识别：抖音直播，${ title }`
+            e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${ user_count }人正在观看`]);
+            // 下载10s的直播流
+            await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
+            return;
+        } else {
+            // 普通类型
+            dyApi = DY_INFO.replace("{}", douId);
+        }
+        logger.info(dyApi);
         // a-bogus参数
         const abParam = aBogus.generate_a_bogus(
             new URLSearchParams(new URL(dyApi).search).toString(),
@@ -355,7 +383,7 @@ export class tools extends plugin {
         });
         // 如果失败进行3次重试
         try {
-            const data = await retryAxiosReq(dyResponse)
+            const data = await retryAxiosReq(dyResponse);
             // saveJsonToFile(data);
             // 直播数据逻辑
             if (douUrl.includes("live")) {
@@ -364,7 +392,7 @@ export class tools extends plugin {
                 const dySendContent = `${ this.identifyPrefix }识别：抖音直播，${ title }`
                 e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${ user_count_str }人正在观看`]);
                 // 下载10s的直播流
-                await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1);
+                await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
                 return;
             }
             const item = await data.aweme_detail;
@@ -458,7 +486,7 @@ export class tools extends plugin {
      * @param stream_url
      * @param second
      */
-    async sendStreamSegment(e, stream_url, second = 10) {
+    async sendStreamSegment(e, stream_url, second = this.streamDuration) {
         const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`;
         await checkAndRemoveFile(outputFilePath);
         const file = fs.createWriteStream(outputFilePath);
@@ -471,13 +499,13 @@ export class tools extends plugin {
 
             // 设置 10 秒后停止下载
             setTimeout(() => {
-                logger.info('[R插件][发送直播流] 直播下载10秒钟到，停止下载！');
+                logger.info(`[R插件][发送直播流] 直播下载 ${this.streamDuration} 秒钟到，停止下载！`);
                 response.data.destroy(); // 销毁流
                 e.reply(segment.video(outputFilePath));
                 file.close(); // 关闭文件流
             }, second * 1000); // 10秒 = 10000毫秒
         }).catch(error => {
-            console.error('下载失败:', error.message);
+            logger.error(`下载失败:${ error.message }`);
             fs.unlink(outputFilePath, () => {
             }); // 下载失败时删除文件
         });
@@ -2160,11 +2188,28 @@ export class tools extends plugin {
             timeout: 10000,
         };
         try {
-            const resp = await axios.head(url, params);
+            const resp = await axios.get(url, params);
+
             const location = resp.request.res.responseUrl;
+
+            const setCookieHeaders = resp.headers['set-cookie']
+            let ttwidValue;
+            if (setCookieHeaders) {
+                setCookieHeaders.forEach(cookie => {
+                    // 使用正则表达式提取 ttwid 的值
+                    const ttwidMatch = cookie.match(/ttwid=([^;]+)/);
+                    if (ttwidMatch) {
+                        ttwidValue = ttwidMatch[1];
+                    }
+                });
+            }
+
             return new Promise((resolve, reject) => {
                 if (location != null) {
-                    return resolve(location);
+                    return resolve({
+                        location: location,
+                        ttwidValue: ttwidValue
+                    });
                 } else {
                     return reject("获取失败");
                 }

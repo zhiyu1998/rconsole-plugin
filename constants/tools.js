@@ -128,6 +128,12 @@ export const DY_TOUTIAO_INFO = "https://aweme.snssdk.com/aweme/v1/play/?video_id
 export const DY_LIVE_INFO = "https://live.douyin.com/webcast/room/web/enter/?device_platform=webapp&aid=6383&channel=channel_pc_web&pc_client_type=1&version_code=190500&version_name=19.5.0&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=zh-CN&browser_platform=Win32&browser_name=Firefox&browser_version=124.0&browser_online=true&engine_name=Gecko&engine_version=122.0.0.0&os_name=Windows&os_version=10&cpu_core_num=12&device_memory=8&platform=PC&web_rid={}&room_id_str={}";
 
 /**
+ * DY 直播信息 二类型
+ * @type {string}
+ */
+export const DY_LIVE_INFO_2 = "https://webcast.amemv.com/webcast/room/reflow/info/?type_id=0&live_id=1&sec_user_id=&version_code=99.99.99&app_id=1128&room_id={}";
+
+/**
  * X API
  * @type {string}
  */

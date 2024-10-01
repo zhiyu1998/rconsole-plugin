@@ -6,6 +6,8 @@ identifyPrefix: '' # 识别前缀，比如你识别哔哩哔哩，那么就有�
 
 deeplApiUrls: 'http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate'
 
+streamDuration: 10 # 视频最大时长（单位秒）
+
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
 biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
