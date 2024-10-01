@@ -8,6 +8,8 @@ import fs from "node:fs";
 import PQueue from 'p-queue';
 import path from "path";
 import querystring from "querystring";
+import { pipeline } from 'stream';
+import { promisify } from 'util';
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
@@ -28,6 +30,7 @@ import {
 import {
     ANIME_SERIES_SEARCH_LINK,
     ANIME_SERIES_SEARCH_LINK2,
+    BILI_ARTICLE_INFO,
     BILI_EP_INFO,
     BILI_ONLINE,
     BILI_SSID_INFO,
@@ -362,7 +365,6 @@ export class tools extends plugin {
             // 普通类型
             dyApi = DY_INFO.replace("{}", douId);
         }
-        logger.info(dyApi);
         // a-bogus参数
         const abParam = aBogus.generate_a_bogus(
             new URLSearchParams(new URL(dyApi).search).toString(),
@@ -481,28 +483,27 @@ export class tools extends plugin {
      * @param second
      */
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
+        const pipelineAsync = promisify(pipeline);
         const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`;
         await checkAndRemoveFile(outputFilePath);
-        const file = fs.createWriteStream(outputFilePath);
-        axios.get(stream_url, {
-            responseType: 'stream'
-        }).then(response => {
-            logger.info("[R插件][发送直播流] 正在下载直播流...");
-            // 将流数据写入文件
-            response.data.pipe(file);
 
-            // 设置 10 秒后停止下载
+        try {
+            const response = await axios.get(stream_url, { responseType: 'stream' });
+            logger.info("[R插件][发送直播流] 正在下载直播流...");
+
+            const file = fs.createWriteStream(outputFilePath);
+            await pipelineAsync(response.data, file);
+
+            // 设置 streamDuration 秒后停止下载
             setTimeout(async () => {
                 logger.info(`[R插件][发送直播流] 直播下载 ${ this.streamDuration } 秒钟到，停止下载！`);
                 response.data.destroy(); // 销毁流
                 await this.sendVideoToUpload(e, outputFilePath);
-                file.close(); // 关闭文件流
-            }, second * 1000); // 10秒 = 10000毫秒
-        }).catch(error => {
-            logger.error(`下载失败:${ error.message }`);
-            fs.unlink(outputFilePath, () => {
-            }); // 下载失败时删除文件
-        });
+            }, second * 1000);
+        } catch (error) {
+            logger.error(`下载失败: ${ error.message }`);
+            await fs.promises.unlink(outputFilePath); // 下载失败时删除文件
+        }
     }
 
     /**
@@ -648,6 +649,7 @@ export class tools extends plugin {
         }
         // 处理专栏
         if (e.msg !== undefined && e.msg.includes("read\/cv")) {
+            await this.biliArticle(e);
             this.linkShareSummary(e);
             return true;
         }
@@ -706,6 +708,31 @@ export class tools extends plugin {
         // 下载文件
         await this.biliDownloadStrategy(e, url, path);
         return true;
+    }
+
+    /**
+     * 提取哔哩哔哩专栏
+     * @param e
+     * @returns {Promise<void>}
+     */
+    async biliArticle(e) {
+        const cvid = e.msg.match(/read\/cv(\d+)/)?.[1];
+        logger.info(BILI_ARTICLE_INFO.replace("{}", cvid));
+        const articleResp = await fetch(BILI_ARTICLE_INFO.replace("{}", cvid), {
+            headers: BILI_HEADER
+        });
+        const articleData = (await articleResp.json()).data;
+        const { title, author_name, origin_image_urls } = articleData;
+        e.reply(`${ this.identifyPrefix }识别：哔哩哔哩专栏，${ title }-${ author_name }\n`);
+        if (origin_image_urls) {
+            await e.reply(Bot.makeForwardMsg(origin_image_urls.map(item => {
+                return {
+                    message: segment.image(item),
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }
+            })))
+        }
     }
 
     /**

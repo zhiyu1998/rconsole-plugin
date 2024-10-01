@@ -90,6 +90,13 @@ export const BILI_EP_INFO = "https://api.bilibili.com/pgc/view/web/season?ep_id=
 export const BILI_SSID_INFO = "https://api.bilibili.com/pgc/web/season/section?season_id={}"
 
 /**
+ * 专栏信息
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/article/info.md
+ * @type {string}
+ */
+export const BILI_ARTICLE_INFO = "https://api.bilibili.com/x/article/viewinfo?id={}"
+
+/**
  * 米游社网页端获取文章
  * https://github.com/UIGF-org/mihoyo-api-collect/blob/main/hoyolab/article/article.md#%E8%8E%B7%E5%8F%96%E5%AE%8C%E6%95%B4%E6%96%87%E7%AB%A0%E4%BF%A1%E6%81%AF
  * @type {string}
