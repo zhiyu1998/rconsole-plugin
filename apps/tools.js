@@ -483,7 +483,6 @@ export class tools extends plugin {
      * @param second
      */
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
-        const pipelineAsync = promisify(pipeline);
         const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_10s.flv`;
         await checkAndRemoveFile(outputFilePath);
 
@@ -492,13 +491,14 @@ export class tools extends plugin {
             logger.info("[R插件][发送直播流] 正在下载直播流...");
 
             const file = fs.createWriteStream(outputFilePath);
-            await pipelineAsync(response.data, file);
+            response.data.pipe(file);
 
             // 设置 streamDuration 秒后停止下载
             setTimeout(async () => {
                 logger.info(`[R插件][发送直播流] 直播下载 ${ this.streamDuration } 秒钟到，停止下载！`);
                 response.data.destroy(); // 销毁流
                 await this.sendVideoToUpload(e, outputFilePath);
+                file.close();
             }, second * 1000);
         } catch (error) {
             logger.error(`下载失败: ${ error.message }`);
