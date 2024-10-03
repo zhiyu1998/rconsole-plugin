@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-09-28T07:22:47.995Z</updated>
+    <updated>2024-10-03T07:46:42.045Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -29,6 +29,7 @@
 <h2>2024 年</h2>
 <h3>9月的一些更新</h3>
 <ul>
+<li>加入 dy 直播切片</li>
 <li>修复了 <code>wb</code></li>
 <li>修复了 <code>ytb</code> 在 <code>Windows</code> 端乱码</li>
 <li>更新了帮助页面</li>
@@ -152,6 +153,17 @@ rm -rf ./plugins/rconsole-plugin/
 # 克隆指定版本的R插件稳定版本
 git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 </code></pre>
+<h3>🎵 关于 douyin 直播切片问题</h3>
+<p>如果没法发出视频，ICQQ直接开启兼容模式</p>
+<p><img src="https://s2.loli.net/2024/10/03/YEz85pZNI7cuBXC.png" alt=""></p>
+<p>LLO有两个选择：</p>
+<ul>
+<li>退回版本到<code>3.27.2</code></li>
+<li>开启兼容模式</li>
+</ul>
+<blockquote>
+<p>开启兼容模式后性能会下降，但是可以发出直播切片</p>
+</blockquote>
 <h3>🎵 douyin问题</h3>
 <p>由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：</p>
 <p>👍 <strong>推荐方案</strong> ：via 视频教程（由群友 <code>@麦满分</code> 录制）：<a href="https://thumbsnap.com/rKxUGKqp">https://thumbsnap.com/rKxUGKqp</a></p>
