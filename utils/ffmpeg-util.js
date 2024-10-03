@@ -1,5 +1,6 @@
 import path from 'path';
 import { exec } from 'child_process';
+import fs from "fs";
 
 /**
  * 提取关键帧
@@ -34,22 +35,32 @@ export async function extractKeyframes(inputFilePath, outputFolderPath, frameCou
  * @param {string} outputFilePath - 输出的 MP4 文件路径
  * @returns {Promise<string>} - 返回一个 Promise，成功时返回输出文件路径，失败时返回错误信息
  */
-function convertFlvToMp4(inputFilePath, outputFilePath) {
+export function convertFlvToMp4(inputFilePath, outputFilePath) {
     return new Promise((resolve, reject) => {
-        const command = `ffmpeg -i ${inputFilePath} ${outputFilePath}`;
+        const resolvedInputPath = path.resolve(inputFilePath);
+        const resolvedOutputPath = path.resolve(outputFilePath);
 
-        logger.info(`[R插件][ffmpeg工具]执行命令：${command}`);
-
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                reject(`执行 ffmpeg 命令时出错: ${error.message}`);
+        // 检查文件是否存在
+        fs.access(resolvedInputPath, fs.constants.F_OK, (err) => {
+            if (err) {
+                reject(`[R插件][ffmpeg工具]输入文件不存在: ${resolvedInputPath}`);
                 return;
             }
-            if (stderr) {
-                reject(`ffmpeg 标准错误输出: ${stderr}`);
-                return;
-            }
-            resolve(outputFilePath);
+
+            const command = `ffmpeg -y -i "${resolvedInputPath}" "${resolvedOutputPath}"`;
+            logger.info(`[R插件][ffmpeg工具]执行命令：${command}`);
+
+            // 执行 ffmpeg 转换
+            exec(command, (error, stdout, stderr) => {
+                if (error) {
+                    reject(`[R插件][ffmpeg工具]执行 ffmpeg 命令时出错: ${error.message}`);
+                    return;
+                }
+                if (stderr) {
+                    logger.warn(`[R插件][ffmpeg工具]ffmpeg 标准错误输出: ${stderr}`);
+                }
+                resolve(resolvedOutputPath);
+            });
         });
     });
 }

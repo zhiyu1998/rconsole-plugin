@@ -246,6 +246,12 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.douyinStreamCompatibility",
+                    label: "抖音直播是否开启兼容模式",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.xiaohongshuCookie",
                     label: "小红书的Cookie",
                     bottomHelpMessage:

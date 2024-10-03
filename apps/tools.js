@@ -85,6 +85,7 @@ import {
     truncateString,
     urlTransformShortLink
 } from "../utils/common.js";
+import { convertFlvToMp4 } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
@@ -260,6 +261,8 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
+        // 加载抖音的是否开启兼容模式
+        this.douyinStreamCompatibility = this.toolsConfig.douyinStreamCompatibility;
         // 加载小红书Cookie
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
@@ -352,7 +355,6 @@ export class tools extends plugin {
             const webcastResp = await fetch(dyApi);
             const webcastData = await webcastResp.json();
             const item = webcastData.data.room;
-            logger.info(item);
             const { title, cover, user_count, stream_url } = item;
             const dySendContent = `${ this.identifyPrefix }识别：抖音直播，${ title }`
             e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${ user_count }人正在观看`]);
@@ -481,8 +483,13 @@ export class tools extends plugin {
      * @param second
      */
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
-        const outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${second}s.flv`;
-        await checkAndRemoveFile(outputFilePath);
+        let outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${second}s.flv`;
+        // 删除临时文件
+        if (this.douyinStreamCompatibility) {
+            await checkAndRemoveFile(outputFilePath.replace("flv", "mp4"));
+        } else {
+            await checkAndRemoveFile(outputFilePath);
+        }
 
         // 创建一个取消令牌
         const CancelToken = axios.CancelToken;
@@ -502,9 +509,17 @@ export class tools extends plugin {
             setTimeout(async () => {
                 logger.info(`[R插件][发送直播流] 直播下载 ${ second } 秒钟到，停止下载！`);
                 // 取消请求
-                source.cancel('下载时间到，停止请求');
+                source.cancel('[R插件][发送直播流] 下载时间到，停止请求');
                 response.data.unpipe(file); // 取消管道连接
                 file.end(); // 结束写入
+                // 这里判断是否开启兼容模式
+                if (this.douyinStreamCompatibility) {
+                    logger.info(`[R插件][发送直播流] 开启兼容模式，开始转换mp4格式...`);
+                    const resolvedOutputPath = await convertFlvToMp4(outputFilePath, outputFilePath.replace(".flv", ".mp4"));
+                    fs.unlinkSync(outputFilePath);
+                    outputFilePath = resolvedOutputPath;
+                    logger.info(`[R插件][发送直播流] 转换完成，开始发送视频...`);
+                }
                 await this.sendVideoToUpload(e, outputFilePath);
             }, second * 1000);
 
