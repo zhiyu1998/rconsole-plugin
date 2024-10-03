@@ -81,6 +81,14 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.streamCompatibility",
+                    label: "直播是否开启兼容模式",
+                    bottomHelpMessage:
+                        "兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.defaultPath",
                     label: "视频暂存位置",
                     bottomHelpMessage:
@@ -242,12 +250,6 @@ export function supportGuoba() {
                 {
                     field: "tools.douyinComments",
                     label: "抖音是否开启评论",
-                    component: "Switch",
-                    required: false,
-                },
-                {
-                    field: "tools.douyinStreamCompatibility",
-                    label: "抖音直播是否开启兼容模式",
                     component: "Switch",
                     required: false,
                 },

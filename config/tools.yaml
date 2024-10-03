@@ -7,6 +7,7 @@ identifyPrefix: '' # 识别前缀，比如你识别哔哩哔哩，那么就有�
 deeplApiUrls: 'http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate'
 
 streamDuration: 10 # 视频最大时长（单位秒）
+streamCompatibility: false # 兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
@@ -26,7 +27,6 @@ YouTubeGraphicsOptions: 720 #YouTobe的下载画质，0为原画，1080，720，
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
 douyinComments: false # true-开启评论，false-关闭评论
-douyinStreamCompatibility: false # 兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启
 
 xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 

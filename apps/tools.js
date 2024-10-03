@@ -231,6 +231,8 @@ export class tools extends plugin {
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
         // 加载直播录制时长
         this.streamDuration = this.toolsConfig.streamDuration;
+        // 加载直播是否开启兼容模式
+        this.streamCompatibility = this.toolsConfig.streamCompatibility;
         // 加载哔哩哔哩配置
         this.biliSessData = this.toolsConfig.biliSessData;
         // 加载哔哩哔哩的限制时长
@@ -261,8 +263,6 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
-        // 加载抖音的是否开启兼容模式
-        this.douyinStreamCompatibility = this.toolsConfig.douyinStreamCompatibility;
         // 加载小红书Cookie
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
@@ -485,7 +485,7 @@ export class tools extends plugin {
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
         let outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${second}s.flv`;
         // 删除临时文件
-        if (this.douyinStreamCompatibility) {
+        if (this.streamCompatibility) {
             await checkAndRemoveFile(outputFilePath.replace("flv", "mp4"));
         } else {
             await checkAndRemoveFile(outputFilePath);
@@ -513,7 +513,7 @@ export class tools extends plugin {
                 response.data.unpipe(file); // 取消管道连接
                 file.end(); // 结束写入
                 // 这里判断是否开启兼容模式
-                if (this.douyinStreamCompatibility) {
+                if (this.streamCompatibility) {
                     logger.info(`[R插件][发送直播流] 开启兼容模式，开始转换mp4格式...`);
                     const resolvedOutputPath = await convertFlvToMp4(outputFilePath, outputFilePath.replace(".flv", ".mp4"));
                     fs.unlinkSync(outputFilePath);
