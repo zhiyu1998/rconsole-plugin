@@ -145,6 +145,18 @@ rm -rf ./plugins/rconsole-plugin/
 git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 ```
 
+### 🎵 关于 douyin 直播切片问题
+
+如果没法发出视频，ICQQ直接开启兼容模式
+
+![](https://s2.loli.net/2024/10/03/YEz85pZNI7cuBXC.png)
+
+LLO有两个选择：
+- 退回版本到`3.27.2`
+- 开启兼容模式
+
+> 开启兼容模式后性能会下降，但是可以发出直播切片
+
 ### 🎵 douyin问题
 
 由于douyin的解析变化莫测，现版本需要填入自己的cookie，具体步骤如下：
