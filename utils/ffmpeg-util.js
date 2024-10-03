@@ -56,9 +56,6 @@ export function convertFlvToMp4(inputFilePath, outputFilePath) {
                     reject(`[R插件][ffmpeg工具]执行 ffmpeg 命令时出错: ${error.message}`);
                     return;
                 }
-                if (stderr) {
-                    logger.warn(`[R插件][ffmpeg工具]ffmpeg 标准错误输出: ${stderr}`);
-                }
                 resolve(resolvedOutputPath);
             });
         });
