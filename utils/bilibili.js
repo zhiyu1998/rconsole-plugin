@@ -14,6 +14,7 @@ import {
     BILI_SCAN_CODE_GENERATE,
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
+import { saveJsonToFile } from "./common.js";
 import { mkdirIfNotExists } from "./file.js";
 
 export const BILI_HEADER = {
@@ -210,11 +211,16 @@ export async function getDownloadUrl(url, SESSDATA) {
     const { video, audio } = dash;
     const videoData = video?.[0];
     const audioData = audio?.[0];
+    // saveJsonToFile(dash);
     // 提取信息
     const { backupUrl: videoBackupUrl, baseUrl: videoBaseUrl } = videoData;
     const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl);
-    const { backupUrl: audioBackupUrl,baseUrl: audioBaseUrl } = audioData;
-    const audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
+    // 有部分视频可能存在没有音频，例如：https://www.bilibili.com/video/BV1CxvseRE8n/?p=1
+    let audioUrl = null;
+    if (audioData != null || audioData !== undefined) {
+        const { backupUrl: audioBackupUrl, baseUrl: audioBaseUrl } = audioData;
+        audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
+    }
     return { videoUrl, audioUrl };
 }
 

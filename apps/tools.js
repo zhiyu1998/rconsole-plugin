@@ -483,7 +483,7 @@ export class tools extends plugin {
      * @param second
      */
     async sendStreamSegment(e, stream_url, second = this.streamDuration) {
-        let outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${second}s.flv`;
+        let outputFilePath = `${ this.getCurDownloadPath(e) }/stream_${ second }s.flv`;
         // 删除临时文件
         if (this.streamCompatibility) {
             await checkAndRemoveFile(outputFilePath.replace("flv", "mp4"));
@@ -899,7 +899,18 @@ export class tools extends plugin {
                 // 获取下载链接
                 const data = await getDownloadUrl(url, this.biliSessData);
 
-                await this.downBili(tempPath, data.videoUrl, data.audioUrl);
+                if (data.audioUrl != null) {
+                    await this.downBili(tempPath, data.videoUrl, data.audioUrl);
+                } else {
+                    // 处理无音频的情况
+                    await downloadBFile(data.videoUrl, `${ tempPath }.mp4`, _.throttle(
+                        value =>
+                            logger.mark("视频下载进度", {
+                                data: value,
+                            }),
+                        1000,
+                    ));
+                }
 
                 // 上传视频
                 return this.sendVideoToUpload(e, `${ tempPath }.mp4`);
