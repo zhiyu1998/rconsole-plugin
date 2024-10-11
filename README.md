@@ -60,9 +60,13 @@ sudo apt-get install ffmpeg
 
 其他玩法见官方文档
 
-## ✍️ 官方文档 & 其他玩法
+## ✍️ 官方文档 & 其他玩法 & AI 文档问答
 
 > [👉 点击进入](https://zhiyu1998.github.io/rconsole-plugin/)
+
+相关问题可以问我创建的 GLM 智能体：
+
+<img src="https://s2.loli.net/2024/10/12/eDi6FcYITkMUpSb.png" style="zoom: 33%;" >
 
 ##  🤺 R插件交流群
 
