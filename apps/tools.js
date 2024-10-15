@@ -1644,8 +1644,6 @@ async neteaseStatus(e, reck) {
             }
 
             let url = await resp.data.data?.[0]?.url || null;
-            // logger.info('获取信息url', resp.data.data?.[0]?.url);
-            // logger.info('获取信息', resp.data.data?.[0]);
             const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
             const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
             // 获取歌曲信息
@@ -1659,11 +1657,11 @@ async neteaseStatus(e, reck) {
                 const song = res.data.songs[0];
                 return song?.al?.picUrl
             });
-            // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
+            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,没有ck的走临时接口)
             if (!isCkExpired || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
-                // 不是VIP歌曲，直接识别完就下一步
+                // 拥有ck，并且有效，直接进行解析
                 e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${AudioLevel}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
