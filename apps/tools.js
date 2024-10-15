@@ -1380,8 +1380,8 @@ export class tools extends plugin {
         return true;
     }
 
-     // 网易云登录状态
-     async neteaseStatus(e) {
+      // 网易云登录状态
+    async neteaseStatus(e, reck) {
         // 优先判断是否使用自建 API
         let autoSelectNeteaseApi
         // 判断海外
@@ -1397,7 +1397,7 @@ export class tools extends plugin {
         axios.get(statusUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
-                "Cookie": this.neteaseCookie
+                "Cookie": reck ? reck : this.neteaseCookie
             },
         }).then(res => {
             // logger.info('登录状态', res.data)
@@ -1406,21 +1406,30 @@ export class tools extends plugin {
                 axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
                     headers: {
                         "User-Agent": COMMON_USER_AGENT,
-                        "Cookie": this.neteaseCookie
+                        "Cookie": reck ? reck : this.neteaseCookie
                     },
                 }).then(res => {
                     // logger.info('vip信息', res.data)
                     const vipInfo = res.data.data
-                    if (vipInfo.redplus.code != 0) {
-                        const expireTime = new Date(vipInfo.redplus.expireTime).toLocaleString();
-                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nSVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\njymaster(超清母带)\n会员到期时间:\n${expireTime}`]);
-                    } else if (vipInfo.associator.code != 0) {
-                        const expireTime = new Date(vipInfo.associator.expireTime).toLocaleString();
-                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP${vipInfo.associator.vipLevel}\n最高解析音质:\lossless(无损)\n会员到期时间:\n${expireTime}`]);
+                    if (vipInfo.redplus.vipCode != 0) {
+                        const expireTime = new Date(vipInfo.redplus.expireTime);
+                        if (expireTime > Date.now()) {
+                            e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nSVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\njymaster(超清母带)\n会员到期时间:\n${expireTime.toLocaleString()}`]);
+                        } else {
+                            e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\standard(标准)`]);
+                        }
+                    } else if (vipInfo.associator.vipCode != 0) {
+                        const expireTime = new Date(vipInfo.associator.expireTime);
+                        if (expireTime > Date.now()) {
+                            e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP${vipInfo.associator.vipLevel}\n最高解析音质:\nlossless(无损)\n会员到期时间:\n${expireTime.toLocaleString()}`]);
+                        } else {
+                            e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\standard(标准)`]);
+                        }
                     } else {
-                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\n暂无VIP\n最高解析音质:\exhigh(极高)`]);
+                        e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\standard(标准)`]);
                     }
                 })
+                // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
             } else {
                 e.reply('暂未登录，请发#网易云扫码登陆进行登陆绑定ck')
             }
@@ -1461,33 +1470,47 @@ export class tools extends plugin {
             let pollCount = 0; // 轮询计数器
             const maxPolls = 6; // 最大轮询次数
 
-            function pollRequest() {
-                let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now()
-                axios.get(pollUrl, {
-                    headers: {
-                        "User-Agent": COMMON_USER_AGENT,
-                    },
-                }).then(res => {
+            const pollRequest = async () => { 
+                let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now();
+                try {
+                    const res = await axios.get(pollUrl, {
+                        headers: {
+                            "User-Agent": COMMON_USER_AGENT,
+                        },
+                    });
+                    logger.info('轮询状态', res.data);
                     if (res.data.code == '800') {
-                        e.reply(`二维码过期，请重新获取`);
+                        e.reply("二维码过期，请重新获取");
                         clearInterval(intervalId);
-                        return
+                        return;
                     }
                     if (res.data.code == '803') {
-                        config.updateField("tools", "neteaseCookie", res.data.cookie)
                         const regex = /music_u=([^;]+)/i; // 使用 'i' 进行不区分大小写匹配
                         const match = res.data.cookie.match(regex);
                         if (match) {
-                            config.updateField("tools", "neteaseCookie", match[0])
+                            try {
+                                await config.updateField("tools", "neteaseCookie", match[0]);
+                                // logger.info('ck------', match[0]);
+                                this.neteaseStatus(e, match[0])
+                            } catch (error) {
+                                logger.error('更新ck时出错:', error);
+                                e.reply('更新ck时出错，请稍后重试');
+                                return;
+                            }
                         }
-                        // logger.info('ck------', match[0])
                         e.reply(`扫码登录成功，ck已自动保存`);
                         clearInterval(intervalId);
-                        return
+                        return;
                     }
-                    pollCount++
-                    // logger.info('登录erweima',res)
-                })
+
+                    pollCount++;
+
+                } catch (error) {
+                    logger.error('轮询过程中出错:', error);
+                    clearInterval(intervalId);
+                    e.reply('轮询过程中发生错误，请稍后再试');
+                }
+
                 if (pollCount >= maxPolls) {
                     clearInterval(intervalId);  // 停止轮询
                     logger.info('超时轮询已停止');
