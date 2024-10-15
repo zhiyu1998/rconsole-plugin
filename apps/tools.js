@@ -55,6 +55,7 @@ import {
     XHS_REQ_LINK
 } from "../constants/tools.js";
 import config from "../model/config.js";
+import NeteaseModel from "../model/netease.js";
 import * as aBogus from "../utils/a-bogus.cjs";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import { startBBDown } from "../utils/bbdown-util.js";
@@ -101,6 +102,7 @@ import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
+import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 
 export class tools extends plugin {
     /**
@@ -1409,22 +1411,32 @@ async neteaseStatus(e, reck) {
                     "User-Agent": COMMON_USER_AGENT,
                     "Cookie": reck ? reck : this.neteaseCookie
                 },
-            }).then(res => {
+            }).then(async res => {
                 // logger.info('vip信息', res.data)
                 const vipInfo = res.data.data
-                const checkVipStatus = (vipLevel, expireTime, nickname, avatarUrl, e) => {
+                const checkVipStatus = async (vipLevel, expireTime, nickname, avatarUrl, e) => {
                     const expireDate = new Date(expireTime);
                     if (expireDate > Date.now()) {
-                        e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
+                        const vipLevelData = vipLevel.split("\n");
+                        const neteaseData = await new NeteaseModel(e).getData({
+                            avatarUrl: `${avatarUrl}?param=170y170`,
+                            nickname,
+                            vipLevel: vipLevelData[0],
+                            musicQuality: vipLevelData[2],
+                            expireDate: expireDate.toLocaleString()
+                        });
+                        // e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
+                        let img = await puppeteer.screenshot("netease", neteaseData);
+                        e.reply(img, true);
                     } else {
                         return false; // 返回 false 以继续检查下一个 VIP 状态
                     }
                     return true;
                 };
 
-                if (vipInfo.redplus.vipCode != 0 && checkVipStatus(`SVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\n jymaster(超清母带)`, vipInfo.redplus.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
+                if (vipInfo.redplus.vipCode != 0 && await checkVipStatus(`SVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\n jymaster(超清母带)`, vipInfo.redplus.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
                     // SVIP 有效，不执行后续逻辑
-                } else if (vipInfo.associator.vipCode != 0 && checkVipStatus(`VIP${vipInfo.associator.vipLevel}\n最高解析音质:\n jyeffect(高清环绕音)`, vipInfo.associator.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
+                } else if (vipInfo.associator.vipCode != 0 && await checkVipStatus(`VIP${vipInfo.associator.vipLevel}\n最高解析音质:\n jyeffect(高清环绕音)`, vipInfo.associator.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
                     // VIP 有效，不执行后续逻辑
                 } else {
                     // 如果都已过期，发送 VIP 已过期信息
@@ -1477,7 +1489,7 @@ async neteaseStatus(e, reck) {
             let pollCount = 0; // 轮询计数器
             const maxPolls = 8; // 最大轮询次数
 
-            const pollRequest = async () => { 
+            const pollRequest = async () => {
                 let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now();
                 try {
                     const res = await axios.get(pollUrl, {

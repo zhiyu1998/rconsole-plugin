@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网易云音乐用户信息</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .user-card {
+            background: linear-gradient(135deg, #C20C0C, #E74C3C);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+        .user-content {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .user-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid white;
+            margin-right: 20px;
+        }
+        .user-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        .user-name::after {
+            content: '♪';
+            margin-left: 10px;
+            font-size: 1.2em;
+        }
+        .user-info {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .info-item {
+            margin-bottom: 15px;
+        }
+        .info-label {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .music-note {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0.2;
+            animation: float 6s infinite ease-in-out;
+        }
+        .note-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .note-2 { top: 20%; right: 10%; animation-delay: 1.5s; }
+        .note-3 { bottom: 15%; left: 20%; animation-delay: 3s; }
+        .note-4 { bottom: 25%; right: 15%; animation-delay: 4.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+        }
+
+        @media (max-width: 480px) {
+            .user-content {
+                padding: 20px;
+            }
+            .user-avatar {
+                width: 60px;
+                height: 60px;
+            }
+            .user-name {
+                font-size: 1.2em;
+            }
+            .info-label {
+                font-size: 0.9em;
+            }
+            .info-value {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="user-card">
+    <div class="music-note note-1">♩</div>
+    <div class="music-note note-2">♪</div>
+    <div class="music-note note-3">♫</div>
+    <div class="music-note note-4">♬</div>
+    <div class="user-content">
+        <div class="user-header">
+            <img src="{{ neteaseData.avatarUrl }}" alt="用户头像" class="user-avatar">
+            <div class="user-name">{{ neteaseData.nickname }}</div>
+        </div>
+        <div class="user-info">
+            <div class="info-item">
+                <div class="info-label">会员等级:</div>
+                <div class="info-value">{{ neteaseData.vipLevel }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">最高解析音质:</div>
+                <div class="info-value">{{ neteaseData.musicQuality }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">会员到期时间:</div>
+                <div class="info-value">{{ neteaseData.expireDate }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
