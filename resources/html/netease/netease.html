@@ -5,105 +5,162 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>网易云音乐用户信息</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+        :root {
+            --primary-color: #C20C0C;
+            --secondary-color: #E74C3C;
+            --text-color: #FFFFFF;
+            --background-color: #2C3E50;
+        }
+
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
+
         .user-card {
-            background: linear-gradient(135deg, #C20C0C, #E74C3C);
-            color: white;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             position: relative;
             overflow: hidden;
         }
+
         .user-content {
             background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 400px;
-            width: 100%;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1;
         }
+
         .user-header {
             display: flex;
             align-items: center;
             margin-bottom: 30px;
         }
+
         .user-avatar {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            border: 3px solid white;
+            border: 4px solid white;
             margin-right: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
         }
+
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+
         .user-name {
-            font-size: 1.5em;
+            font-size: 2em;
             font-weight: bold;
-            display: flex;
-            align-items: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         .user-name::after {
             content: '♪';
             margin-left: 10px;
-            font-size: 1.2em;
+            font-size: 0.8em;
+            vertical-align: super;
+            opacity: 0.7;
         }
+
         .user-info {
-            background-color: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(5px);
         }
+
         .info-item {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
         }
+
+        .info-item:hover {
+            transform: translateX(5px);
+        }
+
         .info-label {
-            font-size: 1em;
+            font-size: 1.1em;
             opacity: 0.8;
             margin-bottom: 5px;
+            font-weight: 400;
         }
+
         .info-value {
-            font-size: 1.1em;
-            font-weight: bold;
+            font-size: 1.3em;
+            font-weight: 700;
+            letter-spacing: 0.5px;
         }
+
         .music-note {
             position: absolute;
-            font-size: 40px;
+            font-size: 50px;
             opacity: 0.2;
-            animation: float 6s infinite ease-in-out;
+            animation: float 8s infinite ease-in-out;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         .note-1 { top: 10%; left: 10%; animation-delay: 0s; }
-        .note-2 { top: 20%; right: 10%; animation-delay: 1.5s; }
-        .note-3 { bottom: 15%; left: 20%; animation-delay: 3s; }
-        .note-4 { bottom: 25%; right: 15%; animation-delay: 4.5s; }
+        .note-2 { top: 20%; right: 10%; animation-delay: 2s; }
+        .note-3 { bottom: 15%; left: 20%; animation-delay: 4s; }
+        .note-4 { bottom: 25%; right: 15%; animation-delay: 6s; }
 
         @keyframes float {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(10deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
+        }
+
+        .background-wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23ffffff' fill-opacity='0.1' d='M0,96L48,112C96,128,192,160,288,186.7C384,213,480,235,576,213.3C672,192,768,128,864,128C960,128,1056,192,1152,208C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+            background-size: cover;
+            animation: wave 10s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 1440px; }
         }
 
         @media (max-width: 480px) {
             .user-content {
-                padding: 20px;
+                padding: 30px;
             }
             .user-avatar {
-                width: 60px;
-                height: 60px;
+                width: 80px;
+                height: 80px;
             }
             .user-name {
-                font-size: 1.2em;
+                font-size: 1.5em;
             }
             .info-label {
-                font-size: 0.9em;
+                font-size: 1em;
             }
             .info-value {
-                font-size: 1em;
+                font-size: 1.2em;
+            }
+            .music-note {
+                font-size: 40px;
             }
         }
     </style>
