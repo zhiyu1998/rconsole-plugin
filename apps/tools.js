@@ -1400,7 +1400,7 @@ async neteaseStatus(e, reck) {
             "Cookie": reck ? reck : this.neteaseCookie
         },
     }).then(res => {
-        logger.info('登录状态', res.data)
+        // logger.info('登录状态', res.data)
         const userInfo = res.data.data.profile
         if (userInfo) {
             axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
@@ -1409,7 +1409,7 @@ async neteaseStatus(e, reck) {
                     "Cookie": reck ? reck : this.neteaseCookie
                 },
             }).then(res => {
-                logger.info('vip信息', res.data)
+                // logger.info('vip信息', res.data)
                 const vipInfo = res.data.data
                 const checkVipStatus = (vipLevel, expireTime, nickname, avatarUrl, e) => {
                     const expireDate = new Date(expireTime);
@@ -1479,7 +1479,7 @@ async neteaseStatus(e, reck) {
                             "User-Agent": COMMON_USER_AGENT,
                         },
                     });
-                    logger.info('轮询状态', res.data);
+                    // logger.info('轮询状态', res.data);
                     if (res.data.code == '800') {
                         e.reply("二维码过期，请重新获取");
                         clearInterval(intervalId);
@@ -1512,7 +1512,7 @@ async neteaseStatus(e, reck) {
                     e.reply('轮询过程中发生错误，请稍后再试');
                 }
 
-                if (pollCount >= maxPolls) {
+                if (pollCount > maxPolls) {
                     clearInterval(intervalId);  // 停止轮询
                     logger.info('超时轮询已停止');
                     e.reply('扫码超时，请重新获取');
@@ -1547,10 +1547,34 @@ async neteaseStatus(e, reck) {
             logger.error("[R插件][网易云解析] 没有找到id，无法进行下一步！")
             return
         }
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi
         // 判断海外
         const isOversea = await this.isOverseasServer();
-        // 自动选择 API
-        const autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+        // 检测ck可用性
+        const statusUrl = autoSelectNeteaseApi + '/login/status'
+        const isCkExpired = await axios.get(statusUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
+            },
+        }).then(res => {
+            const userInfo = res.data.data.profile
+            if (userInfo) {
+                logger.info('ck活着，使用ck进行高音质下载')
+                return true
+            } else {
+                logger.info('ck失效，将启用临时接口下载')
+                return false
+            }
+        })
         // mv截断
         if (message.includes("mv")) {
             const AUTO_NETEASE_MV_DETAIL = autoSelectNeteaseApi + "/mv/detail?mvid={}";
@@ -1561,50 +1585,90 @@ async neteaseStatus(e, reck) {
                 axios.get(AUTO_NETEASE_MV_DETAIL.replace("{}", id), {
                     headers: {
                         "User-Agent": COMMON_USER_AGENT,
+                        "Cookie": this.neteaseCookie
                     }
                 }),
                 axios.get(AUTO_NETEASE_MV_URL.replace("{}", id), {
                     headers: {
                         "User-Agent": COMMON_USER_AGENT,
+                        "Cookie": this.neteaseCookie
                     }
                 })
             ]);
             const { name: mvName, artistName: mvArtist, cover: mvCover } = mvDetailData.data?.data;
-            e.reply([segment.image(mvCover), `${ this.identifyPrefix }识别：网易云MV，${ mvName } - ${ mvArtist }`]);
+            e.reply([segment.image(mvCover), `${this.identifyPrefix}识别：网易云MV，${mvName} - ${mvArtist}`]);
             // logger.info(mvUrlData.data)
             const { url: mvUrl } = mvUrlData.data?.data;
             this.downloadVideo(mvUrl).then(path => {
-                this.sendVideoToUpload(e, `${ path }/temp.mp4`)
+                this.sendVideoToUpload(e, `${path}/temp.mp4`)
             });
             return;
         }
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
-        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url?id={}";
+        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
         const AUTO_NETEASE_SONG_DETAIL = autoSelectNeteaseApi + "/song/detail?ids={}";
         // logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
+        const downloadUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id)
+        const detailUrl = AUTO_NETEASE_SONG_DETAIL.replace("{}", id)
         // 请求netease数据
-        axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
+        axios.get(downloadUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
             },
         }).then(async resp => {
             // 国内解决方案，替换API后这里也需要修改
+
+            // 英转中字典匹配
+            const translationDict = {
+                'standard': '标准',
+                'higher': '较高',
+                'exhigh': '极高',
+                'lossless': '无损',
+                'hires': 'Hi-Res',
+                'jyeffect': '高清环绕声',
+                'sky': '沉浸环绕声',
+                'dolby': '杜比全景声',
+                'jymaster': '超清母带'
+            };
+
+            // 英转中
+            function translateToChinese(word) {
+                return translationDict[word] || word;  // 如果找不到对应翻译，返回原词
+            }
+
+            // 字节转MB
+            function bytesToMB(sizeInBytes) {
+                const sizeInMB = sizeInBytes / (1024 * 1024);  // 1 MB = 1024 * 1024 bytes
+                return sizeInMB.toFixed(2);  // 保留两位小数
+            }
+
             let url = await resp.data.data?.[0]?.url || null;
+            // logger.info('获取信息url', resp.data.data?.[0]?.url);
+            // logger.info('获取信息', resp.data.data?.[0]);
+            const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
+            const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
             // 获取歌曲信息
-            let title = await axios.get(AUTO_NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
+            let title = await axios.get(detailUrl).then(res => {
+                // logger.info('歌曲详情---', res.data.songs[0])
                 const song = res.data.songs[0];
-                return cleanFilename(`${ song?.name }-${ song?.ar?.[0].name }`);
+                return cleanFilename(`${song?.name}-${song?.ar?.[0].name}`);
+            });
+            // 获取歌曲封面
+            let coverUrl = await axios.get(detailUrl).then(res => {
+                const song = res.data.songs[0];
+                return song?.al?.picUrl
             });
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
-            if (!isOversea || url == null) {
+            if (!isCkExpired || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 不是VIP歌曲，直接识别完就下一步
-                e.reply(`${ this.identifyPrefix }识别：网易云音乐，${ title }`);
+                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${AudioLevel}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
             const extensionPattern = /\.([a-zA-Z0-9]+)$/;
-            const musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
+            let musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
@@ -1614,7 +1678,7 @@ async neteaseStatus(e, reck) {
                 // 删除文件
                 await checkAndRemoveFile(path);
             }).catch(err => {
-                logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+                logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
         });
         return true;
