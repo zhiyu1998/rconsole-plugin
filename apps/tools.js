@@ -23,7 +23,7 @@ import {
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
-    XHS_NO_WATERMARK_HEADER,
+    XHS_NO_WATERMARK_HEADER
 } from "../constants/constant.js";
 import {
     ANIME_SERIES_SEARCH_LINK,
@@ -123,7 +123,7 @@ export class tools extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: `^(翻|trans)[${ tools.Constants.existsTransKey }]`,
+                    reg: `^(翻|trans)[${tools.Constants.existsTransKey}]`,
                     fnc: "trans",
                 },
                 {
@@ -214,7 +214,18 @@ export class tools extends plugin {
                 {
                     reg: '^#验车(.*?)',
                     fnc: 'yc'
-                }
+                },
+                {
+                    reg: "^#(网易云登录状态|网易状态|网易云状态)$",
+                    fnc: "neteaseStatus",
+                    permission: 'master',
+                },
+                {
+                    reg: "^#(网易云扫码登录|网易扫码登录)$",
+                    fnc: 'netease_scan',
+                    permission: 'master',
+                },
+
             ],
         });
         // 配置文件
@@ -226,7 +237,7 @@ export class tools extends plugin {
         // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
-        this.myProxy = `http://${ this.proxyAddr }:${ this.proxyPort }`;
+        this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
         // 加载识别前缀
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
         // 加载直播录制时长
@@ -251,6 +262,14 @@ export class tools extends plugin {
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载 BBDown 的CDN配置
         this.biliCDN = this.toolsConfig.biliCDN;
+        // 加载网易云Cookie
+        this.neteaseCookie = this.toolsConfig.neteaseCookie
+        // 加载是否自建服务器
+        this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
+        // 加载自建服务器API
+        this.neteaseCloudAPIServer = this.toolsConfig.neteaseCloudAPIServer
+        // 加载网易云解析最高音质
+        this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality
         // 加载哔哩哔哩是否使用Aria2
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
@@ -1359,6 +1378,124 @@ export class tools extends plugin {
             });
         }
         return true;
+    }
+
+     // 网易云登录状态
+     async neteaseStatus(e) {
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+        const statusUrl = autoSelectNeteaseApi + '/login/status'
+        axios.get(statusUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
+            },
+        }).then(res => {
+            // logger.info('登录状态', res.data)
+            const userInfo = res.data.data.profile
+            if (userInfo) {
+                axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
+                    headers: {
+                        "User-Agent": COMMON_USER_AGENT,
+                        "Cookie": this.neteaseCookie
+                    },
+                }).then(res => {
+                    // logger.info('vip信息', res.data)
+                    const vipInfo = res.data.data
+                    if (vipInfo.redplus.code != 0) {
+                        const expireTime = new Date(vipInfo.redplus.expireTime).toLocaleString();
+                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nSVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\njymaster(超清母带)\n会员到期时间:\n${expireTime}`]);
+                    } else if (vipInfo.associator.code != 0) {
+                        const expireTime = new Date(vipInfo.associator.expireTime).toLocaleString();
+                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP${vipInfo.associator.vipLevel}\n最高解析音质:\lossless(无损)\n会员到期时间:\n${expireTime}`]);
+                    } else {
+                        e.reply([segment.image(`${userInfo.avatarUrl}?param=158y158`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\n暂无VIP\n最高解析音质:\exhigh(极高)`]);
+                    }
+                })
+            } else {
+                e.reply('暂未登录，请发#网易云扫码登陆进行登陆绑定ck')
+            }
+        })
+    }
+    // 网易扫码登录
+    async netease_scan(e) {
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+        // 获取登录key
+        let keyUrl = autoSelectNeteaseApi + '/login/qr/key'
+        axios.get(keyUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT
+            },
+        }).then(res => {
+            // 获取登录二维码
+            const unikey = res.data.data.unikey
+            let url = autoSelectNeteaseApi + '/login/qr/create?key=' + unikey + "&qrimg=true"
+            axios.get(url, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                },
+            }).then(res => {
+                e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
+            })
+
+            //最大轮询次数 5s/check
+            let pollCount = 0; // 轮询计数器
+            const maxPolls = 6; // 最大轮询次数
+
+            function pollRequest() {
+                let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now()
+                axios.get(pollUrl, {
+                    headers: {
+                        "User-Agent": COMMON_USER_AGENT,
+                    },
+                }).then(res => {
+                    if (res.data.code == '800') {
+                        e.reply(`二维码过期，请重新获取`);
+                        clearInterval(intervalId);
+                        return
+                    }
+                    if (res.data.code == '803') {
+                        config.updateField("tools", "neteaseCookie", res.data.cookie)
+                        const regex = /music_u=([^;]+)/i; // 使用 'i' 进行不区分大小写匹配
+                        const match = res.data.cookie.match(regex);
+                        if (match) {
+                            config.updateField("tools", "neteaseCookie", match[0])
+                        }
+                        // logger.info('ck------', match[0])
+                        e.reply(`扫码登录成功，ck已自动保存`);
+                        clearInterval(intervalId);
+                        return
+                    }
+                    pollCount++
+                    // logger.info('登录erweima',res)
+                })
+                if (pollCount >= maxPolls) {
+                    clearInterval(intervalId);  // 停止轮询
+                    logger.info('超时轮询已停止');
+                    e.reply('扫码超时，请重新获取');
+                }
+            }
+            const intervalId = setInterval(pollRequest, 5000);
+        })
     }
 
     // 网易云解析

@@ -193,6 +193,18 @@ export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
     { label: '720P 高清', value: 720 },
     { label: '480P 清晰', value: 480 },
 ]);
+
+export const NETEASECLOUD_QUALITY_LIST = Object.freeze([
+    { label: '标准', value: 'standard' },
+    { label: '较高', value: 'higher' },
+    { label: '极高', value: 'exhigh' },
+    { label: '无损', value: 'lossless' },
+    { label: 'Hi-Res', value: 'hires' },
+    { label: '高清环绕声', value: 'jyeffect' },
+    { label: '沉浸环绕声', value: 'sky' },
+    { label: '杜比全景声', value: 'dolby' },
+    { label: '超清母带', value: 'jymaster' },
+]);
 /**
  * 消息撤回时间
  * @type {number}
