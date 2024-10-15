@@ -7,6 +7,7 @@ import { Buffer } from 'node:buffer';
 import fs from "node:fs";
 import PQueue from 'p-queue';
 import path from "path";
+import qrcode from "qrcode"
 import querystring from "querystring";
 import {
     BILI_CDN_SELECT_LIST,
@@ -1463,13 +1464,18 @@ async neteaseStatus(e, reck) {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT,
                 },
-            }).then(res => {
-                e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
+            }).then(async res => {
+                // logger.info('扫码登录数据', res.data.data)
+                await mkdirIfNotExists(this.defaultPath);
+                const saveCodePath = `${this.defaultPath}NeteaseQrcode.png`;
+                await qrcode.toFile(saveCodePath,res.data.data.qrurl)
+                e.reply([segment.image(saveCodePath), '请在40秒内使用网易云APP进行扫码']);
+                // e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
             })
 
             //最大轮询次数 5s/check
             let pollCount = 0; // 轮询计数器
-            const maxPolls = 6; // 最大轮询次数
+            const maxPolls = 8; // 最大轮询次数
 
             const pollRequest = async () => { 
                 let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now();
