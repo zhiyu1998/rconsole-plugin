@@ -221,7 +221,7 @@ export class tools extends plugin {
                     permission: 'master',
                 },
                 {
-                    reg: "^#(网易云扫码登录|网易扫码登录)$",
+                    reg: "^#(网易云扫码登录|网易扫码登录|网易登录|网易云登录)$",
                     fnc: 'netease_scan',
                     permission: 'master',
                 },
