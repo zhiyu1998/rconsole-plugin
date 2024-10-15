@@ -1469,7 +1469,7 @@ async neteaseStatus(e, reck) {
                 await mkdirIfNotExists(this.defaultPath);
                 const saveCodePath = `${this.defaultPath}NeteaseQrcode.png`;
                 await qrcode.toFile(saveCodePath,res.data.data.qrurl)
-                e.reply([segment.image(saveCodePath), '请在30秒内使用网易云APP进行扫码']);
+                e.reply([segment.image(saveCodePath), '请在40秒内使用网易云APP进行扫码']);
                 // e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
             })
 
