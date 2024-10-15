@@ -23,7 +23,7 @@ import {
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
-    XHS_NO_WATERMARK_HEADER,
+    XHS_NO_WATERMARK_HEADER
 } from "../constants/constant.js";
 import {
     ANIME_SERIES_SEARCH_LINK,
@@ -123,7 +123,7 @@ export class tools extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: `^(翻|trans)[${ tools.Constants.existsTransKey }]`,
+                    reg: `^(翻|trans)[${tools.Constants.existsTransKey}]`,
                     fnc: "trans",
                 },
                 {
@@ -214,7 +214,18 @@ export class tools extends plugin {
                 {
                     reg: '^#验车(.*?)',
                     fnc: 'yc'
-                }
+                },
+                {
+                    reg: "^#(网易云登录状态|网易状态|网易云状态)$",
+                    fnc: "neteaseStatus",
+                    permission: 'master',
+                },
+                {
+                    reg: "^#(网易云扫码登录|网易扫码登录|网易登录|网易云登录)$",
+                    fnc: 'netease_scan',
+                    permission: 'master',
+                },
+
             ],
         });
         // 配置文件
@@ -226,7 +237,7 @@ export class tools extends plugin {
         // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
-        this.myProxy = `http://${ this.proxyAddr }:${ this.proxyPort }`;
+        this.myProxy = `http://${this.proxyAddr}:${this.proxyPort}`;
         // 加载识别前缀
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
         // 加载直播录制时长
@@ -251,6 +262,14 @@ export class tools extends plugin {
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载 BBDown 的CDN配置
         this.biliCDN = this.toolsConfig.biliCDN;
+        // 加载网易云Cookie
+        this.neteaseCookie = this.toolsConfig.neteaseCookie
+        // 加载是否自建服务器
+        this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
+        // 加载自建服务器API
+        this.neteaseCloudAPIServer = this.toolsConfig.neteaseCloudAPIServer
+        // 加载网易云解析最高音质
+        this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality
         // 加载哔哩哔哩是否使用Aria2
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
@@ -1361,6 +1380,148 @@ export class tools extends plugin {
         return true;
     }
 
+// 网易云登录状态
+async neteaseStatus(e, reck) {
+    // 优先判断是否使用自建 API
+    let autoSelectNeteaseApi
+    // 判断海外
+    const isOversea = await this.isOverseasServer();
+    if (this.useLocalNeteaseAPI) {
+        // 使用自建 API
+        autoSelectNeteaseApi = this.neteaseCloudAPIServer
+    } else {
+        // 自动选择 API
+        autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+    }
+    const statusUrl = autoSelectNeteaseApi + '/login/status'
+    axios.get(statusUrl, {
+        headers: {
+            "User-Agent": COMMON_USER_AGENT,
+            "Cookie": reck ? reck : this.neteaseCookie
+        },
+    }).then(res => {
+        // logger.info('登录状态', res.data)
+        const userInfo = res.data.data.profile
+        if (userInfo) {
+            axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    "Cookie": reck ? reck : this.neteaseCookie
+                },
+            }).then(res => {
+                // logger.info('vip信息', res.data)
+                const vipInfo = res.data.data
+                const checkVipStatus = (vipLevel, expireTime, nickname, avatarUrl, e) => {
+                    const expireDate = new Date(expireTime);
+                    if (expireDate > Date.now()) {
+                        e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
+                    } else {
+                        return false; // 返回 false 以继续检查下一个 VIP 状态
+                    }
+                    return true;
+                };
+
+                if (vipInfo.redplus.vipCode != 0 && checkVipStatus(`SVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\n jymaster(超清母带)`, vipInfo.redplus.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
+                    // SVIP 有效，不执行后续逻辑
+                } else if (vipInfo.associator.vipCode != 0 && checkVipStatus(`VIP${vipInfo.associator.vipLevel}\n最高解析音质:\n jyeffect(高清环绕音)`, vipInfo.associator.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
+                    // VIP 有效，不执行后续逻辑
+                } else {
+                    // 如果都已过期，发送 VIP 已过期信息
+                    e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\nstandard(标准)`]);
+                }
+            })
+            // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
+        } else {
+            e.reply('暂未登录，请发#网易云扫码登陆进行登陆绑定ck')
+        }
+    })
+}
+    // 网易扫码登录
+    async netease_scan(e) {
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi
+        // 判断海外
+        const isOversea = await this.isOverseasServer();
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+        // 获取登录key
+        let keyUrl = autoSelectNeteaseApi + '/login/qr/key'
+        axios.get(keyUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT
+            },
+        }).then(res => {
+            // 获取登录二维码
+            const unikey = res.data.data.unikey
+            let url = autoSelectNeteaseApi + '/login/qr/create?key=' + unikey + "&qrimg=true"
+            axios.get(url, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                },
+            }).then(res => {
+                e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
+            })
+
+            //最大轮询次数 5s/check
+            let pollCount = 0; // 轮询计数器
+            const maxPolls = 6; // 最大轮询次数
+
+            const pollRequest = async () => { 
+                let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now();
+                try {
+                    const res = await axios.get(pollUrl, {
+                        headers: {
+                            "User-Agent": COMMON_USER_AGENT,
+                        },
+                    });
+                    // logger.info('轮询状态', res.data);
+                    if (res.data.code == '800') {
+                        e.reply("二维码过期，请重新获取");
+                        clearInterval(intervalId);
+                        return;
+                    }
+                    if (res.data.code == '803') {
+                        const regex = /music_u=([^;]+)/i; // 使用 'i' 进行不区分大小写匹配
+                        const match = res.data.cookie.match(regex);
+                        if (match) {
+                            try {
+                                await config.updateField("tools", "neteaseCookie", match[0]);
+                                // logger.info('ck------', match[0]);
+                                this.neteaseStatus(e, match[0])
+                            } catch (error) {
+                                logger.error('更新ck时出错:', error);
+                                e.reply('更新ck时出错，请稍后重试');
+                                return;
+                            }
+                        }
+                        e.reply(`扫码登录成功，ck已自动保存`);
+                        clearInterval(intervalId);
+                        return;
+                    }
+
+                    pollCount++;
+
+                } catch (error) {
+                    logger.error('轮询过程中出错:', error);
+                    clearInterval(intervalId);
+                    e.reply('轮询过程中发生错误，请稍后再试');
+                }
+
+                if (pollCount > maxPolls) {
+                    clearInterval(intervalId);  // 停止轮询
+                    logger.info('超时轮询已停止');
+                    e.reply('扫码超时，请重新获取');
+                }
+            }
+            const intervalId = setInterval(pollRequest, 5000);
+        })
+    }
+
     // 网易云解析
     async netease(e) {
         let message =
@@ -1386,10 +1547,34 @@ export class tools extends plugin {
             logger.error("[R插件][网易云解析] 没有找到id，无法进行下一步！")
             return
         }
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi
         // 判断海外
         const isOversea = await this.isOverseasServer();
-        // 自动选择 API
-        const autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+        // 检测ck可用性
+        const statusUrl = autoSelectNeteaseApi + '/login/status'
+        const isCkExpired = await axios.get(statusUrl, {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
+            },
+        }).then(res => {
+            const userInfo = res.data.data.profile
+            if (userInfo) {
+                logger.info('ck活着，使用ck进行高音质下载')
+                return true
+            } else {
+                logger.info('ck失效，将启用临时接口下载')
+                return false
+            }
+        })
         // mv截断
         if (message.includes("mv")) {
             const AUTO_NETEASE_MV_DETAIL = autoSelectNeteaseApi + "/mv/detail?mvid={}";
@@ -1400,50 +1585,88 @@ export class tools extends plugin {
                 axios.get(AUTO_NETEASE_MV_DETAIL.replace("{}", id), {
                     headers: {
                         "User-Agent": COMMON_USER_AGENT,
+                        "Cookie": this.neteaseCookie
                     }
                 }),
                 axios.get(AUTO_NETEASE_MV_URL.replace("{}", id), {
                     headers: {
                         "User-Agent": COMMON_USER_AGENT,
+                        "Cookie": this.neteaseCookie
                     }
                 })
             ]);
             const { name: mvName, artistName: mvArtist, cover: mvCover } = mvDetailData.data?.data;
-            e.reply([segment.image(mvCover), `${ this.identifyPrefix }识别：网易云MV，${ mvName } - ${ mvArtist }`]);
+            e.reply([segment.image(mvCover), `${this.identifyPrefix}识别：网易云MV，${mvName} - ${mvArtist}`]);
             // logger.info(mvUrlData.data)
             const { url: mvUrl } = mvUrlData.data?.data;
             this.downloadVideo(mvUrl).then(path => {
-                this.sendVideoToUpload(e, `${ path }/temp.mp4`)
+                this.sendVideoToUpload(e, `${path}/temp.mp4`)
             });
             return;
         }
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
-        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url?id={}";
+        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
         const AUTO_NETEASE_SONG_DETAIL = autoSelectNeteaseApi + "/song/detail?ids={}";
         // logger.info(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id));
+        const downloadUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id)
+        const detailUrl = AUTO_NETEASE_SONG_DETAIL.replace("{}", id)
         // 请求netease数据
-        axios.get(AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id), {
+        axios.get(downloadUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
             },
         }).then(async resp => {
             // 国内解决方案，替换API后这里也需要修改
+
+            // 英转中字典匹配
+            const translationDict = {
+                'standard': '标准',
+                'higher': '较高',
+                'exhigh': '极高',
+                'lossless': '无损',
+                'hires': 'Hi-Res',
+                'jyeffect': '高清环绕声',
+                'sky': '沉浸环绕声',
+                'dolby': '杜比全景声',
+                'jymaster': '超清母带'
+            };
+
+            // 英转中
+            function translateToChinese(word) {
+                return translationDict[word] || word;  // 如果找不到对应翻译，返回原词
+            }
+
+            // 字节转MB
+            function bytesToMB(sizeInBytes) {
+                const sizeInMB = sizeInBytes / (1024 * 1024);  // 1 MB = 1024 * 1024 bytes
+                return sizeInMB.toFixed(2);  // 保留两位小数
+            }
+
             let url = await resp.data.data?.[0]?.url || null;
+            const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
+            const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
             // 获取歌曲信息
-            let title = await axios.get(AUTO_NETEASE_SONG_DETAIL.replace("{}", id)).then(res => {
+            let title = await axios.get(detailUrl).then(res => {
+                // logger.info('歌曲详情---', res.data.songs[0])
                 const song = res.data.songs[0];
-                return cleanFilename(`${ song?.name }-${ song?.ar?.[0].name }`);
+                return cleanFilename(`${song?.name}-${song?.ar?.[0].name}`);
             });
-            // 一般这个情况是VIP歌曲 (如果没有url或者是国内, 国内全走临时接口，后续如果不要删除逻辑'!isOversea ||')
-            if (!isOversea || url == null) {
+            // 获取歌曲封面
+            let coverUrl = await axios.get(detailUrl).then(res => {
+                const song = res.data.songs[0];
+                return song?.al?.picUrl
+            });
+            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,没有ck的走临时接口)
+            if (!isCkExpired || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
-                // 不是VIP歌曲，直接识别完就下一步
-                e.reply(`${ this.identifyPrefix }识别：网易云音乐，${ title }`);
+                // 拥有ck，并且有效，直接进行解析
+                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${AudioLevel}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
             const extensionPattern = /\.([a-zA-Z0-9]+)$/;
-            const musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
+            let musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
@@ -1453,7 +1676,7 @@ export class tools extends plugin {
                 // 删除文件
                 await checkAndRemoveFile(path);
             }).catch(err => {
-                logger.error(`下载音乐失败，错误信息为: ${ err.message }`);
+                logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
         });
         return true;

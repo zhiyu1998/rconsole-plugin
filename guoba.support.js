@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, YOUTUBE_GRAPHICS_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST } from "./constants/constant.js";
 import model from "./model/config.js";
 
 const pluginName = `rconsole-plugin`;
@@ -228,6 +228,46 @@ export function supportGuoba() {
                     component: "Select",
                     componentProps: {
                         options: YOUTUBE_GRAPHICS_LIST,
+                    }
+                },
+                {
+                    field: "tools.useLocalNeteaseAPI",
+                    label: "使用自建网易云API",
+                    bottomHelpMessage:
+                        "默认不开启，有条件可以查看https://gitlab.com/Binaryify/neteasecloudmusicapi进行搭建",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.neteaseCloudAPIServer",
+                    label: "自建网易云API地址",
+                    bottomHelpMessage:
+                        "填入自建API地址，例：http://xxxxxxxx",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "填入自建API地址",
+                    },
+                },
+                {
+                    field: "tools.neteaseCookie",
+                    label: "网易云Cookie",
+                    bottomHelpMessage:
+                        "可以发送 #网易云扫码登陆 快捷获取 或 者在网易云官网自己获取",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "使用vip账号登陆获取更高音质解析",
+                    },
+                },
+                {
+                    field: "tools.neteaseCloudAudioQuality",
+                    label: "网易云解析最高音质",
+                    bottomHelpMessage:
+                        "网易云解析最高音质(需vip账号ck！！！ 默认极高，更高请根据登陆的账号和服务器承载能力进行选择)",
+                    component: "Select",
+                    componentProps: {
+                        options: NETEASECLOUD_QUALITY_LIST,
                     }
                 },
                 {
