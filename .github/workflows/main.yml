@@ -40,7 +40,7 @@ jobs:
         run: pnpm run build #  打包文件
 
       - name: 👷部署文档
-        uses: JamesIves/github-pages-deploy-action@v4.6.4
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: gh-pages
           folder: ./.vitepress/dist
