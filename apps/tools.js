@@ -1702,7 +1702,7 @@ async neteaseStatus(e, reck) {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
-                if (!musicExt == 'mp4') {
+                if (musicExt != 'mp4') {
                     await e.reply(segment.record(path));
                 }
                 // 上传群文件
