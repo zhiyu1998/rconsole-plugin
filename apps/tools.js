@@ -219,12 +219,12 @@ export class tools extends plugin {
                     fnc: 'yc'
                 },
                 {
-                    reg: "^#(网易云登录状态|网易状态|网易云状态)$",
+                    reg: "^#(网易状态|rns|RNS)$",
                     fnc: "neteaseStatus",
                     permission: 'master',
                 },
                 {
-                    reg: "^#(网易云扫码登录|网易扫码登录|网易登录|网易云登录)$",
+                    reg: "^#(rnq|RNQ)$",
                     fnc: 'netease_scan',
                     permission: 'master',
                 },
