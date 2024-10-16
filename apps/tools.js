@@ -1508,9 +1508,10 @@ async neteaseStatus(e, reck) {
                         const match = res.data.cookie.match(regex);
                         if (match) {
                             try {
-                                await config.updateField("tools", "neteaseCookie", match[0]);
+                                let ck = match[0] + '; os=pc'
+                                await config.updateField("tools", "neteaseCookie", ck);
                                 // logger.info('ck------', match[0]);
-                                this.neteaseStatus(e, match[0])
+                                this.neteaseStatus(e, ck)
                             } catch (error) {
                                 logger.error('更新ck时出错:', error);
                                 e.reply('更新ck时出错，请稍后重试');
