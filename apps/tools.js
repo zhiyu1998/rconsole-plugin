@@ -674,7 +674,11 @@ export class tools extends plugin {
 
         // 解构所需的字段
         const { face, uname, level_info, money, wallet, vipStatus } = biliData;
-        const { following, follower, dynamic_count } = biliStat;
+        const {
+            following = 0,  // 默认值为 0
+            follower = 0,   // 默认值为 0
+            dynamic_count = 0 // 默认值为 0
+        } = biliStat || {};  // 如果 biliStat 为 undefined，使用空对象解构
 
         // 获取屏幕截图所需的数据
         const screenData = await new BiliInfoModel(e).getData({
