@@ -673,7 +673,7 @@ export class tools extends plugin {
         const [biliData, biliStat] = await Promise.all([fetchData(BILI_NAV), fetchData(BILI_NAV_STAT)]);
 
         // 解构所需的字段
-        const { face, uname, level_info, money, moral, vipStatus } = biliData;
+        const { face, uname, level_info, money, wallet, vipStatus } = biliData;
         const { following, follower, dynamic_count } = biliStat;
 
         // 获取屏幕截图所需的数据
@@ -682,7 +682,7 @@ export class tools extends plugin {
             uname,
             level_info,
             money,
-            moral,
+            wallet,
             vipStatus,
             following,
             follower,
