@@ -1440,7 +1440,16 @@ async neteaseStatus(e, reck) {
                     // VIP 有效，不执行后续逻辑
                 } else {
                     // 如果都已过期，发送 VIP 已过期信息
-                    e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\nstandard(标准)`]);
+                    const neteaseData = await new NeteaseModel(e).getData({
+                        avatarUrl: `${userInfo.avatarUrl}?param=170y170`,
+                        nickname: userInfo.nickname,
+                        vipLevel: `${vipInfo.redplus.vipCode != 0 ? `SVIP${vipInfo.associator.vipLevel}(已过期)\n` : vipInfo.associator.vipCode != 0 ? `VIP${vipInfo.associator.vipLevel}(已过期)\n` : '未开通'}`,
+                        musicQuality: 'standard(标准)',
+                        expireDate: `未开通`
+                    });
+                    // e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
+                    let img = await puppeteer.screenshot("netease", neteaseData);
+                    e.reply(img, true);
                 }
             })
             // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
