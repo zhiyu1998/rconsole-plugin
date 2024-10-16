@@ -30,7 +30,7 @@ import {
     ANIME_SERIES_SEARCH_LINK,
     ANIME_SERIES_SEARCH_LINK2,
     BILI_ARTICLE_INFO,
-    BILI_EP_INFO,
+    BILI_EP_INFO, BILI_NAV, BILI_NAV_STAT,
     BILI_ONLINE,
     BILI_SSID_INFO,
     BILI_STREAM_FLV,
@@ -54,6 +54,7 @@ import {
     WEISHI_VIDEO_INFO,
     XHS_REQ_LINK
 } from "../constants/tools.js";
+import BiliInfoModel from "../model/bili-info.js";
 import config from "../model/config.js";
 import NeteaseModel from "../model/netease.js";
 import * as aBogus from "../utils/a-bogus.cjs";
@@ -140,6 +141,11 @@ export class tools extends plugin {
                 {
                     reg: "^#(RBQ|rbq)$",
                     fnc: "biliScan",
+                    permission: 'master',
+                },
+                {
+                    reg: "^#(RBS|rbs)$",
+                    fnc: "biliState",
                     permission: 'master',
                 },
                 {
@@ -638,6 +644,58 @@ export class tools extends plugin {
         config.updateField("tools", "biliSessData", SESSDATA);
         e.reply('登录成功！相关信息已保存至配置文件', true)
         return true;
+    }
+
+    // B站状态
+    async biliState(e) {
+        if (!this.biliSessData) {
+            e.reply("未检测到 B 站登录信息，请填写 SessData");
+            return;
+        }
+
+        // 封装 fetch 请求为函数
+        const fetchData = async (url) => {
+            try {
+                const res = await fetch(url, {
+                    headers: {
+                        Cookie: `SESSDATA=${this.biliSessData}`
+                    }
+                });
+                const data = await res.json();
+                return data.data;
+            } catch (error) {
+                e.reply("请求失败，请稍后重试");
+                throw error; // 确保错误传播
+            }
+        };
+
+        // 并行请求用户基本信息和状态信息
+        const [biliData, biliStat] = await Promise.all([fetchData(BILI_NAV), fetchData(BILI_NAV_STAT)]);
+
+        // 解构所需的字段
+        const { face, uname, level_info, money, moral, vipStatus } = biliData;
+        const { following, follower, dynamic_count } = biliStat;
+
+        // 获取屏幕截图所需的数据
+        const screenData = await new BiliInfoModel(e).getData({
+            face,
+            uname,
+            level_info,
+            money,
+            moral,
+            vipStatus,
+            following,
+            follower,
+            dynamic_count
+        });
+
+        // 使用 puppeteer 生成截图
+        try {
+            let img = await puppeteer.screenshot("bili-info", screenData);
+            e.reply(img, true);
+        } catch (error) {
+            e.reply("截图生成失败，请稍后重试");
+        }
     }
 
     // B 站解析
