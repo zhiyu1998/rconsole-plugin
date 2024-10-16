@@ -134,6 +134,104 @@ apt-get install atomicparsley
 - 在config/tools.yaml里设置`biliDuration`
 - 锅巴设置
 
+### 💎 关于网易云高音质解析
+
+> 由于公开的API过老 出现有些歌曲无法解析的问题，所以必须搭建个人解析API才可使用该功能
+
+🏅【强烈推荐】搭建个人网易云解析API
+ 
+ 🦊 更多搭建方法参考[NeteaseCloudMusicApi](https://gitlab.com/Binaryify/neteasecloudmusicapi)
+
+👍 **推荐方案** :🐬docker 部署
+```shell
+docker pull binaryify/netease_cloud_music_api
+
+docker run -d -p 3000:3000 --name netease_cloud_music_api    binaryify/netease_cloud_music_api
+
+## 或者
+docker run -d -p 3000:3000 binaryify/netease_cloud_music_api
+
+## 去掉或者设置相关的环境变量
+
+docker run -d -p 3000:3000 --name netease_cloud_music_api -e http_proxy= -e https_proxy= -e no_proxy= -e HTTP_PROXY= -e HTTPS_PROXY= -e NO_PROXY= binaryify/netease_cloud_music_api
+
+## 或者
+docker run -d -p 3000:3000 -e http_proxy= -e https_proxy= -e no_proxy= -e HTTP_PROXY= -e HTTPS_PROXY= -e NO_PROXY= binaryify/netease_cloud_music_api
+```
+> 不会用docker怎么办？使用[docker desktop](https://www.docker.com/products/docker-desktop/)
+
+打开命令行
+
+<img src="https://s2.loli.net/2024/10/16/2i6aBethbOorIA8.png" alt="打开命令行" width="50%" height="50%" />
+
+```shell
+##拉取镜像
+docker pull binaryify/netease_cloud_music_api
+```
+点击运行
+
+<img src="https://s2.loli.net/2024/10/16/azIPlT5bX9sgrjF.png" alt="运行" width="70%" height="50%" />
+
+参数设置
+
+<img src="https://s2.loli.net/2024/10/16/pUJQv3XYo1eEsAD.png" alt="设置" width="50%" height="50%" />
+
+看到这一行，证明服务已经跑起来了
+
+<img src="https://s2.loli.net/2024/10/16/jw5pPLnK7M2aWVr.png" alt="run" width="70%" height="50%" />
+
+> 请注意，如果跟我一样上面自定义的端口是2222:3000 这时候你访问你的API的地址就应该是http://localhost:2222
+
+- 更改下面两个选项，自行修改 `tools.yaml` 或者锅巴：
+
+```yaml
+useLocalNeteaseAPI: 'true' # 开启自建API服务
+neteaseCloudAPIServer: '' # 填入刚刚跑起来的API地址 例如上面 就填入http://localhost:2222
+```
+🍪 获取网易云Cookie
+
+> 需要网易云VIP账号 VIP最高解析->高清环绕音 SVIP最高解析->超清母带
+
+👍 **推荐方案** : 扫码登录 发送 `#rnq` 使用网易云APP进行扫码
+
+<img src="https://s2.loli.net/2024/10/16/9FZS1PldCyuVp6c.png" alt="rnq" width="70%" height="50%" />
+
+- Cookie获取备用方案
+
+1. 打开`https://music.163.com/` 登入自己的账号，点击自己头像->我的主页
+2. F12进入控制台，打开`网络/network`
+3. 点击`Fetch/XHR`
+4. 找到`info`开头的请求，把下面的一串`MUSIC_U=`开头复制到`;`结尾
+
+> 如果请求过于多，可以点击左上角的删除，再刷新页面即可
+
+![image.png](https://s2.loli.net/2024/10/16/WbCs2YHqzkwoAnE.png)
+
+
+- 自行修改 `tools.yaml` 填写 或者锅巴：
+
+> 注意！！要在Cookie的尾部拼接 `; os=pc` 否则无法进行最高音质解析
+
+```yaml
+neteaseCookie: '' # 网易云Cookie 例：MUSIC_U=xxxxxxxxxxxxx; os=pc
+```
+
+👑 网易云登录状态 发送 `#rns` 可以查看当前登录账号VIP状态
+
+![image.png](https://s2.loli.net/2024/10/16/BNFUcT3DXVpYKMS.png)
+
+🎸 网易云解析音质选择
+
+- 自行修改 `tools.yaml` 填写 或者 锅巴：
+
+> 不推荐杜比全景声，解析过后会发送MP4文件，编码格式为AC-4，需要设备支持才能播放
+
+> 最高支持的解析取决于 `vip等级` 和 `歌曲本身支持最高音质` 如没有设定的音质选项则自动向下选取
+
+```yaml
+neteaseCloudAudioQuality: '' # 网易云解析最高音质 默认exhigh(极高) 分类：standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, dolby => 杜比全景声(不推荐), jymaster => 超清母带
+```
+
 ### 🔄 R插件版本回退方法（慎重）
 
 下载指定版本的R插件：
@@ -383,3 +481,4 @@ apt install aria2
 > [#I7KQVY](https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY)
 
 <img src="https://s2.loli.net/2024/08/19/uo1J35V4vMDUSbN.webp" alt="小程序解析" width="50%" height="50%" />
+
