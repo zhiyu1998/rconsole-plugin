@@ -1685,8 +1685,8 @@ async neteaseStatus(e, reck) {
                 const song = res.data.songs[0];
                 return song?.al?.picUrl
             });
-            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,没有ck的走临时接口)
-            if (!isCkExpired || url == null) {
+            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
+            if (!isCkExpired || !this.useLocalNeteaseAPI || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 拥有ck，并且有效，直接进行解析
