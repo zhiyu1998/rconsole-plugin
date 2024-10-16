@@ -1440,7 +1440,16 @@ async neteaseStatus(e, reck) {
                     // VIP 有效，不执行后续逻辑
                 } else {
                     // 如果都已过期，发送 VIP 已过期信息
-                    e.reply([segment.image(`${userInfo.avatarUrl}?param=170y170`), `网易云已登录:\n${userInfo.nickname}\n会员等级:\nVIP已过期\n最高解析音质:\nstandard(标准)`]);
+                    const neteaseData = await new NeteaseModel(e).getData({
+                        avatarUrl: `${userInfo.avatarUrl}?param=170y170`,
+                        nickname: userInfo.nickname,
+                        vipLevel: `${vipInfo.redplus.vipCode != 0 ? `SVIP${vipInfo.associator.vipLevel}(已过期)\n` : vipInfo.associator.vipCode != 0 ? `VIP${vipInfo.associator.vipLevel}(已过期)\n` : '未开通'}`,
+                        musicQuality: 'standard(标准)',
+                        expireDate: `未开通`
+                    });
+                    // e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
+                    let img = await puppeteer.screenshot("netease", neteaseData);
+                    e.reply(img, true);
                 }
             })
             // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
@@ -1508,9 +1517,10 @@ async neteaseStatus(e, reck) {
                         const match = res.data.cookie.match(regex);
                         if (match) {
                             try {
-                                await config.updateField("tools", "neteaseCookie", match[0]);
+                                let ck = match[0] + '; os=pc'
+                                await config.updateField("tools", "neteaseCookie", ck);
                                 // logger.info('ck------', match[0]);
-                                this.neteaseStatus(e, match[0])
+                                this.neteaseStatus(e, ck)
                             } catch (error) {
                                 logger.error('更新ck时出错:', error);
                                 e.reply('更新ck时出错，请稍后重试');
@@ -1675,12 +1685,16 @@ async neteaseStatus(e, reck) {
                 const song = res.data.songs[0];
                 return song?.al?.picUrl
             });
-            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,没有ck的走临时接口)
-            if (!isCkExpired || url == null) {
+            // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
+            if (!isCkExpired || !this.useLocalNeteaseAPI || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 拥有ck，并且有效，直接进行解析
-                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${AudioLevel}\n预估大小: ${AudioSize}MB`]);
+                let audioInfo = AudioLevel;
+                if (AudioLevel == '杜比全景声') {
+                    audioInfo += '\n(杜比下载文件为MP4，编码格式为AC-4，需要设备支持才可播放)';
+                }
+                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
             const extensionPattern = /\.([a-zA-Z0-9]+)$/;
@@ -1688,7 +1702,9 @@ async neteaseStatus(e, reck) {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
-                await e.reply(segment.record(path));
+                if (!musicExt == 'mp4') {
+                    await e.reply(segment.record(path));
+                }
                 // 上传群文件
                 await this.uploadGroupFile(e, path);
                 // 删除文件

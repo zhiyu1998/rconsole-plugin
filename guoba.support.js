@@ -242,7 +242,7 @@ export function supportGuoba() {
                     field: "tools.neteaseCloudAPIServer",
                     label: "自建网易云API地址",
                     bottomHelpMessage:
-                        "填入自建API地址，例：http://xxxxxxxx",
+                        "填入自建API地址，例：http://localhost:3000",
                     component: "Input",
                     required: false,
                     componentProps: {
@@ -264,7 +264,7 @@ export function supportGuoba() {
                     field: "tools.neteaseCloudAudioQuality",
                     label: "网易云解析最高音质",
                     bottomHelpMessage:
-                        "网易云解析最高音质(需vip账号ck！！！ 默认极高，更高请根据登陆的账号和服务器承载能力进行选择)",
+                        "网易云解析最高音质(目前仅针对自建最新API服务器生效！！需vip账号ck！！默认极高，杜比全景声由于编码特殊需要设备支持，更高请根据登陆的账号和服务器承载能力进行选择)",
                     component: "Select",
                     componentProps: {
                         options: NETEASECLOUD_QUALITY_LIST,

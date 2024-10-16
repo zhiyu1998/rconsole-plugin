@@ -202,7 +202,7 @@ export const NETEASECLOUD_QUALITY_LIST = Object.freeze([
     { label: 'Hi-Res', value: 'hires' },
     { label: '高清环绕声', value: 'jyeffect' },
     { label: '沉浸环绕声', value: 'sky' },
-    { label: '杜比全景声', value: 'dolby' },
+    { label: '杜比全景声(不推荐)', value: 'dolby' },
     { label: '超清母带', value: 'jymaster' },
 ]);
 /**
