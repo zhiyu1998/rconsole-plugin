@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Thu, 03 Oct 2024 07:46:42 GMT</lastBuildDate>
+        <lastBuildDate>Wed, 16 Oct 2024 08:45:50 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -140,6 +140,91 @@ apt-get install atomicparsley
 <li>在config/tools.yaml里设置<code>biliDuration</code></li>
 <li>锅巴设置</li>
 </ul>
+<h3>💎 关于网易云高音质解析</h3>
+<blockquote>
+<p>由于公开的API过老 出现有些歌曲无法解析的问题，所以必须搭建个人解析API才可使用该功能</p>
+</blockquote>
+<p>🏅【强烈推荐】搭建个人网易云解析API</p>
+<p>🦊 更多搭建方法参考<a href="https://gitlab.com/Binaryify/neteasecloudmusicapi">NeteaseCloudMusicApi</a></p>
+<p>👍 <strong>推荐方案</strong> :🐬docker 部署</p>
+<pre><code class="language-shell">docker pull binaryify/netease_cloud_music_api
+
+docker run -d -p 3000:3000 --name netease_cloud_music_api    binaryify/netease_cloud_music_api
+
+## 或者
+docker run -d -p 3000:3000 binaryify/netease_cloud_music_api
+
+## 去掉或者设置相关的环境变量
+
+docker run -d -p 3000:3000 --name netease_cloud_music_api -e http_proxy= -e https_proxy= -e no_proxy= -e HTTP_PROXY= -e HTTPS_PROXY= -e NO_PROXY= binaryify/netease_cloud_music_api
+
+## 或者
+docker run -d -p 3000:3000 -e http_proxy= -e https_proxy= -e no_proxy= -e HTTP_PROXY= -e HTTPS_PROXY= -e NO_PROXY= binaryify/netease_cloud_music_api
+</code></pre>
+<blockquote>
+<p>不会用docker怎么办？使用<a href="https://www.docker.com/products/docker-desktop/">docker desktop</a></p>
+</blockquote>
+<p>打开命令行</p>
+<img src="https://s2.loli.net/2024/10/16/2i6aBethbOorIA8.png" alt="打开命令行" width="50%" height="50%" />
+<pre><code class="language-shell">##拉取镜像
+docker pull binaryify/netease_cloud_music_api
+</code></pre>
+<p>点击运行</p>
+<img src="https://s2.loli.net/2024/10/16/azIPlT5bX9sgrjF.png" alt="运行" width="70%" height="50%" />
+<p>参数设置</p>
+<img src="https://s2.loli.net/2024/10/16/pUJQv3XYo1eEsAD.png" alt="设置" width="50%" height="50%" />
+<p>看到这一行，证明服务已经跑起来了</p>
+<img src="https://s2.loli.net/2024/10/16/jw5pPLnK7M2aWVr.png" alt="run" width="70%" height="50%" />
+<blockquote>
+<p>请注意，如果跟我一样上面自定义的端口是2222:3000 这时候你访问你的API的地址就应该是<code>http://localhost:2222</code></p>
+</blockquote>
+<ul>
+<li>更改下面两个选项，自行修改 <code>tools.yaml</code> 或者锅巴：</li>
+</ul>
+<pre><code class="language-yaml">useLocalNeteaseAPI: 'true' # 开启自建API服务
+neteaseCloudAPIServer: '' # 填入刚刚跑起来的API地址 例如上面 就填入http://localhost:2222
+</code></pre>
+<p>🍪 获取网易云Cookie</p>
+<blockquote>
+<p>需要网易云VIP账号 VIP最高解析-&gt;高清环绕音 SVIP最高解析-&gt;超清母带</p>
+</blockquote>
+<p>👍 <strong>推荐方案</strong> : 扫码登录 发送 <code>#rnq</code> 使用网易云APP进行扫码</p>
+<img src="https://s2.loli.net/2024/10/16/9FZS1PldCyuVp6c.png" alt="rnq" width="70%" height="50%" />
+<ul>
+<li>Cookie获取备用方案</li>
+</ul>
+<ol>
+<li>打开<code>https://music.163.com/</code> 登入自己的账号，点击自己头像-&gt;我的主页</li>
+<li>F12进入控制台，打开<code>网络/network</code></li>
+<li>点击<code>Fetch/XHR</code></li>
+<li>找到<code>info</code>开头的请求，把下面的一串<code>MUSIC_U=</code>开头复制到<code>;</code>结尾</li>
+</ol>
+<blockquote>
+<p>如果请求过于多，可以点击左上角的删除，再刷新页面即可</p>
+</blockquote>
+<p><img src="https://s2.loli.net/2024/10/16/WbCs2YHqzkwoAnE.png" alt="image.png"></p>
+<ul>
+<li>自行修改 <code>tools.yaml</code> 填写 或者锅巴：</li>
+</ul>
+<blockquote>
+<p>注意！！要在Cookie的尾部拼接 <code>; os=pc</code> 否则无法进行最高音质解析</p>
+</blockquote>
+<pre><code class="language-yaml">neteaseCookie: '' # 网易云Cookie 例：MUSIC_U=xxxxxxxxxxxxx; os=pc
+</code></pre>
+<p>👑 网易云登录状态 发送 <code>#rns</code> 可以查看当前登录账号VIP状态</p>
+<p><img src="https://s2.loli.net/2024/10/16/BNFUcT3DXVpYKMS.png" alt="image.png"></p>
+<p>🎸 网易云解析音质选择</p>
+<ul>
+<li>自行修改 <code>tools.yaml</code> 填写 或者 锅巴：</li>
+</ul>
+<blockquote>
+<p>不推荐杜比全景声，解析过后会发送MP4文件，编码格式为AC-4，需要设备支持才能播放</p>
+</blockquote>
+<blockquote>
+<p>最高支持的解析取决于 <code>vip等级</code> 和 <code>歌曲本身支持最高音质</code> 如没有设定的音质选项则自动向下选取</p>
+</blockquote>
+<pre><code class="language-yaml">neteaseCloudAudioQuality: '' # 网易云解析最高音质 默认exhigh(极高) 分类：standard =&gt; 标准,higher =&gt; 较高, exhigh=&gt;极高, lossless=&gt;无损, hires=&gt;Hi-Res, jyeffect =&gt; 高清环绕声, sky =&gt; 沉浸环绕声, dolby =&gt; 杜比全景声(不推荐), jymaster =&gt; 超清母带
+</code></pre>
 <h3>🔄 R插件版本回退方法（慎重）</h3>
 <p>下载指定版本的R插件：<br>
 如果你觉得当前版本的功能出现了问题，那么可以下载指定版本的插件，比如<code>1.5.1</code>：</p>
