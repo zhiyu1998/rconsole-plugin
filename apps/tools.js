@@ -1454,7 +1454,7 @@ async neteaseStatus(e, reck) {
             })
             // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
         } else {
-            e.reply('暂未登录，请发#网易云扫码登陆进行登陆绑定ck')
+            e.reply('暂未登录，请发 #RNQ 或者 #rnq 进行登陆绑定ck')
         }
     })
 }
