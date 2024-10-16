@@ -140,7 +140,7 @@ apt-get install atomicparsley
 
 🏅【强烈推荐】搭建个人网易云解析API
  
- 🦊 更多搭建方法参考[NeteaseCloudMusicApi](https://gitlab.com/Binaryify/neteasecloudmusicapi)
+🦊 更多搭建方法参考[NeteaseCloudMusicApi](https://gitlab.com/Binaryify/neteasecloudmusicapi)
 
 👍 **推荐方案** :🐬docker 部署
 ```shell
@@ -180,7 +180,7 @@ docker pull binaryify/netease_cloud_music_api
 
 <img src="https://s2.loli.net/2024/10/16/jw5pPLnK7M2aWVr.png" alt="run" width="70%" height="50%" />
 
-> 请注意，如果跟我一样上面自定义的端口是2222:3000 这时候你访问你的API的地址就应该是http://localhost:2222
+> 请注意，如果跟我一样上面自定义的端口是2222:3000 这时候你访问你的API的地址就应该是`http://localhost:2222`
 
 - 更改下面两个选项，自行修改 `tools.yaml` 或者锅巴：
 
