@@ -1681,7 +1681,11 @@ async neteaseStatus(e, reck) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 拥有ck，并且有效，直接进行解析
-                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${AudioLevel}\n预估大小: ${AudioSize}MB`]);
+                let audioInfo = AudioLevel;
+                if (AudioLevel == '杜比全景声') {
+                    audioInfo += '\n(杜比下载文件为MP4，编码格式为AC-4，需要设备支持才可播放)';
+                }
+                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
             const extensionPattern = /\.([a-zA-Z0-9]+)$/;
@@ -1689,7 +1693,9 @@ async neteaseStatus(e, reck) {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
-                await e.reply(segment.record(path));
+                if (!musicExt == 'mp4') {
+                    await e.reply(segment.record(path));
+                }
                 // 上传群文件
                 await this.uploadGroupFile(e, path);
                 // 删除文件
