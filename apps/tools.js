@@ -1966,7 +1966,7 @@ export class tools extends plugin {
             }
             if(await convertToSeconds(Duration) > this.youtubeDuration){
                 e.reply([
-                    segment.image(`${path}/Thumbnail.png`),
+                    segment.image(`${path}/thumbnail.png`),
                     `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}${DIVIDING_LINE.replace('{}', '限制说明')}\n视频时长：${Duration}分钟\n大于管理员限定时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取限定时间部分`
                 ]);
             } else {
