@@ -1973,7 +1973,7 @@ export class tools extends plugin {
             } else {
                 e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
             }
-            await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+            await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange );
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             logger.error(error);
