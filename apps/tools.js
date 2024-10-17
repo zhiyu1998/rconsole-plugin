@@ -283,8 +283,6 @@ export class tools extends plugin {
         this.biliResolution = this.toolsConfig.biliResolution;
         // 加载youtube的限制时长
         this.youtubeDuration = this.toolsConfig.youtubeDuration
-        // 加载youtube下载最大线程数
-        this.youtubemaxThreads = this.toolsConfig.youtubemaxThreads
         // 加载油管下载画质选项
         this.YouTubeGraphicsOptions = this.toolsConfig.YouTubeGraphicsOptions
         // 加载抖音Cookie
@@ -1975,7 +1973,7 @@ export class tools extends plugin {
             } else {
                 e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
             }
-            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics, timeRange, this.youtubemaxThreads);
+            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics, timeRange, this.videoDownloadConcurrency);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             logger.error(error);

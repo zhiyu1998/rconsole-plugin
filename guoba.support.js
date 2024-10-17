@@ -232,17 +232,6 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "tools.youtubemaxThreads",
-                    label: "YouTuBe最大下载线程",
-                    bottomHelpMessage:
-                        "默认为 1,请根据自己的服务器调节,一定程度上缓解切片下载慢的问题",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入YouTuBe最大下载线程",
-                    },
-                },
-                {
                     field: "tools.YouTubeGraphicsOptions",
                     label: "YouTube最高分辨率",
                     bottomHelpMessage:
@@ -341,7 +330,7 @@ export function supportGuoba() {
                     field: "tools.videoDownloadConcurrency",
                     label: "（高级）下载并发个数",
                     bottomHelpMessage:
-                        "【涉及哔哩哔哩、抖音】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                        "【涉及哔哩哔哩、抖音、YouTuBe】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
