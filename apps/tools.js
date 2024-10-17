@@ -1956,21 +1956,22 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.mp4")
             await checkAndRemoveFile(path + "/Thumbnail.png")
             await ytDlpGetThumbnail(path, url, isOversea, this.myProxy)
-            const Duration =  await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, '')
-            // logger.info('时长------',Duration)
             const title = await ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
             // logger.info('标题------',title)
             function convertToSeconds(timeStr) {
                 const [minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
+                if (!seconds) return timeStr;
                 return minutes * 60 + seconds; // 分钟转化为秒并加上秒数
             }
-            if(await convertToSeconds(Duration) > this.youtubeDuration){
+            const Duration = convertToSeconds(await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, '')) 
+            // logger.info('时长------',Duration)
+            if(Duration > this.youtubeDuration){
                 e.reply([
-                    segment.image(`${path}/thumbnail.png`),
-                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}${DIVIDING_LINE.replace('{}', '限制说明')}\n视频时长：${Duration}分钟\n大于管理员限定时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取限定时间部分`
+                    segment.image(`${ path }/thumbnail.png`),
+                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}${DIVIDING_LINE.replace('{}', '限制说明')}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取限定时间部分`
                 ]);
             } else {
-                e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${Duration} 分钟`]);
+                e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
             }
             await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics, timeRange);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
