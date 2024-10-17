@@ -19,7 +19,7 @@ function constructProxyParam(isOversea, proxy) {
  * @returns string
  */
 export function ytDlpGetDuration(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-duration ${constructProxyParam(isOversea, proxy)} ${url}`);
+    return execSync(`yt-dlp --get-duration --skip-download ${constructProxyParam(isOversea, proxy)} ${url}`);
 }
 
 /**
@@ -30,7 +30,7 @@ export function ytDlpGetDuration(url, isOversea, proxy) {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-title ${constructProxyParam(isOversea, proxy)} ${url} --encoding utf8`);
+    return execSync(`yt-dlp --get-title --skip-download ${constructProxyParam(isOversea, proxy)} ${url} --encoding utf8`);
 }
 
 /**
