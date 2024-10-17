@@ -620,7 +620,7 @@ export class tools extends plugin {
         await checkAndRemoveFile(path + "/temp.mp4");
         const title = ytDlpGetTilt(url, isOversea, this.myProxy);
         e.reply(`${ this.identifyPrefix }识别：TikTok，视频下载中请耐心等待 \n${ title }`);
-        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy);
+        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency);
         await this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         return true;
     }
@@ -1973,7 +1973,7 @@ export class tools extends plugin {
             } else {
                 e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
             }
-            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics, timeRange, this.videoDownloadConcurrency);
+            await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange );
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             logger.error(error);

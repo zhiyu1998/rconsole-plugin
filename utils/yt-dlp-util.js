@@ -56,13 +56,13 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy) {
  * @param timeRange  截取时间段
  * @param maxThreads  最大线程数
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, merge = false, graphics, timeRange, maxThreads) {
+export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge = false, graphics, timeRange) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
 
-        const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" --concurrent-fragments ${maxThreads} ` : "";
+        const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
 
-        const command = `yt-dlp ${fParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+        const command = `yt-dlp ${fParam} --concurrent-fragments ${maxThreads} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
 
         logger.info(`[R插件][yt-dlp审计] ${command}`)
 
