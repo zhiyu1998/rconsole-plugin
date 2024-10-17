@@ -54,12 +54,13 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy) {
  * @param merge      是否合并输出为 mp4 格式 (仅适用于视频合并需求)
  * @param graphics   YouTube画质参数
  * @param timeRange  截取时间段
+ * @param maxThreads  最大线程数
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, merge = false, graphics, timeRange) {
+export async function ytDlpHelper(path, url, isOversea, proxy, merge = false, graphics, timeRange, maxThreads) {
     return new Promise((resolve, reject) => {
         const mergeOption = merge ? '--merge-output-format "mp4"' : '';
 
-        const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]"` : "";
+        const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" --concurrent-fragments ${maxThreads} ` : "";
 
         const command = `yt-dlp ${fParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
 
