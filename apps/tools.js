@@ -444,7 +444,7 @@ export class tools extends plugin {
                     const dyCover = cover.url_list?.pop();
                     // logger.info(cover.url_list);
                     dySendContent += `\n
-                    ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ Number.isInteger(dyDuration / 60) ? Math.trunc(dyDuration / 60) : (dyDuration / 60).toFixed(2) }分钟，\n大于管理员设置的最大时长 ${ Number.isInteger(durationThreshold / 60) ? Math.trunc(durationThreshold / 60) : (durationThreshold / 60).toFixed(2) } 分钟！`;
+                    ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
                     e.reply([segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
                     await this.douyinComment(e, douId, headers);
@@ -814,7 +814,7 @@ export class tools extends plugin {
         // 限制视频解析
         if (isLimitDuration) {
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ Number.isInteger(this.biliDuration / 60) ? Math.trunc(this.biliDuration / 60) : (this.biliDuration / 60).toFixed(2) } 分钟！`);
+            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${(this.biliDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`);
             e.reply(biliInfo);
             return true;
         } else {
