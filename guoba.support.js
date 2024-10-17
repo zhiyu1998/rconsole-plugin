@@ -232,6 +232,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.youtubemaxThreads",
+                    label: "YouTuBe最大下载线程",
+                    bottomHelpMessage:
+                        "默认为 1,请根据自己的服务器调节,一定程度上缓解切片下载慢的问题",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入YouTuBe最大下载线程",
+                    },
+                },
+                {
                     field: "tools.YouTubeGraphicsOptions",
                     label: "YouTube最高分辨率",
                     bottomHelpMessage:
