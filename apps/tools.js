@@ -9,6 +9,7 @@ import PQueue from 'p-queue';
 import path from "path";
 import qrcode from "qrcode"
 import querystring from "querystring";
+import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
@@ -30,7 +31,9 @@ import {
     ANIME_SERIES_SEARCH_LINK,
     ANIME_SERIES_SEARCH_LINK2,
     BILI_ARTICLE_INFO,
-    BILI_EP_INFO, BILI_NAV, BILI_NAV_STAT,
+    BILI_EP_INFO,
+    BILI_NAV,
+    BILI_NAV_STAT,
     BILI_ONLINE,
     BILI_SSID_INFO,
     BILI_STREAM_FLV,
@@ -103,7 +106,6 @@ import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
-import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 
 export class tools extends plugin {
     /**
@@ -219,10 +221,6 @@ export class tools extends plugin {
                 {
                     reg: "tieba.baidu.com",
                     fnc: "tieba"
-                },
-                {
-                    reg: '^#验车(.*?)',
-                    fnc: 'yc'
                 },
                 {
                     reg: "^#(网易状态|rns|RNS)$",
@@ -2470,40 +2468,6 @@ export class tools extends plugin {
 
         e.reply(await Bot.makeForwardMsg(reply));
         return true;
-    }
-
-    async yc(e) {
-        if (!(await this.isTrustUser(e.user_id))) {
-            e.reply("你没有权限使用此命令");
-            return;
-        }
-
-        const tag = e.msg.replace(/#验车/g, "");
-
-        const reqUrl = `https://whatslink.info/api/v1/link?url=${ tag }`;
-        const resp = await axios.get(reqUrl, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-            }
-        });
-        if (!resp.data) {
-            e.reply("没有找到相关磁力");
-            return;
-        }
-        await e.reply(`🧲 [R插件 x Mix] 联合为您验车：\n${ resp.data.name }`, false, { recallMsg: MESSAGE_RECALL_TIME });
-        if (resp.data?.screenshots === null) {
-            e.reply("没有找到相关媒体");
-            return;
-        }
-        const screenshots = resp.data.screenshots.map(item => {
-            const screenshot = item.screenshot;
-            return {
-                message: segment.image(screenshot),
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            }
-        });
-        e.reply(Bot.makeForwardMsg(screenshots), false, { recallMsg: MESSAGE_RECALL_TIME });
     }
 
     /**
