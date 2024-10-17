@@ -1445,171 +1445,152 @@ export class tools extends plugin {
         return true;
     }
 
-// 网易云登录状态
-async neteaseStatus(e, reck) {
-    // 优先判断是否使用自建 API
-    let autoSelectNeteaseApi
-    // 判断海外
-    const isOversea = await this.isOverseasServer();
-    if (this.useLocalNeteaseAPI) {
-        // 使用自建 API
-        autoSelectNeteaseApi = this.neteaseCloudAPIServer
-    } else {
-        // 自动选择 API
-        autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
-    }
-    const statusUrl = autoSelectNeteaseApi + '/login/status'
-    axios.get(statusUrl, {
-        headers: {
-            "User-Agent": COMMON_USER_AGENT,
-            "Cookie": reck ? reck : this.neteaseCookie
-        },
-    }).then(res => {
-        // logger.info('登录状态', res.data)
-        const userInfo = res.data.data.profile
-        if (userInfo) {
-            axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
+    // 网易云登录状态
+    async neteaseStatus(e, reck) {
+        // 优先判断是否使用自建 API
+        let autoSelectNeteaseApi = this.useLocalNeteaseAPI ? this.neteaseCloudAPIServer : (await this.isOverseasServer() ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN);
+        const statusUrl = `${autoSelectNeteaseApi}/login/status`;
+
+        try {
+            const statusResponse = await axios.get(statusUrl, {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT,
-                    "Cookie": reck ? reck : this.neteaseCookie
+                    "Cookie": reck ? reck : this.neteaseCookie,
                 },
-            }).then(async res => {
-                // logger.info('vip信息', res.data)
-                const vipInfo = res.data.data
-                const checkVipStatus = async (vipLevel, expireTime, nickname, avatarUrl, e) => {
-                    const expireDate = new Date(expireTime);
-                    if (expireDate > Date.now()) {
-                        const vipLevelData = vipLevel.split("\n");
-                        const neteaseData = await new NeteaseModel(e).getData({
-                            avatarUrl: `${avatarUrl}?param=170y170`,
-                            nickname,
-                            vipLevel: vipLevelData[0],
-                            musicQuality: vipLevelData[2],
-                            expireDate: expireDate.toLocaleString()
-                        });
-                        // e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
-                        let img = await puppeteer.screenshot("netease", neteaseData);
-                        e.reply(img, true);
-                    } else {
-                        return false; // 返回 false 以继续检查下一个 VIP 状态
-                    }
-                    return true;
-                };
+            });
+            const userInfo = statusResponse.data?.data?.profile;
+            if (!userInfo) {
+                e.reply('暂未登录，请发 #RNQ 或者 #rnq 进行登陆绑定ck');
+                return;
+            }
 
-                if (vipInfo.redplus.vipCode != 0 && await checkVipStatus(`SVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\n jymaster(超清母带)`, vipInfo.redplus.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
-                    // SVIP 有效，不执行后续逻辑
-                } else if (vipInfo.associator.vipCode != 0 && await checkVipStatus(`VIP${vipInfo.associator.vipLevel}\n最高解析音质:\n jyeffect(高清环绕音)`, vipInfo.associator.expireTime, userInfo.nickname, userInfo.avatarUrl, e)) {
-                    // VIP 有效，不执行后续逻辑
-                } else {
-                    // 如果都已过期，发送 VIP 已过期信息
+            const vipResponse = await axios.get(`${autoSelectNeteaseApi}/vip/info?uid=${userInfo.userId}`, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    "Cookie": reck ? reck : this.neteaseCookie,
+                },
+            });
+            const vipInfo = vipResponse.data?.data;
+
+            const checkVipStatus = async (vipLevel, expireTime, nickname, avatarUrl) => {
+                const expireDate = new Date(expireTime);
+                if (expireDate > Date.now()) {
+                    const vipLevelData = vipLevel.split("\n");
                     const neteaseData = await new NeteaseModel(e).getData({
-                        avatarUrl: `${userInfo.avatarUrl}?param=170y170`,
-                        nickname: userInfo.nickname,
-                        vipLevel: `${vipInfo.redplus.vipCode != 0 ? `SVIP${vipInfo.associator.vipLevel}(已过期)\n` : vipInfo.associator.vipCode != 0 ? `VIP${vipInfo.associator.vipLevel}(已过期)\n` : '未开通'}`,
-                        musicQuality: 'standard(标准)',
-                        expireDate: `未开通`
+                        avatarUrl: `${avatarUrl}?param=170y170`,
+                        nickname,
+                        vipLevel: vipLevelData[0],
+                        musicQuality: vipLevelData[2],
+                        expireDate: expireDate.toLocaleString(),
                     });
-                    // e.reply([segment.image(`${avatarUrl}?param=170y170`), `网易云已登录:\n${nickname}\n会员等级:\n${vipLevel}\n会员到期时间:\n${expireDate.toLocaleString()}`]);
                     let img = await puppeteer.screenshot("netease", neteaseData);
                     e.reply(img, true);
+                    return true;
                 }
-            })
-            // e.reply([segment.image(userInfo.avatarUrl), `网易云已登录:${userInfo.nickname}\n会员等级:\n`,segment.image(vipInfo.iconUrl)]);
-        } else {
-            e.reply('暂未登录，请发 #RNQ 或者 #rnq 进行登陆绑定ck')
+                return false;
+            };
+
+            if (vipInfo.redplus.vipCode !== 0 && await checkVipStatus(`SVIP${vipInfo.redplus.vipLevel}\n最高解析音质:\n jymaster(超清母带)`, vipInfo.redplus.expireTime, userInfo.nickname, userInfo.avatarUrl)) {
+                return;
+            }
+            if (vipInfo.associator.vipCode !== 0 && await checkVipStatus(`VIP${vipInfo.associator.vipLevel}\n最高解析音质:\n jyeffect(高清环绕音)`, vipInfo.associator.expireTime, userInfo.nickname, userInfo.avatarUrl)) {
+                return;
+            }
+
+            // 如果都已过期，发送 VIP 已过期信息
+            const neteaseData = await new NeteaseModel(e).getData({
+                avatarUrl: `${userInfo.avatarUrl}?param=170y170`,
+                nickname: userInfo.nickname,
+                vipLevel: vipInfo.redplus.vipCode !== 0 ? `SVIP${vipInfo.redplus.vipLevel}(已过期)` : vipInfo.associator.vipCode !== 0 ? `VIP${vipInfo.associator.vipLevel}(已过期)` : '未开通',
+                musicQuality: 'standard(标准)',
+                expireDate: '未开通',
+            });
+            let img = await puppeteer.screenshot("netease", neteaseData);
+            e.reply(img, true);
+        } catch (error) {
+            logger.error('获取网易云状态时出错:', error);
+            e.reply('获取网易云状态时出错，请稍后再试');
         }
-    })
-}
-    // 网易扫码登录
-    async netease_scan(e) {
-        // 优先判断是否使用自建 API
-        let autoSelectNeteaseApi
-        // 判断海外
-        const isOversea = await this.isOverseasServer();
-        if (this.useLocalNeteaseAPI) {
-            // 使用自建 API
-            autoSelectNeteaseApi = this.neteaseCloudAPIServer
-        } else {
-            // 自动选择 API
-            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
-        }
-        // 获取登录key
-        let keyUrl = autoSelectNeteaseApi + '/login/qr/key'
-        axios.get(keyUrl, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT
-            },
-        }).then(res => {
-            // 获取登录二维码
-            const unikey = res.data.data.unikey
-            let url = autoSelectNeteaseApi + '/login/qr/create?key=' + unikey + "&qrimg=true"
-            axios.get(url, {
-                headers: {
-                    "User-Agent": COMMON_USER_AGENT,
-                },
-            }).then(async res => {
-                // logger.info('扫码登录数据', res.data.data)
-                await mkdirIfNotExists(this.defaultPath);
-                const saveCodePath = `${this.defaultPath}NeteaseQrcode.png`;
-                await qrcode.toFile(saveCodePath,res.data.data.qrurl)
-                e.reply([segment.image(saveCodePath), '请在40秒内使用网易云APP进行扫码']);
-                // e.reply([segment.image(res.data.data.qrimg), '请在30秒内使用网易云APP进行扫码']);
-            })
+    }
 
-            //最大轮询次数 5s/check
-            let pollCount = 0; // 轮询计数器
-            const maxPolls = 8; // 最大轮询次数
+    // 轮询网易云状态
+    async pollLoginStatus(autoSelectNeteaseApi, unikey, e) {
+        let pollCount = 0;
+        const maxPolls = 8;
+        const intervalTime = 5000;
 
-            const pollRequest = async () => {
-                let pollUrl = autoSelectNeteaseApi + '/login/qr/check?key=' + unikey + '&timestamp=' + Date.now();
-                try {
-                    const res = await axios.get(pollUrl, {
-                        headers: {
-                            "User-Agent": COMMON_USER_AGENT,
-                        },
-                    });
-                    // logger.info('轮询状态', res.data);
-                    if (res.data.code == '800') {
-                        e.reply("二维码过期，请重新获取");
-                        clearInterval(intervalId);
-                        return;
-                    }
-                    if (res.data.code == '803') {
-                        const regex = /music_u=([^;]+)/i; // 使用 'i' 进行不区分大小写匹配
-                        const match = res.data.cookie.match(regex);
-                        if (match) {
-                            try {
-                                let ck = match[0] + '; os=pc'
-                                await config.updateField("tools", "neteaseCookie", ck);
-                                // logger.info('ck------', match[0]);
-                                this.neteaseStatus(e, ck)
-                            } catch (error) {
-                                logger.error('更新ck时出错:', error);
-                                e.reply('更新ck时出错，请稍后重试');
-                                return;
-                            }
-                        }
-                        e.reply(`扫码登录成功，ck已自动保存`);
-                        clearInterval(intervalId);
-                        return;
-                    }
+        const pollRequest = async () => {
+            try {
+                const pollUrl = `${autoSelectNeteaseApi}/login/qr/check?key=${unikey}&timestamp=${Date.now()}`;
+                const res = await axios.get(pollUrl, { headers: { "User-Agent": COMMON_USER_AGENT } });
 
-                    pollCount++;
-
-                } catch (error) {
-                    logger.error('轮询过程中出错:', error);
+                if (res.data.code == '800') {
+                    e.reply("二维码过期，请重新获取");
                     clearInterval(intervalId);
-                    e.reply('轮询过程中发生错误，请稍后再试');
+                    return;
                 }
 
+                if (res.data.code == '803') {
+                    const regex = /music_u=([^;]+)/i;
+                    const match = res.data.cookie.match(regex);
+                    if (match) {
+                        try {
+                            const ck = `${match[0]}; os=pc`;
+                            await config.updateField("tools", "neteaseCookie", ck);
+                            this.neteaseStatus(e, ck);
+                            e.reply(`扫码登录成功，ck已自动保存`);
+                        } catch (error) {
+                            logger.error('更新ck时出错:', error);
+                            e.reply('更新ck时出错，请稍后重试');
+                        }
+                    }
+                    clearInterval(intervalId);
+                    return;
+                }
+
+                pollCount++;
                 if (pollCount > maxPolls) {
-                    clearInterval(intervalId);  // 停止轮询
+                    clearInterval(intervalId);
                     logger.info('超时轮询已停止');
                     e.reply('扫码超时，请重新获取');
                 }
+            } catch (error) {
+                logger.error('轮询过程中出错:', error);
+                clearInterval(intervalId);
+                e.reply('轮询过程中发生错误，请稍后再试');
             }
-            const intervalId = setInterval(pollRequest, 5000);
-        })
+        };
+
+        const intervalId = setInterval(pollRequest, intervalTime);
+    }
+
+    // 网易扫码登录
+    async netease_scan(e) {
+        try {
+            // 优先判断是否使用自建 API
+            const isOversea = await this.isOverseasServer();
+            const autoSelectNeteaseApi = this.useLocalNeteaseAPI ? this.neteaseCloudAPIServer : (isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN);
+
+            // 获取登录key
+            const keyUrl = `${autoSelectNeteaseApi}/login/qr/key`;
+            const keyResponse = await axios.get(keyUrl, { headers: { "User-Agent": COMMON_USER_AGENT } });
+            const unikey = keyResponse.data.data.unikey;
+
+            // 获取登录二维码
+            const qrUrl = `${autoSelectNeteaseApi}/login/qr/create?key=${unikey}&qrimg=true`;
+            const qrResponse = await axios.get(qrUrl, { headers: { "User-Agent": COMMON_USER_AGENT } });
+
+            await mkdirIfNotExists(this.defaultPath);
+            const saveCodePath = `${this.defaultPath}NeteaseQrcode.png`;
+            await qrcode.toFile(saveCodePath, qrResponse.data.data.qrurl);
+            e.reply([segment.image(saveCodePath), '请在40秒内使用网易云APP进行扫码']);
+
+            // 轮询检查登录状态
+            await this.pollLoginStatus(autoSelectNeteaseApi, unikey, e);
+        } catch (error) {
+            logger.error('执行网易云扫码登录时出错:', error);
+            e.reply('执行扫码登录时发生错误，请稍后再试');
+        }
     }
 
     // 网易云解析
@@ -1963,7 +1944,7 @@ async neteaseStatus(e, reck) {
             await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
         }
         return true;
@@ -1991,7 +1972,7 @@ async neteaseStatus(e, reck) {
             // debug专用
             // fs.writeFile('data.json', JSON.stringify(respJson), (err) => {
             //     if (err) {
-            //         console.error('Error writing file:', err);
+            //         logger.error('Error writing file:', err);
             //     } else {
             //         console.log('JSON saved to file successfully.');
             //     }
@@ -2146,7 +2127,7 @@ async neteaseStatus(e, reck) {
                 });
             }
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
         }
     }
@@ -2603,7 +2584,7 @@ async neteaseStatus(e, reck) {
                 }
             });
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             throw error;
         }
     }
