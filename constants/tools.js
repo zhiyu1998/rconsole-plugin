@@ -41,6 +41,13 @@ export const BILI_VIDEO_INFO = "http://api.bilibili.com/x/web-interface/view"
 export const BILI_NAV = "https://api.bilibili.com/x/web-interface/nav"
 
 /**
+ * 登录用户状态数（双端）
+ * https://github.com/SocialSisterYi/bilibili-API-collect?tab=readme-ov-file
+ * @type {string}
+ */
+export const BILI_NAV_STAT = "https://api.bilibili.com/x/web-interface/nav/stat";
+
+/**
  * 扫码登录的二维码生成
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/login/login_action/QR.md
  * @type {string}
