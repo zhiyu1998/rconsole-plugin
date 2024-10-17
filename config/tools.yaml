@@ -29,7 +29,6 @@ neteaseCloudAudioQuality: exhigh # 网易云解析最高音质 默认exhigh(极�
 
 YouTubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
 youtubeDuration: 300 # YouTobe限制的最大视频时长（默认5分钟），单位：秒
-youtubemaxThreads: 1 # YouTobe下载最大线程数 默认1
 
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
