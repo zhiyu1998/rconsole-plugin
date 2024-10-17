@@ -221,6 +221,17 @@ export function supportGuoba() {
                     }
                 },
                 {
+                    field: "tools.youtubeDuration",
+                    label: "YouTuBe最大时长",
+                    bottomHelpMessage:
+                        "超过时长会截取指定时间（单位：秒），保护魔法的流量，计算公式：5分钟 x 60秒 = 300秒",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入YouTuBe视频最大时长限制（默认5分钟）",
+                    },
+                },
+                {
                     field: "tools.YouTubeGraphicsOptions",
                     label: "YouTube最高分辨率",
                     bottomHelpMessage:

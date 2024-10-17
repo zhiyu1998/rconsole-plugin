@@ -104,7 +104,7 @@ import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
-import { ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
+import { ytDlpGetTilt, ytDlpHelper, ytDlpGetThumbnail, ytDlpGetDuration } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
@@ -281,6 +281,8 @@ export class tools extends plugin {
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
         this.biliResolution = this.toolsConfig.biliResolution;
+        // 加载youtube的限制时长
+        this.youtubeDuration = this.toolsConfig.youtubeDuration
         // 加载油管下载画质选项
         this.YouTubeGraphicsOptions = this.toolsConfig.YouTubeGraphicsOptions
         // 加载抖音Cookie
@@ -442,7 +444,7 @@ export class tools extends plugin {
                     const dyCover = cover.url_list?.pop();
                     // logger.info(cover.url_list);
                     dySendContent += `\n
-                    ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ Math.trunc(dyDuration / 60) }分钟，\n大于管理员设置的最大时长 ${ durationThreshold / 60 } 分钟！`;
+                    ${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
                     e.reply([segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
                     await this.douyinComment(e, douId, headers);
@@ -812,7 +814,7 @@ export class tools extends plugin {
         // 限制视频解析
         if (isLimitDuration) {
             const durationInMinutes = (curDuration / 60).toFixed(0);
-            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ this.biliDuration / 60 } 分钟！`);
+            biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${(this.biliDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`);
             e.reply(biliInfo);
             return true;
         } else {
@@ -1908,6 +1910,19 @@ export class tools extends plugin {
 
     // 油管解析
     async sy2b(e) {
+        function formatTime(seconds) {
+            // 计算小时、分钟和秒
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            // 将小时、分钟和秒格式化为两位数
+            const formattedHours = String(hours).padStart(2, '0');
+            const formattedMinutes = String(minutes).padStart(2, '0');
+            const formattedSeconds = String(secs).padStart(2, '0');
+            // 构造时间范围字符串
+            return `00:00:00-${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+        }
+        const timeRange = await formatTime(this.youtubeDuration)
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
@@ -1939,9 +1954,25 @@ export class tools extends plugin {
             }
             const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
-            const title = await ytDlpGetTilt(url, isOversea, this.myProxy);
-            e.reply(`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n${ title }`);
-            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics);
+            await checkAndRemoveFile(path + "/Thumbnail.png")
+            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy)
+            const Duration =  await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, '')
+            // logger.info('时长------',Duration)
+            const title = await ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
+            // logger.info('标题------',title)
+            function convertToSeconds(timeStr) {
+                const [minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
+                return minutes * 60 + seconds; // 分钟转化为秒并加上秒数
+            }
+            if(await convertToSeconds(Duration) > this.youtubeDuration){
+                e.reply([
+                    segment.image(`${path}/Thumbnail.png`),
+                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}${DIVIDING_LINE.replace('{}', '限制说明')}\n视频时长：${Duration}分钟\n大于管理员限定时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取限定时间部分`
+                ]);
+            } else {
+                e.reply([segment.image(`${ path }/Thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${Duration} 分钟`]);
+            }
+            await ytDlpHelper(path, url, isOversea, this.myProxy, true, graphics, timeRange);
             this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             logger.error(error);
