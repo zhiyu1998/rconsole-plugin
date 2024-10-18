@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-10-16T08:45:50.535Z</updated>
+    <updated>2024-10-18T16:04:14.522Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -55,14 +55,24 @@
         <summary type="html"><![CDATA[R插件的问题解答]]></summary>
         <content type="html"><![CDATA[<h2>🐤 Q&amp;A</h2>
 <h3>📢 太子专用的 AI 文档问答</h3>
-<p>命令是：<code>#R文档 xxx</code>，比如：<code>#R文档 如何使用yt-dlp</code></p>
+<ol>
+<li>进群后发送命令，命令是：<code>#R文档 xxx</code>，比如：<code>#R文档 如何使用yt-dlp</code></li>
+</ol>
 <p><img src="https://s2.loli.net/2024/09/17/dxMhfTZr4jw6CzX.png" alt=""></p>
 <p>示例回答：<br>
 <img src="https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png" alt=""></p>
 <p>如果要进行文档更新，可以使用：<code>#R文档 更新</code></p>
 <p><img src="https://s2.loli.net/2024/09/28/AsvmJLpylbZQoex.png" alt=""></p>
+<ol start="2">
+<li>通过 GLM 进行问答（暂时的）</li>
+</ol>
+<p><img src="https://camo.githubusercontent.com/db979437e758fc465e2cc8496e5cb64370281f8eebb23c89ae45c104d53a0c85/68747470733a2f2f73322e6c6f6c692e6e65742f323032342f31302f31322f6544693646635949546b4d557053622e706e67" alt=""></p>
 <h3>♻️ 关于更新问题</h3>
 <p>请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie</p>
+<p>命令集合：</p>
+<pre><code class="language-shell">#R更新
+#R强制更新
+</code></pre>
 <p>✅ 正确演示：</p>
 <blockquote>
 <p><img src="https://s2.loli.net/2024/09/28/BIcV4XM5J1TroYg.png" alt=""></p>
@@ -70,6 +80,7 @@
 <p>❌ 错误演示：</p>
 <blockquote>
 <p>#强制更新rconsole-plugin</p>
+<p><img src="https://s2.loli.net/2024/10/18/Nl6ZI3Se2fFXs9T.jpg" alt="977AA674A05B3CB54F7C3E7721E837A1.jpg"></p>
 </blockquote>
 <h3>🛠️ 使用方法（基础）</h3>
 <p>1.【必要】下载插件</p>
