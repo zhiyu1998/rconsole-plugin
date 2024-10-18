@@ -235,11 +235,11 @@ export function supportGuoba() {
                     field: "tools.youtubeClipTime",
                     label: "YouTuBe截取时长",
                     bottomHelpMessage:
-                        "超过时长会截取指定时间（单位：秒），保护魔法的流量，计算公式：3分钟 x 60秒 = 180秒，默认不开启，最好不超过5分钟",
+                        "超过时长会截取指定时间（单位：秒），保护魔法的流量，计算公式：3分钟 x 60秒 = 180秒，默认不开启，最好不超过5分钟,0表无限or不开启",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入YouTuBe视频最大时长限制",
+                        placeholder: "请输入截取时长",
                     },
                 },
                 {

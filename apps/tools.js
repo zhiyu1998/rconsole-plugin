@@ -1956,7 +1956,7 @@ export class tools extends plugin {
             }
             const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
-            await checkAndRemoveFile(path + "/Thumbnail.png")
+            await checkAndRemoveFile(path + "/thumbnail.png")
             await ytDlpGetThumbnail(path, url, isOversea, this.myProxy)
             const title = await ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
             // logger.info('标题------',title)
