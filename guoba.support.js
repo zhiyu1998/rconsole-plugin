@@ -275,7 +275,7 @@ export function supportGuoba() {
                     field: "tools.neteaseCookie",
                     label: "网易云Cookie",
                     bottomHelpMessage:
-                        "可以发送 #网易云扫码登陆 快捷获取 或 者在网易云官网自己获取",
+                        "可以发送 #RNQ / #rnq 快捷获取 或 者在网易云官网自己获取，格式为：MUSIC_U=xxx",
                     component: "Input",
                     required: false,
                     componentProps: {
