@@ -11,7 +11,7 @@ streamCompatibility: false # 兼容模式，NCQQ不用开，其他ICQQ、LLO需�
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
-biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
+biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒 
 biliDisplayCover: true # 是否显示哔哩哔哩的封面
 biliDisplayInfo: true # 是否显示哔哩哔哩的视频信息
 biliDisplayIntro: true # 是否显示哔哩哔哩的简介
@@ -27,8 +27,9 @@ neteaseCookie: '' # 网易云ck
 neteaseCloudAPIServer: '' # 网易云自建服务器地址
 neteaseCloudAudioQuality: exhigh # 网易云解析最高音质 默认exhigh(极高) 分类：standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, dolby => 杜比全景声, jymaster => 超清母带
 
-YouTubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
-youtubeDuration: 300 # YouTobe限制的最大视频时长（默认5分钟），单位：秒
+youtubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
+youtubeClipTime:  # YouTobe限制的最大视频时长（默认不开启），单位：秒 最好不要超过5分钟，否则截取效率非常低
+youtubeDuration: 480 # YouTobe限制的最大视频时长（默认8分钟），单位：秒 最好不要超过30分钟，否则截取效率非常低
 
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送

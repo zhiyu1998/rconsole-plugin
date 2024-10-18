@@ -281,10 +281,12 @@ export class tools extends plugin {
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
         this.biliResolution = this.toolsConfig.biliResolution;
-        // 加载youtube的限制时长
+        // 加载youtube的截取时长
+        this.youtubeClipTime = this.toolsConfig.youtubeClipTime
+        // 加载youtube的解析时长
         this.youtubeDuration = this.toolsConfig.youtubeDuration
         // 加载油管下载画质选项
-        this.YouTubeGraphicsOptions = this.toolsConfig.YouTubeGraphicsOptions
+        this.youtubeGraphicsOptions = this.toolsConfig.youtubeGraphicsOptions
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -1922,7 +1924,7 @@ export class tools extends plugin {
             // 构造时间范围字符串
             return `00:00:00-${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
         }
-        const timeRange = await formatTime(this.youtubeDuration)
+        const timeRange = await formatTime(this.youtubeClipTime)
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
@@ -1944,8 +1946,8 @@ export class tools extends plugin {
             let url = removeParams(urlRex.exec(e.msg)?.[0] || url2Rex.exec(e.msg)?.[0]).replace(/&/g, isWindows ? '^&' : '&')
             //非最高画质，就按照设定的来
             let graphics = ""
-            if (this.YouTubeGraphicsOptions != 0) {
-                graphics = `[height<=${ this.YouTubeGraphicsOptions }]`
+            if (this.youtubeGraphicsOptions != 0) {
+                graphics = `[height<=${ this.youtubeGraphicsOptions }]`
             }
             // 适配 YouTube Music
             if (url.includes("music")) {
@@ -1965,16 +1967,23 @@ export class tools extends plugin {
             }
             const Duration = convertToSeconds(await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, '')) 
             // logger.info('时长------',Duration)
-            if(Duration > this.youtubeDuration){
+            if (Duration > this.youtubeDuration) {
                 e.reply([
-                    segment.image(`${ path }/thumbnail.png`),
-                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}${DIVIDING_LINE.replace('{}', '限制说明')}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取限定时间部分`
+                    segment.image(`${path}/thumbnail.png`),
+                    `${this.identifyPrefix}识别：油管，视频时长超限 \n视频标题：${title}\n⌚${DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '')}⌚\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定解析时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
                 ]);
+            } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
+                e.reply([
+                    segment.image(`${path}/thumbnail.png`),
+                    `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${title}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`
+                ]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                this.sendVideoToUpload(e, `${path}/temp.mp4`);
             } else {
-                e.reply([segment.image(`${ path }/thumbnail.png`),`${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
+                e.reply([segment.image(`${path}/thumbnail.png`), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                this.sendVideoToUpload(e, `${path}/temp.mp4`);
             }
-            await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange );
-            this.sendVideoToUpload(e, `${ path }/temp.mp4`);
         } catch (error) {
             logger.error(error);
             throw error; // Rethrow the error so it can be handled by the caller
