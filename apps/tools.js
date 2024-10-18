@@ -1615,7 +1615,7 @@ export class tools extends plugin {
             musicUrlReg2.exec(message)?.[3] ||
             musicUrlReg.exec(message)?.[2] ||
             musicUrlReg3.exec(message)?.[2] ||
-            /\bid=(\d+)/.exec(message)[1];
+            /(?<!user)id=(\d+)/.exec(message)[1];
         // 如果没有下载地址跳出if
         if (_.isEmpty(id)) {
             e.reply(`识别：网易云音乐，解析失败！`);
