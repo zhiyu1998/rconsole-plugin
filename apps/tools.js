@@ -1664,7 +1664,7 @@ export class tools extends plugin {
             }
         })
         // mv截断
-        if (message.includes("mv")) {
+        if (/mv\?/.test(message)) {
             const AUTO_NETEASE_MV_DETAIL = autoSelectNeteaseApi + "/mv/detail?mvid={}";
             const AUTO_NETEASE_MV_URL = autoSelectNeteaseApi + "/mv/url?id={}";
             // logger.info(AUTO_NETEASE_MV_DETAIL.replace("{}", id));
