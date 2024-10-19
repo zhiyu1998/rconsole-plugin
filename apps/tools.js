@@ -1571,8 +1571,13 @@ export class tools extends plugin {
         try {
             // 优先判断是否使用自建 API
             const isOversea = await this.isOverseasServer();
-            const autoSelectNeteaseApi = this.useLocalNeteaseAPI ? this.neteaseCloudAPIServer : (isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN);
-
+            let autoSelectNeteaseApi
+            if (this.useLocalNeteaseAPI) {
+                autoSelectNeteaseApi = this.neteaseCloudAPIServer
+            } else {
+                autoSelectNeteaseApi = (isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN)
+                await e.reply('未使用自建服务器，高概率#rnq失败');
+            }
             // 获取登录key
             const keyUrl = `${autoSelectNeteaseApi}/login/qr/key`;
             const keyResponse = await axios.get(keyUrl, { headers: { "User-Agent": COMMON_USER_AGENT } });
@@ -1590,8 +1595,16 @@ export class tools extends plugin {
             // 轮询检查登录状态
             await this.pollLoginStatus(autoSelectNeteaseApi, unikey, e);
         } catch (error) {
-            logger.error('执行网易云扫码登录时出错:', error);
-            e.reply('执行扫码登录时发生错误，请稍后再试');
+            if (error.code == 'ERR_INVALID_URL') {
+                logger.error('执行网易云扫码登录时出错:非法地址，请检查API服务地址', error);
+                e.reply(`执行网易云扫码登录时出错${error.code}请检查API服务器地址`);
+            } else if (error.code == 'ECONNRESET') {
+                logger.error('执行网易云扫码登录时出错:API请求错误，请检查API服务状态', error);
+                e.reply(`执行扫码登录时发生错误${error.code}请检查API服务状态`);
+            } else {
+                logger.error('执行网易云扫码登录时出错:', error);
+                e.reply('执行扫码登录时发生错误，请稍后再试');
+            }
         }
     }
 
