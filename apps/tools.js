@@ -104,6 +104,7 @@ import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
+import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetTilt, ytDlpHelper, ytDlpGetThumbnail, ytDlpGetDuration } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
@@ -1925,19 +1926,7 @@ export class tools extends plugin {
 
     // 油管解析
     async sy2b(e) {
-        function formatTime(seconds) {
-            // 计算小时、分钟和秒
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            // 将小时、分钟和秒格式化为两位数
-            const formattedHours = String(hours).padStart(2, '0');
-            const formattedMinutes = String(minutes).padStart(2, '0');
-            const formattedSeconds = String(secs).padStart(2, '0');
-            // 构造时间范围字符串
-            return `00:00:00-${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
-        }
-        const timeRange = await formatTime(this.youtubeClipTime)
+        const timeRange = ytbFormatTime(this.youtubeClipTime)
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
             e.reply("检测到没有梯子，无法解析油管");
@@ -1946,11 +1935,6 @@ export class tools extends plugin {
         try {
             const urlRex = /(?:https?:\/\/)?(www\.|music\.)?youtube\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
             const url2Rex = /(?:https?:\/\/)?youtu\.be\/[A-Za-z\d._?%&+\-=\/#]*/g;
-
-            //移除链接中的不需要的参数
-            function removeParams(url) {
-                return url.replace(/&list=[^&]*/g, '').replace(/&start_radio=[^&]*/g, '').replace(/&index=[^&]*/g, '');
-            }
 
             // 检测操作系统平台
             const isWindows = process.platform === 'win32';
@@ -1962,23 +1946,28 @@ export class tools extends plugin {
             if (this.youtubeGraphicsOptions != 0) {
                 graphics = `[height<=${ this.youtubeGraphicsOptions }]`
             }
-            // 适配 YouTube Music
-            if (url.includes("music")) {
-                // https://music.youtube.com/watch?v=F4sRtMoIgUs&si=7ZYrHjlI3fHAha0F
-                url = url.replace("music", "www");
-            }
+
             const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
             await checkAndRemoveFile(path + "/thumbnail.png")
             await ytDlpGetThumbnail(path, url, isOversea, this.myProxy)
-            const title = await ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
-            // logger.info('标题------',title)
-            function convertToSeconds(timeStr) {
-                const [minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
-                if (!seconds) return timeStr;
-                return minutes * 60 + seconds; // 分钟转化为秒并加上秒数
+            const title = ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
+
+            // 音频逻辑
+            if (url.includes("music")) {
+                e.reply([
+                    segment.image(`${path}/thumbnail.png`),
+                    `${this.identifyPrefix}识别：油管音乐，视频时长超限 \n视频标题：${title}`
+                ]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                e.reply(segment.record(`${ path }/temp.mp3`));
+                this.uploadGroupFile(e, `${ path }/temp.mp3`);
+                // 发送完就截断
+                return;
             }
-            const Duration = convertToSeconds(await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, '')) 
+
+            // 下面为视频逻辑
+            const Duration = convertToSeconds(await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, ''));
             // logger.info('时长------',Duration)
             if (Duration > this.youtubeDuration) {
                 e.reply([

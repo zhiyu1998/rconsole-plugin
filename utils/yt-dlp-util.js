@@ -58,13 +58,17 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy) {
  */
 export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge = false, graphics, timeRange) {
     return new Promise((resolve, reject) => {
-        const mergeOption = merge ? '--merge-output-format "mp4"' : '';
+        let command = "";
+        if (url.includes("music")) {
+            // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
+            command = `yt-dlp -x --audio-format mp3 ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.mp3" ${url}`;
+        } else {
+            const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
 
-        const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
+            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+        }
 
-        const command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
-
-        logger.info(`[R插件][yt-dlp审计] ${command}`)
+        logger.info(`[R插件][yt-dlp审计] ${command}`);
 
         exec(command, (error, stdout) => {
             if (error) {
