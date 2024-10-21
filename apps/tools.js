@@ -1958,7 +1958,7 @@ export class tools extends plugin {
             if (url.includes("music")) {
                 e.reply([
                     segment.image(`${path}/thumbnail.png`),
-                    `${this.identifyPrefix}识别：油管音乐，视频时长超限 \n视频标题：${title}`
+                    `${this.identifyPrefix}识别：油管音乐\n视频标题：${title}`
                 ]);
                 await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
                 e.reply(segment.record(`${ path }/temp.mp3`));
