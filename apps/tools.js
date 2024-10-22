@@ -1048,8 +1048,8 @@ export class tools extends plugin {
         }
         const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
         getDynamic(dynamicId, session).then(async resp => {
-            if (resp.dynamicSrc.length > 0) {
-                e.reply(`${ this.identifyPrefix }识别：哔哩哔哩动态, ${ resp.dynamicDesc }`);
+            if (resp.dynamicSrc.length > 0 || resp.dynamicDesc) {
+                e.reply(`${ this.identifyPrefix }识别：哔哩哔哩动态\n${ resp.dynamicDesc }`);
                 let dynamicSrcMsg = [];
                 resp.dynamicSrc.forEach(item => {
                     dynamicSrcMsg.push({
