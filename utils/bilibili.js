@@ -402,9 +402,9 @@ export async function getDynamic(dynamicId, SESSDATA) {
         const dynamicData = resp.data.data.card
         const card = JSON.parse(dynamicData.card)
         const dynamicOrigin = card.item
-        const dynamicDesc = dynamicOrigin.description
+        const dynamicDesc = dynamicOrigin.description || dynamicOrigin.content
+        const pictures = dynamicOrigin.pictures || ''
 
-        const pictures = dynamicOrigin.pictures
         let dynamicSrc = []
         for (let pic of pictures) {
             const img_src = pic.img_src
