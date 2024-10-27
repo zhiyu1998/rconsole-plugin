@@ -899,7 +899,7 @@ export class tools extends plugin {
             const onlineTotal = await this.biliOnlineTotal(bvid, cid);
             combineContent += `\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
         }
-        let biliInfo = [`${ this.identifyPrefix }识别：哔哩哔哩：${ title }`, combineContent]
+        let biliInfo = [`${ this.identifyPrefix }识别：哔哩哔哩，${ title }`, combineContent]
         // 是否显示封面
         if (this.biliDisplayCover) {
             // 加入图片
