@@ -770,9 +770,8 @@ export class tools extends plugin {
             return true;
         }
         // 处理专栏
-        if (e.msg !== undefined && e.msg.includes("read\/cv") || e.msg.includes("read\/mobile")) {
-            await this.biliArticle(e);
-            this.linkShareSummary(e);
+        if (e.msg !== undefined && url.includes("read\/cv") || url.includes("read\/mobile")) {
+            await this.biliArticle(e, url);
             return true;
         }
         // 动态处理
@@ -835,25 +834,31 @@ export class tools extends plugin {
     /**
      * 提取哔哩哔哩专栏
      * @param e
+     * @param url
      * @returns {Promise<void>}
      */
-    async biliArticle(e) {
-        const cvid = e.msg.match(/read\/cv(\d+)/)?.[1] || e.msg.match(/read\/mobile\?id=(\d+)/)?.[1];
+    async biliArticle(e, url) {
+        const cvid = url.match(/read\/cv(\d+)/)?.[1] || url.match(/read\/mobile\?id=(\d+)/)?.[1];
         const articleResp = await fetch(BILI_ARTICLE_INFO.replace("{}", cvid), {
             headers: {
                 ...BILI_HEADER
             }
         });
         const articleData = (await articleResp.json()).data;
-        const { origin_image_urls } = articleData;
+        const { title, author_name, origin_image_urls } = articleData;
         if (origin_image_urls) {
+            const titleMsg = {
+                message: { type: "text", text: `标题：${title}\n作者：${author_name}` },
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }
             await e.reply(Bot.makeForwardMsg(origin_image_urls.map(item => {
                 return {
                     message: segment.image(item),
                     nickname: e.sender.card || e.user_id,
                     user_id: e.user_id,
                 }
-            })))
+            }).concat(titleMsg)));
         }
     }
 
