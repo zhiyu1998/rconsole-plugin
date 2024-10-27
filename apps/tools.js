@@ -770,7 +770,7 @@ export class tools extends plugin {
             return true;
         }
         // 处理专栏
-        if (e.msg !== undefined && e.msg.includes("read\/cv")) {
+        if (e.msg !== undefined && e.msg.includes("read\/cv") || e.msg.includes("read\/mobile")) {
             await this.biliArticle(e);
             this.linkShareSummary(e);
             return true;
@@ -838,7 +838,7 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async biliArticle(e) {
-        const cvid = e.msg.match(/read\/cv(\d+)/)?.[1];
+        const cvid = e.msg.match(/read\/cv(\d+)/)?.[1] || e.msg.match(/read\/mobile\?id=(\d+)/)?.[1];
         const articleResp = await fetch(BILI_ARTICLE_INFO.replace("{}", cvid), {
             headers: {
                 ...BILI_HEADER
