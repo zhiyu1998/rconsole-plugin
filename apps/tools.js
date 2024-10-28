@@ -355,6 +355,11 @@ export class tools extends plugin {
             ttwid = ttwidValue;
             douUrl = location
         }
+        // TODO 如果有新的好解决方案可以删除，如果遇到https://www.iesdouyin.com/share/slides，这类动图暂时交付给其他API解析
+        if (douUrl.includes("share/slides")) {
+            this.general(e);
+            return;
+        }
         // 获取 ID
         const douId = /note\/(\d+)/g.exec(douUrl)?.[1] ||
             /video\/(\d+)/g.exec(douUrl)?.[1] ||

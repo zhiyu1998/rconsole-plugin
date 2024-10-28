@@ -113,6 +113,12 @@ class GeneralLinkAdapter {
         return { name: "即刻", reqLink };
     }
 
+    async douyinBackup(link) {
+        const msg = /(http:\/\/|https:\/\/)v.douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(link)?.[0];
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
+        return { name: "抖音动图", reqLink };
+    }
+
     /**
      * 初始化通用适配器
      * @param link 通用链接
@@ -128,6 +134,7 @@ class GeneralLinkAdapter {
             [/tieba.baidu.com/, this.tieba.bind(this)],
             [/xsj.qq.com/, this.qqSmallWorld.bind(this)],
             [/m.okjike.com/, this.jike.bind(this)],
+            [/v.douyin.com/, this.douyinBackup.bind(this)],
         ]);
 
         for (let [regex, handler] of handlers) {
