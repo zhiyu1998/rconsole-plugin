@@ -1365,7 +1365,7 @@ export class tools extends plugin {
         const downloadPath = `${ this.getCurDownloadPath(e) }`;
         // 检测没有 cookie 则退出
         if (_.isEmpty(this.xiaohongshuCookie) || _.isEmpty(id) || _.isEmpty(xsecToken) || _.isEmpty(xsecSource)) {
-            e.reply(`请检查以下问题：\n1. 是否填写 Cookie\n2. 链接是否有id\n3. 是否填写 xsec_token 和 xsec_source\n${ HELP_DOC }`);
+            e.reply(`请检查以下问题：\n1. 是否填写 Cookie\n2. 链接是否有id\n3. 链接是否有 xsec_token 和 xsec_source\n${ HELP_DOC }`);
             return;
         }
         // 获取信息
