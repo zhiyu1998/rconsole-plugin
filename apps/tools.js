@@ -1377,7 +1377,7 @@ export class tools extends plugin {
         const reg = /window\.__INITIAL_STATE__=(.*?)<\/script>/;
         const res = xhsHtml.match(reg)[1].replace(/undefined/g, "null");
         const resJson = JSON.parse(res);
-        saveJsonToFile(resJson);
+        // saveJsonToFile(resJson);
         // 检测无效 Cookie
         if (resJson?.note === undefined || resJson?.note?.noteDetailMap?.[id]?.note === undefined) {
             e.reply(`检测到无效的小红书 Cookie，可以尝试清除缓存和cookie 或者 换一个浏览器进行获取\n${ HELP_DOC }`);
