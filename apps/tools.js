@@ -85,7 +85,7 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq,
+    retryAxiosReq, saveJsonToFile,
     secondsToTime,
     testProxy,
     truncateString,
@@ -1339,86 +1339,101 @@ export class tools extends plugin {
         // 注入ck
         XHS_NO_WATERMARK_HEADER.cookie = this.xiaohongshuCookie;
         // 解析短号
-        let id;
+        let id, xsecToken, xsecSource;
         if (msgUrl.includes("xhslink")) {
             await fetch(msgUrl, {
                 headers: XHS_NO_WATERMARK_HEADER,
                 redirect: "follow",
             }).then(resp => {
                 const uri = decodeURIComponent(resp.url);
+                const parsedUrl = new URL(resp.url);
                 // 如果出现了网页验证uri:https://www.xiaohongshu.com/website-login/captcha?redirectPath=https://www.xiaohongshu.com/discovery/item/63c93ac3000000002203b28a?app_platform=android&app_version=8.23.1&author_share=1&ignoreEngage=true&share_from_user_hidden=true&type=normal&xhsshare=CopyLink&appuid=62c58b90000000000303dc54&apptime=1706149572&exSource=&verifyUuid=a5f32b62-453e-426b-98fe-2cfe0c16776d&verifyType=102&verifyBiz=461
                 const verify = uri.match(/\/item\/([0-9a-fA-F]+)/);
                 // 一般情况下不会出现问题就使用这个正则
                 id = /noteId=(\w+)/.exec(uri)?.[1] ?? verify?.[1];
+                // 提取 xsec_source 和 xsec_token 参数
+                xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
+                xsecToken = parsedUrl.searchParams.get("xsec_token");
             });
         } else {
+            const parsedUrl = new URL(msgUrl);
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
+            // 提取 xsec_source 和 xsec_token 参数
+            xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
+            xsecToken = parsedUrl.searchParams.get("xsec_token");
         }
         const downloadPath = `${ this.getCurDownloadPath(e) }`;
         // 检测没有 cookie 则退出
-        if (_.isEmpty(this.xiaohongshuCookie)) {
-            e.reply(`2024-8-2后反馈必须使用ck，不然无法解析请填写相关ck\n${ HELP_DOC }`);
+        if (_.isEmpty(this.xiaohongshuCookie) || _.isEmpty(id) || _.isEmpty(xsecToken) || _.isEmpty(xsecSource)) {
+            e.reply(`请检查以下问题：\n1. 是否填写 Cookie\n2. 链接是否有id\n3. 是否填写 xsec_token 和 xsec_source\n${ HELP_DOC }`);
             return;
         }
         // 获取信息
-        fetch(`${ XHS_REQ_LINK }${ id }`, {
+        const resp = await fetch(`${ XHS_REQ_LINK }${ id }?xsec_token=${xsecToken}&xsec_source=${xsecSource}`, {
             headers: XHS_NO_WATERMARK_HEADER,
-        }).then(async resp => {
-            const xhsHtml = await resp.text();
-            const reg = /window\.__INITIAL_STATE__=(.*?)<\/script>/;
-            const res = xhsHtml.match(reg)[1].replace(/undefined/g, "null");
-            const resJson = JSON.parse(res);
-            const noteData = resJson.note.noteDetailMap[id].note;
-            const { title, desc, type } = noteData;
-            if (type === "video") {
-                // 封面
-                const cover = noteData.imageList?.[0].urlDefault;
-                e.reply([segment.image(cover), `${ this.identifyPrefix }识别：小红书, ${ title }\n${ desc }`]);
-                // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
-                const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
-
-                // 构造无水印
-                // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
-                // 下载视频
-                this.downloadVideo(xhsVideoUrl).then(path => {
-                    if (path === undefined) {
-                        // 创建文件，如果不存在
-                        path = `${ this.getCurDownloadPath(e) }/`;
-                    }
-                    this.sendVideoToUpload(e, `${ path }/temp.mp4`)
-                });
-                return true;
-            } else if (type === "normal") {
-                e.reply(`${ this.identifyPrefix }识别：小红书, ${ title }\n${ desc }`);
-                const imagePromises = [];
-                // 使用 for..of 循环处理异步下载操作
-                for (let [index, item] of noteData.imageList.entries()) {
-                    imagePromises.push(downloadImg({
-                        img: item.urlDefault,
-                        dir: downloadPath,
-                        fileName: `${ index }.png`,
-                        downloadMethod: this.biliDownloadMethod,
-                    }));
-                }
-                // 等待所有图片下载完成
-                const paths = await Promise.all(imagePromises);
-
-                // 直接构造 imagesData 数组
-                const imagesData = await Promise.all(paths.map(async (item) => {
-                    return {
-                        message: segment.image(await fs.promises.readFile(item)),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    };
-                }));
-
-                // 回复带有转发消息的图片数据
-                e.reply(await Bot.makeForwardMsg(imagesData));
-
-                // 批量删除下载的文件
-                await Promise.all(paths.map(item => fs.promises.rm(item, { force: true })));
-            }
         });
+        // 从网页获取数据
+        const xhsHtml = await resp.text();
+        const reg = /window\.__INITIAL_STATE__=(.*?)<\/script>/;
+        const res = xhsHtml.match(reg)[1].replace(/undefined/g, "null");
+        const resJson = JSON.parse(res);
+        saveJsonToFile(resJson);
+        // 检测无效 Cookie
+        if (resJson?.note === undefined || resJson?.note?.noteDetailMap?.[id]?.note === undefined) {
+            e.reply(`检测到无效的小红书 Cookie，可以尝试清除缓存和cookie 或者 换一个浏览器进行获取\n${ HELP_DOC }`);
+            return;
+        }
+        // 提取出数据
+        const noteData = resJson?.note?.noteDetailMap?.[id]?.note;
+        const { title, desc, type } = noteData;
+        if (type === "video") {
+            // 封面
+            const cover = noteData.imageList?.[0].urlDefault;
+            e.reply([segment.image(cover), `${ this.identifyPrefix }识别：小红书, ${ title }\n${ desc }`]);
+            // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
+            const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
+
+            // 构造无水印
+            // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
+            // 下载视频
+            this.downloadVideo(xhsVideoUrl).then(path => {
+                if (path === undefined) {
+                    // 创建文件，如果不存在
+                    path = `${ this.getCurDownloadPath(e) }/`;
+                }
+                this.sendVideoToUpload(e, `${ path }/temp.mp4`)
+            });
+            return true;
+        } else if (type === "normal") {
+            e.reply(`${ this.identifyPrefix }识别：小红书, ${ title }\n${ desc }`);
+            const imagePromises = [];
+            // 使用 for..of 循环处理异步下载操作
+            for (let [index, item] of noteData.imageList.entries()) {
+                imagePromises.push(downloadImg({
+                    img: item.urlDefault,
+                    dir: downloadPath,
+                    fileName: `${ index }.png`,
+                    downloadMethod: this.biliDownloadMethod,
+                }));
+            }
+            // 等待所有图片下载完成
+            const paths = await Promise.all(imagePromises);
+
+            // 直接构造 imagesData 数组
+            const imagesData = await Promise.all(paths.map(async (item) => {
+                return {
+                    message: segment.image(await fs.promises.readFile(item)),
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            }));
+
+            // 回复带有转发消息的图片数据
+            e.reply(await Bot.makeForwardMsg(imagesData));
+
+            // 批量删除下载的文件
+            await Promise.all(paths.map(item => fs.promises.rm(item, { force: true })));
+        }
         return true;
     }
 
