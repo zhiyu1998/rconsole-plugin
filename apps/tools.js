@@ -1356,7 +1356,8 @@ export class tools extends plugin {
                 xsecToken = parsedUrl.searchParams.get("xsec_token");
             });
         } else {
-            const parsedUrl = new URL(msgUrl);
+            // 新版 xhs 这里必须是e.msg.trim()，因为要匹配参数：xsec_source 和 xsec_token
+            const parsedUrl = new URL(e.msg.trim());
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
             // 提取 xsec_source 和 xsec_token 参数
             xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
