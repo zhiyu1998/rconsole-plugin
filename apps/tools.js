@@ -1357,7 +1357,7 @@ export class tools extends plugin {
             });
         } else {
             // 新版 xhs 这里必须是e.msg.trim()，因为要匹配参数：xsec_source 和 xsec_token
-            const xhsUrlMatch = e.msg.trim().match(/(http|https)?:\/\/(www\.)?xiaohongshu\.com[^\s]+/);
+            const xhsUrlMatch = e.msg.trim().replace("amp;", "").match(/(http|https)?:\/\/(www\.)?xiaohongshu\.com[^\s]+/);
             if (!xhsUrlMatch) {
                 logger.info("[R插件][xhs] 无法匹配到链接");
                 return;
