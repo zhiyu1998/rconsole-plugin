@@ -1357,7 +1357,12 @@ export class tools extends plugin {
             });
         } else {
             // 新版 xhs 这里必须是e.msg.trim()，因为要匹配参数：xsec_source 和 xsec_token
-            const parsedUrl = new URL(e.msg.trim());
+            const xhsUrlMatch = e.msg.trim().match(/(http|https)?:\/\/(www\.)?xiaohongshu\.com[^\s]+/);
+            if (!xhsUrlMatch) {
+                logger.info("[R插件][xhs] 无法匹配到链接");
+                return;
+            }
+            const parsedUrl = new URL(xhsUrlMatch[0]);
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
             // 提取 xsec_source 和 xsec_token 参数
             xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
