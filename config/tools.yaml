@@ -1,87 +1,50 @@
-defaultPath: ./data/rcmp4/
-videoSizeLimit: 100
-proxyAddr: 127.0.0.1
-proxyPort: "7890"
-identifyPrefix: ✅
-deeplApiUrls: http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate
-streamDuration: 10
-streamCompatibility: false
-biliSessData: a56d470f%2C1744730590%2C813e6%2Aa2CjAD_PFOxMcmeZ40kSD03f6j1kTArPuM-cpVjnSK_5azosYAuZxGAeQ3RzK7Eh0O40ESVlJsUkxTWDlFVEY3VGNTU1dtWEFEQmh4TER3OW5UQ3FOTzBWSkx5WXYzTFBoai1nTEpwMVprek5BNlJic3g2RWhYVTRqNXJFME9WX1p1U1RoMGQ1Qkh3IIEC
-biliIntroLenLimit: 50
-biliDuration: 900
-biliDisplayCover: true
-biliDisplayInfo: true
-biliDisplayIntro: true
-biliDisplayOnline: true
-biliDisplaySummary: false
-biliUseBBDown: true
-biliCDN: 0
-biliDownloadMethod: 0
-biliResolution: 2
-useLocalNeteaseAPI: true
-neteaseCookie: MUSIC_U=000B6FB760D4DD0C8FF579D22EF13F4631A662365882A1DCB227B306A50E274E5A93061745A36AB27D85F9EFF82699A34BA6DF9B311AF9C52EF096F512D8BE274001B1D0064FEE95158AD7BDE28CD277212FA99569D0B94ADB14281355C80E2C0A730F49304C257AD0E16492F253EA47B91D64206344527DD9768454C27343D73ACFB59B13830B6FD6F367B69EDE875796CED7958CFF653AF87E7F3FEFCF43B8D9E7C75C9494F8C31C553B64A23357E2B59A07B8D7AFFAC1234589DD0C338C7DAD7A36407D36933A6DA7F21F7E975A271E65D5C38805CFE3AE3D7E55588E64DDB2D94A719FABA9464A54E78F699182728206C72D5A10FF9D1E5BF2C4DDFB7E47F61723DDE3ABF47A5D6352E2EDC984BA1A4767B7BB4F8E8D018E6ACDB1D71D85694D29B8C4DBF0C6072CD2127EA7D94348;
-  os=pc
-neteaseCloudAPIServer: http://www.qdy.ink:55522
-neteaseCloudAudioQuality: jymaster
-youtubeGraphicsOptions: 1080
-youtubeClipTime: null
-youtubeDuration: 900
-douyinCookie: ttwid=1%7CGlKor0s7yJTURXYA5X9sbAgunYFVfBoVLX9v2mfAyhQ%7C1694051452%7C80e7c98a8473faed6f881b7379f7e29405be10e9ac35b7618cc43adf8a1a2f41;
-  SEARCH_RESULT_LIST_TYPE=%22single%22;
-  UIFID_TEMP=1ee16134db40129a5ff28e6a352dddaa8524f48fc5e4ea6d697d6a182d7836e449f664cfb29d1099cfb2fb62ce7db5e6a4fd0aeafe0c2afd30fa1e97fa68fc67ff8e51c3904b654300f5021c7159cd6a;
-  s_v_web_id=verify_m0up87e5_t8ChctxF_3HK0_4e2k_9UKg_49HT0IC3Hsab;
-  hevc_supported=true; passport_csrf_token=0197d3b34f027df28862da61991c0eb7;
-  passport_csrf_token_default=0197d3b34f027df28862da61991c0eb7;
-  bd_ticket_guard_client_web_domain=2;
-  fpk1=U2FsdGVkX19oyd9PX2fmFVaSJiFDZTknfNeDgrBL+oovtUMKhA6vexuXHj6gEF9IWKs8iyFJc5r4PmS7QmyiKQ==;
-  fpk2=e8db1a910ee088b469ecfd2b6a9b9da5;
-  UIFID=1ee16134db40129a5ff28e6a352dddaa8524f48fc5e4ea6d697d6a182d7836e4b80abacd6e9013b4a4043a401aab353263551bdef6fcabc5b1891e33448cae02c056b0c65c2758ee92ffbde2996c98ba87eddf939a7e91224bfc962944ab939cefb96fb42fb2482f40658d2ca65e0ee68131f8082f360cbcec35bb06f7d444bb5ef3e84cacc65df726cc55e14e3d6a959699a997c4f9a9a39cbfe63f07bd93ad;
-  d_ticket=22c8797c4bb92fa7f9198fff1c949b98a0750;
-  passport_assist_user=Cj8lyV9Z6D9MR1YIPSuyBTmq-MkkfDC_ino72STrLztUelhMSlxQmhu1hWD4SKT5fXqnn9h8Pf-2PoTcZD7AYesaSgo8CWitJ5ebWoBSMtxmNtbczFA-fU49bNw_ESDcASSVeTGd74mnRUFwlknjTqR-OKcWuJGtiWTCmdLeFF1WEMjR2w0Yia_WVCABIgEDk97NRw%3D%3D;
-  n_mh=6PqAsBDwpWzjjhyh0DJxbjfHwLWX-QGpUHXGB71culA;
-  sso_uid_tt=17ce377d8953b76136b51d2c8c476936;
-  sso_uid_tt_ss=17ce377d8953b76136b51d2c8c476936;
-  toutiao_sso_user=cc92e6a4f4c0e72e261228be675000cc;
-  toutiao_sso_user_ss=cc92e6a4f4c0e72e261228be675000cc;
-  sid_ucp_sso_v1=1.0.0-KGU2MTMxNDkyZDY0MzM3YjJhOWI1Mzg2NzYyYTM0Yzk5OTc5YTcwZTYKIAi50eCEpM0CEOTP-rYGGO8xIAwwyZKQrQY4AkDxB0gGGgJsZiIgY2M5MmU2YTRmNGMwZTcyZTI2MTIyOGJlNjc1MDAwY2M;
-  ssid_ucp_sso_v1=1.0.0-KGU2MTMxNDkyZDY0MzM3YjJhOWI1Mzg2NzYyYTM0Yzk5OTc5YTcwZTYKIAi50eCEpM0CEOTP-rYGGO8xIAwwyZKQrQY4AkDxB0gGGgJsZiIgY2M5MmU2YTRmNGMwZTcyZTI2MTIyOGJlNjc1MDAwY2M;
-  uid_tt=e890963c895ad76636236d4ee7bd8012;
-  uid_tt_ss=e890963c895ad76636236d4ee7bd8012;
-  sid_tt=c39dac16eb6c7b7e864503b9cc06bfa6;
-  sessionid=c39dac16eb6c7b7e864503b9cc06bfa6;
-  sessionid_ss=c39dac16eb6c7b7e864503b9cc06bfa6; is_staff_user=false;
-  _bd_ticket_crypt_doamin=2;
-  _bd_ticket_crypt_cookie=d94b00dc5003896c6a41e34592d484b8;
-  __security_server_data_status=1; store-region=cn-zj; store-region-src=uid;
-  SelfTabRedDotControl=%5B%5D;
-  FOLLOW_NUMBER_YELLOW_POINT_INFO=%22MS4wLjABAAAAuFw1NBpBldrgd6kUkSzXm882qpOX-nkmG2jMSHiXoxk%2F1728748800000%2F0%2F1728717264795%2F0%22;
-  sid_guard=c39dac16eb6c7b7e864503b9cc06bfa6%7C1728717275%7C5184000%7CWed%2C+11-Dec-2024+07%3A14%3A35+GMT;
-  sid_ucp_v1=1.0.0-KGFmNmNkNWVjZGEzM2JjM2ZkYjNhYmVjMDE5OTllZmFkNjI5NjFhY2IKGgi50eCEpM0CENvDqLgGGO8xIAw4AkDxB0gEGgJsZiIgYzM5ZGFjMTZlYjZjN2I3ZTg2NDUwM2I5Y2MwNmJmYTY;
-  ssid_ucp_v1=1.0.0-KGFmNmNkNWVjZGEzM2JjM2ZkYjNhYmVjMDE5OTllZmFkNjI5NjFhY2IKGgi50eCEpM0CENvDqLgGGO8xIAw4AkDxB0gEGgJsZiIgYzM5ZGFjMTZlYjZjN2I3ZTg2NDUwM2I5Y2MwNmJmYTY;
-  publish_badge_show_info=%220%2C0%2C0%2C1728717274522%22;
-  download_guide=%222%2F20241012%2F0%22; pwa2=%220%7C0%7C2%7C0%22;
-  __ac_nonce=0671204d000cf7a511d5;
-  __ac_signature=_02B4Z6wo00f01yb3HygAAIDDpuujdXSjLbcm1xuAAK664i8ozjg4YMd4AG2mOFHsO0Fd1E73.5lD6UR9uQBCgVA979LZPMOF2vQIAb-o024iWhuUuhVSQtIV4tDeNPYFOuzu5B6QgDXDwB-e37;
-  douyin.com; device_web_cpu_core=12; device_web_memory_size=8;
-  architecture=amd64; csrf_session_id=2264bbdaa769999e3eecc34c080de9b2;
-  strategyABtestKey=%221729234131.288%22;
-  volume_info=%7B%22isUserMute%22%3Afalse%2C%22isMute%22%3Atrue%2C%22volume%22%3A0.5%7D;
-  biz_trace_id=0e5f258d; xg_device_score=7.802204888412783;
-  WallpaperGuide=%7B%22showTime%22%3A1729234135617%2C%22closeTime%22%3A0%2C%22showCount%22%3A2%2C%22cursor1%22%3A16%2C%22cursor2%22%3A4%7D;
-  odin_tt=dbdf6a7f9f8c2fb70be9c86c7caca90a829c468db4ef92e609be2988c736b84cc19ce0736278c3f7153f2fd21c9927d3;
-  passport_fe_beating_status=false;
-  stream_player_status_params=%22%7B%5C%22is_auto_play%5C%22%3A0%2C%5C%22is_full_screen%5C%22%3A0%2C%5C%22is_full_webscreen%5C%22%3A0%2C%5C%22is_mute%5C%22%3A1%2C%5C%22is_speed%5C%22%3A1%2C%5C%22is_visible%5C%22%3A0%7D%22;
-  IsDouyinActive=true; home_can_add_dy_2_desktop=%220%22; dy_swidth=1920;
-  dy_sheight=1080;
-  stream_recommend_feed_params=%22%7B%5C%22cookie_enabled%5C%22%3Atrue%2C%5C%22screen_width%5C%22%3A1920%2C%5C%22screen_height%5C%22%3A1080%2C%5C%22browser_online%5C%22%3Atrue%2C%5C%22cpu_core_num%5C%22%3A12%2C%5C%22device_memory%5C%22%3A8%2C%5C%22downlink%5C%22%3A10%2C%5C%22effective_type%5C%22%3A%5C%224g%5C%22%2C%5C%22round_trip_time%5C%22%3A100%7D%22;
-  bd_ticket_guard_client_data=eyJiZC10aWNrZXQtZ3VhcmQtdmVyc2lvbiI6MiwiYmQtdGlja2V0LWd1YXJkLWl0ZXJhdGlvbi12ZXJzaW9uIjoxLCJiZC10aWNrZXQtZ3VhcmQtcmVlLXB1YmxpYy1rZXkiOiJCTjFqYW5GbHBBUXBIeDhoTGtBYmgzQVBNdmhvWXllazI1OTY5WEVmc2xiYnIvcmdTeGQ2bHRlUUsyL25mWFVQWHRzUExhRG8rNjlQUkRMOGNIT21Xdnc9IiwiYmQtdGlja2V0LWd1YXJkLXdlYi12ZXJzaW9uIjoyfQ%3D%3D
-douyinCompression: true
-douyinComments: true
-xiaohongshuCookie: xsecappid=xhs-pc-web;acw_tc=350c17ac654c7a6669103ccf2dd453f9b24be9618e26768e1dc000632195acb0;websectiga=3633fe24d49c7dd0eb923edc8205740f10fdb18b25d424d2a2322c6196d2a4ad;webBuild=4.39.0;sec_poison_id=5a4ce41c-3934-4231-813e-89b9bcca9775;web_session=040069b66645392a9a51e64e27354bb4c13a46;gid=yjJjdKjJ0KvYyjJjdKjJ8lx0jKfxSK2349CY9IKfWAudux28iJ69Eu888y4yJ2Y8yJW4W2fd;a1=1929e692096dhc65i4tx8d7qzezf2mtwyothzhan650000141258;abRequestId=4592d5bf-bf0a-557f-837a-a4236e412134;unread={%22ub%22:%2266f6862e000000001a022a34%22%2C%22ue%22:%226705181f000000001a022078%22%2C%22uc%22:26};webId=c29b9c5db1577e152daaba1e9076a79b
-queueConcurrency: 1
-videoDownloadConcurrency: 12
-lagrangeForwardWebSocket: ws://127.0.0.1:9091/
-autoclearTrashtime: 0 0 8 * * ?
-aiBaseURL: http://localhost:8000
-aiApiKey: eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJ1c2VyLWNlbnRlciIsImV4cCI6MTczNzQ0MDkyMiwiaWF0IjoxNzI5NjY0OTIyLCJqdGkiOiJjc2M5ZjZnamRvN2tndWN2cTZwMCIsInR5cCI6InJlZnJlc2giLCJhcHBfaWQiOiJraW1pIiwic3ViIjoiY3Mydjdrb25zbW1zdmRpYzc5M2ciLCJzcGFjZV9pZCI6ImNzMnY3a29uc21tc3ZkaWM3OTFnIiwiYWJzdHJhY3RfdXNlcl9pZCI6ImNzMnY3a29uc21tc3ZkaWM3OTEwIn0.tmu2lOu-4xQeI-8RhkF-SrObWjPLJ5mZAKahvlUnEzy3LL0dPZ_Ruwv5xpHCMIN-k0GnncXotZC5kIuNhEnyIg
-aiModel: moonshot-v1-8k
+defaultPath: './data/rcmp4/' # 保存视频的位置
+videoSizeLimit: 70 # 视频大小限制（单位MB），超过大小则转换成群文件上传
+proxyAddr: '127.0.0.1' # 魔法地址
+proxyPort: '7890' # 魔法端口
+identifyPrefix: '' # 识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩
+
+deeplApiUrls: 'http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate'
+
+streamDuration: 10 # 视频最大时长（单位秒）
+streamCompatibility: false # 兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启
+
+biliSessData: '' # 哔哩哔哩的SESSDATA
+biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
+biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒 
+biliDisplayCover: true # 是否显示哔哩哔哩的封面
+biliDisplayInfo: true # 是否显示哔哩哔哩的视频信息
+biliDisplayIntro: true # 是否显示哔哩哔哩的简介
+biliDisplayOnline: true # 是否显示哔哩哔哩的在线人数
+biliDisplaySummary: false # 是否显示哔哩哔哩的总结
+biliUseBBDown: false # 是否使用BBDown，默认不开启，开启后使用强劲的BBDown下载最高画质
+biliCDN: 0 # 哔哩哔哩 CDN，默认为0表示不使用
+biliDownloadMethod: 0 # 哔哩哔哩的下载方式：0默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载
+biliResolution: 1 # 哔哩哔哩的下载画质，0为原画，1为清晰画，2为流畅画（默认为0）
+
+useLocalNeteaseAPI: false # 是否使用网易云解析自建API
+neteaseCookie: '' # 网易云ck
+neteaseCloudAPIServer: '' # 网易云自建服务器地址
+neteaseCloudAudioQuality: exhigh # 网易云解析最高音质 默认exhigh(极高) 分类：standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, dolby => 杜比全景声, jymaster => 超清母带
+
+youtubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
+youtubeClipTime: 0 # YouTobe限制的最大视频时长（默认不开启），单位：秒 最好不要超过5分钟，否则截取效率非常低
+youtubeDuration: 480 # YouTobe限制的最大视频时长（默认8分钟），单位：秒 最好不要超过30分钟，否则截取效率非常低
+
+douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
+douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
+douyinComments: false # true-开启评论，false-关闭评论
+
+xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
+
+queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
+
+videoDownloadConcurrency: 1 # 下载视频是否使用多线程，如果不使用默认是1，如果使用根据服务器进行选择，如果不确定是否可以用4即可，高性能服务器随意4~12都可以，看CPU的实力
+
+lagrangeForwardWebSocket: 'ws://127.0.0.1:9091/' # 格式：ws://地址:端口/，拉格朗日正向连接地址，用于适配拉格朗日上传群文件，解决部分用户无法查看视频问题
+
+autoclearTrashtime: '0 0 8 * * ?' #每天早上8点自动清理视频缓存，cron可自定义时间
+
+aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
+aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
+aiModel: 'moonshot-v1-8k' # 模型，使用kimi不用填写，其他要填写
