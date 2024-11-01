@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+@font-face {
+    font-family: 'number';
+    src: url("../../font/江城月湖体\ 400W.ttf");
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.songList {
+    min-height: 50vh;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    background: #121212ef;
+    position: relative;
+    padding: 0px 40px 20px 40px;
+    box-sizing: border-box;
+}
+
+.songListNav {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100px;
+    margin-top: 30px;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+}
+
+.navText {
+    font-size: 30px;
+    color: #fff;
+    margin-left: 20px;
+    width: 85%;    
+}
+
+.songName{
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.singerText{
+    font-size: 25px;
+    color: #aaa;
+    margin-top: 5px;
+}
+
+
+.navInfo {
+    display: flex;
+    width: 80%;
+}
+
+.navDuration {
+    color: #aaa;
+    width: 40px;
+    font-size: 25px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.navInfo img {
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+}
+
+.bgicon {
+    position: absolute;
+    top: calc(50% - 100px);
+    left: calc(50% - 85px);
+    width: 200px;
+    height: 200px;
+    z-index: 1;
+}
+
+.bgicon img {
+    width: 100%;
+    height: 100%;
+    opacity: 0.4
+}
+
+.number {
+    width: 40px;
+    height: 100%;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    color: #fff;
+    margin-right: 25px;
+    margin-left: -20px;
+    font-family: 'number'
+}

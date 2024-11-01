@@ -21,61 +21,61 @@
 - group: 工具类合集
   list:
     - icon: translate
-      title: "翻中/英/日 xxx"
+      title: 翻中/英/日 xxx
       desc: R插件翻译引擎
     - icon: tiktok
-      title: "douyin"
+      title: douyin
       desc: 抖音分享实时下载
     - icon: bilibili
-      title: "哔哩哔哩"
+      title: 哔哩哔哩
       desc: 哔哩哔哩分享实时下载
     - icon: bqrcode
       title: "#rbq/#RBQ"
       desc: R插件B站扫码
     - icon: applemusic
-      title: "Apple Music"
+      title: Apple Music
       desc: Apple Music音乐分享实时下载
     - icon: youtube
-      title: "油管"
+      title: 油管
       desc: 油管学习版分享实时下载
     - icon: twitter
-      title: "小蓝鸟"
+      title: 小蓝鸟
       desc: 推特学习版分享实时下载
     - icon: acfun
-      title: "acfun"
+      title: acfun
       desc: 猴山分享实时下载
     - icon: redbook
-      title: "小红书"
+      title: 小红书
       desc: 小红书分享实时下载
     - icon: kuaishou
-      title: "快手（测试阶段）"
+      title: 快手（测试阶段）
       desc: 快手分享实时下载
     - icon: xigua
-      title: "西瓜（测试阶段）"
+      title: 西瓜（测试阶段）
       desc: 西瓜分享实时下载
     - icon: miyoushe
-      title: "米游社"
+      title: 米游社
       desc: 米游社文章分享实时下载
     - icon: weibo
-      title: "微博"
+      title: 微博
       desc: 微博文章分享实时下载
     - icon: zuiyou
-      title: "最右（测试阶段）"
+      title: 最右（测试阶段）
       desc: 最右分享实时下载
     - icon: pipi
-      title: "皮皮虾（测试阶段）"
+      title: 皮皮虾（测试阶段）
       desc: 皮皮虾分享实时下载
     - icon: bodian
-      title: "波点音乐"
+      title: 波点音乐
       desc: 波点云音乐点解析
     - icon: spotify
-      title: "Spotify"
+      title: Spotify
       desc: 解析Spotify音乐
     - icon: telegram
-      title: "小飞机（学习版）"
+      title: 小飞机（学习版）
       desc: 解析小飞机
 - group: 其他指令
   list:
     - icon: update
       title: "#R插件更新"
-      desc: "进行更新R插件"
+      desc: 进行更新R插件

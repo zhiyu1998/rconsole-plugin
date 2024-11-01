@@ -81,6 +81,13 @@ export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
 export const REDIS_YUNZAI_LAGRANGE = "Yz:rconsole:tools:lagrange";
 
 /**
+ * 缓存音乐搜索列表
+ * @type {string}
+ */
+export const REDIS_YUNZAI_SONGINFO = "Yz:rconsole:tools:songinfo";
+
+
+/**
  * 某些功能的解析白名单
  * @type {string}
  */
