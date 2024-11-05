@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Fri, 18 Oct 2024 16:04:14 GMT</lastBuildDate>
+        <lastBuildDate>Tue, 05 Nov 2024 13:03:23 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -62,6 +62,20 @@
 <li>通过 GLM 进行问答（暂时的）</li>
 </ol>
 <p><img src="https://camo.githubusercontent.com/db979437e758fc465e2cc8496e5cb64370281f8eebb23c89ae45c104d53a0c85/68747470733a2f2f73322e6c6f6c692e6e65742f323032342f31302f31322f6544693646635949546b4d557053622e706e67" alt=""></p>
+<h3>🧴 关于双容器解决方案</h3>
+<p>由我的朋友@春日野穹提供的方案，重装下napcat就可以，<code>xxx</code>记得改成QQ号：</p>
+<pre><code class="language-shell">docker run -d \
+  -e ACC0UNT=xxx \
+  -e WSR_ENABLE=true \
+  -e WS_URLS='[&quot;ws://localhost:2536/0neBotv11&quot;]' \
+  -e NAPCAT_GID=01 \
+  -e NAPCAT_UID=0 \
+  -v /root/TRsS_AiiBot:/root/TRsS_AilBot1 \
+  --restart always \
+  --network host \
+  --name napcat \
+  mlikiowa/napcat-docker:latest
+</code></pre>
 <h3>♻️ 关于更新问题</h3>
 <p>请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie</p>
 <p>命令集合：</p>
