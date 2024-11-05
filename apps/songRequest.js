@@ -7,6 +7,7 @@ import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO } from
 import { downloadAudio } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { checkAndRemoveFile } from "../utils/file.js";
+import { sendMusicCard } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 
 export class songRequest extends plugin {
@@ -24,14 +25,15 @@ export class songRequest extends plugin {
                     reg: "^#播放(.*)",
                     fnc: "playSong"
                 },
+                {
+                    reg: "^#?上传(.*)",
+                    fnc: "upLoad"
+                },
             ]
         });
-        
         this.toolsConfig = config.getConfig("tools");
         // 加载网易云Cookie
         this.neteaseCookie = this.toolsConfig.neteaseCookie
-        // 视频保存路径
-        this.defaultPath = this.toolsConfig.defaultPath;
         // 加载是否自建服务器
         this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
         // 加载自建服务器API
@@ -44,6 +46,8 @@ export class songRequest extends plugin {
         this.useNeteaseSongRequest = this.toolsConfig.useNeteaseSongRequest
         // 加载点歌列表长度
         this.songRequestMaxList = this.toolsConfig.songRequestMaxList
+        // 视频保存路径
+        this.defaultPath = this.toolsConfig.defaultPath;
     }
 
     async pickSong(e) {
@@ -176,6 +180,30 @@ export class songRequest extends plugin {
         }
     }
 
+    async upLoad(e) {
+        let msg = await e.getReply();
+        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
+        const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
+        const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
+        const id =
+            musicUrlReg2.exec(msg.message[0].data)?.[3] ||
+            musicUrlReg.exec(msg.message[0].data)?.[2] ||
+            musicUrlReg3.exec(msg.message[0].data)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data)[1] || "";
+        const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
+        const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
+        if (id === "") return
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + 'flac'
+        try {
+            // 上传群文件
+            await this.uploadGroupFile(e, path);
+            // 删除文件
+            await checkAndRemoveFile(path);
+        } catch (error) {
+            logger.error(error)
+        }
+    }
+
 
     // 判断是否海外服务器
     async isOverseasServer() {
@@ -279,34 +307,20 @@ export class songRequest extends plugin {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 try {
-                    await e.bot.sendApi('send_group_msg', {
-                        group_id: e.group.group_id,
-                        message: [
-                            {
-                                type: 'music',
-                                data: {
-                                    type: '163',
-                                    id: songInfo[pickNumber].id
-                                }
-                            }
-                        ]
-                    });
+                    // 发送卡片
+                    await sendMusicCard(e, '163', songInfo[pickNumber].id)
                 } catch (error) {
-                    // 发送语音
                     if (error.error.message) {
                         logger.error("发送卡片错误错误:", error.error.message, '发送群语音');
                     } else {
                         logger.error("发送卡片错误错误，请查看控制台报错，将发送群语音")
                         logger.error(error)
                     }
+                    // 发送语音
                     if (musicExt != 'mp4') {
                         await e.reply(segment.record(path));
                     }
                 }
-                // 上传群文件
-                await this.uploadGroupFile(e, path);
-                // 删除文件
-                await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
