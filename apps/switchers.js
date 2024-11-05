@@ -1,6 +1,6 @@
 import config from "../model/config.js";
 import schedule from 'node-schedule';
-import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_LAGRANGE, REDIS_YUNZAI_WHITELIST } from "../constants/constant.js";
+import { REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_WHITELIST } from "../constants/constant.js";
 import { deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
 import { redisExistAndGetKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 
@@ -19,11 +19,6 @@ export class switchers extends plugin {
                 {
                     reg: "^#设置海外解析$",
                     fnc: "setOversea",
-                    permission: "master",
-                },
-                {
-                    reg: "^#设置拉格朗日$",
-                    fnc: "setLagrange",
                     permission: "master",
                 },
                 {
@@ -76,35 +71,6 @@ export class switchers extends plugin {
             return true;
         } catch (err) {
             e.reply(`设置海外模式时发生错误: ${ err.message }`);
-            return false;
-        }
-    }
-
-    /**
-     * 设置拉格朗日
-     * @param e
-     * @returns {Promise<boolean>}
-     */
-    async setLagrange(e) {
-        try {
-            // 查看当前设置
-            let driver = (await redisGetKey(REDIS_YUNZAI_LAGRANGE))?.driver;
-            // 如果是第一次
-            if (driver === undefined) {
-                await redisSetKey(REDIS_YUNZAI_LAGRANGE, { driver: 1 });
-                driver = 1;
-            }
-            // 异常检测，之前算法出现问题，如果出现异常就检测纠正
-            if (driver === -1) {
-                driver = 1;
-            }
-            // 设置
-            driver ^= 1;
-            await redisSetKey(REDIS_YUNZAI_LAGRANGE, { driver });
-            e.reply(`当前驱动：${ driver ? '拉格朗日' : '其他驱动' }`);
-            return true;
-        } catch (err) {
-            e.reply(`设置拉格朗日时发生错误: ${ err.message }`);
             return false;
         }
     }

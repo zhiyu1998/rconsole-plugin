@@ -20,7 +20,6 @@ import {
     HELP_DOC,
     MESSAGE_RECALL_TIME,
     REDIS_YUNZAI_ISOVERSEA,
-    REDIS_YUNZAI_LAGRANGE,
     REDIS_YUNZAI_WHITELIST,
     SUMMARY_PROMPT,
     transMap,
@@ -85,7 +84,7 @@ import {
     downloadImg,
     estimateReadingTime,
     formatBiliInfo,
-    retryAxiosReq, saveJsonToFile,
+    retryAxiosReq,
     secondsToTime,
     testProxy,
     truncateString,
@@ -94,7 +93,6 @@ import {
 import { convertFlvToMp4 } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
-import { LagrangeAdapter } from "../utils/lagrange-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { deepSeekChat, llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
@@ -105,7 +103,7 @@ import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
-import { ytDlpGetTilt, ytDlpHelper, ytDlpGetThumbnail, ytDlpGetDuration } from "../utils/yt-dlp-util.js";
+import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
@@ -2970,22 +2968,6 @@ export class tools extends plugin {
     }
 
     /**
-     * 判断是否是拉格朗日驱动
-     * @returns {Promise<Boolean>}
-     */
-    async isLagRangeDriver() {
-        // 如果第一次使用没有值就设置
-        if (!(await redisExistKey(REDIS_YUNZAI_LAGRANGE))) {
-            await redisSetKey(REDIS_YUNZAI_LAGRANGE, {
-                driver: 0,
-            });
-            return true;
-        }
-        // 如果有就取出来
-        return (await redisGetKey(REDIS_YUNZAI_LAGRANGE)).driver;
-    }
-
-    /**
      * 判断当前用户是否是信任用户
      * @param userId
      * @returns {Promise<boolean>}
@@ -3011,17 +2993,6 @@ export class tools extends plugin {
      */
     async sendVideoToUpload(e, path, videoSizeLimit = this.videoSizeLimit) {
         try {
-            // logger.info(videoSizeLimit);
-            const isLag = await this.isLagRangeDriver();
-            // 判断是否是拉格朗日
-            if (isLag === 1) {
-                // 构造拉格朗日适配器
-                const lagrange = new LagrangeAdapter(this.toolsConfig.lagrangeForwardWebSocket);
-                // 上传群文件
-                await lagrange.uploadGroupFile(e.user_id || e.sender.card, e.group_id, path);
-                // 上传完直接返回
-                return;
-            }
             // 判断文件是否存在
             if (!fs.existsSync(path)) {
                 return e.reply('视频不存在');

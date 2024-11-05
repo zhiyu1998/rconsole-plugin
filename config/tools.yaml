@@ -11,7 +11,7 @@ streamCompatibility: false # 兼容模式，NCQQ不用开，其他ICQQ、LLO需�
 
 biliSessData: '' # 哔哩哔哩的SESSDATA
 biliIntroLenLimit: 50 # 哔哩哔哩简介长度限制，填 0 或者 -1 可以不做任何限制，显示完整简介
-biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒 
+biliDuration: 480 # 哔哩哔哩限制的最大视频时长（默认8分钟），单位：秒
 biliDisplayCover: true # 是否显示哔哩哔哩的封面
 biliDisplayInfo: true # 是否显示哔哩哔哩的视频信息
 biliDisplayIntro: true # 是否显示哔哩哔哩的简介
@@ -42,8 +42,6 @@ xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
 
 videoDownloadConcurrency: 1 # 下载视频是否使用多线程，如果不使用默认是1，如果使用根据服务器进行选择，如果不确定是否可以用4即可，高性能服务器随意4~12都可以，看CPU的实力
-
-lagrangeForwardWebSocket: 'ws://127.0.0.1:9091/' # 格式：ws://地址:端口/，拉格朗日正向连接地址，用于适配拉格朗日上传群文件，解决部分用户无法查看视频问题
 
 autoclearTrashtime: '0 0 8 * * ?' #每天早上8点自动清理视频缓存，cron可自定义时间
 
