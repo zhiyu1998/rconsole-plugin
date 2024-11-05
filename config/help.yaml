@@ -1,3 +1,23 @@
+- group: 查询类功能
+  list:
+    - icon: doctor
+      title: "#医药查询 疾病/症状/医院/医生/药品"
+      desc: 便利的医药查询功能
+    - icon: cat
+      title: "#cat 开始吸猫"
+      desc: 猫咪图捕捉
+    - icon: computer
+      title: "#推荐软件"
+      desc: 推荐PC、Android软件
+    - icon: buyer
+      title: "#买家秀"
+      desc: 淘宝买家秀
+    - icon: pic1
+      title: "#累了"
+      desc: 疲惫往往是过度劳累
+    - icon: zhubai
+      title: "#竹白"
+      desc: 基于竹白百科的搜索
 - group: 工具类合集
   list:
     - icon: translate
