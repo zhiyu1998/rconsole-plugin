@@ -45,10 +45,10 @@ export class songRequest extends plugin {
 
     async pickSong(e) {
         // 判断功能是否开启
-        if(!this.useNeteaseSongRequest) {
+        if (!this.useNeteaseSongRequest) {
             logger.info('当前未开启网易云点歌')
             return
-        } 
+        }
         const autoSelectNeteaseApi = await this.pickApi()
         // 只在群里可以使用
         let group_id = e.group.group_id
@@ -58,7 +58,7 @@ export class songRequest extends plugin {
         const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
-        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit='+ this.songRequestMaxList //搜索API
+        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=' + this.songRequestMaxList //搜索API
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
         if (e.msg.replace(/\s+/g, "").match(/点歌(.+)/)) {
             const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1]
@@ -121,10 +121,10 @@ export class songRequest extends plugin {
 
     // 播放策略
     async playSong(e) {
-        if(!this.useNeteaseSongRequest) {
+        if (!this.useNeteaseSongRequest) {
             logger.info('当前未开启网易云点歌')
             return
-        } 
+        }
         // 只在群里可以使用
         let group_id = e.group.group_id
         if (!group_id) return
@@ -275,9 +275,30 @@ export class songRequest extends plugin {
             let musicExt = resp.data.data?.[0]?.type
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
-                // 发送语音
-                if (musicExt != 'mp4') {
-                    await e.reply(segment.record(path));
+                try {
+                    await e.bot.sendApi('send_group_msg', {
+                        group_id: e.group.group_id,
+                        message: [
+                            {
+                                type: 'music',
+                                data: {
+                                    type: '163',
+                                    id: songInfo[pickNumber].id
+                                }
+                            }
+                        ]
+                    });
+                } catch (error) {
+                    // 发送语音
+                    if (error.error.message) {
+                        logger.error("发送卡片错误错误:", error.error.message, '发送群语音');
+                    } else {
+                        logger.error("发送卡片错误错误，请查看控制台报错，将发送群语音")
+                        logger.error(error)
+                    }
+                    if (musicExt != 'mp4') {
+                        await e.reply(segment.record(path));
+                    }
                 }
                 // 上传群文件
                 await this.uploadGroupFile(e, path);
