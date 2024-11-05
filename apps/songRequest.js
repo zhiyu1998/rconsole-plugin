@@ -17,7 +17,7 @@ export class songRequest extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: '^点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
+                    reg: '^#?点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
                     fnc: 'pickSong'
                 },
                 {
@@ -39,10 +39,13 @@ export class songRequest extends plugin {
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
     }
 
-    // 点歌策略
     async pickSong(e) {
-        const { autoSelectNeteaseApi, isCkExpired } = await this.checkApi()
-        let songInfo = []
+        const autoSelectNeteaseApi = await this.pickApi()
+        let group_id = e.group.group_id
+        if (!group_id) return
+        let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
+        const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
+        let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
         let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=10' //搜索API
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
@@ -56,14 +59,14 @@ export class songRequest extends plugin {
             }).then(async res => {
                 if (res.data.result.songs) {
                     for (const info of res.data.result.songs) {
-                        songInfo.push({
+                        musicDate.data.push({
                             'id': info.id,
                             'songName': info.name,
                             'singerName': info.artists[0]?.name,
                             'duration': formatTime(info.duration)
                         });
                     }
-                    const ids = songInfo.map(item => item.id).join(',');
+                    const ids = musicDate.data.map(item => item.id).join(',');
                     detailUrl = detailUrl.replace("{}", ids)
                     await axios.get(detailUrl, {
                         headers: {
@@ -71,11 +74,16 @@ export class songRequest extends plugin {
                         },
                     }).then(res => {
                         for (let i = 0; i < res.data.songs.length; i++) {
-                            songInfo[i].cover = res.data.songs[i].al.picUrl
+                            musicDate.data[i].cover = res.data.songs[i].al.picUrl
                         }
                     })
+                    if (saveId == -1) {
+                        songInfo.push(musicDate)
+                    } else {
+                        songInfo[saveId] = musicDate
+                    }
                     await redisSetKey(REDIS_YUNZAI_SONGINFO, songInfo)
-                    const data = await new PickSongList(e).getData(songInfo)
+                    const data = await new PickSongList(e).getData(musicDate.data)
                     let img = await puppeteer.screenshot("pick-song", data);
                     e.reply(img, true);
                 } else {
@@ -85,21 +93,28 @@ export class songRequest extends plugin {
         } else if (await redisGetKey(REDIS_YUNZAI_SONGINFO) != []) {
             if (e.msg.match(/听(\d+)/)) {
                 const pickNumber = e.msg.match(/听(\d+)/)[1] - 1
+                let group_id = e.group.group_id
+                if (!group_id) return
                 let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
+                const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
                 const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
-                const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[pickNumber].id)
+                const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[saveId].data[pickNumber].id)
                 const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
+                const isCkExpired = await this.checkCooike(statusUrl)
+                logger.info('isckex-----------', isCkExpired)
                 // // 请求netease数据
-                this.neteasePlay(e, pickSongUrl, songInfo, pickNumber, isCkExpired)
+                this.neteasePlay(e, pickSongUrl, songInfo[saveId].data, pickNumber, isCkExpired)
             }
         }
+
     }
 
     // 播放策略
-    async pickSong(e) {
-        const { autoSelectNeteaseApi, isCkExpired } = await this.checkApi()
+    async playSong(e) {
+        const autoSelectNeteaseApi = await this.pickApi()
         let songInfo = []
         // 获取搜索歌曲列表信息
+        const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
         let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=1' //搜索API
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
         if (e.msg.replace(/\s+/g, "").match(/播放(.+)/)) {
@@ -131,7 +146,9 @@ export class songRequest extends plugin {
                         }
                     })
                     const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[0].id)
-                    this.neteasePlay(e, pickSongUrl, songInfo, pickNumber, isCkExpired)
+                    const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
+                    const isCkExpired = await this.checkCooike(statusUrl)
+                    this.neteasePlay(e, pickSongUrl, songInfo, 0, isCkExpired)
                 } else {
                     e.reply('暂未找到你想听的歌哦~')
                 }
@@ -139,36 +156,6 @@ export class songRequest extends plugin {
         }
     }
 
-    // API自动选择 AND ck活性检测
-    async checkApi() {
-        const isOversea = await this.isOverseasServer();
-        let autoSelectNeteaseApi
-        if (this.useLocalNeteaseAPI) {
-            // 使用自建 API
-            autoSelectNeteaseApi = this.neteaseCloudAPIServer
-        } else {
-            // 自动选择 API
-            autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
-        }
-        const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
-        let isCkExpired
-        await axios.get(statusUrl, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-                "Cookie": this.neteaseCookie
-            },
-        }).then(res => {
-            const userInfo = res.data.data.profile
-            if (userInfo) {
-                logger.info('ck活着，使用ck进行高音质下载')
-                isCkExpired = true
-            } else {
-                logger.info('ck失效，将启用临时接口下载')
-                isCkExpired = false
-            }
-        })
-        return { autoSelectNeteaseApi, isCkExpired }
-    }
 
     // 判断是否海外服务器
     async isOverseasServer() {
@@ -183,24 +170,43 @@ export class songRequest extends plugin {
         return (await redisGetKey(REDIS_YUNZAI_ISOVERSEA)).os;
     }
 
-    async musicTempApi(e, title, musicType) {
-        let musicReqApi = NETEASE_TEMP_API;
-        // 临时接口，title经过变换后搜索到的音乐质量提升
-        const vipMusicData = await axios.get(musicReqApi.replace("{}", title.replace("-", " ")), {
+    // API选择
+    async pickApi() {
+        const isOversea = await this.isOverseasServer();
+        let autoSelectNeteaseApi
+        if (this.useLocalNeteaseAPI) {
+            // 使用自建 API
+            return autoSelectNeteaseApi = this.neteaseCloudAPIServer
+        } else {
+            // 自动选择 API
+            return autoSelectNeteaseApi = isOversea ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN;
+        }
+    }
+
+    // 检测cooike活性
+
+    async checkCooike(statusUrl) {
+        let status
+        await axios.get(statusUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
+                "Cookie": this.neteaseCookie
             },
-        });
-        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-        // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
-        const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        await e.reply([segment.image(cover), `${this.identifyPrefix}识别：${musicType}，${messageTitle}`]);
-        return url;
+        }).then(res => {
+            const userInfo = res.data.data.profile
+            if (userInfo) {
+                logger.info('ck活着，使用ck进行高音质下载')
+                status = true
+            } else {
+                logger.info('ck失效，将启用临时接口下载')
+                status = false
+            }
+        })
+        return status
     }
 
     // 网易云音乐下载策略
-    neteasePlay(pickSongUrl, songInfo, pickNumber = 0, isCkExpired) {
+    neteasePlay(e, pickSongUrl, songInfo, pickNumber = 0, isCkExpired) {
         axios.get(pickSongUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
@@ -265,6 +271,22 @@ export class songRequest extends plugin {
                 logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
         });
+    }
+
+    async musicTempApi(e, title, musicType) {
+        let musicReqApi = NETEASE_TEMP_API;
+        // 临时接口，title经过变换后搜索到的音乐质量提升
+        const vipMusicData = await axios.get(musicReqApi.replace("{}", title.replace("-", " ")), {
+            headers: {
+                "User-Agent": COMMON_USER_AGENT,
+            },
+        });
+        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
+        // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
+        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
+        const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
+        await e.reply([segment.image(cover), `${this.identifyPrefix}识别：${musicType}，${messageTitle}`]);
+        return url;
     }
 
     /**
