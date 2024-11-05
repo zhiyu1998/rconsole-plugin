@@ -54,7 +54,7 @@ export class songRequest extends plugin {
         let group_id = e.group.group_id
         if (!group_id) return
         // 初始化
-        let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
+        let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO) || []
         const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
