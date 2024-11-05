@@ -25,6 +25,23 @@ tags:
 
 ![](https://camo.githubusercontent.com/db979437e758fc465e2cc8496e5cb64370281f8eebb23c89ae45c104d53a0c85/68747470733a2f2f73322e6c6f6c692e6e65742f323032342f31302f31322f6544693646635949546b4d557053622e706e67)
 
+### 🧴 关于双容器解决方案
+
+由我的朋友@春日野穹提供的方案，重装下napcat就可以，`xxx`记得改成QQ号：
+```shell
+docker run -d \
+  -e ACC0UNT=xxx \
+  -e WSR_ENABLE=true \
+  -e WS_URLS='["ws://localhost:2536/0neBotv11"]' \
+  -e NAPCAT_GID=01 \
+  -e NAPCAT_UID=0 \
+  -v /root/TRsS_AiiBot:/root/TRsS_AilBot1 \
+  --restart always \
+  --network host \
+  --name napcat \
+  mlikiowa/napcat-docker:latest
+```
+
 ### ♻️ 关于更新问题
 
 请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie
