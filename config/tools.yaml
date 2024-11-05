@@ -23,6 +23,8 @@ biliDownloadMethod: 0 # 哔哩哔哩的下载方式：0默认使用原生稳定�
 biliResolution: 1 # 哔哩哔哩的下载画质，0为原画，1为清晰画，2为流畅画（默认为0）
 
 useLocalNeteaseAPI: false # 是否使用网易云解析自建API
+useNeteaseSongRequest: false # 是否开启网易云点歌功能
+songRequestMaxList: 10 # 网易云点歌请求最大列表数
 neteaseCookie: '' # 网易云ck
 neteaseCloudAPIServer: '' # 网易云自建服务器地址
 neteaseCloudAudioQuality: exhigh # 网易云解析最高音质 默认exhigh(极高) 分类：standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, dolby => 杜比全景声, jymaster => 超清母带

@@ -37,17 +37,25 @@ export class songRequest extends plugin {
         this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality
         // 加载识别前缀
         this.identifyPrefix = this.toolsConfig.identifyPrefix;
+        // 加载是否开启网易云点歌功能
+        this.useNeteaseSongRequest = this.toolsConfig.useNeteaseSongRequest
+        // 加载点歌列表长度
+        this.songRequestMaxList = this.toolsConfig.songRequestMaxList
     }
 
     async pickSong(e) {
+        // 判断功能是否开启
+        if(!this.useNeteaseSongRequest) return
         const autoSelectNeteaseApi = await this.pickApi()
+        // 只在群里可以使用
         let group_id = e.group.group_id
         if (!group_id) return
+        // 初始化
         let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
         const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
-        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=10' //搜索API
+        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit='+ this.songRequestMaxList //搜索API
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
         if (e.msg.replace(/\s+/g, "").match(/点歌(.+)/)) {
             const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1]
@@ -111,6 +119,10 @@ export class songRequest extends plugin {
 
     // 播放策略
     async playSong(e) {
+        if(!this.useNeteaseSongRequest) return
+        // 只在群里可以使用
+        let group_id = e.group.group_id
+        if (!group_id) return
         const autoSelectNeteaseApi = await this.pickApi()
         let songInfo = []
         // 获取搜索歌曲列表信息
