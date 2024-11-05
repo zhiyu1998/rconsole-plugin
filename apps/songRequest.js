@@ -21,7 +21,7 @@ export class songRequest extends plugin {
                     fnc: 'pickSong'
                 },
                 {
-                    reg: "^#?播放(.*)",
+                    reg: "^#播放(.*)",
                     fnc: "playSong"
                 },
             ]
@@ -45,7 +45,10 @@ export class songRequest extends plugin {
 
     async pickSong(e) {
         // 判断功能是否开启
-        if(!this.useNeteaseSongRequest) return
+        if(!this.useNeteaseSongRequest) {
+            logger.info('当前未开启网易云点歌')
+            return
+        } 
         const autoSelectNeteaseApi = await this.pickApi()
         // 只在群里可以使用
         let group_id = e.group.group_id
@@ -109,7 +112,6 @@ export class songRequest extends plugin {
                 const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[saveId].data[pickNumber].id)
                 const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
                 const isCkExpired = await this.checkCooike(statusUrl)
-                logger.info('isckex-----------', isCkExpired)
                 // // 请求netease数据
                 this.neteasePlay(e, pickSongUrl, songInfo[saveId].data, pickNumber, isCkExpired)
             }
@@ -119,7 +121,10 @@ export class songRequest extends plugin {
 
     // 播放策略
     async playSong(e) {
-        if(!this.useNeteaseSongRequest) return
+        if(!this.useNeteaseSongRequest) {
+            logger.info('当前未开启网易云点歌')
+            return
+        } 
         // 只在群里可以使用
         let group_id = e.group.group_id
         if (!group_id) return
@@ -250,7 +255,6 @@ export class songRequest extends plugin {
                 const sizeInMB = sizeInBytes / (1024 * 1024);  // 1 MB = 1024 * 1024 bytes
                 return sizeInMB.toFixed(2);  // 保留两位小数
             }
-            logger.info('下载歌曲详情-----------', resp.data.data)
             let url = await resp.data.data?.[0]?.url || null;
             const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
             const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
