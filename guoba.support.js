@@ -261,6 +261,25 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.useNeteaseSongRequest",
+                    label: "开启网易云点歌功能",
+                    bottomHelpMessage:
+                        "默认不开启，建议搭配自建网易云API使用，以获得最佳体验",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.songRequestMaxList",
+                    label: "点歌列表长度",
+                    bottomHelpMessage:
+                        "网易云点歌选择列表长度默认10",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "填入长度",
+                    },
+                },
+                {
                     field: "tools.neteaseCloudAPIServer",
                     label: "自建网易云API地址",
                     bottomHelpMessage:

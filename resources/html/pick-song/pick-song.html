@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜索歌单</title>
+    <style>
+        @import url('{{pluResPath}}html/pick-song/pick-song.css');
+    </style>
+</head>
+
+<body>
+    <div class="songList">
+        {{each songData info key}}
+        <div class="songListNav">
+            <div class="navInfo">
+                <div class="number">{{ key+1 }}</div>
+                <img src="{{ info.cover }}" alt="">
+                <div class="navText">
+                    <div class="songName">{{ info.songName }}</div>
+                    <div class="singerText">{{ info.singerName }}</div>
+                </div>
+            </div>
+            <div class="navDuration">{{ info.duration }}</div>
+        </div>
+        {{ /each }}
+        <div class="bgicon">
+            <img src="{{pluResPath}}img/icon/neteaseRank.png" alt="">
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1789,8 +1789,7 @@ export class tools extends plugin {
                 e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
-            const extensionPattern = /\.([a-zA-Z0-9]+)$/;
-            let musicExt = url.match(extensionPattern)?.[0].replace("\.", "");
+            let musicExt = resp.data.data?.[0]?.type
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
