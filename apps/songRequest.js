@@ -26,9 +26,12 @@ export class songRequest extends plugin {
                 },
             ]
         });
+        
         this.toolsConfig = config.getConfig("tools");
         // 加载网易云Cookie
         this.neteaseCookie = this.toolsConfig.neteaseCookie
+        // 视频保存路径
+        this.defaultPath = this.toolsConfig.defaultPath;
         // 加载是否自建服务器
         this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
         // 加载自建服务器API
