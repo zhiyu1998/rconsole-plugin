@@ -12,3 +12,25 @@ export function textArrayToMakeForward(e, textArray) {
         };
     })
 }
+
+/**
+ * 发送群组音乐卡片
+ * @param e
+ * @param platformType 音乐平台 
+ * @param musicId      音乐id 
+ */
+
+export async function sendMusicCard(e, platformType, musicId) {
+    await e.bot.sendApi('send_group_msg', {
+        group_id: e.group.group_id,
+        message: [
+            {
+                type: 'music',
+                data: {
+                    type: platformType,
+                    id: musicId
+                }
+            }
+        ]
+    });
+}

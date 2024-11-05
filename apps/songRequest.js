@@ -7,6 +7,7 @@ import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO } from
 import { downloadAudio } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { checkAndRemoveFile } from "../utils/file.js";
+import { sendMusicCard } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 
 export class songRequest extends plugin {
@@ -23,6 +24,10 @@ export class songRequest extends plugin {
                 {
                     reg: "^#播放(.*)",
                     fnc: "playSong"
+                },
+                {
+                    reg: "^#?上传(.*)",
+                    fnc: "upLoad"
                 },
             ]
         });
@@ -41,14 +46,16 @@ export class songRequest extends plugin {
         this.useNeteaseSongRequest = this.toolsConfig.useNeteaseSongRequest
         // 加载点歌列表长度
         this.songRequestMaxList = this.toolsConfig.songRequestMaxList
+        // 视频保存路径
+        this.defaultPath = this.toolsConfig.defaultPath;
     }
 
     async pickSong(e) {
         // 判断功能是否开启
-        if(!this.useNeteaseSongRequest) {
+        if (!this.useNeteaseSongRequest) {
             logger.info('当前未开启网易云点歌')
             return
-        } 
+        }
         const autoSelectNeteaseApi = await this.pickApi()
         // 只在群里可以使用
         let group_id = e.group.group_id
@@ -58,7 +65,7 @@ export class songRequest extends plugin {
         const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
-        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit='+ this.songRequestMaxList //搜索API
+        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=' + this.songRequestMaxList //搜索API
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
         if (e.msg.replace(/\s+/g, "").match(/点歌(.+)/)) {
             const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1]
@@ -102,8 +109,8 @@ export class songRequest extends plugin {
                 }
             })
         } else if (await redisGetKey(REDIS_YUNZAI_SONGINFO) != []) {
-            if (e.msg.match(/听(\d+)/)) {
-                const pickNumber = e.msg.match(/听(\d+)/)[1] - 1
+            if (e.msg.replace(/\s+/g, "").match(/听(\d+)/)) {
+                const pickNumber = e.msg.replace(/\s+/g, "").match(/听(\d+)/)[1] - 1
                 let group_id = e.group.group_id
                 if (!group_id) return
                 let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
@@ -121,10 +128,10 @@ export class songRequest extends plugin {
 
     // 播放策略
     async playSong(e) {
-        if(!this.useNeteaseSongRequest) {
+        if (!this.useNeteaseSongRequest) {
             logger.info('当前未开启网易云点歌')
             return
-        } 
+        }
         // 只在群里可以使用
         let group_id = e.group.group_id
         if (!group_id) return
@@ -170,6 +177,30 @@ export class songRequest extends plugin {
                     e.reply('暂未找到你想听的歌哦~')
                 }
             })
+        }
+    }
+
+    async upLoad(e) {
+        let msg = await e.getReply();
+        const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
+        const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
+        const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
+        const id =
+            musicUrlReg2.exec(msg.message[0].data)?.[3] ||
+            musicUrlReg.exec(msg.message[0].data)?.[2] ||
+            musicUrlReg3.exec(msg.message[0].data)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data)[1] || "";
+        const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
+        const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
+        if (id === "") return
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + 'flac'
+        try {
+            // 上传群文件
+            await this.uploadGroupFile(e, path);
+            // 删除文件
+            await checkAndRemoveFile(path);
+        } catch (error) {
+            logger.error(error)
         }
     }
 
@@ -275,14 +306,21 @@ export class songRequest extends plugin {
             let musicExt = resp.data.data?.[0]?.type
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
-                // 发送语音
-                if (musicExt != 'mp4') {
-                    await e.reply(segment.record(path));
+                try {
+                    // 发送卡片
+                    await sendMusicCard(e, '163', songInfo[pickNumber].id)
+                } catch (error) {
+                    if (error.error.message) {
+                        logger.error("发送卡片错误错误:", error.error.message, '发送群语音');
+                    } else {
+                        logger.error("发送卡片错误错误，请查看控制台报错，将发送群语音")
+                        logger.error(error)
+                    }
+                    // 发送语音
+                    if (musicExt != 'mp4') {
+                        await e.reply(segment.record(path));
+                    }
                 }
-                // 上传群文件
-                await this.uploadGroupFile(e, path);
-                // 删除文件
-                await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
