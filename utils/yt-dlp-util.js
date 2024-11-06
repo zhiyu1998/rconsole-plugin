@@ -10,6 +10,17 @@ function constructProxyParam(isOversea, proxy) {
     return isOversea ? "" : `--proxy ${proxy}`;
 }
 
+/**
+ * 构造cookie参数
+ * 目前只支持YouTube构造cookie，否则就必须修改`url.includes("youtu")`
+ * @param url
+ * @param cookiePath
+ * @returns {string}
+ */
+function constructCookiePath(url, cookiePath) {
+    return (cookiePath !== "" && url.includes("youtu")) ? `--cookies ${ cookiePath }` : "";
+}
+
 
 /**
  * 获取时长
@@ -27,10 +38,12 @@ export function ytDlpGetDuration(url, isOversea, proxy) {
  * @param url
  * @param isOversea
  * @param proxy
+ * @param cookiePath
  * @returns string
  */
-export function ytDlpGetTilt(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-title --skip-download ${constructProxyParam(isOversea, proxy)} ${url} --encoding utf8`);
+export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
+    const cookieParam = constructCookiePath(url, cookiePath);
+    return execSync(`yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } --encoding utf8`);
 }
 
 /**
@@ -39,9 +52,11 @@ export function ytDlpGetTilt(url, isOversea, proxy) {
  * @param url
  * @param isOversea
  * @param proxy
+ * @param cookiePath
  */
-export function ytDlpGetThumbnail(path, url, isOversea, proxy) {
-    return execSync(`yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${constructProxyParam(isOversea, proxy)} ${url} -P ${path} -o "thumbnail.%(ext)s"`);
+export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath= "") {
+    const cookieParam = constructCookiePath(url, cookiePath);
+    return execSync(`yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P ${path} -o "thumbnail.%(ext)s"`);
 }
 
 /**
@@ -55,17 +70,19 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy) {
  * @param graphics   YouTube画质参数
  * @param timeRange  截取时间段
  * @param maxThreads 最大并发
+ * @param cookiePath Cookie所在位置
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge = false, graphics, timeRange) {
+export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge = false, graphics, timeRange, cookiePath = "") {
     return new Promise((resolve, reject) => {
         let command = "";
+        const cookieParam = constructCookiePath(url, cookiePath);
         if (url.includes("music")) {
             // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
-            command = `yt-dlp -x --audio-format mp3 ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.mp3" ${url}`;
+            command = `yt-dlp -x --audio-format mp3 ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.mp3" ${url}`;
         } else {
             const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
 
-            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
         }
 
         logger.info(`[R插件][yt-dlp审计] ${command}`);

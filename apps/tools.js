@@ -269,25 +269,27 @@ export class tools extends plugin {
         // 加载 BBDown 的CDN配置
         this.biliCDN = this.toolsConfig.biliCDN;
         // 加载网易云Cookie
-        this.neteaseCookie = this.toolsConfig.neteaseCookie
+        this.neteaseCookie = this.toolsConfig.neteaseCookie;
         // 加载是否转化群语音
-        this.isSendVocal = this.toolsConfig.isSendVocal
+        this.isSendVocal = this.toolsConfig.isSendVocal;
         // 加载是否自建服务器
-        this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
+        this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI;
         // 加载自建服务器API
-        this.neteaseCloudAPIServer = this.toolsConfig.neteaseCloudAPIServer
+        this.neteaseCloudAPIServer = this.toolsConfig.neteaseCloudAPIServer;
         // 加载网易云解析最高音质
-        this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality
+        this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality;
         // 加载哔哩哔哩是否使用Aria2
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
         this.biliResolution = this.toolsConfig.biliResolution;
         // 加载youtube的截取时长
-        this.youtubeClipTime = this.toolsConfig.youtubeClipTime
+        this.youtubeClipTime = this.toolsConfig.youtubeClipTime;
         // 加载youtube的解析时长
-        this.youtubeDuration = this.toolsConfig.youtubeDuration
+        this.youtubeDuration = this.toolsConfig.youtubeDuration;
         // 加载油管下载画质选项
-        this.youtubeGraphicsOptions = this.toolsConfig.youtubeGraphicsOptions
+        this.youtubeGraphicsOptions = this.toolsConfig.youtubeGraphicsOptions;
+        // 加载youtube的Cookie
+        this.youtubeCookiePath = this.toolsConfig.youtubeCookiePath;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
@@ -1981,8 +1983,8 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.mp4")
             await checkAndRemoveFile(path + "/temp.mp3")
             await checkAndRemoveFile(path + "/thumbnail.png")
-            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy)
-            const title = ytDlpGetTilt(url, isOversea, this.myProxy).toString().replace(/\n/g, '');
+            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath)
+            const title = ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath).toString().replace(/\n/g, '');
 
             // 音频逻辑
             if (url.includes("music")) {
@@ -1990,7 +1992,7 @@ export class tools extends plugin {
                     segment.image(`${path}/thumbnail.png`),
                     `${this.identifyPrefix}识别：油管音乐\n视频标题：${title}`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
                 e.reply(segment.record(`${ path }/temp.mp3`));
                 this.uploadGroupFile(e, `${ path }/temp.mp3`);
                 // 发送完就截断
@@ -2010,11 +2012,11 @@ export class tools extends plugin {
                     segment.image(`${path}/thumbnail.png`),
                     `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${title}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
                 this.sendVideoToUpload(e, `${path}/temp.mp4`);
             } else {
                 e.reply([segment.image(`${path}/thumbnail.png`), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${title}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
                 this.sendVideoToUpload(e, `${path}/temp.mp4`);
             }
         } catch (error) {

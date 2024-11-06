@@ -222,7 +222,7 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.youtubeDuration",
-                    label: "YouTuBe最大解析时长",
+                    label: "油管最大解析时长",
                     bottomHelpMessage:
                         "超过时长不解析（单位：秒），保护魔法的流量，计算公式：8分钟 x 60秒 = 480秒，默认8分钟，最好不超过30分钟",
                     component: "InputNumber",
@@ -233,7 +233,7 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.youtubeClipTime",
-                    label: "YouTuBe截取时长",
+                    label: "油管截取时长",
                     bottomHelpMessage:
                         "超过时长会截取指定时间（单位：秒），保护魔法的流量，计算公式：3分钟 x 60秒 = 180秒，默认不开启，最好不超过5分钟,0表无限or不开启",
                     component: "InputNumber",
@@ -244,13 +244,24 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.youtubeGraphicsOptions",
-                    label: "YouTube最高分辨率",
+                    label: "油管最高分辨率",
                     bottomHelpMessage:
                         "油管下载的最高分辨率（默认720p，请根据自己魔法流量和服务器承载能力进行调整）",
                     component: "Select",
                     componentProps: {
                         options: YOUTUBE_GRAPHICS_LIST,
                     }
+                },
+                {
+                    field: "tools.youtubeCookiePath",
+                    label: "油管Cookie",
+                    bottomHelpMessage:
+                        "【！重要：这里填写的是路径，例如/path/to/cookies.txt】如果无法解析油管就填写这个Cookie",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入Youtube Cookie所在的路径，例如：/path/to/cookies.txt",
+                    },
                 },
                 {
                     field: "tools.useLocalNeteaseAPI",
