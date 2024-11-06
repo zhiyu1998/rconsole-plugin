@@ -33,6 +33,11 @@ export function ytDlpGetDuration(url, isOversea, proxy) {
     return execSync(`yt-dlp --get-duration --skip-download ${constructProxyParam(isOversea, proxy)} ${url}`);
 }
 
+/**
+ * yt-dlp获取标题的时候可能需要的一个编码参数，也在一定程度上解决部分window系统乱码问题
+ * @param url
+ * @returns {string}
+ */
 function constructEncodingParam(url) {
     let encodingParam = "";
     if (url.includes("youtu")) {
