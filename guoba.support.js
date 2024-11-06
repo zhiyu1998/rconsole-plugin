@@ -264,10 +264,10 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "tools.useLocalNeteaseAPI",
-                    label: "使用自建网易云API",
+                    field: "tools.isSendVocal",
+                    label: "网易云开启仅发送音频",
                     bottomHelpMessage:
-                        "默认不开启，有条件可以查看https://gitlab.com/Binaryify/neteasecloudmusicapi进行搭建",
+                        "默认开启，识别音乐之后是否转化群语音发送，关闭将获得一定的性能提升",
                     component: "Switch",
                     required: false,
                 },
@@ -276,14 +276,6 @@ export function supportGuoba() {
                     label: "开启网易云点歌功能",
                     bottomHelpMessage:
                         "默认不开启，建议搭配自建网易云API使用，以获得最佳体验",
-                    component: "Switch",
-                    required: false,
-                },
-                {
-                    field: "tools.isSendVocal",
-                    label: "开启转语音",
-                    bottomHelpMessage:
-                        "默认开启，识别音乐之后是否转化群语音发送，关闭将获得一定的性能提升",
                     component: "Switch",
                     required: false,
                 },
@@ -297,6 +289,14 @@ export function supportGuoba() {
                     componentProps: {
                         placeholder: "填入长度",
                     },
+                },
+                {
+                    field: "tools.useLocalNeteaseAPI",
+                    label: "使用自建网易云API",
+                    bottomHelpMessage:
+                        "默认不开启，有条件可以查看https://gitlab.com/Binaryify/neteasecloudmusicapi进行搭建",
+                    component: "Switch",
+                    required: false,
                 },
                 {
                     field: "tools.neteaseCloudAPIServer",
