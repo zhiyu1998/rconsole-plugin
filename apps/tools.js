@@ -2000,7 +2000,7 @@ export class tools extends plugin {
             }
 
             // 下面为视频逻辑
-            const Duration = convertToSeconds(await ytDlpGetDuration(url, isOversea, this.myProxy).toString().replace(/\n/g, ''));
+            const Duration = convertToSeconds(ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath).toString().replace(/\n/g, ''));
             // logger.info('时长------',Duration)
             if (Duration > this.youtubeDuration) {
                 e.reply([

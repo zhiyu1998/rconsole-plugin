@@ -36,10 +36,13 @@ function constructEncodingParam(url) {
  * @param url
  * @param isOversea
  * @param proxy
+ * @param cookiePath
  * @returns string
  */
-export function ytDlpGetDuration(url, isOversea, proxy) {
-    return execSync(`yt-dlp --get-duration --skip-download ${constructProxyParam(isOversea, proxy)} ${url}`);
+export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
+    // 构造 cookie 参数
+    const cookieParam = constructCookiePath(url, cookiePath);
+    return execSync(`yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`);
 }
 
 /**
