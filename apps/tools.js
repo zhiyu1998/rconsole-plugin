@@ -272,6 +272,8 @@ export class tools extends plugin {
         this.biliCDN = this.toolsConfig.biliCDN;
         // 加载网易云Cookie
         this.neteaseCookie = this.toolsConfig.neteaseCookie
+        // 加载是否转化群语音
+        this.isSendVocal = this.toolsConfig.isSendVocal
         // 加载是否自建服务器
         this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
         // 加载自建服务器API
@@ -1793,7 +1795,7 @@ export class tools extends plugin {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 // 发送语音
-                if (musicExt != 'mp4') {
+                if (musicExt != 'mp4' && this.isSendVocal) {
                     await e.reply(segment.record(path));
                 }
                 // 上传群文件
@@ -2250,7 +2252,9 @@ export class tools extends plugin {
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow').then(async path => {
                 // 发送语音
-                await e.reply(segment.record(path));
+                if (this.isSendVocal) {
+                    await e.reply(segment.record(path));
+                }
                 // 判断是不是icqq
                 await this.uploadGroupFile(e, path);
                 await checkAndRemoveFile(path);
@@ -2382,7 +2386,9 @@ export class tools extends plugin {
         // 下载音乐
         await downloadAudio(url, this.getCurDownloadPath(e), musicInfo, 'follow').then(async path => {
             // 发送语音
-            await e.reply(segment.record(path));
+            if (this.isSendVocal) {
+                await e.reply(segment.record(path));
+            }
             // 判断是不是icqq
             await this.uploadGroupFile(e, path);
             await checkAndRemoveFile(path);
@@ -2402,7 +2408,9 @@ export class tools extends plugin {
         // 下载音乐
         await downloadAudio(url, this.getCurDownloadPath(e), musicInfo, 'follow').then(async path => {
             // 发送语音
-            await e.reply(segment.record(path));
+            if (this.isSendVocal) {
+                await e.reply(segment.record(path));
+            }
             // 判断是不是icqq
             await this.uploadGroupFile(e, path);
             await checkAndRemoveFile(path);
