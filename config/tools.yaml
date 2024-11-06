@@ -24,6 +24,7 @@ biliResolution: 1 # 哔哩哔哩的下载画质，0为原画，1为清晰画，2
 
 useLocalNeteaseAPI: false # 是否使用网易云解析自建API
 useNeteaseSongRequest: false # 是否开启网易云点歌功能
+isSendVocal: true # 是否开启发送群语音
 songRequestMaxList: 10 # 网易云点歌请求最大列表数
 neteaseCookie: '' # 网易云ck
 neteaseCloudAPIServer: '' # 网易云自建服务器地址

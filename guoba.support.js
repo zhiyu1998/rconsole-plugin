@@ -269,6 +269,14 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.isSendVocal",
+                    label: "开启转语音",
+                    bottomHelpMessage:
+                        "默认开启，识别音乐之后是否转化群语音发送，关闭将获得一定的性能提升",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.songRequestMaxList",
                     label: "点歌列表长度",
                     bottomHelpMessage:

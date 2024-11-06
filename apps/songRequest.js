@@ -34,6 +34,8 @@ export class songRequest extends plugin {
         this.toolsConfig = config.getConfig("tools");
         // 加载网易云Cookie
         this.neteaseCookie = this.toolsConfig.neteaseCookie
+        // 加载是否转化群语音
+        this.isSendVocal = this.toolsConfig.isSendVocal
         // 加载是否自建服务器
         this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI
         // 加载自建服务器API
@@ -316,8 +318,12 @@ export class songRequest extends plugin {
                         logger.error("发送卡片错误错误，请查看控制台报错，将发送群语音")
                         logger.error(error)
                     }
+                    // 发送群文件
+                    await this.uploadGroupFile(e, path);
+                    // 删除文件
+                    await checkAndRemoveFile(path);
                     // 发送语音
-                    if (musicExt != 'mp4') {
+                    if (musicExt != 'mp4' && this.isSendVocal) {
                         await e.reply(segment.record(path));
                     }
                 }
