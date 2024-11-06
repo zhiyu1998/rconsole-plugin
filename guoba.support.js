@@ -254,7 +254,7 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.youtubeCookiePath",
-                    label: "油管Cookie",
+                    label: "油管Cookie文件路径",
                     bottomHelpMessage:
                         "【！重要：这里填写的是路径，例如/path/to/cookies.txt】如果无法解析油管就填写这个Cookie",
                     component: "Input",
