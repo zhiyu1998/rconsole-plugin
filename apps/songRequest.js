@@ -294,7 +294,7 @@ export class songRequest extends plugin {
             // 获取歌曲信息
             let title = songInfo[pickNumber].songName + '-' + songInfo[pickNumber].singerName
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
-            if (!isCkExpired || !this.useLocalNeteaseAPI || url == null) {
+            if (!isCkExpired || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
             } else {
                 // 拥有ck，并且有效，直接进行解析

@@ -195,7 +195,7 @@ export const NETEASE_SONG_DETAIL = "https://neteasecloudmusicapi.vercel.app"
  * 致谢 NeteaseCloudMusicApi：https://gitlab.com/Binaryify/neteasecloudmusicapi
  * @type {string}
  */
-export const NETEASE_API_CN = 'https://zmusic.i9mr.com';
+export const NETEASE_API_CN = 'http://118.89.80.17:3000';
 
 /**
  * 下载VIP的临时接口
