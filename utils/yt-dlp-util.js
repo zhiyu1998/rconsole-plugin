@@ -33,6 +33,14 @@ export function ytDlpGetDuration(url, isOversea, proxy) {
     return execSync(`yt-dlp --get-duration --skip-download ${constructProxyParam(isOversea, proxy)} ${url}`);
 }
 
+function constructEncodingParam(url) {
+    let encodingParam = "";
+    if (url.includes("youtu")) {
+        encodingParam = "--encoding UTF-8";
+    }
+    return encodingParam;
+}
+
 /**
  * 获取标题
  * @param url
@@ -43,7 +51,8 @@ export function ytDlpGetDuration(url, isOversea, proxy) {
  */
 export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
     const cookieParam = constructCookiePath(url, cookiePath);
-    return execSync(`yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } --encoding utf8`);
+    const encodingParam = constructEncodingParam(url);
+    return execSync(`yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`);
 }
 
 /**
