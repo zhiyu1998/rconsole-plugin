@@ -75,12 +75,6 @@ export const DIVIDING_LINE = "\n━━━{}━━━"
 export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
 
 /**
- * 保存判断机子是否使用的是拉格朗日
- * @type {string}
- */
-export const REDIS_YUNZAI_LAGRANGE = "Yz:rconsole:tools:lagrange";
-
-/**
  * 缓存音乐搜索列表
  * @type {string}
  */
