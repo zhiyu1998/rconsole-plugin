@@ -17,26 +17,30 @@
     </div>
     <div class="infoBox">
         <div class="info">
-            <div class="cover">
-                <img src="{{ songInfo.cover }}" alt="">
-            </div>
-            <div class="songSize">
-                {{ songInfo.size }} MB
-            </div>
-            <div class="songName">
-                {{ songInfo.songName }}
-            </div>
-            <div class="singerName">
-                {{ songInfo.singerName }}
-            </div>
-            <div class="typeBox">
-                <div class="typeList">
-                    {{each songInfo.musicType typeName}}
-                    <div class="typeNav">
-                        {{ typeName }}
-                    </div>
-                    {{ /each }}
+            <div class="songinfobox">
+                <div class="cover">
+                    <img src="{{ songInfo.cover }}" alt="">
                 </div>
+                <div class="songSize">
+                    {{ songInfo.size }}
+                </div>
+                <div class="songName">
+                    {{ songInfo.songName }}
+                </div>
+                <div class="singerName">
+                    {{ songInfo.singerName }}
+                </div>
+                {{if songInfo.musicType}}
+                <div class="typeBox">
+                    <div class="typeList">
+                        {{each songInfo.musicType typeName}}
+                        <div class="typeNav">
+                            {{ typeName || '喵喵~'}}
+                        </div>
+                        {{ /each }}
+                    </div>
+                </div>
+                {{/if}}
             </div>
         </div>
     </div>

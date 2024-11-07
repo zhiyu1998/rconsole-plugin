@@ -10,7 +10,6 @@ html {
     margin: 0;
     padding: 0;
     width: 780px;
-    height: 370px;
     font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
@@ -20,7 +19,7 @@ html {
     top: 0;
     left: 0;
     width: 780px;
-    height:450px;
+    height: 450px;
     z-index: -1;
     object-fit: cover;
 }
@@ -44,6 +43,12 @@ html {
     box-sizing: border-box;
 }
 
+.songinfobox {
+    width: 100%;
+    height: 100%;
+    padding: 30px 0px;
+}
+
 .info {
     width: 100%;
     height: 100%;
@@ -54,7 +59,6 @@ html {
 }
 
 .cover {
-    margin-top: 28px;
     width: 100%;
     height: 135px;
     display: flex;
@@ -68,7 +72,7 @@ html {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
-.songSize{
+.songSize {
     width: 100%;
     text-align: center;
     margin-top: 20px;
@@ -87,7 +91,7 @@ html {
     text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.4);
 }
 
-.singerName{
+.singerName {
     width: 100%;
     text-align: center;
     font-family: 'singerName';
@@ -97,23 +101,23 @@ html {
     text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.4);
 }
 
-.typeBox{
+.typeBox {
     width: 100%;
     margin-top: 22px;
     display: flex;
     justify-content: center;
 }
 
-.typeList{ 
+.typeList {
     display: flex;
 }
 
-.typeNav{
+.typeNav {
     font-size: 15px;
     height: 25px;
     padding: 0px 10px;
     box-sizing: border-box;
-    background-color:rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.2);
     line-height: 0px;
     display: flex;
     justify-content: center;
