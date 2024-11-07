@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-11-05T13:03:23.623Z</updated>
+    <updated>2024-11-07T03:16:09.945Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -484,6 +484,30 @@ apt install axel
 <p>海外服务器示例：<br>
 直接发送<code>#设置海外解析</code></p>
 </blockquote>
+<h3>💦 海外服务器使用 yt-dlp 提示 Sign in to confirm you're not a bot. This helps protect our community. Learn more</h3>
+<blockquote>
+<p>🚀 由 @春日野穹 提供解决方案</p>
+</blockquote>
+<p><img src="https://s2.loli.net/2024/11/06/zXrjhe6APpB94Z2.png" alt="ytdlp1.png"></p>
+<p>解决方案：</p>
+<ol>
+<li>更新最新版R插件（2024/11/06）</li>
+<li>本地使用chrome浏览器<strong>登录</strong>YouTube并且安装浏览器插件<a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc">Get cookies.txt LOCALLY</a><br>
+<img src="https://s2.loli.net/2024/11/06/mwFsAZpr2j354Xf.png" alt="ytdlp2.png"></li>
+<li>打开YouTube主页并点击右上角插件，根据下图顺序点击复制cookies内容<br>
+<img src="https://s2.loli.net/2024/11/06/9c5JA4MV2inBKR6.png" alt="ytdlp3.png"></li>
+<li>打开ssh并创建cookies.txt，我的路径设置为/root/TRSS_AllBot/TRSS-Yunzai/plugins/rconsole-plugin/config/cookies.txt，如果你修改过容器的话，请确保自己的路径正确</li>
+</ol>
+<pre><code>nano /root/TRSS_AllBot/TRSS-Yunzai/plugins/rconsole-plugin/config/cookies.txt
+</code></pre>
+<p>粘贴刚刚复制来的内容，然后Ctrl+O保存Ctrl+X退出</p>
+<ol start="5">
+<li>进入锅巴webui并修改R插件配置：<br>
+如下图<br>
+<img src="https://s2.loli.net/2024/11/06/b6k7gFyDMEI5oqH.png" alt="ytdkp4.png"><br>
+<strong>记得保存！！！</strong><br>
+重启trss后生效，海外服务器记得设置  #设置海外解析</li>
+</ol>
 <h3>📱 关于小程序</h3>
 <p>小程序解析适配了：</p>
 <ul>
