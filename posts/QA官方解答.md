@@ -499,6 +499,30 @@ apt install aria2
 > 海外服务器示例：  
 > 直接发送`#设置海外解析`
 
+### 💦 海外服务器使用 yt-dlp 提示 Sign in to confirm you're not a bot. This helps protect our community. Learn more
+
+> 🚀 由 @春日野穹 提供解决方案
+
+![ytdlp1.png](https://s2.loli.net/2024/11/06/zXrjhe6APpB94Z2.png)
+
+解决方案：
+1. 更新最新版R插件（2024/11/06）
+2. 本地使用chrome浏览器**登录**YouTube并且安装浏览器插件[Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc)
+   ![ytdlp2.png](https://s2.loli.net/2024/11/06/mwFsAZpr2j354Xf.png)
+3. 打开YouTube主页并点击右上角插件，根据下图顺序点击复制cookies内容
+   ![ytdlp3.png](https://s2.loli.net/2024/11/06/9c5JA4MV2inBKR6.png)
+4. 打开ssh并创建cookies.txt，我的路径设置为/root/TRSS_AllBot/TRSS-Yunzai/plugins/rconsole-plugin/config/cookies.txt，如果你修改过容器的话，请确保自己的路径正确
+```
+nano /root/TRSS_AllBot/TRSS-Yunzai/plugins/rconsole-plugin/config/cookies.txt
+```
+粘贴刚刚复制来的内容，然后Ctrl+O保存Ctrl+X退出
+
+5. 进入锅巴webui并修改R插件配置：
+如下图
+![ytdkp4.png](https://s2.loli.net/2024/11/06/b6k7gFyDMEI5oqH.png)
+**记得保存！！！**
+重启trss后生效，海外服务器记得设置  #设置海外解析
+
 ### 📱 关于小程序
 
 小程序解析适配了：
