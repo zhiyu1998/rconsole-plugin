@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap');
+
+@font-face {
+    font-family: 'singerName';
+    src: url("../../font/江城月湖体\ 400W.ttf");
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    width: 780px;
+    height: 370px;
+    font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+.bg-image,
+.img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 780px;
+    height:450px;
+    z-index: -1;
+    object-fit: cover;
+}
+
+.inner {
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(5px);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.infoBox {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+.info {
+    width: 100%;
+    height: 100%;
+    border: 0px solid #ffffff2e;
+    backdrop-filter: blur(10px);
+    background: hsla(0, 0%, 100%, 0.281);
+    box-shadow: 0 6px 15px 0 #8e8e8e30;
+}
+
+.cover {
+    margin-top: 28px;
+    width: 100%;
+    height: 135px;
+    display: flex;
+    justify-content: center;
+}
+
+.cover img {
+    width: 135px;
+    height: 135px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.songSize{
+    width: 100%;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 18px;
+    font-family: 'singerName';
+    color: #fff;
+    text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.4);
+}
+
+.songName {
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 20px;
+    color: #fff;
+    text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.4);
+}
+
+.singerName{
+    width: 100%;
+    text-align: center;
+    font-family: 'singerName';
+    margin-top: 17px;
+    font-size: 17px;
+    color: #fff;
+    text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.4);
+}
+
+.typeBox{
+    width: 100%;
+    margin-top: 22px;
+    display: flex;
+    justify-content: center;
+}
+
+.typeList{ 
+    display: flex;
+}
+
+.typeNav{
+    font-size: 15px;
+    height: 25px;
+    padding: 0px 10px;
+    box-sizing: border-box;
+    background-color:rgba(255, 255, 255, 0.2);
+    line-height: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12.5px;
+    margin-left: 10px;
+    color: #fff;
+    box-shadow: 0px 0px 3px rgba(255, 255, 255, 0.4);
+}
