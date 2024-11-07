@@ -57,6 +57,7 @@ import {
     XHS_REQ_LINK
 } from "../constants/tools.js";
 import BiliInfoModel from "../model/bili-info.js";
+import NeteaseMusicInfo from '../model/neteaseMusicInfo.js'
 import config from "../model/config.js";
 import NeteaseModel from "../model/netease.js";
 import * as aBogus from "../utils/a-bogus.cjs";
@@ -104,7 +105,7 @@ import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
-import { textArrayToMakeForward } from "../utils/yunzai-util.js";
+import { textArrayToMakeForward, sendMusicCard } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
     /**
@@ -1701,6 +1702,7 @@ export class tools extends plugin {
         if (/mv\?/.test(message)) {
             const AUTO_NETEASE_MV_DETAIL = autoSelectNeteaseApi + "/mv/detail?mvid={}";
             const AUTO_NETEASE_MV_URL = autoSelectNeteaseApi + "/mv/url?id={}";
+
             // logger.info(AUTO_NETEASE_MV_DETAIL.replace("{}", id));
             // logger.info(AUTO_NETEASE_MV_URL.replace("{}", id));
             const [mvDetailData, mvUrlData] = await Promise.all([
@@ -1726,6 +1728,7 @@ export class tools extends plugin {
             });
             return;
         }
+        const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + id
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
         const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
         const AUTO_NETEASE_SONG_DETAIL = autoSelectNeteaseApi + "/song/detail?ids={}";
@@ -1769,16 +1772,55 @@ export class tools extends plugin {
             const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
             const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
             // 获取歌曲信息
-            let title = await axios.get(detailUrl).then(res => {
-                // logger.info('歌曲详情---', res.data.songs[0])
+            let { songName, artistName } = await axios.get(detailUrl).then(res => {
                 const song = res.data.songs[0];
-                return cleanFilename(`${song?.name}-${song?.ar?.[0].name}`);
+                return {
+                    songName: cleanFilename(song?.name),
+                    artistName: cleanFilename(song?.ar?.[0].name)
+                };
             });
+            let title = songName + '-' + artistName
             // 获取歌曲封面
             let coverUrl = await axios.get(detailUrl).then(res => {
                 const song = res.data.songs[0];
                 return song?.al?.picUrl
             });
+            let typelist = []
+            // 歌曲百科API
+            await axios.get(songWikiUrl, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    // "Cookie": this.neteaseCookie
+                },
+            }).then(res => {
+                const wikiData = res.data.data.blocks[1].creatives
+                typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
+                // 防止数据过深出错
+                const recTags = wikiData[1]
+                if (recTags.resources[0]) {
+                    for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
+                        if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                            typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                        }
+                    }
+                } else {
+                    if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
+                }
+
+                if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
+                    typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                } else {
+                    typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                }
+                typelist.push(AudioLevel)
+            })
+            let musicInfo = {
+                'cover': coverUrl,
+                'songName': songName,
+                'singerName': artistName,
+                'size': AudioSize + " MB",
+                'musicType': typelist
+            }
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
             if (!isCkExpired || url == null) {
                 url = await this.musicTempApi(e, title, "网易云音乐");
@@ -1788,20 +1830,23 @@ export class tools extends plugin {
                 if (AudioLevel == '杜比全景声') {
                     audioInfo += '\n(杜比下载文件为MP4，编码格式为AC-4，需要设备支持才可播放)';
                 }
-                e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
+                const data = await new NeteaseMusicInfo(e).getData(musicInfo)
+                let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+                await e.reply(img);
+                // e.reply([segment.image(coverUrl), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
             }
             // 动态判断后缀名
             let musicExt = resp.data.data?.[0]?.type
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
+                // 发送群文件
+                await this.uploadGroupFile(e, path);
+                // 删除文件
+                await checkAndRemoveFile(path);
                 // 发送语音
                 if (musicExt != 'mp4' && this.isSendVocal) {
                     await e.reply(segment.record(path));
                 }
-                // 上传群文件
-                await this.uploadGroupFile(e, path);
-                // 删除文件
-                await checkAndRemoveFile(path);
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${err}`);
             });
@@ -1810,7 +1855,7 @@ export class tools extends plugin {
     }
 
     // 临时接口
-    async musicTempApi(e, title, musicType) {
+    async musicTempApi(e, title, musicType, musicInfo = {}) {
         let musicReqApi = NETEASE_TEMP_API;
         if (musicType === "QQ音乐") {
             musicReqApi = QQ_MUSIC_TEMP_API;
@@ -1823,11 +1868,32 @@ export class tools extends plugin {
                 "User-Agent": COMMON_USER_AGENT,
             },
         });
-        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
+        // const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
         const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
         const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        await e.reply([segment.image(cover), `${ this.identifyPrefix }识别：${ musicType }，${ messageTitle }`]);
+        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song_name ?? vipMusicData.data?.title;
+        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.song_singer ?? vipMusicData.data?.singer;
+        const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
+        if (musicType === "网易云音乐") {
+            musicInfo.size = id
+            musicInfo.musicType = musicInfo.musicType.slice(0, -1)
+            const data = await new NeteaseMusicInfo(e).getData(musicInfo)
+            let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+            await e.reply(img);
+        } else {
+            musicInfo = {
+                'cover': cover,
+                'songName': name,
+                'singerName': singer,
+                'size': id,
+                'musicType': ""
+            }
+            const data = await new NeteaseMusicInfo(e).getData(musicInfo)
+            let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+            await e.reply(img);
+        }
+        // await e.reply([segment.image(cover), `${this.identifyPrefix}识别：${musicType}，${messageTitle}`]);
         return url;
     }
 
@@ -1859,13 +1925,13 @@ export class tools extends plugin {
                 "User-Agent": COMMON_USER_AGENT,
                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
                 "cookie": "_T_WM=40835919903; WEIBOCN_FROM=1110006030; MLOGIN=0; XSRF-TOKEN=4399c8",
-                "Referer": `https://m.weibo.cn/detail/${ id }`,
+                "Referer": `https://m.weibo.cn/detail/${id}`,
             }
         })
             .then(async resp => {
                 const wbData = resp.data.data;
                 const { text, status_title, source, region_name, pics, page_info } = wbData;
-                e.reply(`${ this.identifyPrefix }识别：微博，${ text.replace(/<[^>]+>/g, '') }\n${ status_title }\n${ source }\t${ region_name ?? '' }`);
+                e.reply(`${this.identifyPrefix}识别：微博，${text.replace(/<[^>]+>/g, '')}\n${status_title}\n${source}\t${region_name ?? ''}`);
                 if (pics) {
                     // 下载图片并格式化消息
                     const imagesPromise = pics.map(item => {

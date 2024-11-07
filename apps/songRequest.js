@@ -310,19 +310,27 @@ export class songRequest extends plugin {
                 typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
                 // 防止数据过深出错
                 const recTags = wikiData[1]
-                for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
-                    if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
-                        typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                if (recTags.resources[0]) {
+                    for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
+                        if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                            typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                        }
                     }
+                } else {
+                    if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
                 }
-                typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
+                    typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                } else {
+                    typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                }
                 typelist.push(AudioLevel)
             })
             let musicInfo = {
                 'cover': songInfo[pickNumber].cover,
                 'songName': songInfo[pickNumber].songName,
                 'singerName': songInfo[pickNumber].singerName,
-                'size': AudioSize,
+                'size': AudioSize + ' MB',
                 'musicType': typelist
             }
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
@@ -375,9 +383,10 @@ export class songRequest extends plugin {
                 "User-Agent": COMMON_USER_AGENT,
             },
         });
-        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-        // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
+        const url = vipMusicData.data?.music_url
+        const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
+        musicInfo.size = id
+        musicInfo.musicType = musicInfo.musicType.slice(0, -1)
         const data = await new NeteaseMusicInfo(e).getData(musicInfo)
         let img = await puppeteer.screenshot("neteaseMusicInfo", data);
         e.reply(img);
