@@ -19,7 +19,7 @@ export class songRequest extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: '^#?点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
+                    reg: '^#点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
                     fnc: 'pickSong'
                 },
                 {
