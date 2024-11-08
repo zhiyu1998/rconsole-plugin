@@ -19,7 +19,7 @@ export class songRequest extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: '^#?点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
+                    reg: '^#点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
                     fnc: 'pickSong'
                 },
                 {
@@ -362,12 +362,12 @@ export class songRequest extends plugin {
                     }
                     // 发送群文件
                     await this.uploadGroupFile(e, path);
-                    // 删除文件
-                    await checkAndRemoveFile(path);
                     // 发送语音
                     if (musicExt != 'mp4' && this.isSendVocal) {
                         await e.reply(segment.record(path));
                     }
+                    // 删除文件
+                    await checkAndRemoveFile(path);
                 }
             }).catch(err => {
                 logger.error(`下载音乐失败，错误信息为: ${err}`);
