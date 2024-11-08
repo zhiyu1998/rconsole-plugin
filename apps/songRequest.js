@@ -112,8 +112,8 @@ export class songRequest extends plugin {
                 }
             })
         } else if (await redisGetKey(REDIS_YUNZAI_SONGINFO) != []) {
-            if (e.msg.replace(/\s+/g, "").match(/^听(\d+)/)) {
-                const pickNumber = e.msg.replace(/\s+/g, "").match(/^听(\d+)/)[1] - 1
+            if (e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)) {
+                const pickNumber = e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)[1] - 1
                 let group_id = e.group.group_id
                 if (!group_id) return
                 let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
