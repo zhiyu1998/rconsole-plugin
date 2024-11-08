@@ -265,7 +265,7 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.isSendVocal",
-                    label: "网易云开启仅发送音频",
+                    label: "网易云开启发送音频",
                     bottomHelpMessage:
                         "默认开启，识别音乐之后是否转化群语音发送，关闭将获得一定的性能提升",
                     component: "Switch",

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歌曲信息</title>
+    <style>
+        @import url('{{pluResPath}}html/neteaseMusicInfo/neteaseMusicInfo.css');
+    </style>
+</head>
+
+<body>
+    <div class="bg-image">
+        <img src="{{ songInfo.cover }}" alt="" class="img" width="100%">
+        <div class="inner"></div>
+    </div>
+    <div class="infoBox">
+        <div class="info">
+            <div class="songinfobox">
+                <div class="cover">
+                    <img src="{{ songInfo.cover }}" alt="">
+                </div>
+                <div class="songSize">
+                    {{ songInfo.size }}
+                </div>
+                <div class="songName">
+                    {{ songInfo.songName }}
+                </div>
+                <div class="singerName">
+                    {{ songInfo.singerName }}
+                </div>
+                {{if songInfo.musicType}}
+                <div class="typeBox">
+                    <div class="typeList">
+                        {{each songInfo.musicType typeName}}
+                        <div class="typeNav">
+                            {{ typeName || '喵喵~'}}
+                        </div>
+                        {{ /each }}
+                    </div>
+                </div>
+                {{/if}}
+                <div class="logo">Created By Yunzai-Bot & R-Plugin</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

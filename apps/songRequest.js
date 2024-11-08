@@ -2,6 +2,7 @@ import axios from "axios";
 import { formatTime } from '../utils/other.js'
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import PickSongList from "../model/pick-song.js";
+import NeteaseMusicInfo from '../model/neteaseMusicInfo.js'
 import { NETEASE_API_CN, NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API } from "../constants/tools.js";
 import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO } from "../constants/constant.js";
 import { downloadAudio } from "../utils/common.js";
@@ -105,7 +106,7 @@ export class songRequest extends plugin {
                     await redisSetKey(REDIS_YUNZAI_SONGINFO, songInfo)
                     const data = await new PickSongList(e).getData(musicDate.data)
                     let img = await puppeteer.screenshot("pick-song", data);
-                    e.reply(img, true);
+                    e.reply(img);
                 } else {
                     e.reply('暂未找到你想听的歌哦~')
                 }
@@ -119,10 +120,11 @@ export class songRequest extends plugin {
                 const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
                 const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
                 const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[saveId].data[pickNumber].id)
+                const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songInfo[saveId].data[pickNumber].id
                 const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
                 const isCkExpired = await this.checkCooike(statusUrl)
                 // // 请求netease数据
-                this.neteasePlay(e, pickSongUrl, songInfo[saveId].data, pickNumber, isCkExpired)
+                this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo[saveId].data, pickNumber, isCkExpired)
             }
         }
 
@@ -173,8 +175,9 @@ export class songRequest extends plugin {
                     })
                     const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[0].id)
                     const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
+                    const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songInfo[0].id
                     const isCkExpired = await this.checkCooike(statusUrl)
-                    this.neteasePlay(e, pickSongUrl, songInfo, 0, isCkExpired)
+                    this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo, 0, isCkExpired)
                 } else {
                     e.reply('暂未找到你想听的歌哦~')
                 }
@@ -256,7 +259,7 @@ export class songRequest extends plugin {
     }
 
     // 网易云音乐下载策略
-    neteasePlay(e, pickSongUrl, songInfo, pickNumber = 0, isCkExpired) {
+    neteasePlay(e, pickSongUrl, songWikiUrl, songInfo, pickNumber = 0, isCkExpired) {
         axios.get(pickSongUrl, {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
@@ -291,18 +294,57 @@ export class songRequest extends plugin {
             let url = await resp.data.data?.[0]?.url || null;
             const AudioLevel = translateToChinese(resp.data.data?.[0]?.level)
             const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
-            // 获取歌曲信息
+
+            // 获取歌曲标题
             let title = songInfo[pickNumber].songName + '-' + songInfo[pickNumber].singerName
+            let typelist = []
+            // 歌曲百科API
+            await axios.get(songWikiUrl, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    // "Cookie": this.neteaseCookie
+                },
+            }).then(res => {
+                const wikiData = res.data.data.blocks[1].creatives
+
+                typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
+                // 防止数据过深出错
+                const recTags = wikiData[1]
+                if (recTags.resources[0]) {
+                    for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
+                        if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                            typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                        }
+                    }
+                } else {
+                    if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
+                }
+                if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
+                    typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                } else {
+                    typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                }
+                typelist.push(AudioLevel)
+            })
+            let musicInfo = {
+                'cover': songInfo[pickNumber].cover,
+                'songName': songInfo[pickNumber].songName,
+                'singerName': songInfo[pickNumber].singerName,
+                'size': AudioSize + ' MB',
+                'musicType': typelist
+            }
             // 一般这个情况是VIP歌曲 (如果没有url或者是国内,公用接口暂时不可用，必须自建并且ck可用状态才能进行高质量解析)
             if (!isCkExpired || url == null) {
-                url = await this.musicTempApi(e, title, "网易云音乐");
+                url = await this.musicTempApi(e, musicInfo, title);
             } else {
                 // 拥有ck，并且有效，直接进行解析
                 let audioInfo = AudioLevel;
                 if (AudioLevel == '杜比全景声') {
                     audioInfo += '\n(杜比下载文件为MP4，编码格式为AC-4，需要设备支持才可播放)';
                 }
-                e.reply([segment.image(songInfo[pickNumber].cover), `${this.identifyPrefix}识别：网易云音乐，${title}\n当前下载音质: ${audioInfo}\n预估大小: ${AudioSize}MB`]);
+                const data = await new NeteaseMusicInfo(e).getData(musicInfo)
+                let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+                e.reply(img);
             }
             // 动态判断后缀名
             let musicExt = resp.data.data?.[0]?.type
@@ -333,7 +375,7 @@ export class songRequest extends plugin {
         });
     }
 
-    async musicTempApi(e, title, musicType) {
+    async musicTempApi(e, musicInfo, title) {
         let musicReqApi = NETEASE_TEMP_API;
         // 临时接口，title经过变换后搜索到的音乐质量提升
         const vipMusicData = await axios.get(musicReqApi.replace("{}", title.replace("-", " ")), {
@@ -341,11 +383,13 @@ export class songRequest extends plugin {
                 "User-Agent": COMMON_USER_AGENT,
             },
         });
-        const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
-        // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
-        const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        await e.reply([segment.image(cover), `${this.identifyPrefix}识别：${musicType}，${messageTitle}`]);
+        const url = vipMusicData.data?.music_url
+        const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
+        musicInfo.size = id
+        musicInfo.musicType = musicInfo.musicType.slice(0, -1)
+        const data = await new NeteaseMusicInfo(e).getData(musicInfo)
+        let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+        e.reply(img);
         return url;
     }
 
