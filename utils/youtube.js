@@ -30,9 +30,9 @@ export function removeParams(url) {
 }
 
 export function convertToSeconds(timeStr) {
-    const [minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
+    const [hour, minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
     if (!seconds) return timeStr;
-    return minutes * 60 + seconds; // 分钟转化为秒并加上秒数
+    return hour * 3600 + minutes * 60 + seconds; // 分钟转化为秒并加上秒数
 }
 
 export async function autoSelectMusicOrVideoSend() {
