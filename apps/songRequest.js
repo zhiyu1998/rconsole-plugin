@@ -19,7 +19,7 @@ export class songRequest extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: '^#点歌|#?听[1-9][0-9]*|#?听[1-9]*$',
+                    reg: '^#点歌|#听[1-9][0-9]*|#听[1-9]*$',
                     fnc: 'pickSong'
                 },
                 {
@@ -57,7 +57,7 @@ export class songRequest extends plugin {
         // 判断功能是否开启
         if (!this.useNeteaseSongRequest) {
             logger.info('当前未开启网易云点歌')
-            return
+            return false
         }
         const autoSelectNeteaseApi = await this.pickApi()
         // 只在群里可以使用
@@ -112,8 +112,8 @@ export class songRequest extends plugin {
                 }
             })
         } else if (await redisGetKey(REDIS_YUNZAI_SONGINFO) != []) {
-            if (e.msg.replace(/\s+/g, "").match(/听(\d+)/)) {
-                const pickNumber = e.msg.replace(/\s+/g, "").match(/听(\d+)/)[1] - 1
+            if (e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)) {
+                const pickNumber = e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)[1] - 1
                 let group_id = e.group.group_id
                 if (!group_id) return
                 let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
@@ -306,23 +306,26 @@ export class songRequest extends plugin {
                 },
             }).then(res => {
                 const wikiData = res.data.data.blocks[1].creatives
-
-                typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
-                // 防止数据过深出错
-                const recTags = wikiData[1]
-                if (recTags.resources[0]) {
-                    for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
-                        if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
-                            typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                try {
+                    typelist.push(wikiData[0].resources[0]?.uiElement?.mainTitle?.title || "")
+                    // 防止数据过深出错
+                    const recTags = wikiData[1]
+                    if (recTags?.resources[0]) {
+                        for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
+                            if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                                typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                            }
                         }
+                    } else {
+                        if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
                     }
-                } else {
-                    if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
-                }
-                if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
-                    typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
-                } else {
-                    typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                    if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
+                        typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                    } else {
+                        typelist.push(wikiData[2].uiElement.textLinks[0].text || '')
+                    }
+                } catch (error) {
+                    logger.error('获取标签报错：', error)
                 }
                 typelist.push(AudioLevel)
             })
