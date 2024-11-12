@@ -38,12 +38,12 @@ export class songRequest extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#?云盘更新$',
+                    reg: '^#?云盘更新|#?更新云盘$',
                     fnc: 'songCloudUpdate',
                     permission: 'master'
                 },
                 {
-                    reg: '^#?上传云盘$',
+                    reg: '^#?上传云盘|#?上传网盘$',
                     fnc: 'uploadCloud',
                     permission: 'master'
                 },
