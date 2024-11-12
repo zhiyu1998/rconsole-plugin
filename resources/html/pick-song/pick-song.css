@@ -65,6 +65,7 @@ html {
     width: 70px;
     font-size: 25px;
     height: 100%;
+    align-content: center;
     text-align: center;
 }
 .cloudBox{
