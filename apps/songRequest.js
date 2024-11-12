@@ -296,8 +296,8 @@ export class songRequest extends plugin {
 
     // 上传云盘
     async uploadCloud(e) {
-        const autoSelectNeteaseApi = await this.pickApi()
         let msg = await e?.getReply();
+        const autoSelectNeteaseApi = await this.pickApi()
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
@@ -310,19 +310,15 @@ export class songRequest extends plugin {
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
         let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac'
-        try {
-            await formData.append('songFile', fs.createReadStream(path))
-        } catch (error) {
-            logger.error(error);
-        }
-        let formData = new FormData()
-        const headers = {
-            ...formData.getHeaders(),
-            'Cookie': this.neteaseCookie,
-        };
-        const updateUrl = autoSelectNeteaseApi + `/cloud?time=${Date.now()}`
         let tryCount = 0
-        const tryUpload = () => {
+        const tryUpload = async () => {
+            let formData = new FormData()
+            await formData.append('songFile', fs.createReadStream(path))
+            const headers = {
+                ...formData.getHeaders(),
+                'Cookie': this.neteaseCookie,
+            };
+            const updateUrl = autoSelectNeteaseApi + `/cloud?time=${Date.now()}`
             axios({
                 method: 'post',
                 url: updateUrl,
