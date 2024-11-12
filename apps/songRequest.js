@@ -33,7 +33,7 @@ export class songRequest extends plugin {
                     fnc: "upLoad"
                 },
                 {
-                    reg: '^#?我的云盘$|#?rnc|#?RNC',
+                    reg: '^#?我的云盘$|#rnc|#RNC',
                     fnc: 'myCloud',
                     permission: 'master'
                 },
@@ -43,7 +43,7 @@ export class songRequest extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#?上传云盘|#?上传网盘$|#?rnu|#?RNU',
+                    reg: '^#?上传云盘|#?上传网盘$|#rnu|#RNU',
                     fnc: 'uploadCloud',
                     permission: 'master'
                 },
