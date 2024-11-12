@@ -13,6 +13,8 @@ import { sendMusicCard } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
 
+let FileSuffix = 'flac'
+
 export class songRequest extends plugin {
     constructor() {
         super({
@@ -282,7 +284,7 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac'
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + FileSuffix
         try {
             // 上传群文件
             await this.uploadGroupFile(e, path);
@@ -308,7 +310,7 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac'
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + FileSuffix
         let tryCount = 0
         const tryUpload = async () => {
             let formData = new FormData()
@@ -537,6 +539,7 @@ export class songRequest extends plugin {
             }
             // 动态判断后缀名
             let musicExt = resp.data.data?.[0]?.type
+            FileSuffix = musicExt
             // 下载音乐
             downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
                 try {
