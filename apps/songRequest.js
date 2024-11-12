@@ -149,7 +149,6 @@ export class songRequest extends plugin {
                     } else {
                         songInfo[saveId] = musicDate
                     }
-                    logger.info('当前搜索列表---', songInfo)
                     await redisSetKey(REDIS_YUNZAI_SONGINFO, songInfo)
                     const data = await new PickSongList(e).getData(musicDate.data)
                     let img = await puppeteer.screenshot("pick-song", data);
