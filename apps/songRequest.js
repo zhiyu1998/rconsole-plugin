@@ -283,21 +283,14 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let paths = [
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac',
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.mp3',
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.mp4'
-        ];
-
-        for (let path of paths) {
-            try {
-                // 上传群文件
-                await this.uploadGroupFile(e, path);
-                // 删除文件
-                await checkAndRemoveFile(path);
-            } catch (error) {
-                logger.error(error);
-            }
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac'
+        try {
+            // 上传群文件
+            await this.uploadGroupFile(e, path);
+            // 删除文件
+            await checkAndRemoveFile(path);
+        } catch (error) {
+            logger.error(error);
         }
     }
 
@@ -316,17 +309,11 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let paths = [
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac',
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.mp3',
-            this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.mp4'
-        ];
-        for (let path of paths) {
-            try {
-                await formData.append('songFile', fs.createReadStream(path))
-            } catch (error) {
-                logger.error(error);
-            }
+        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.flac'
+        try {
+            await formData.append('songFile', fs.createReadStream(path))
+        } catch (error) {
+            logger.error(error);
         }
         let formData = new FormData()
         const headers = {
@@ -353,9 +340,9 @@ export class songRequest extends plugin {
                         }).then(res => {
                             logger.info('歌曲信息匹配成功')
                         })
-                        .catch(error =>{
-                            logger.error('歌曲信息匹配错误',error)
-                        })
+                            .catch(error => {
+                                logger.error('歌曲信息匹配错误', error)
+                            })
                         this.songCloudUpdate(e)
                     }
                 })
