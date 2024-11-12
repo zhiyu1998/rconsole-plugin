@@ -142,8 +142,15 @@ export class songRequest extends plugin {
                             "User-Agent": COMMON_USER_AGENT
                         },
                     }).then(res => {
+                        let imgList = {}
                         for (let i = 0; i < res.data.songs.length; i++) {
-                            musicDate.data[i].cover = res.data.songs[i].al.picUrl
+                            imgList[res.data.songs[i].id] = res.data.songs[i].al.picUrl;
+                        }
+                        for (let i = 0; i < musicDate.data.length; i++) {
+                            const songId = musicDate.data[i].id;
+                            if (imgList[songId]) {
+                                musicDate.data[i].cover = imgList[songId];
+                            }
                         }
                     })
                     if (saveId == -1) {
