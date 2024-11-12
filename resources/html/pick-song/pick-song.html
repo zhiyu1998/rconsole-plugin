@@ -22,7 +22,13 @@
                     <div class="singerText">{{ info.singerName }}</div>
                 </div>
             </div>
+            {{ if info.duration == '云盘' }}
+            <div class="cloudBox">
+                <div class="cloud">{{ info.duration }}</div>
+            </div>
+            {{ else }}
             <div class="navDuration">{{ info.duration }}</div>
+            {{ /if }}
         </div>
         {{ /each }}
         <div class="bgicon">

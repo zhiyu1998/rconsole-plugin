@@ -62,11 +62,30 @@ html {
 
 .navDuration {
     color: #aaa;
-    width: 40px;
+    width: 70px;
     font-size: 25px;
     height: 100%;
+    text-align: center;
+}
+.cloudBox{
+    height: 100%;
+    width: 70px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+
+.cloud{
+    color: #dd001b;
+    box-sizing: border-box;
+    padding: 0px 8px;
+    font-size: 22px;
+    height: 40px;
+    width: 70px;
+    border-radius: 10px;
     display: flex;
     justify-content: center;
+    border: 1px solid;
     align-items: center;
 }
 
@@ -74,6 +93,7 @@ html {
     width: 90px;
     height: 90px;
     border-radius: 8px;
+    flex-shrink: 0;
 }
 
 .bgicon {
