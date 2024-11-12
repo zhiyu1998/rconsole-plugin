@@ -115,7 +115,7 @@ export class songRequest extends plugin {
                     'duration': matchedSongs[i].duration
                 });
             }
-            let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=' + searchCount + '&offset=' + songListCount//搜索API
+            let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=' + searchCount//搜索API
             searchUrl = searchUrl.replace("{}", songKeyWord)
             await axios.get(searchUrl, {
                 headers: {
