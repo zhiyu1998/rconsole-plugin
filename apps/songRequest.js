@@ -249,7 +249,7 @@ export class songRequest extends plugin {
                 'useSize': toGBorTB(res.data.size),
                 'cloudSize': toGBorTB(res.data.maxSize)
             }
-            e.reply(`云盘数据\n歌曲数量:${cloudData.songCount}\n云盘容量:${cloudData.cloudSize}\n已使用容量:${cloudData.useSize}`)
+            e.reply(`云盘数据\n歌曲数量:${cloudData.songCount}\n云盘容量:${cloudData.cloudSize}\n已使用容量:${cloudData.useSize}\n数据可能有延迟`)
         })
     }
 
