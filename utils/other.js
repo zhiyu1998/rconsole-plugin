@@ -9,3 +9,15 @@ export function formatTime(timestamp) {
 
     return `${formattedMinutes}:${formattedSeconds}`;
 }
+
+export function toGBorTB(Bytes) {
+    const GB = 1024 ** 3;
+    let sizeInGB = Bytes / GB;
+    let unit = "GB";
+    if (sizeInGB > 1024) {
+        sizeInGB /= 1024;
+        unit = "TB";
+    }
+    sizeInGB = sizeInGB % 1 === 0 ? sizeInGB.toString() : sizeInGB.toFixed(2);
+    return sizeInGB + unit;
+}

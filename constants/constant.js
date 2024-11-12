@@ -80,6 +80,11 @@ export const REDIS_YUNZAI_ISOVERSEA = "Yz:rconsole:tools:oversea";
  */
 export const REDIS_YUNZAI_SONGINFO = "Yz:rconsole:tools:songinfo";
 
+/**
+ * 缓存网易云云盘列表
+ * @type {string}
+ */
+export const REDIS_YUNZAI_CLOUDSONGLIST = "Yz:rconsole:tools:cloudsonglist";
 
 /**
  * 某些功能的解析白名单
