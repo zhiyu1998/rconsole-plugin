@@ -1781,7 +1781,7 @@ export class tools extends plugin {
                     artistName: cleanFilename(song?.ar?.[0].name)
                 };
             });
-            let title = songName + '-' + artistName
+            let title = artistName  + '-' + songName
             // 获取歌曲封面
             let coverUrl = await axios.get(detailUrl).then(res => {
                 const song = res.data.songs[0];
