@@ -426,8 +426,8 @@ export class songRequest extends plugin {
         // 进行元数据编辑
         if (parts) {
             const tags = {
-                title: parts[2].trim(),
-                artist: parts[1].trim()
+                title: parts[2].replace(/^\s+|\s+$/g, ''),
+                artist: parts[1].replace(/^\s+|\s+$/g, '')
             };
             // 写入元数据
             let success = NodeID3.write(tags, cleanPath)
