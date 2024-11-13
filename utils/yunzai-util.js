@@ -16,8 +16,8 @@ export function textArrayToMakeForward(e, textArray) {
 /**
  * 发送群组音乐卡片
  * @param e
- * @param platformType 音乐平台 
- * @param musicId      音乐id 
+ * @param platformType 音乐平台
+ * @param musicId      音乐id
  */
 
 export async function sendMusicCard(e, platformType, musicId) {
@@ -65,7 +65,27 @@ export async function getGroupFileUrl(e, count = 10) {
         "group_id": e.group_id,
         "file_id": file_id
     });
-    let path = decodeURIComponent(latestFileUrl.data.url)
-    const cleanPath = path.startsWith('file:///') ? path.replace('file:///', '') : path;
-    return cleanPath
+    let cleanPath = decodeURIComponent(latestFileUrl.data.url)
+    // 适配 低版本 Napcat 例如：3.6.4
+    if (cleanPath.startsWith("https")) {
+        // https://njc-download.ftn.qq.com/....
+        const urlObj = new URL(cleanPath);
+        // 检查URL中是否包含 fname 参数
+        if (urlObj.searchParams.has('fname')) {
+            // 获取 fname 参数的值
+            const originalFname = urlObj.searchParams.get('fname');
+
+            // 提取 file_id（第一个"."后面的内容）
+            const fileId = file_id.split('.').slice(1).join('.'); // 分割并去掉第一个部分
+            urlObj.searchParams.set('fname', `${originalFname}${fileId}`);
+            return {
+                cleanPath: urlObj.toString(),
+                file_id
+            };
+        }
+    } else if (cleanPath.startsWith('file:///')) {
+        cleanPath.replace('file:///', '')
+    }
+
+    return { cleanPath, file_id };
 }

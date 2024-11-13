@@ -8,7 +8,7 @@ import { NETEASE_API_CN, NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API } from "../cons
 import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO, REDIS_YUNZAI_CLOUDSONGLIST } from "../constants/constant.js";
 import { downloadAudio, retryAxiosReq } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
-import { checkAndRemoveFile } from "../utils/file.js";
+import { checkAndRemoveFile, splitPaths } from "../utils/file.js";
 import { sendMusicCard, getGroupFileUrl } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
@@ -355,7 +355,7 @@ export class songRequest extends plugin {
                     }
                     this.songCloudUpdate(e);
                     return res;
-        
+
                 } else {
                     throw new Error('上传失败，响应不正确');
                 }
@@ -409,17 +409,22 @@ export class songRequest extends plugin {
 
     // 群文件上传云盘
     async getLatestDocument(e) {
-        const autoSelectNeteaseApi = await this.pickApi()
-        const cleanPath = await getGroupFileUrl(e)
-        // 拓展名
-        const extension = cleanPath.match(/\.\w+$/);
-        // 获取文件路径
-        const dirPath = cleanPath.substring(0, cleanPath.lastIndexOf('/'));
-        // 获取文件名
-        const fileName = cleanPath.split('/').pop().replace(/\.\w+$/, '');
-        // 进行文件名拆解
-        const parts = fileName.trim().match(/^([\s\S]+)\s*-\s*([\s\S]+)$/);
-        const newFileName = dirPath + '/' + parts[2].replace(/^\s+|\s+$/g, '') + extension
+        const autoSelectNeteaseApi = await this.pickApi();
+        let { cleanPath, file_id } = await getGroupFileUrl(e);
+        // Napcat 解决方案
+        if (cleanPath.startsWith("https")) {
+            const fileIdMatch = file_id.match(/\.(.*?)\.(\w+)$/);
+            const songName = fileIdMatch[1];  // 提取的歌曲名称
+            const fileFormat = fileIdMatch[2];  // 提取的文件格式
+            cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", fileFormat);
+        }
+        logger.info(cleanPath);
+        // 使用 splitPaths 提取信息
+        const [{ dir: dirPath, fileName, extension, baseFileName }] = splitPaths(cleanPath);
+        // 文件名拆解为两部分
+        const parts = baseFileName.trim().match(/^([\s\S]+)\s*-\s*([\s\S]+)$/);
+        // 生成新文件名
+        const newFileName = `${dirPath}/${parts[2].trim()}${extension}`;
         // 进行元数据编辑
         if (parts) {
             const tags = {

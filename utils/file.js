@@ -185,3 +185,20 @@ export async function getMediaFilesAndOthers(folderPath) {
         handleError(err);
     }
 }
+
+/**
+ * 将输入统一为数组形式，方便处理单个和多个路径
+ * @param input
+ * @returns {{fileName: *, dir: *}[]}
+ */
+export function splitPaths(input) {
+    const paths = Array.isArray(input) ? input : [input];
+
+    return paths.map(filePath => {
+        const dir = path.dirname(filePath);
+        const fileName = path.basename(filePath);
+        const extension = path.extname(fileName);
+        const baseFileName = path.basename(fileName, extension); // 去除扩展名的文件名
+        return { dir, fileName, extension, baseFileName };
+    });
+}
