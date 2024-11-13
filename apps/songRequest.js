@@ -6,12 +6,14 @@ import PickSongList from "../model/pick-song.js";
 import NeteaseMusicInfo from '../model/neteaseMusicInfo.js'
 import { NETEASE_API_CN, NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API } from "../constants/tools.js";
 import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO, REDIS_YUNZAI_CLOUDSONGLIST } from "../constants/constant.js";
-import { downloadAudio } from "../utils/common.js";
+import { downloadAudio, retryAxiosReq } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { checkAndRemoveFile } from "../utils/file.js";
-import { sendMusicCard } from "../utils/yunzai-util.js";
+import { sendMusicCard, getGroupFileUrl } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
+import NodeID3 from 'node-id3';
+import { isError } from "node:util";
 
 let FileSuffix = 'flac'
 
@@ -52,6 +54,11 @@ export class songRequest extends plugin {
                 {
                     reg: '^#?清除云盘缓存$',
                     fnc: 'cleanCloudData',
+                    permission: 'master'
+                },
+                {
+                    reg: '^#?获取群文件$',
+                    fnc: 'getLatestDocument',
                     permission: 'master'
                 }
             ]
@@ -95,16 +102,16 @@ export class songRequest extends plugin {
         const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
-        let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
+        let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}&time=" + Date.now() //歌曲详情API
         if (e.msg.replace(/\s+/g, "").match(/点歌(.+)/)) {
-            const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1]
+            const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1].replace(/[^\w\u4e00-\u9fa5]/g, '')
             // 获取云盘歌单列表
             const cloudSongList = await this.getCloudSong()
             // 搜索云盘歌单并进行搜索
             const matchedSongs = await cloudSongList.filter(({ songName, singerName }) =>
-                songName.includes(songKeyWord) || singerName.includes(songKeyWord)
+                songName.includes(songKeyWord) || singerName.includes(songKeyWord) || songName == songKeyWord || singerName == songKeyWord
             );
-            // 计算列表数 计算偏移量
+            // 计算列表数
             let songListCount = matchedSongs.length >= this.songRequestMaxList ? this.songRequestMaxList : matchedSongs.length
             let searchCount = this.songRequestMaxList - songListCount
             for (let i = 0; i < songListCount; i++) {
@@ -317,51 +324,47 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + FileSuffix
-        let tryCount = 0
+        let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         const tryUpload = async () => {
-            let formData = new FormData()
-            await formData.append('songFile', fs.createReadStream(path))
+            let formData = new FormData();
+            formData.append('songFile', fs.createReadStream(path));
             const headers = {
                 ...formData.getHeaders(),
                 'Cookie': this.neteaseCookie,
             };
-            const updateUrl = autoSelectNeteaseApi + `/cloud?time=${Date.now()}`
-            axios({
-                method: 'post',
-                url: updateUrl,
-                headers: headers,
-                data: formData,
-            })
-                .then(async res => {
-                    if (res.data.code == 200) {
-                        let matchUrl = autoSelectNeteaseApi + '/cloud/match?uid=' + this.uid + "&sid=" + res.data.privateCloud.songId + '&asid=' + id
-                        await axios.get(matchUrl, {
+            const updateUrl = `${autoSelectNeteaseApi}/cloud?time=${Date.now()}`;
+            try {
+                const res = await axios({
+                    method: 'post',
+                    url: updateUrl,
+                    headers: headers,
+                    data: formData,
+                });
+                if (res.data.code == 200) {
+                    let matchUrl = `${autoSelectNeteaseApi}/cloud/match?uid=${this.uid}&sid=${res.data.privateCloud.songId}&asid=${id}`;
+                    try {
+                        const matchRes = await axios.get(matchUrl, {
                             headers: {
                                 "User-Agent": COMMON_USER_AGENT,
                                 "Cookie": this.neteaseCookie
                             },
-                        }).then(res => {
-                            logger.info('歌曲信息匹配成功')
-                        })
-                            .catch(error => {
-                                logger.error('歌曲信息匹配错误', error)
-                            })
-                        this.songCloudUpdate(e)
+                        });
+                        logger.info('歌曲信息匹配成功');
+                    } catch (error) {
+                        logger.error('歌曲信息匹配错误', error);
                     }
-                })
-                .catch(error => {
-                    tryCount += 1;
-                    logger.info('失败喽~再试一次')
-                    if (tryCount < 3) {
-                        tryUpload(); // 直接调用
-                    } else {
-                        logger.error('怎么想都传不上去吧', error)
-                    }
+                    this.songCloudUpdate(e);
+                    return res;
+        
+                } else {
+                    throw new Error('上传失败，响应不正确');
                 }
-                )
+            } catch (error) {
+                    throw error;
+            }
         };
-        tryUpload();
+        await retryAxiosReq(() => tryUpload())
+        await checkAndRemoveFile(path)
     }
 
     // 获取云盘歌单
@@ -380,10 +383,10 @@ export class songRequest extends plugin {
                             "Cookie": this.neteaseCookie
                         }
                     });
-                    const songs = res.data.data.map(({ simpleSong }) => ({
-                        'songName': simpleSong.name,
-                        'id': simpleSong.id,
-                        'singerName': simpleSong.ar[0].name || '喵喵~',
+                    const songs = res.data.data.map(({ songId, songName, artist }) => ({
+                        'songName': songName,
+                        'id': songId,
+                        'singerName': artist || '喵喵~',
                         'duration': '云盘'
                     }));
                     songList.push(...songs);
@@ -404,6 +407,70 @@ export class songRequest extends plugin {
         }
     }
 
+    // 群文件上传云盘
+    async getLatestDocument(e) {
+        const autoSelectNeteaseApi = await this.pickApi()
+        const cleanPath = await getGroupFileUrl(e)
+        logger.info(cleanPath)
+        // 拓展名
+        const extension = cleanPath.match(/\.\w+$/);
+        // 获取文件路径
+        const dirPath = cleanPath.substring(0, cleanPath.lastIndexOf('/'));
+        // 获取文件名
+        const fileName = cleanPath.split('/').pop().replace(/\.\w+$/, '');
+        logger.info(fileName)
+        const parts = fileName.match(/([\u4e00-\u9fa5a-zA-Z0-9]+)\s*-\s*([\u4e00-\u9fa5a-zA-Z0-9]+)/);
+        logger.info(parts)
+        logger.info(parts[1].trim())
+        const newFileName = dirPath + '/' + parts[2].trim() + extension
+        // 进行元数据编辑
+        if (parts) {
+            const tags = {
+                title: parts[2].trim(),
+                artist: parts[1].trim()
+            };
+            // 写入元数据
+            let success = NodeID3.write(tags, cleanPath)
+            if (fs.existsSync(newFileName)) {
+                logger.info(`音频已存在`);
+                fs.unlinkSync(newFileName);
+            }
+            // 文件重命名
+            fs.renameSync(cleanPath, newFileName)
+            if (success) logger.info('写入元数据成功')
+        } else {
+            logger.info('未按照标准命名')
+        }
+        // 上传请求
+        const tryUpload = async () => {
+            let formData = new FormData()
+            await formData.append('songFile', fs.createReadStream(newFileName))
+            const headers = {
+                ...formData.getHeaders(),
+                'Cookie': this.neteaseCookie,
+            };
+            const updateUrl = autoSelectNeteaseApi + `/cloud?time=${Date.now()}`
+            try {
+                const res = await axios({
+                    method: 'post',
+                    url: updateUrl,
+                    headers: headers,
+                    data: formData,
+                });
+                this.songCloudUpdate(e);
+                return res;
+
+            } catch (error) {
+                throw error;
+            }
+        };
+        // 重试
+        await retryAxiosReq(() => tryUpload())
+        checkAndRemoveFile(newFileName)
+    }
+
+
+    // 清除缓存
     async cleanCloudData(e) {
         await redisSetKey(REDIS_YUNZAI_CLOUDSONGLIST, [])
     }
@@ -494,7 +561,7 @@ export class songRequest extends plugin {
             const AudioSize = bytesToMB(resp.data.data?.[0]?.size)
 
             // 获取歌曲标题
-            let title = songInfo[pickNumber].songName + '-' + songInfo[pickNumber].singerName
+            let title = songInfo[pickNumber].singerName + '-' + songInfo[pickNumber].songName
             let typelist = []
             // 歌曲百科API
             await axios.get(songWikiUrl, {
@@ -503,24 +570,25 @@ export class songRequest extends plugin {
                     // "Cookie": this.neteaseCookie
                 },
             }).then(res => {
-                const wikiData = res.data.data.blocks[1].creatives
-
-                typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
-                // 防止数据过深出错
-                const recTags = wikiData[1]
-                if (recTags.resources[0]) {
-                    for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
-                        if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
-                            typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                const wikiData = res.data.data.blocks[1]?.creatives || []
+                if (wikiData[0]) {
+                    typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
+                    // 防止数据过深出错
+                    const recTags = wikiData[1]
+                    if (recTags.resources[0]) {
+                        for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
+                            if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                                typelist.push(recTags.resources[i].uiElement.mainTitle.title)
+                            }
                         }
+                    } else {
+                        if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
                     }
-                } else {
-                    if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
-                }
-                if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
-                    typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
-                } else {
-                    typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                    if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
+                        typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                    } else {
+                        typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                    }
                 }
                 typelist.push(AudioLevel)
             })
