@@ -12,10 +12,27 @@ const mimeTypes = {
     // 添加其他文件类型和MIME类型的映射
 };
 
-// 通用错误处理函数
+/**
+ * 通用错误处理函数
+ * @param err
+ */
 function handleError(err) {
     logger.error(`错误: ${ err.message }\n堆栈: ${ err.stack }`);
     throw err;
+}
+
+/**
+ * 异步的方式检查文件是否存在
+ * @param filePath
+ * @returns {Promise<boolean>}
+ */
+export async function checkFileExists(filePath) {
+    try {
+        await fs.access(filePath);
+        return true; // 文件存在
+    } catch (error) {
+        return false; // 文件不存在
+    }
 }
 
 /**
@@ -188,8 +205,13 @@ export async function getMediaFilesAndOthers(folderPath) {
 
 /**
  * 将输入统一为数组形式，方便处理单个和多个路径
- * @param input
- * @returns {{fileName: *, dir: *}[]}
+ * @param {string|string[]} input - 一个或多个文件路径
+ *
+ * fileName：文件的完整名称，包括文件名和扩展名
+ * extension：文件的扩展名
+ * dir：文件所在的目录路径
+ * baseFileName：不包含扩展名的文件名
+ * @returns {{fileName: string, extension: string, dir: string, baseFileName: string}[]} - 一个包含文件信息的对象数组
  */
 export function splitPaths(input) {
     const paths = Array.isArray(input) ? input : [input];

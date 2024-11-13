@@ -8,7 +8,7 @@ import { NETEASE_API_CN, NETEASE_SONG_DOWNLOAD, NETEASE_TEMP_API } from "../cons
 import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO, REDIS_YUNZAI_CLOUDSONGLIST } from "../constants/constant.js";
 import { downloadAudio, retryAxiosReq } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
-import { checkAndRemoveFile, splitPaths } from "../utils/file.js";
+import { checkAndRemoveFile, checkFileExists, splitPaths } from "../utils/file.js";
 import { sendMusicCard, getGroupFileUrl } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
@@ -416,9 +416,18 @@ export class songRequest extends plugin {
             const fileIdMatch = file_id.match(/\.(.*?)\.(\w+)$/);
             const songName = fileIdMatch[1];  // 提取的歌曲名称
             const fileFormat = fileIdMatch[2];  // 提取的文件格式
-            cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", fileFormat);
+            // 检测文件是否存在 已提升性能
+            if (await checkFileExists(cleanPath)) {
+                // 如果文件已存在
+                logger.mark(`[R插件][云盘] 上传路径审计：已存在下载文件`);
+                cleanPath = `${this.getCurDownloadPath(e)}/${songName}.${fileFormat}`;
+            } else {
+                // 如果文件不存在
+                logger.mark(`[R插件][云盘] 上传路径审计：不存在下载文件，将进行下载...`);
+                cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", fileFormat);
+            }
         }
-        logger.info(cleanPath);
+        logger.info(`[R插件][云盘] 上传路径审计： ${ cleanPath }`);
         // 使用 splitPaths 提取信息
         const [{ dir: dirPath, fileName, extension, baseFileName }] = splitPaths(cleanPath);
         // 文件名拆解为两部分
