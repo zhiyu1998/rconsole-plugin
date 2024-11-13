@@ -108,7 +108,7 @@ export class songRequest extends plugin {
             // 获取云盘歌单列表
             const cloudSongList = await this.getCloudSong()
             // 搜索云盘歌单并进行搜索
-            const matchedSongs = await cloudSongList.filter(({ songName, singerName }) =>
+            const matchedSongs = cloudSongList.filter(({ songName, singerName }) =>
                 songName.includes(songKeyWord) || singerName.includes(songKeyWord) || songName == songKeyWord || singerName == songKeyWord
             );
             // 计算列表数
