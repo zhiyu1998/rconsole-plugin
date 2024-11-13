@@ -419,9 +419,8 @@ export class songRequest extends plugin {
         // 获取文件名
         const fileName = cleanPath.split('/').pop().replace(/\.\w+$/, '');
         logger.info(fileName)
-        const parts = fileName.match(/([\u4e00-\u9fa5a-zA-Z0-9]+)\s*-\s*([\u4e00-\u9fa5a-zA-Z0-9]+)/);
+        const parts = fileName.trim().match(/^\s*([\u4e00-\u9fa5a-zA-Z0-9]+)\s*-\s*([\u4e00-\u9fa5a-zA-Z0-9]+)\s*$/);
         logger.info(parts)
-        logger.info(parts[1].trim())
         const newFileName = dirPath + '/' + parts[2].trim() + extension
         // 进行元数据编辑
         if (parts) {
