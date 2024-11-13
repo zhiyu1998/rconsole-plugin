@@ -57,7 +57,7 @@ export class songRequest extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#?文件上传云盘$|#rngu|#RNGU',
+                    reg: '^#?文件上传云盘$|#?群文件上传云盘$|#rngu|#RNGU',
                     fnc: 'getLatestDocument',
                     permission: 'master'
                 }
