@@ -84,7 +84,7 @@ export async function getGroupFileUrl(e, count = 10) {
             };
         }
     } else if (cleanPath.startsWith('file:///')) {
-        cleanPath.replace('file:///', '')
+        cleanPath = cleanPath.replace('file:///', '')
     }
 
     return { cleanPath, file_id };
