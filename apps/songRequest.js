@@ -57,7 +57,7 @@ export class songRequest extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#?获取群文件$',
+                    reg: '^#?群文件上传云盘$|#rngu|#RNGU',
                     fnc: 'getLatestDocument',
                     permission: 'master'
                 }
@@ -411,17 +411,15 @@ export class songRequest extends plugin {
     async getLatestDocument(e) {
         const autoSelectNeteaseApi = await this.pickApi()
         const cleanPath = await getGroupFileUrl(e)
-        logger.info(cleanPath)
         // 拓展名
         const extension = cleanPath.match(/\.\w+$/);
         // 获取文件路径
         const dirPath = cleanPath.substring(0, cleanPath.lastIndexOf('/'));
         // 获取文件名
         const fileName = cleanPath.split('/').pop().replace(/\.\w+$/, '');
-        logger.info(fileName)
+        // 进行文件名拆解
         const parts = fileName.trim().match(/^([\s\S]+)\s*-\s*([\s\S]+)$/);
-        logger.info(parts)
-        const newFileName = dirPath + '/' + parts[2].trim() + extension
+        const newFileName = dirPath + '/' + parts[2].replace(/^\s+|\s+$/g, '') + extension
         // 进行元数据编辑
         if (parts) {
             const tags = {
