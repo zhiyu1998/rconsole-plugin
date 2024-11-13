@@ -37,7 +37,7 @@ export async function sendMusicCard(e, platformType, musicId) {
 /**
  * 获取群文件最新的图片
  * @param e
- * @param count
+ * @param count     获取群聊条数
  * @returns {Promise<*|string>}
  */
 export async function getLatestImage(e, count = 10) {
