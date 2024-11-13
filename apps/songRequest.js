@@ -298,7 +298,7 @@ export class songRequest extends plugin {
         const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
-        let path = this.getCurDownloadPath(e) + '/' + title + '-' + desc + '.' + FileSuffix
+        let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         try {
             // 上传群文件
             await this.uploadGroupFile(e, path);
