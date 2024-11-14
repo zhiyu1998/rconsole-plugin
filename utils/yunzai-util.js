@@ -19,7 +19,6 @@ export function textArrayToMakeForward(e, textArray) {
  * @param platformType 音乐平台
  * @param musicId      音乐id
  */
-
 export async function sendMusicCard(e, platformType, musicId) {
     await e.bot.sendApi('send_group_msg', {
         group_id: e.group.group_id,
@@ -35,13 +34,34 @@ export async function sendMusicCard(e, platformType, musicId) {
     });
 }
 
+/**
+ * 获取群文件最新的图片
+ * @param e
+ * @param count     获取群聊条数
+ * @returns {Promise<*|string>}
+ */
+export async function getLatestImage(e, count = 10) {
+    // 获取最新的聊天记录，阈值为5
+    const latestChat = await e.bot.sendApi("get_group_msg_history", {
+        "group_id": e.group_id,
+        "count": count
+    });
+    const messages = latestChat.data.messages;
+    // 找到最新的图片
+    for (let i = messages.length - 1; i >= 0; i--) {
+        const message = messages?.[i]?.message;
+        if (message?.[0]?.type === "image") {
+            return message?.[0].data?.url;
+        }
+    }
+    return "";
+}
 
 /**
  * 获取群文件Url地址
  * @param e
  * @param count     获取群聊条数
  */
-
 export async function getGroupFileUrl(e, count = 10) {
     const latestChat = await e.bot.sendApi("get_group_msg_history", {
         "group_id": e.group_id,
