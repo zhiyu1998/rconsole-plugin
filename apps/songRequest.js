@@ -13,7 +13,6 @@ import { sendMusicCard, getGroupFileUrl } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
 import NodeID3 from 'node-id3';
-import { isError } from "node:util";
 
 let FileSuffix = 'flac'
 
