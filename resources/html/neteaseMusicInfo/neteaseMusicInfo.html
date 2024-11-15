@@ -12,7 +12,7 @@
 
 <body>
     <div class="bg-image">
-        {{ if songInfo.cover == 'def' }}
+        {{ if songInfo.cover != 'def' }}
         <img src="{{ songInfo.cover }}" alt="" class="img" width="100%">
         {{ else }}
         <img src="{{pluResPath}}img/default.png" alt="" class="img" width="100%">
