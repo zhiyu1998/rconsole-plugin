@@ -150,7 +150,11 @@ export class songRequest extends plugin {
                     }).then(res => {
                         let imgList = {}
                         for (let i = 0; i < res.data.songs.length; i++) {
-                            imgList[res.data.songs[i].id] = res.data.songs[i].al.picUrl;
+                            if (res.data.songs[i].al.includes('109951169484091680.jpg')) {
+                                imgList[res.data.songs[i].id] = 'def'
+                            } else {
+                                imgList[res.data.songs[i].id] = res.data.songs[i].al.picUrl;
+                            }
                         }
                         for (let i = 0; i < musicDate.data.length; i++) {
                             const songId = musicDate.data[i].id;
@@ -359,7 +363,7 @@ export class songRequest extends plugin {
                     throw new Error('上传失败，响应不正确');
                 }
             } catch (error) {
-                    throw error;
+                throw error;
             }
         };
         await retryAxiosReq(() => tryUpload())
@@ -426,7 +430,7 @@ export class songRequest extends plugin {
                 cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", fileFormat);
             }
         }
-        logger.info(`[R插件][云盘] 上传路径审计： ${ cleanPath }`);
+        logger.info(`[R插件][云盘] 上传路径审计： ${cleanPath}`);
         // 使用 splitPaths 提取信息
         const [{ dir: dirPath, fileName, extension, baseFileName }] = splitPaths(cleanPath);
         // 文件名拆解为两部分

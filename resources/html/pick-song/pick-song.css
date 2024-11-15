@@ -95,6 +95,7 @@ html {
     height: 90px;
     border-radius: 8px;
     flex-shrink: 0;
+    object-fit: cover;
 }
 
 .bgicon {

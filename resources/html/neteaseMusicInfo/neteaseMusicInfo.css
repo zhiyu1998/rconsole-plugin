@@ -69,6 +69,7 @@ html {
     width: 135px;
     height: 135px;
     border-radius: 10px;
+    object-fit: cover;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
 }
 
