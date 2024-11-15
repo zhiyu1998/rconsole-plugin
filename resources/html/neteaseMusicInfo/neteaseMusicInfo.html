@@ -23,7 +23,7 @@
         <div class="info">
             <div class="songinfobox">
                 <div class="cover">
-                    {{ if songInfo.cover == 'def' }}
+                    {{ if songInfo.cover != 'def' }}
                     <img src="{{ songInfo.cover }}" alt="">
                     {{ else }}
                     <img src="{{pluResPath}}img/default.png" alt="">

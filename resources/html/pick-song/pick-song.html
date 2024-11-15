@@ -16,10 +16,10 @@
         <div class="songListNav">
             <div class="navInfo">
                 <div class="number">{{ key+1 }}</div>
-                {{ if info.cover == 'def' }}
+                {{ if info.cover != 'def' }}
                     <img src="{{ info.cover }}" alt="">
                 {{ else }}
-                    <img src="{{pluResPath}}imgdefault.png" alt="">
+                    <img src="{{pluResPath}}img/default.png" alt="">
                 {{ /if }}
                 <div class="navText">
                     <div class="songName">{{ info.songName }}</div>

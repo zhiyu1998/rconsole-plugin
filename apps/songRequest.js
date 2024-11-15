@@ -150,7 +150,7 @@ export class songRequest extends plugin {
                     }).then(res => {
                         let imgList = {}
                         for (let i = 0; i < res.data.songs.length; i++) {
-                            if (res.data.songs[i].al.includes('109951169484091680.jpg')) {
+                            if (res.data.songs[i].al.picUrl.includes('109951169484091680.jpg')) {
                                 imgList[res.data.songs[i].id] = 'def'
                             } else {
                                 imgList[res.data.songs[i].id] = res.data.songs[i].al.picUrl;
