@@ -2052,7 +2052,7 @@ export class tools extends plugin {
 
             const path = this.getCurDownloadPath(e);
             await checkAndRemoveFile(path + "/temp.mp4")
-            await checkAndRemoveFile(path + "/temp.mp3")
+            await checkAndRemoveFile(path + "/temp.flac")
             await checkAndRemoveFile(path + "/thumbnail.png")
             await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath)
             const title = ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath).toString().replace(/\n/g, '');
@@ -2064,8 +2064,10 @@ export class tools extends plugin {
                     `${this.identifyPrefix}识别：油管音乐\n视频标题：${title}`
                 ]);
                 await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
-                e.reply(segment.record(`${path}/temp.mp3`));
-                this.uploadGroupFile(e, `${path}/temp.mp3`);
+                if(this.isSendVocal){
+                    e.reply(segment.record(`${path}/temp.flac`));
+                }
+                this.uploadGroupFile(e, `${path}/temp.flac`);
                 // 发送完就截断
                 return;
             }
