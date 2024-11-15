@@ -30,9 +30,15 @@ export function removeParams(url) {
 }
 
 export function convertToSeconds(timeStr) {
-    const [hour, minutes, seconds] = timeStr.split(':').map(Number); // 拆分并转换为数字
-    if (!seconds) return timeStr;
-    return hour * 3600 + minutes * 60 + seconds; // 分钟转化为秒并加上秒数
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2) {
+        const [minutes, seconds] = parts;
+        return minutes * 60 + seconds;
+    } else if (parts.length === 3) {
+        const [hours, minutes, seconds] = parts;
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+    return timeStr;
 }
 
 export async function autoSelectMusicOrVideoSend() {

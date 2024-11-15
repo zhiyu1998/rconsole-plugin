@@ -96,7 +96,7 @@ export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge
         if (url.includes("music")) {
             // 这里是 YouTube Music的处理逻辑
             // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
-            command = `yt-dlp -x --audio-format mp3 ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.mp3" ${url}`;
+            command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.flac" ${url}`;
         } else {
             // 正常情况下的处理逻辑
             const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
