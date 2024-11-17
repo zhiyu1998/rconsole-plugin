@@ -527,10 +527,10 @@ export class songRequest extends plugin {
             const userInfo = res.data.data.profile
             await config.updateField("tools", "neteaseUserId", res.data.data.profile.userId);
             if (userInfo) {
-                logger.info('ck活着，使用ck进行高音质下载')
+                logger.info('[R插件][ncm-Cookie检测]ck活着，使用ck进行高音质下载')
                 status = true
             } else {
-                logger.info('ck失效，将启用临时接口下载')
+                logger.info('[R插件][ncm-Cookie检测]ck失效，将启用临时接口下载')
                 status = false
             }
         })

@@ -1693,10 +1693,10 @@ export class tools extends plugin {
         }).then(res => {
             const userInfo = res.data.data.profile
             if (userInfo) {
-                logger.info('ck活着，使用ck进行高音质下载')
+                logger.info('[R插件][netease]ck活着，使用ck进行高音质下载')
                 return true
             } else {
-                logger.info('ck失效，将启用临时接口下载')
+                logger.info('[R插件][netease]ck失效，将启用临时接口下载')
                 return false
             }
         })
