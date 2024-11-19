@@ -109,3 +109,19 @@ export async function getGroupFileUrl(e, count = 10) {
 
     return { cleanPath, file_id };
 }
+
+/**
+ * 获取群回复
+ * @param e
+ */
+export async function getReplyMsg(e) {
+    const msgList = await e.bot.sendApi("get_group_msg_history", {
+        "group_id": e.group_id,
+        "count": 1
+    });
+    let msgId = msgList.data.messages[0]?.message[0]?.data.id
+    let msg = await e.bot.sendApi("get_msg",{
+        "message_id" : msgId
+    })
+    return msg.data
+}

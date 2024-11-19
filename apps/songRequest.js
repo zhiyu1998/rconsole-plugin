@@ -9,7 +9,7 @@ import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO, REDIS
 import { downloadAudio, retryAxiosReq } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { checkAndRemoveFile, checkFileExists, splitPaths } from "../utils/file.js";
-import { sendMusicCard, getGroupFileUrl } from "../utils/yunzai-util.js";
+import { sendMusicCard, getGroupFileUrl, getReplyMsg } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
 import NodeID3 from 'node-id3';
@@ -289,7 +289,8 @@ export class songRequest extends plugin {
 
     // 上传音频文件
     async upLoad(e) {
-        let msg = await e?.getReply();
+        let msg = await getReplyMsg(e)
+        logger.info('msglist=====', msgList)
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
@@ -314,7 +315,7 @@ export class songRequest extends plugin {
 
     // 上传云盘
     async uploadCloud(e) {
-        let msg = await e?.getReply();
+        let msg = await getReplyMsg(e)
         const autoSelectNeteaseApi = await this.pickApi()
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
