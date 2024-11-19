@@ -12,7 +12,7 @@ import querystring from "querystring";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import {
     BILI_CDN_SELECT_LIST,
-    BILI_DEFAULT_INTRO_LEN_LIMIT,
+    BILI_DEFAULT_INTRO_LEN_LIMIT, BILI_RESOLUTION_LIST,
     COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
@@ -998,8 +998,10 @@ export class tools extends plugin {
             }
             // =================默认下载方式=====================
             try {
+                // 获取分辨率参数 QN，如果没有默认使用 480p --> 32
+                const qn = BILI_RESOLUTION_LIST.find(item => item.value === this.biliResolution).qn || 32;
                 // 获取下载链接
-                const data = await getDownloadUrl(url, this.biliSessData);
+                const data = await getDownloadUrl(url, this.biliSessData, qn);
 
                 if (data.audioUrl != null) {
                     await this.downBili(tempPath, data.videoUrl, data.audioUrl);

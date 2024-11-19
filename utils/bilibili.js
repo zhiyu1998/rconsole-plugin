@@ -14,7 +14,6 @@ import {
     BILI_SCAN_CODE_GENERATE,
     BILI_VIDEO_INFO
 } from "../constants/tools.js";
-import { saveJsonToFile } from "./common.js";
 import { mkdirIfNotExists } from "./file.js";
 
 export const BILI_HEADER = {
@@ -204,9 +203,9 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @param SESSDATA
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url, SESSDATA) {
+export async function getDownloadUrl(url, SESSDATA, qn) {
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
-    const dash = await getBiliVideoWithSession(videoId, "", SESSDATA);
+    const dash = await getBiliVideoWithSession(videoId, "", SESSDATA, qn);
     // 获取关键信息
     const { video, audio } = dash;
     const videoData = video?.[0];
@@ -327,13 +326,20 @@ export async function getBiliAudio(bvid, cid) {
     }))
 }
 
-export async function getBiliVideoWithSession(bvid, cid, SESSDATA) {
+export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn) {
     if (!cid) {
-        cid = await fetchCID(bvid).catch((err) => console.log(err))
+        cid = await fetchCID(bvid).catch((err) => logger.error(err))
     }
+    logger.info(`[R插件][BILI请求审计]：${ BILI_PLAY_STREAM
+        .replace("{bvid}", bvid)
+        .replace("{cid}", cid)
+        .replace("{qn}", qn) }`);
     // 返回一个fetch的promise
     return (new Promise((resolve, reject) => {
-        fetch(BILI_PLAY_STREAM.replace("{bvid}", bvid).replace("{cid}", cid), {
+        fetch(BILI_PLAY_STREAM
+            .replace("{bvid}", bvid)
+            .replace("{cid}", cid)
+            .replace("{qn}", qn), {
             headers: {
                 ...BILI_HEADER,
                 Cookie: `SESSDATA=${ SESSDATA }`

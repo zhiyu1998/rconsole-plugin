@@ -20,7 +20,7 @@ biliDisplaySummary: false # 是否显示哔哩哔哩的总结
 biliUseBBDown: false # 是否使用BBDown，默认不开启，开启后使用强劲的BBDown下载最高画质
 biliCDN: 0 # 哔哩哔哩 CDN，默认为0表示不使用
 biliDownloadMethod: 0 # 哔哩哔哩的下载方式：0默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载
-biliResolution: 1 # 哔哩哔哩的下载画质，0为原画，1为清晰画，2为流畅画（默认为0）
+biliResolution: 5 # 哔哩哔哩的下载画质，默认480p（因为不用登录），参考 {BILI_RESOLUTION_LIST}
 
 useLocalNeteaseAPI: false # 是否使用网易云解析自建API
 useNeteaseSongRequest: false # 是否开启网易云点歌功能

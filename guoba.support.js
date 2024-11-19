@@ -214,7 +214,7 @@ export function supportGuoba() {
                     field: "tools.biliResolution",
                     label: "bili最高分辨率",
                     bottomHelpMessage:
-                        "哔哩哔哩的最高分辨率（目前仅适用于开启BBDown后），默认为1080p，可以自行根据服务器进行调整",
+                        "【开不开BBDown都同步】哔哩哔哩的最高分辨率，默认为480p，可以自行根据服务器进行调整",
                     component: "Select",
                     componentProps: {
                         options: BILI_RESOLUTION_LIST,

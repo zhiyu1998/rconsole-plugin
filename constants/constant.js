@@ -184,13 +184,13 @@ export const BILI_DOWNLOAD_METHOD = Object.freeze([
 ]);
 
 export const BILI_RESOLUTION_LIST = Object.freeze([
-    { label: '8K 超高清', value: 0 },
-    { label: '4K 超清', value: 1 },
-    { label: '1080P 高码率', value: 2 },
-    { label: '1080P 高清', value: 3 },
-    { label: '720P 高清', value: 4 },
-    { label: '480P 清晰', value: 5 },
-    { label: '360P 流畅', value: 6 },
+    { label: '8K 超高清', value: 0, qn: 127 },
+    { label: '4K 超清', value: 1, qn: 120 },
+    { label: '1080P 高码率', value: 2, qn: 112 },
+    { label: '1080P 高清', value: 3, qn: 80 },
+    { label: '720P 高清', value: 4, qn: 64 },
+    { label: '480P 清晰', value: 5, qn: 32 },
+    { label: '360P 流畅', value: 6, qn: 16 },
 ]);
 
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
