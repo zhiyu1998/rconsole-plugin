@@ -289,7 +289,7 @@ export class songRequest extends plugin {
 
     // 上传音频文件
     async upLoad(e) {
-        let msg = await getReplyMsg(e)
+        let msg = await getReplyMsg(e);
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
@@ -297,7 +297,7 @@ export class songRequest extends plugin {
             musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
             musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
             musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)[1] || "";
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)?.[1] || "";
         const title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
         const desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
@@ -435,6 +435,12 @@ export class songRequest extends plugin {
         const [{ dir: dirPath, fileName, extension, baseFileName }] = splitPaths(cleanPath);
         // 文件名拆解为两部分
         const parts = baseFileName.trim().match(/^([\s\S]+)\s*-\s*([\s\S]+)$/);
+        // 命令不规范检测
+        if (parts == null || parts.length < 2) {
+            logger.warn("[R插件][云盘] 上传路径审计：命名不规范");
+            e.reply("请规范上传文件的命名：歌手-歌名，例如：梁静茹-勇气");
+            return true;
+        }
         // 生成新文件名
         const newFileName = `${dirPath}/${parts[2].trim()}${extension}`;
         // 进行元数据编辑
