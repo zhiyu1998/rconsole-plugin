@@ -290,7 +290,6 @@ export class songRequest extends plugin {
     // 上传音频文件
     async upLoad(e) {
         let msg = await getReplyMsg(e)
-        logger.info('msglist=====', msgList)
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
