@@ -295,12 +295,12 @@ export class songRequest extends plugin {
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
         const id =
-            musicUrlReg2.exec(msg.message[0].data)?.[3] ||
-            musicUrlReg.exec(msg.message[0].data)?.[2] ||
-            musicUrlReg3.exec(msg.message[0].data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data)[1] || "";
-        const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
-        const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
+            musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
+            musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
+            musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)[1] || "";
+        const title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
+        const desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
         let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         try {
@@ -321,12 +321,12 @@ export class songRequest extends plugin {
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
         const id =
-            musicUrlReg2.exec(msg.message[0].data)?.[3] ||
-            musicUrlReg.exec(msg.message[0].data)?.[2] ||
-            musicUrlReg3.exec(msg.message[0].data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data)[1] || "";
-        const title = msg.message[0].data.match(/"title":"([^"]+)"/)[1]
-        const desc = msg.message[0].data.match(/"desc":"([^"]+)"/)[1]
+            musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
+            musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
+            musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)[1] || "";
+        const title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
+        const desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
         if (id === "") return
         let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         const tryUpload = async () => {
