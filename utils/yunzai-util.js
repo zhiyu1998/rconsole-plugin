@@ -21,7 +21,7 @@ export function textArrayToMakeForward(e, textArray) {
  */
 export async function sendMusicCard(e, platformType, musicId) {
     await e.bot.sendApi('send_group_msg', {
-        group_id: e.group.group_id,
+        group_id: e.group_id,
         message: [
             {
                 type: 'music',

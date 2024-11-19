@@ -94,11 +94,11 @@ export class songRequest extends plugin {
         // 获取自定义API
         const autoSelectNeteaseApi = await this.pickApi()
         // 只在群里可以使用
-        let group_id = e.group.group_id
+        let group_id = e.group_id
         if (!group_id) return
         // 初始化
         let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO) || []
-        const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
+        const saveId = songInfo.findIndex(item => item.group_id === e.group_id)
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}&time=" + Date.now() //歌曲详情API
@@ -179,10 +179,10 @@ export class songRequest extends plugin {
         } else if (await redisGetKey(REDIS_YUNZAI_SONGINFO) != []) {
             if (e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)) {
                 const pickNumber = e.msg.replace(/\s+/g, "").match(/^#听(\d+)/)[1] - 1
-                let group_id = e.group.group_id
+                let group_id = e.group_id
                 if (!group_id) return
                 let songInfo = await redisGetKey(REDIS_YUNZAI_SONGINFO)
-                const saveId = songInfo.findIndex(item => item.group_id === e.group.group_id)
+                const saveId = songInfo.findIndex(item => item.group_id === e.group_id)
                 const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
                 const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[saveId].data[pickNumber].id)
                 const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songInfo[saveId].data[pickNumber].id
@@ -202,7 +202,7 @@ export class songRequest extends plugin {
             return
         }
         // 只在群里可以使用
-        let group_id = e.group.group_id
+        let group_id = e.group_id
         if (!group_id) return
         const autoSelectNeteaseApi = await this.pickApi()
         let songInfo = []
@@ -528,10 +528,10 @@ export class songRequest extends plugin {
             const userInfo = res.data.data.profile
             await config.updateField("tools", "neteaseUserId", res.data.data.profile.userId);
             if (userInfo) {
-                logger.info('ck活着，使用ck进行高音质下载')
+                logger.info('[R插件][ncm-Cookie检测]ck活着，使用ck进行高音质下载')
                 status = true
             } else {
-                logger.info('ck失效，将启用临时接口下载')
+                logger.info('[R插件][ncm-Cookie检测]ck失效，将启用临时接口下载')
                 status = false
             }
         })
@@ -636,8 +636,8 @@ export class songRequest extends plugin {
                     // 发送卡片
                     await sendMusicCard(e, '163', songInfo[pickNumber].id)
                 } catch (error) {
-                    if (error.error.message) {
-                        logger.error("发送卡片错误错误:", error.error.message, '发送群语音');
+                    if (error.message) {
+                        logger.error("发送卡片错误错误:", error.message, '发送群语音');
                     } else {
                         logger.error("发送卡片错误错误，请查看控制台报错，将发送群语音")
                         logger.error(error)
