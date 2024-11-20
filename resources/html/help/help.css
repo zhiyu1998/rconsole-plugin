@@ -1,14 +1,14 @@
 @font-face {
-  font-family: "PermanentMarker";
-  src: url("../../font/PermanentMarker.ttf");
-  font-weight: normal;
-  font-style: normal;
+  font-family: "FZB";
+  src: url("../../font/FZB.ttf");
 }
 
 * {
   margin: 0;
-  padding: 0;
+  font-family: "FZB", serif;
   box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
   user-select: none;
 }
 
@@ -19,40 +19,47 @@ body {
   color: #1e1f20;
   transform: scale(1.5);
   transform-origin: 0 0;
+  background: #f5f5f5;
+  line-height: 1.6;
 }
 
 .container {
   width: 788px;
-  padding: 20px 15px 10px 15px;
-  background-image: url(../../img/bg.jpg);
-  background-size: 100%;
+  padding: 20px 15px;
+  background-size: cover;
+  background-color: #444;
+  border-radius: 10px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
 }
 
 .head_box {
   border-radius: 15px;
-  font-family: 'PermanentMarker', serif;
-  padding: 10px 20px;
+  padding: 20px;
   position: relative;
-  color: white;
-  box-shadow: 0 5px 10px 0 rgb(0 0 0 / 15%);
+  color: #ffffff;
+  background: linear-gradient(135deg, #2b2b2b, #444444);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  border: 2px solid #FFBD73;
 }
 
 .head_box .id_text {
-  margin-left: 100px;
-  color: #E1D7B7;
-  font-size: 24px;
+  color: #FFBD73;
+  font-size: 28px;
+  font-weight: bold;
 }
 
 .head_box .day_text {
-  margin-left: 100px;
-  color: #E1D7B7;
+  color: #FFBD73;
   font-size: 20px;
+  margin-top: 10px;
 }
 
 .head_box .genshin_logo {
   position: absolute;
   top: -20px;
-  width: 97px;
+  left: 15px;
+  width: 80px;
 }
 
 .base_info {
@@ -61,19 +68,15 @@ body {
 }
 
 .uid {
-  font-family: PermanentMarker, serif;
+  font-family: "FZB", serif;
 }
 
 .data_box {
   border-radius: 15px;
-  margin-top: 20px;
-  margin-bottom: 15px;
-  padding: 20px 10px 5px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-top: 25px;
+  padding: 25px;
+  background: #222;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
@@ -81,86 +84,77 @@ body {
   position: absolute;
   top: -12px;
   left: -8px;
-  background-color: rgba(76, 76, 76, 0.8);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.37);
+  background-color: #444;
+  padding: 8px 16px;
+  border-radius: 15px 0 15px 15px;
   color: #fff;
   font-size: 14px;
-  padding: 5px 12px;
-  border-radius: 15px 0px 15px 15px;
-  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .data_line {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 
 .data_line_item {
-  width: 100px;
+  width: 120px;
   text-align: center;
-  /*margin: 0 20px;*/
 }
 
 .num {
-  font-family: PermanentMarker, serif;
-  font-size: 24px;
+  font-family: "FZB", serif;
+  font-size: 26px;
+  color: #ffd700;
 }
 
 .data_box .lable {
   font-size: 14px;
-  color: #7f858a;
-  line-height: 1;
-  margin-top: 3px;
+  color: #bbb;
+  margin-top: 5px;
 }
 
 .list {
   display: flex;
   justify-content: flex-start;
   flex-wrap: wrap;
-  margin: -5px;
+  margin: -10px;
 }
 
 .list .item {
-  width: calc(50% - 10px);
+  width: calc(50% - 20px);
   display: flex;
   align-items: center;
-  color: white;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.2);
-  padding: 10px;
-  border-radius: 10px;
-  margin: 5px;
+  color: #fff;
+  background: #2b2b2b;
+  padding: 15px;
+  border-radius: 12px;
+  margin: 10px;
   transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .list .item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px 0 rgba(31, 38, 135, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .list .item .icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   background-repeat: no-repeat;
-  background-size: 100% 100%;
-  position: relative;
-  flex-shrink: 0;
+  background-size: cover;
+  margin-right: 15px;
 }
 
 .list .item .title {
   font-size: 16px;
-  margin-left: 10px;
-  line-height: 20px;
-  flex-grow: 1;
+  line-height: 1.5;
 }
 
 .list .item .title .dec {
-  font-size: 12px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
   margin-top: 4px;
 }
@@ -168,6 +162,7 @@ body {
 .logo {
   text-align: center;
   font-size: 14px;
-  color: white;
-  font-family: 'PermanentMarker', serif;
+  color: #e1d7b7;
+  font-family: "FZB", serif;
+  margin-top: 30px;
 }
