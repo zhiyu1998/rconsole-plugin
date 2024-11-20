@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/** 代码字体 */
+@font-face {
+    font-family: "FiraCode";
+    src: url("../assets/fonts/FiraCode-VF.woff2");
+}
+/** 正文字体 */
+@font-face {
+    font-family: "SourceHanSerifCN";
+    src: local("SourceHanSerifCN"), url("../assets/fonts/SourceHanSerifCN-VF.woff2");
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+    /* 滚动条宽度 */
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    /* 滚动条轨道背景色 */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    /* 滚动条滑块颜色 */
+    border-radius: 4px;
+    /* 滑块圆角 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    /* 滑块悬停时的颜色 */
+}
