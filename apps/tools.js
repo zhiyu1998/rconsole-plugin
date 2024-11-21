@@ -111,11 +111,6 @@ import { textArrayToMakeForward, sendMusicCard } from "../utils/yunzai-util.js";
 
 export class tools extends plugin {
     /**
-     * 用于计数applemusic，达到一定数量清理文件
-     * @type {number}
-     */
-    static #amCount = 0;
-    /**
      * 构造安全的命令
      * @type {{existsPromptKey: string, existsTransKey: string}}
      */
@@ -2346,15 +2341,6 @@ export class tools extends plugin {
             for (let other of mediaFiles.others) {
                 await this.uploadGroupFile(e, `${musicPath}/${other}`);
             }
-        }
-        // 计数
-        tools.#amCount += 1;
-        logger.info(`当前${freyrName}已经下载了：${tools.#amCount}次`);
-        // 定时清理
-        if (tools.#amCount >= 5) {
-            await deleteFolderRecursive(currentWorkingDirectory + "/am");
-            // 重置
-            tools.#amCount = 0;
         }
         return true;
     }
