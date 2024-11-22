@@ -116,8 +116,8 @@ export default function Network() {
 
     return (
         <div className="container mx-auto p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="card bg-base-100 shadow-xl col-span-1 lg:col-span-3">
+            <div className="grid grid-cols-1 gap-8">
+                <div className="card bg-base-100 shadow-xl">
                     <div className="card-body">
                         <h2 className="card-title text-lg font-bold">网络监控</h2>
                         <div className="flex justify-between mb-4">
@@ -130,8 +130,14 @@ export default function Network() {
                                 <p>总接收: {networkData.totalReceived} GB</p>
                             </div>
                         </div>
-                        <div className="h-[300px]">
-                            <Line data={chartData} options={chartOptions} />
+                        <div className="w-full h-[300px]">
+                            <Line
+                                data={chartData}
+                                options={{
+                                    ...chartOptions,
+                                    maintainAspectRatio: false,
+                                }}
+                            />
                         </div>
                     </div>
                 </div>

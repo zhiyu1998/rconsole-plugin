@@ -1,48 +1,92 @@
+import { promises as fs } from 'fs';
 import os from 'os';
+import si from 'systeminformation';
 
 let lastBytesReceived = 0;
 let lastBytesSent = 0;
 let lastTimestamp = Date.now();
 
-function getNetworkStats() {
-    const networkInterfaces = os.networkInterfaces();
+async function getLinuxStats() {
+    const data = await fs.readFile('/proc/net/dev', 'utf8');
+    const lines = data.trim().split('\n');
+
     let bytesReceived = 0;
     let bytesSent = 0;
 
-    // 累加所有网络接口的数据
-    Object.values(networkInterfaces).forEach(interfaces => {
-        interfaces.forEach(netInterface => {
-            if (netInterface.internal === false) {
-                bytesReceived += netInterface.bytes_received || 0;
-                bytesSent += netInterface.bytes_sent || 0;
-            }
-        });
-    });
+    for (let i = 2; i < lines.length; i++) {
+        const line = lines[i].trim();
+        const parts = line.split(/\s+/);
 
-    const now = Date.now();
-    const timeDiff = (now - lastTimestamp) / 1000; // 转换为秒
+        if (parts[0].startsWith('lo:')) continue;
 
-    // 计算速率（字节/秒）
-    const downloadSpeed = (bytesReceived - lastBytesReceived) / timeDiff;
-    const uploadSpeed = (bytesSent - lastBytesSent) / timeDiff;
+        bytesReceived += parseInt(parts[1], 10);
+        bytesSent += parseInt(parts[9], 10);
+    }
 
-    // 更新上次的值
-    lastBytesReceived = bytesReceived;
-    lastBytesSent = bytesSent;
-    lastTimestamp = now;
+    return { bytesReceived, bytesSent };
+}
 
-    return {
-        downloadSpeed: (downloadSpeed / 1024).toFixed(2), // KB/s
-        uploadSpeed: (uploadSpeed / 1024).toFixed(2), // KB/s
-        totalReceived: (bytesReceived / (1024 * 1024 * 1024)).toFixed(2), // GB
-        totalSent: (bytesSent / (1024 * 1024 * 1024)).toFixed(2), // GB
-        timestamp: now
-    };
+async function getWindowsStats() {
+    const networkStats = await si.networkStats();
+    let bytesReceived = 0;
+    let bytesSent = 0;
+
+    for (const stat of networkStats) {
+        bytesReceived += stat.rx_bytes || 0;
+        bytesSent += stat.tx_bytes || 0;
+    }
+
+    return { bytesReceived, bytesSent };
+}
+
+async function getNetworkStats() {
+    try {
+        const platform = os.platform();
+        let bytesReceived = 0;
+        let bytesSent = 0;
+
+        if (platform === 'linux') {
+            const stats = await getLinuxStats();
+            bytesReceived = stats.bytesReceived;
+            bytesSent = stats.bytesSent;
+        } else {
+            const stats = await getWindowsStats();
+            bytesReceived = stats.bytesReceived;
+            bytesSent = stats.bytesSent;
+        }
+
+        const now = Date.now();
+        const timeDiff = (now - lastTimestamp) / 1000;
+
+        const downloadSpeed = Math.max(0, (bytesReceived - lastBytesReceived) / timeDiff);
+        const uploadSpeed = Math.max(0, (bytesSent - lastBytesSent) / timeDiff);
+
+        lastBytesReceived = bytesReceived;
+        lastBytesSent = bytesSent;
+        lastTimestamp = now;
+
+        return {
+            downloadSpeed: (downloadSpeed / 1024).toFixed(2),
+            uploadSpeed: (uploadSpeed / 1024).toFixed(2),
+            totalReceived: (bytesReceived / (1024 * 1024 * 1024)).toFixed(2),
+            totalSent: (bytesSent / (1024 * 1024 * 1024)).toFixed(2),
+            timestamp: now
+        };
+    } catch (error) {
+        console.error('获取网络统计信息失败:', error);
+        return {
+            downloadSpeed: "0",
+            uploadSpeed: "0",
+            totalReceived: "0",
+            totalSent: "0",
+            timestamp: Date.now()
+        };
+    }
 }
 
 export async function GET() {
     try {
-        const stats = getNetworkStats();
+        const stats = await getNetworkStats();
         return new Response(JSON.stringify(stats), {
             status: 200,
             headers: { 'Content-Type': 'application/json' },
@@ -51,6 +95,6 @@ export async function GET() {
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' },
-        })
+        });
     }
 }
