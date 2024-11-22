@@ -1,6 +1,4 @@
 import { spawn } from 'child_process';
-import child_process from "node:child_process";
-import { getBotLoginInfo, getBotStatus, getBotVersionInfo } from "./utils/yunzai-util.js";
 
 logger.info(`[R插件][Next.js监测], 父进程 PID: ${process.pid}`);
 
