@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
+import Toast from "../toast.jsx";
 
 export default function Generic() {
     const [config, setConfig] = useState({
@@ -13,6 +14,7 @@ export default function Generic() {
         queueConcurrency: 1,
         videoDownloadConcurrency: 1,
         autoclearTrashtime: '0 0 8 * * ?',
+        xiaohongshuCookie: '',
         deeplApiUrls: ''
     });
 
@@ -34,6 +36,7 @@ export default function Generic() {
                     queueConcurrency: yamlConfig.queueConcurrency || 1,
                     videoDownloadConcurrency: yamlConfig.videoDownloadConcurrency || 1,
                     autoclearTrashtime: yamlConfig.autoclearTrashtime || '0 0 8 * * ?',
+                    xiaohongshuCookie: yamlConfig.xiaohongshuCookie || '',
                     deeplApiUrls: yamlConfig.deeplApiUrls || ''
                 });
             }
@@ -57,6 +60,7 @@ export default function Generic() {
                 queueConcurrency: config.queueConcurrency,
                 videoDownloadConcurrency: config.videoDownloadConcurrency,
                 autoclearTrashtime: config.autoclearTrashtime,
+                xiaohongshuCookie: config.xiaohongshuCookie,
                 deeplApiUrls: config.deeplApiUrls
             });
 
@@ -88,7 +92,8 @@ export default function Generic() {
                 queueConcurrency: yamlConfig.queueConcurrency || 1,
                 videoDownloadConcurrency: yamlConfig.videoDownloadConcurrency || 1,
                 autoclearTrashtime: yamlConfig.autoclearTrashtime || '0 0 8 * * ?',
-                deeplApiUrls: yamlConfig.deeplApiUrls || ''
+                xiaohongshuCookie: yamlConfig.xiaohongshuCookie || '',
+                deeplApiUrls: yamlConfig.deeplApiUrls || '',
             });
         }
     };
@@ -96,11 +101,7 @@ export default function Generic() {
     return (
         <div className="p-6 mx-auto container">
             {/* 成功提示 */}
-            <div id="generic-toast-success" className="toast toast-top toast-end hidden z-[9999]">
-                <div className="alert alert-success">
-                    <span>配置保存成功！</span>
-                </div>
-            </div>
+            <Toast id="generic-toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">通用配置</h2>
@@ -110,7 +111,7 @@ export default function Generic() {
                     <div className="card-body">
                         <h3 className="card-title mb-4">基础配置</h3>
 
-                        {/* 路径和大小限制配置 */}
+                        {/* 路径和大小限制配置 */ }
                         <div className="grid md:grid-cols-2 gap-4 mb-6">
                             <div className="form-control">
                                 <label className="label">
@@ -118,8 +119,8 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={config.defaultPath}
-                                    onChange={(e) => setConfig({ ...config, defaultPath: e.target.value })}
+                                    value={ config.defaultPath }
+                                    onChange={ (e) => setConfig({ ...config, defaultPath: e.target.value }) }
                                     placeholder="请输入视频保存路径..."
                                     className="input input-bordered"
                                 />
@@ -131,14 +132,17 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="number"
-                                    value={config.videoSizeLimit}
-                                    onChange={(e) => setConfig({ ...config, videoSizeLimit: parseInt(e.target.value) })}
+                                    value={ config.videoSizeLimit }
+                                    onChange={ (e) => setConfig({
+                                        ...config,
+                                        videoSizeLimit: parseInt(e.target.value)
+                                    }) }
                                     className="input input-bordered"
                                 />
                             </div>
                         </div>
 
-                        {/* 代理配置 */}
+                        {/* 代理配置 */ }
                         <div className="grid md:grid-cols-2 gap-4 mb-6">
                             <div className="form-control">
                                 <label className="label">
@@ -146,8 +150,8 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={config.proxyAddr}
-                                    onChange={(e) => setConfig({ ...config, proxyAddr: e.target.value })}
+                                    value={ config.proxyAddr }
+                                    onChange={ (e) => setConfig({ ...config, proxyAddr: e.target.value }) }
                                     placeholder="请输入代理地址..."
                                     className="input input-bordered"
                                 />
@@ -158,15 +162,15 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={config.proxyPort}
-                                    onChange={(e) => setConfig({ ...config, proxyPort: e.target.value })}
+                                    value={ config.proxyPort }
+                                    onChange={ (e) => setConfig({ ...config, proxyPort: e.target.value }) }
                                     placeholder="请输入代理端口..."
                                     className="input input-bordered"
                                 />
                             </div>
                         </div>
 
-                        {/* 其他基础配置 */}
+                        {/* 其他基础配置 */ }
                         <div className="grid md:grid-cols-2 gap-4 mb-6">
                             <div className="form-control">
                                 <label className="label">
@@ -174,8 +178,8 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={config.identifyPrefix}
-                                    onChange={(e) => setConfig({ ...config, identifyPrefix: e.target.value })}
+                                    value={ config.identifyPrefix }
+                                    onChange={ (e) => setConfig({ ...config, identifyPrefix: e.target.value }) }
                                     placeholder="请输入识别前缀..."
                                     className="input input-bordered"
                                 />
@@ -186,14 +190,17 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="number"
-                                    value={config.streamDuration}
-                                    onChange={(e) => setConfig({ ...config, streamDuration: parseInt(e.target.value) })}
+                                    value={ config.streamDuration }
+                                    onChange={ (e) => setConfig({
+                                        ...config,
+                                        streamDuration: parseInt(e.target.value)
+                                    }) }
                                     className="input input-bordered"
                                 />
                             </div>
                         </div>
 
-                        {/* 并发和定时配置 */}
+                        {/* 并发和定时配置 */ }
                         <div className="grid md:grid-cols-2 gap-4 mb-6">
                             <div className="form-control">
                                 <label className="label">
@@ -202,8 +209,11 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="number"
-                                    value={config.queueConcurrency}
-                                    onChange={(e) => setConfig({ ...config, queueConcurrency: parseInt(e.target.value) })}
+                                    value={ config.queueConcurrency }
+                                    onChange={ (e) => setConfig({
+                                        ...config,
+                                        queueConcurrency: parseInt(e.target.value)
+                                    }) }
                                     className="input input-bordered"
                                 />
                             </div>
@@ -213,34 +223,37 @@ export default function Generic() {
                                 </label>
                                 <input
                                     type="number"
-                                    value={config.videoDownloadConcurrency}
-                                    onChange={(e) => setConfig({ ...config, videoDownloadConcurrency: parseInt(e.target.value) })}
+                                    value={ config.videoDownloadConcurrency }
+                                    onChange={ (e) => setConfig({
+                                        ...config,
+                                        videoDownloadConcurrency: parseInt(e.target.value)
+                                    }) }
                                     className="input input-bordered"
                                 />
                             </div>
                         </div>
 
-                        {/* DeepL API配置 */}
+                        {/* DeepL API配置 */ }
                         <div className="form-control w-full mb-6">
                             <label className="label">
                                 <span className="label-text">DeepL API地址</span>
                             </label>
                             <textarea
-                                value={config.deeplApiUrls}
-                                onChange={(e) => setConfig({ ...config, deeplApiUrls: e.target.value })}
+                                value={ config.deeplApiUrls }
+                                onChange={ (e) => setConfig({ ...config, deeplApiUrls: e.target.value }) }
                                 placeholder="请输入DeepL API地址，多个地址用逗号分隔..."
                                 className="textarea textarea-bordered h-24"
                             />
                         </div>
 
-                        {/* 开关配置 */}
+                        {/* 开关配置 */ }
                         <div className="form-control">
                             <label className="label cursor-pointer">
                                 <span className="label-text">兼容模式</span>
                                 <input
                                     type="checkbox"
-                                    checked={config.streamCompatibility}
-                                    onChange={(e) => setConfig({ ...config, streamCompatibility: e.target.checked })}
+                                    checked={ config.streamCompatibility }
+                                    onChange={ (e) => setConfig({ ...config, streamCompatibility: e.target.checked }) }
                                     className="toggle toggle-primary"
                                 />
                             </label>
@@ -249,7 +262,21 @@ export default function Generic() {
                             </span>
                         </div>
 
-                        {/* 定时清理配置 */}
+                        {/* 小红书 Cookie */ }
+                        <div className="form-control w-full mt-6">
+                            <label className="label">
+                                <span className="label-text">小红书Cookie</span>
+                            </label>
+                            <input
+                                type="text"
+                                value={ config.xiaohongshuCookie }
+                                onChange={ (e) => setConfig({ ...config, xiaohongshuCookie: e.target.value }) }
+                                placeholder="请输入小红书的Cookie..."
+                                className="input input-bordered"
+                            />
+                        </div>
+
+                        {/* 定时清理配置 */ }
                         <div className="form-control w-full mt-6">
                             <label className="label">
                                 <span className="label-text">自动清理时间</span>
@@ -257,8 +284,8 @@ export default function Generic() {
                             </label>
                             <input
                                 type="text"
-                                value={config.autoclearTrashtime}
-                                onChange={(e) => setConfig({ ...config, autoclearTrashtime: e.target.value })}
+                                value={ config.autoclearTrashtime }
+                                onChange={ (e) => setConfig({ ...config, autoclearTrashtime: e.target.value }) }
                                 placeholder="请输入Cron表达式..."
                                 className="input input-bordered"
                             />
@@ -266,21 +293,21 @@ export default function Generic() {
                     </div>
                 </div>
 
-                {/* 保存按钮 */}
+                {/* 保存按钮 */ }
                 <div className="flex justify-end gap-4">
                     <button
                         className="btn btn-ghost"
-                        onClick={handleReset}
-                        disabled={loading}
+                        onClick={ handleReset }
+                        disabled={ loading }
                     >
                         重置
                     </button>
                     <button
                         className="btn btn-primary"
-                        onClick={handleSave}
-                        disabled={loading}
+                        onClick={ handleSave }
+                        disabled={ loading }
                     >
-                        {loading ? <span className="loading loading-spinner"></span> : '保存配置'}
+                        { loading ? <span className="loading loading-spinner"></span> : '保存配置' }
                     </button>
                 </div>
             </div>

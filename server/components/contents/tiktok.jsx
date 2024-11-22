@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
+import Toast from "../toast.jsx";
 
 export default function Tiktok() {
     const [config, setConfig] = useState({
@@ -64,11 +65,7 @@ export default function Tiktok() {
     return (
         <div className="p-6 mx-auto container">
             {/* 成功提示 */}
-            <div id="tiktok-toast-success" className="toast toast-top toast-end hidden z-[9999]">
-                <div className="alert alert-success">
-                    <span>配置保存成功！</span>
-                </div>
-            </div>
+            <Toast id="tiktok-toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">抖音配置</h2>

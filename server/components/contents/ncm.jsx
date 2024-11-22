@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NETEASECLOUD_QUALITY_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
+import Toast from "../toast.jsx";
 
 export default function Ncm() {
     const [config, setConfig] = useState({
@@ -85,11 +86,7 @@ export default function Ncm() {
     return (
         <div className="p-6 mx-auto container">
             {/* 成功提示 */}
-            <div id="ncm-toast-success" className="toast toast-top toast-end hidden z-[9999]">
-                <div className="alert alert-success">
-                    <span>配置保存成功！</span>
-                </div>
-            </div>
+            <Toast id="ncm-toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">网易云音乐配置</h2>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
+import Toast from "../toast.jsx";
 
 export default function Bili() {
     const [config, setConfig] = useState({
@@ -102,11 +103,7 @@ export default function Bili() {
     return (
         <div className="p-6 mx-auto container">
             {/* 成功提示 */}
-            <div id="toast-success" className="toast toast-top toast-end hidden z-[9999]">
-                <div className="alert alert-success">
-                    <span>配置保存成功！</span>
-                </div>
-            </div>
+            <Toast id="toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">Bilibili 配置</h2>
