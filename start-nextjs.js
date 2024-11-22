@@ -11,6 +11,7 @@ export const buildNextJs = () => {
         const buildProcess = spawn('pnpm', ['run', 'build'], {
             cwd: './plugins/rconsole-plugin/server',
             stdio: 'inherit',
+            shell: true,
         });
 
         buildProcess.on('close', (code) => {
@@ -34,6 +35,7 @@ export const startNextJs = (mode = 'start') => {
     childProcess = spawn('pnpm', ['run', script], {
         cwd: './plugins/rconsole-plugin', // 指定工作目录
         stdio: 'inherit', // 继承父进程的标准输入输出
+        shell: true,
     });
 
     // 子进程异常退出时捕获信号
