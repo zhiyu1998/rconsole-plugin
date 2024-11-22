@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NETWORK_BASE_URL } from "../../constants/system.js";
+import { NETWORK_BASE_URL } from "../../constants/api.js";
 
 // 测试链接配置
 const TESTING_LINKS = [

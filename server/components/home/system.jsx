@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { SYSTEM_BASE_URL } from "../../constants/system.js";
+import { SYSTEM_BASE_URL } from "../../constants/api.js";
 
 export default function System() {
     const [systemInfo, setSystemInfo] = useState(null);

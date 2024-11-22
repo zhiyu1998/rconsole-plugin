@@ -1,8 +1,10 @@
 import { spawn } from 'child_process';
+import child_process from "node:child_process";
+import { getBotLoginInfo, getBotStatus, getBotVersionInfo } from "./utils/yunzai-util.js";
 
 logger.info(`[R插件][Next.js监测], 父进程 PID: ${process.pid}`);
 
-let childProcess = null;
+let nextjsProcess = null;
 
 // 构建应用程序
 export const buildNextJs = () => {
@@ -10,7 +12,7 @@ export const buildNextJs = () => {
     return new Promise((resolve, reject) => {
         const buildProcess = spawn('pnpm', ['run', 'build'], {
             cwd: './plugins/rconsole-plugin/server',
-            stdio: 'inherit',
+            stdio: 'ignore',
             shell: true,
         });
 
@@ -32,24 +34,24 @@ export const startNextJs = (mode = 'start') => {
 
     logger.info(logger.yellow(`[R插件][Next.js监测]，启动 Next.js ${mode} 进程...`));
 
-    childProcess = spawn('pnpm', ['run', script], {
+    nextjsProcess = spawn('pnpm', ['run', script], {
         cwd: './plugins/rconsole-plugin', // 指定工作目录
-        stdio: 'inherit', // 继承父进程的标准输入输出
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'], // 继承父进程的标准输入输出
         shell: true,
     });
 
     // 子进程异常退出时捕获信号
-    childProcess.on('close', (code) => {
+    nextjsProcess.on('close', (code) => {
         logger.error(`[R插件][Next.js监测]，Next.js 进程发生异常 ${code}`);
-        childProcess = null;
+        nextjsProcess = null;
     });
 };
 
 // 捕获父进程退出信号
 const cleanup = () => {
     logger.info(logger.yellow('[R插件][Next.js监测] 父进程退出，终止子进程...'));
-    if (childProcess) {
-        childProcess.kill(); // 终止子进程
+    if (nextjsProcess) {
+        nextjsProcess.kill(); // 终止子进程
     }
     process.exit();
 };

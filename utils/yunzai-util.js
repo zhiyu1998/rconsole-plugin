@@ -125,3 +125,30 @@ export async function getReplyMsg(e) {
     })
     return msg.data
 }
+
+/**
+ * 获取机器人信息
+ * @param e
+ * @returns {Promise<*>}
+ */
+export async function getBotLoginInfo(e) {
+    return await e.bot.sendApi("get_login_info");
+}
+
+/**
+ * 获取运行状态
+ * @param e
+ * @returns {Promise<*>}
+ */
+export async function getBotStatus(e) {
+    return await e.bot.sendApi("get_status");
+}
+
+/**
+ * 获取版本信息
+ * @param e
+ * @returns {Promise<*>}
+ */
+export async function getBotVersionInfo(e) {
+    return await e.bot.sendApi("get_version_info");
+}

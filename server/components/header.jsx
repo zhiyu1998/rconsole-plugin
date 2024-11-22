@@ -1,17 +1,21 @@
 "use client"
 import { useState, useEffect } from 'react';
+import { BOT_INFO_URL } from "../constants/api.js";
 import { useDrawer } from "../contexts/drawer-context.js";
-import { getUserInfo } from "../utils/napact.js";
 import ThemeToggle from "./ThemeToggle.jsx";
 
 export default function Header () {
 
     const { toggleDrawer } = useDrawer();
 
-    const [user, setUser] = useState({ user_id: null, nickname: '' });
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
-        getUserInfo().then(setUser);
+        fetch(BOT_INFO_URL)
+            .then(response => {
+                return response.json();
+            })
+            .then(data => setUser(data))
     }, []);
 
     return (
@@ -49,12 +53,12 @@ export default function Header () {
                         <div className="w-10 rounded-full">
                             <img
                                 alt="头像"
-                                src={`http://q1.qlogo.cn/g?b=qq&nk=${user.user_id}&s=100`}/>
+                                src={`http://q1.qlogo.cn/g?b=qq&nk=${user?.user_id}&s=100`}/>
                         </div>
                     </div>
                     <div className="mt-1.5">
-                        <div className="font-bold">{user.nickname || "未获取"}</div>
-                        <div className="text-sm opacity-50">{user.user_id || "NaN"}</div>
+                        <div className="font-bold">{user?.nickname || "未获取"}</div>
+                        <div className="text-sm opacity-50">{user?.user_id || "NaN"}</div>
                     </div>
                 </div>
             </div>

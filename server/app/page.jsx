@@ -1,3 +1,12 @@
+import Header from "../components/header.jsx";
+import Sidebar from "../components/sidebar.jsx";
+import { DrawerProvider } from "../contexts/drawer-context.js";
+
 export default function Page() {
-    return <h1><a href="/r">进入控制面板</a></h1>
+    return (
+        <DrawerProvider>
+            <Header/>
+            <Sidebar />
+        </DrawerProvider>
+    )
 }
