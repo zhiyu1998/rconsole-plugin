@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { NETEASECLOUD_QUALITY_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
 
 export default function Ncm() {
@@ -80,18 +81,6 @@ export default function Ncm() {
             });
         }
     };
-
-    const audioQualityOptions = [
-        { value: 'standard', label: '标准' },
-        { value: 'higher', label: '较高' },
-        { value: 'exhigh', label: '极高' },
-        { value: 'lossless', label: '无损' },
-        { value: 'hires', label: 'Hi-Res' },
-        { value: 'jyeffect', label: '高清环绕声' },
-        { value: 'sky', label: '沉浸环绕声' },
-        { value: 'dolby', label: '杜比全景声' },
-        { value: 'jymaster', label: '超清母带' }
-    ];
 
     return (
         <div className="p-6 mx-auto container">
@@ -208,7 +197,7 @@ export default function Ncm() {
                                     className="select select-bordered"
                                     value={config.neteaseCloudAudioQuality}
                                     onChange={(e) => setConfig({ ...config, neteaseCloudAudioQuality: e.target.value })}>
-                                    {audioQualityOptions.map(option => (
+                                    {NETEASECLOUD_QUALITY_LIST.map(option => (
                                         <option key={option.value} value={option.value}>
                                             {option.label}
                                         </option>

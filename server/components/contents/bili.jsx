@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
 
 export default function Bili() {
@@ -235,9 +236,13 @@ export default function Bili() {
                                     className="select select-bordered"
                                     value={config.biliCDN}
                                     onChange={(e) => setConfig({ ...config, biliCDN: parseInt(e.target.value) })}>
-                                    <option value={0}>不使用CDN</option>
-                                    <option value={1}>CDN 1</option>
-                                    <option value={2}>CDN 2</option>
+                                    {
+                                        BILI_CDN_SELECT_LIST.map(item => {
+                                            return (
+                                                <option value={ item.value }>{ item.label }</option>
+                                            )
+                                        })
+                                    }
                                 </select>
                             </div>
                             <div className="form-control">
@@ -248,10 +253,13 @@ export default function Bili() {
                                     className="select select-bordered"
                                     value={config.biliDownloadMethod}
                                     onChange={(e) => setConfig({ ...config, biliDownloadMethod: parseInt(e.target.value) })}>
-                                    <option value={0}>原生下载</option>
-                                    <option value={1}>wget</option>
-                                    <option value={2}>axel</option>
-                                    <option value={3}>Aria2</option>
+                                    {
+                                        BILI_DOWNLOAD_METHOD.map(item => {
+                                            return (
+                                                <option value={ item.value }>{ item.label }</option>
+                                            )
+                                        })
+                                    }
                                 </select>
                             </div>
                             <div className="form-control">
@@ -262,12 +270,13 @@ export default function Bili() {
                                     className="select select-bordered"
                                     value={config.biliResolution}
                                     onChange={(e) => setConfig({ ...config, biliResolution: parseInt(e.target.value) })}>
-                                    <option value={5}>480P</option>
-                                    <option value={16}>360P</option>
-                                    <option value={32}>720P</option>
-                                    <option value={64}>1080P</option>
-                                    <option value={74}>720P60</option>
-                                    <option value={80}>1080P+</option>
+                                    {
+                                        BILI_RESOLUTION_LIST.map(item => {
+                                            return (
+                                                <option value={ item.value }>{ item.label }</option>
+                                            )
+                                        })
+                                    }
                                 </select>
                             </div>
                         </div>

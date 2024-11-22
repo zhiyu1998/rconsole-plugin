@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BILI_CDN_SELECT_LIST, YOUTUBE_GRAPHICS_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
 
 export default function Youtube() {
@@ -107,10 +108,13 @@ export default function Youtube() {
                                     className="select select-bordered"
                                     value={config.youtubeGraphicsOptions}
                                     onChange={(e) => setConfig({ ...config, youtubeGraphicsOptions: parseInt(e.target.value) })}>
-                                    <option value={0}>原画</option>
-                                    <option value={1080}>1080P</option>
-                                    <option value={720}>720P</option>
-                                    <option value={480}>480P</option>
+                                    {
+                                        YOUTUBE_GRAPHICS_LIST.map(item => {
+                                            return (
+                                                <option value={ item.value }>{ item.label }</option>
+                                            )
+                                        })
+                                    }
                                 </select>
                             </div>
                             <div className="form-control">
