@@ -16,7 +16,7 @@ const config = {
         daisyui,
     ],
     daisyui: {
-        themes: ["light", "dark", "valentine"],
+        themes: ["light", "dark", "valentine", "retro", "lofi", "dracula", "aqua", "cupcake"],
     },
 };
 
