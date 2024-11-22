@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "path";
 import config from "./model/config.js";
-import { buildNextJs, startNextJs } from "./start-nextjs.js";
+import { startNextJs } from "./utils/start-nextjs.js";
 if (!global.segment) {
     global.segment = (await import("oicq")).segment
 }
@@ -41,8 +41,7 @@ for (let i in files) {
 
 // 检查是否启动 webui
 if (isOpenWebUI) {
-    buildNextJs()
-        .then(() => startNextJs('start'))
+    startNextJs('dev')
 }
 
 export { apps };

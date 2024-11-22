@@ -34,7 +34,7 @@ export const startNextJs = (mode = 'start') => {
 
     nextjsProcess = spawn('pnpm', ['run', script], {
         cwd: './plugins/rconsole-plugin', // 指定工作目录
-        stdio: ['ignore', 'ignore', 'ignore', 'ipc'], // 继承父进程的标准输入输出
+        stdio: 'ignore',
         shell: true,
     });
 
@@ -42,6 +42,9 @@ export const startNextJs = (mode = 'start') => {
     nextjsProcess.on('close', (code) => {
         logger.error(`[R插件][Next.js监测]，Next.js 进程发生异常 ${code}`);
         nextjsProcess = null;
+    });
+    nextjsProcess.on('error', (err) => {
+        logger.error(`[R插件][Next.js监测] 子进程错误: ${err.message}`);
     });
 };
 
