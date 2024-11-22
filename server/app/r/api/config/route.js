@@ -2,8 +2,9 @@ import fs from 'fs';
 import yaml from 'js-yaml';
 import path from 'path';
 
+const configPath = path.join(process.cwd(), "../", 'config', 'tools.yaml');
+
 export async function GET(req, res) {
-    const configPath = path.join(process.cwd(), "../", 'config', 'tools.yaml');
     try {
         const yamlContent = await fs.promises.readFile(configPath, 'utf8');
         const config = yaml.load(yamlContent);
@@ -21,7 +22,6 @@ export async function GET(req, res) {
 }
 
 export async function POST(req, res) {
-    const configPath = path.join(process.cwd(), "../", 'config', 'tools.yaml');
     try {
         const updates = await req.json();
 
