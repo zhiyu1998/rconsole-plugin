@@ -4,13 +4,17 @@
 
 /** 代码字体 */
 @font-face {
-    font-family: "FiraCode";
-    src: url("../assets/fonts/FiraCode-VF.woff2");
+    font-family: "FZB";
+    src: url("../../resources/font/FZB.ttf");
 }
-/** 正文字体 */
-@font-face {
-    font-family: "SourceHanSerifCN";
-    src: local("SourceHanSerifCN"), url("../assets/fonts/SourceHanSerifCN-VF.woff2");
+
+* {
+    margin: 0;
+    font-family: "FZB", serif;
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
 }
 
 /* 自定义滚动条 */
