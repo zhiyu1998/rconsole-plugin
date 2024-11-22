@@ -69,7 +69,7 @@ export default function Youtube() {
     return (
         <div className="p-6 mx-auto container">
             {/* 成功提示 */}
-            <div id="youtube-toast-success" className="toast toast-top toast-end hidden">
+            <div id="youtube-toast-success" className="toast toast-top toast-end hidden z-[9999]">
                 <div className="alert alert-success">
                     <span>配置保存成功！</span>
                 </div>

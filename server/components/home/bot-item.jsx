@@ -18,7 +18,7 @@ export function BotItem() {
             <div className="card-body">
                 <h2 className="card-title">🐔状态</h2>
                 <div className="flex flex-row pt-5 justify-between items-center">
-                    <div className={ `avatar ${ user?.online ? "online" : "offline" }` }>
+                    <div className={ `avatar z-0 ${ user?.online ? "online" : "offline" }` }>
                         <div className="w-24 rounded-full">
                             <img src={ `http://q1.qlogo.cn/g?b=qq&nk=${ user?.user_id }&s=100` }/>
                         </div>
