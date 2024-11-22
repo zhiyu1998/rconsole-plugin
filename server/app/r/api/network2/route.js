@@ -5,6 +5,7 @@ import si from 'systeminformation';
 let lastBytesReceived = 0;
 let lastBytesSent = 0;
 let lastTimestamp = Date.now();
+let isFirstRun = true;
 
 async function getLinuxStats() {
     const data = await fs.readFile('/proc/net/dev', 'utf8');
@@ -58,18 +59,33 @@ async function getNetworkStats() {
         const now = Date.now();
         const timeDiff = (now - lastTimestamp) / 1000;
 
-        const downloadSpeed = Math.max(0, (bytesReceived - lastBytesReceived) / timeDiff);
-        const uploadSpeed = Math.max(0, (bytesSent - lastBytesSent) / timeDiff);
+        let downloadSpeed = 0;
+        let uploadSpeed = 0;
 
+        if (!isFirstRun) {
+            // 检查是否发生了计数器重置或异常值
+            if (bytesReceived >= lastBytesReceived && bytesSent >= lastBytesSent) {
+                downloadSpeed = (bytesReceived - lastBytesReceived) / timeDiff;
+                uploadSpeed = (bytesSent - lastBytesSent) / timeDiff;
+
+                // 设置合理的上限值（比如 1GB/s）
+                const MAX_SPEED = 1024 * 1024 * 1024; // 1 GB/s
+                downloadSpeed = Math.min(downloadSpeed, MAX_SPEED);
+                uploadSpeed = Math.min(uploadSpeed, MAX_SPEED);
+            }
+        }
+
+        // 更新状态
         lastBytesReceived = bytesReceived;
         lastBytesSent = bytesSent;
         lastTimestamp = now;
+        isFirstRun = false;
 
         return {
-            downloadSpeed: (downloadSpeed / 1024).toFixed(2),
-            uploadSpeed: (uploadSpeed / 1024).toFixed(2),
-            totalReceived: (bytesReceived / (1024 * 1024 * 1024)).toFixed(2),
-            totalSent: (bytesSent / (1024 * 1024 * 1024)).toFixed(2),
+            downloadSpeed: (downloadSpeed / 1024).toFixed(2), // KB/s
+            uploadSpeed: (uploadSpeed / 1024).toFixed(2), // KB/s
+            totalReceived: (bytesReceived / (1024 * 1024 * 1024)).toFixed(2), // GB
+            totalSent: (bytesSent / (1024 * 1024 * 1024)).toFixed(2), // GB
             timestamp: now
         };
     } catch (error) {
