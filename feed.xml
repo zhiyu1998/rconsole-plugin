@@ -4,7 +4,7 @@
         <title>R-Plugin</title>
         <link>https://zhiyu1998.github.io/rconsole-plugin/</link>
         <description>Plugin' Blog</description>
-        <lastBuildDate>Mon, 25 Nov 2024 12:07:22 GMT</lastBuildDate>
+        <lastBuildDate>Mon, 25 Nov 2024 12:09:46 GMT</lastBuildDate>
         <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
         <generator>https://github.com/jpmonette/feed</generator>
         <image>
@@ -151,9 +151,10 @@ source ~/.zshrc   # 如果你使用 zsh
 <li>
 <p>查看机器人发送给你的私信地址，重启 Yunzai 后即可看到</p>
 </li>
-<li>
-<p>通过 <code>#rws</code> 可以查看 WebUI的状态</p>
-</li>
+</ol>
+<p><img src="https://s2.loli.net/2024/11/25/VQeCRZ7ojvSqBzm.png" alt="PixPin_2024-11-25_20-08-57.png"></p>
+<ol start="3">
+<li>通过 <code>#rws</code> 可以查看 WebUI的状态</li>
 </ol>
 <h3>🍏 Apple Music 和 Spotify 使用说明</h3>
 <p><code>AM解析</code>和<code>Spotify解析</code>需要使用两个依赖<code>freyr</code>、<code>atomicparsley</code>，现在只以Debian系统为例：</p>
