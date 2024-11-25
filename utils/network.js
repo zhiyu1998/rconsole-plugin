@@ -101,7 +101,7 @@ export function constructPublicIPsMsg() {
     if (publicIPs.length > 0) {
         publicIPsStr = `\n公网地址：${ getPublicIPs().map(item => {
             logger.info('[R插件][公网检测]公网IP地址', item.address);
-            return `#${ item.address }:4016#\n`;
+            return `${ item.address }:4016\n`;
         }) }`;
     }
     publicIPsStr = `R插件可视化面板内网地址：${ ipAddress }:4016${ publicIPsStr }`;
