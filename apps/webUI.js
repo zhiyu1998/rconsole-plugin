@@ -63,7 +63,7 @@ export class WebUI extends plugin {
     }
 
     async rWebStatus(e) {
-        e.reply(`R插件可视化面板：${ this.toolsConfig.isOpenWebUI ? "✅开启" : "❌关闭" }`);
+        e.reply(`R插件可视化面板：\n状态：${ this.toolsConfig.isOpenWebUI ? "✅开启" : "❌关闭" }\n地址：******:4016`);
         return true;
     }
 }
