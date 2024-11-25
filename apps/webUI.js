@@ -2,6 +2,7 @@ import { REDIS_YUNZAI_WEBUI } from "../constants/constant.js";
 import config from "../model/config.js";
 import { constructPublicIPsMsg } from "../utils/network.js";
 import { redisSetKey } from "../utils/redis-util.js";
+import { buildNextJs } from "../utils/start-nextjs.js";
 import { getBotLoginInfo, getBotStatus, getBotVersionInfo, sendPrivateMsg } from "../utils/yunzai-util.js";
 
 export class WebUI extends plugin {
@@ -48,13 +49,15 @@ export class WebUI extends plugin {
     async rWebSwitch(e) {
         config.updateField("tools", "isOpenWebUI", !this.isOpenWebUI);
         const realIsOpenWebUI = config.getConfig("tools").isOpenWebUI;
-        // 初始化数据
-        await this.initData(e, realIsOpenWebUI);
-        // 这里有点延迟，需要写反
-        e.reply(`R插件可视化面板：${ realIsOpenWebUI ? "✅已开启" : "❌已关闭" }，重启后生效`);
         if (realIsOpenWebUI) {
+            // 初始化数据
+            await this.initData(e, realIsOpenWebUI);
+            e.reply(`R插件可视化面板：正在构建中，请稍等...`);
+            // 动态编译生产环境
+            await buildNextJs();
             await sendPrivateMsg(e, constructPublicIPsMsg());
         }
+        e.reply(`R插件可视化面板：${ realIsOpenWebUI ? "✅已开启" : "❌已关闭" }，重启后生效`);
         return true;
     }
 

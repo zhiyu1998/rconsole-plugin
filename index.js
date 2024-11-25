@@ -42,7 +42,7 @@ for (let i in files) {
 
 // 检查是否启动 webui
 if (isOpenWebUI) {
-    startNextJs('dev');
+    startNextJs('start');
     logger.info(constructPublicIPsMsg());
 }
 

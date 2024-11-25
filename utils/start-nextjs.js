@@ -5,6 +5,28 @@ logger.mark(`[R插件][WebUI], 父进程 PID: ${process.pid}`);
 
 let nextjsProcess = null;
 
+// 构建应用程序
+export const buildNextJs = () => {
+    logger.info(logger.yellow('[R插件][WebUI]，正在构建 Next.js 应用...'));
+    return new Promise((resolve, reject) => {
+        const buildProcess = spawn('pnpm', ['run', 'build'], {
+            cwd: './plugins/rconsole-plugin/server',
+            stdio: 'ignore',
+            shell: true,
+        });
+
+        buildProcess.on('close', (code) => {
+            if (code === 0) {
+                logger.info(logger.yellow('[R插件][Next.js监测]，构建完成。'));
+                resolve();
+            } else {
+                logger.error(`[R插件][WebUI监测]，构建失败，退出码：${code}`);
+                reject(new Error('Build failed'));
+            }
+        });
+    });
+};
+
 // 启动子进程运行 Next.js
 export const startNextJs = (mode = 'start') => {
     let script = mode === 'start' ? 'start' : 'dev';
@@ -13,7 +35,7 @@ export const startNextJs = (mode = 'start') => {
 
     // 判断是不是只有ipv6地址
     if (hasIPv6Only()) {
-        script = 'dev6';
+        script = 'start6';
     }
 
     nextjsProcess = spawn('pnpm', ['run', script], {

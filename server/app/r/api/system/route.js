@@ -1,7 +1,10 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import si from 'systeminformation';
 import os from 'os';
 
 export async function GET(request, { params }) {
+    // 这个不允许删除，否则无法做到实时获取
+    noStore();
     try {
         // 获取CPU信息
         const cpuInfo = await si.cpu();

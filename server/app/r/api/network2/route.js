@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from 'next/cache';
 import { promises as fs } from 'fs';
 import os from 'os';
 import si from 'systeminformation';
@@ -85,6 +86,8 @@ async function getNetworkStats() {
 }
 
 export async function GET() {
+    // 这个不允许删除，否则无法做到实时获取
+    noStore();
     try {
         const stats = await getNetworkStats();
         return new Response(JSON.stringify(stats), {
