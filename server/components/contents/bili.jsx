@@ -2,71 +2,69 @@ import { useState, useEffect } from 'react';
 import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
 import Toast from "../toast.jsx";
+import { ConfigToggle, ConfigInput, ConfigSelect } from '../common/ConfigItem';
+
+// 定义配置项
+const BILI_CONFIG = {
+    toggles: [
+        { key: 'biliDisplayCover', label: '显示封面' },
+        { key: 'biliDisplayInfo', label: '显示视频信息' },
+        { key: 'biliDisplayIntro', label: '显示简介' },
+        { key: 'biliDisplayOnline', label: '显示在线人数' },
+        { key: 'biliDisplaySummary', label: '显示总结' },
+        { key: 'biliUseBBDown', label: '使用BBDown' },
+    ],
+    inputs: [
+        { key: 'biliSessData', label: 'SESSDATA', type: 'text', placeholder: '请输入Bilibili SESSDATA' },
+        { key: 'biliDuration', label: '视频时长限制（秒）', type: 'number' },
+        { key: 'biliIntroLenLimit', label: '简介长度限制', type: 'number' },
+    ],
+    selects: [
+        { key: 'biliCDN', label: 'CDN选择', options: BILI_CDN_SELECT_LIST },
+        { key: 'biliDownloadMethod', label: '下载方式', options: BILI_DOWNLOAD_METHOD },
+        { key: 'biliResolution', label: '视频画质', options: BILI_RESOLUTION_LIST },
+    ]
+};
+
+// 默认配置
+const DEFAULT_CONFIG = {
+    biliSessData: '',
+    biliDuration: 480,
+    biliIntroLenLimit: 50,
+    biliDisplayCover: true,
+    biliDisplayInfo: true,
+    biliDisplayIntro: true,
+    biliDisplayOnline: true,
+    biliDisplaySummary: false,
+    biliUseBBDown: false,
+    biliCDN: 0,
+    biliDownloadMethod: 0,
+    biliResolution: 5
+};
 
 export default function Bili() {
-    const [config, setConfig] = useState({
-        biliSessData: '',
-        biliDuration: 480,
-        biliIntroLenLimit: 50,
-        biliDisplayCover: true,
-        biliDisplayInfo: true,
-        biliDisplayIntro: true,
-        biliDisplayOnline: true,
-        biliDisplaySummary: false,
-        biliUseBBDown: false,
-        biliCDN: 0,
-        biliDownloadMethod: 0,
-        biliResolution: 5
-    });
-
+    const [config, setConfig] = useState(DEFAULT_CONFIG);
     const [loading, setLoading] = useState(false);
 
-    // 读取配置
     useEffect(() => {
         const loadConfig = async () => {
             const yamlConfig = await readYamlConfig();
             if (yamlConfig) {
-                setConfig({
-                    biliSessData: yamlConfig.biliSessData || '',
-                    biliDuration: yamlConfig.biliDuration || 480,
-                    biliIntroLenLimit: yamlConfig.biliIntroLenLimit || 50,
-                    biliDisplayCover: yamlConfig.biliDisplayCover ?? true,
-                    biliDisplayInfo: yamlConfig.biliDisplayInfo ?? true,
-                    biliDisplayIntro: yamlConfig.biliDisplayIntro ?? true,
-                    biliDisplayOnline: yamlConfig.biliDisplayOnline ?? true,
-                    biliDisplaySummary: yamlConfig.biliDisplaySummary ?? false,
-                    biliUseBBDown: yamlConfig.biliUseBBDown ?? false,
-                    biliCDN: yamlConfig.biliCDN || 0,
-                    biliDownloadMethod: yamlConfig.biliDownloadMethod || 0,
-                    biliResolution: yamlConfig.biliResolution || 5
+                const newConfig = {};
+                Object.keys(DEFAULT_CONFIG).forEach(key => {
+                    newConfig[key] = yamlConfig[key] ?? DEFAULT_CONFIG[key];
                 });
+                setConfig(newConfig);
             }
         };
-
         loadConfig();
     }, []);
 
-    // 保存配置
     const handleSave = async () => {
         setLoading(true);
         try {
-            const success = await updateYamlConfig({
-                biliSessData: config.biliSessData,
-                biliDuration: config.biliDuration,
-                biliIntroLenLimit: config.biliIntroLenLimit,
-                biliDisplayCover: config.biliDisplayCover,
-                biliDisplayInfo: config.biliDisplayInfo,
-                biliDisplayIntro: config.biliDisplayIntro,
-                biliDisplayOnline: config.biliDisplayOnline,
-                biliDisplaySummary: config.biliDisplaySummary,
-                biliUseBBDown: config.biliUseBBDown,
-                biliCDN: config.biliCDN,
-                biliDownloadMethod: config.biliDownloadMethod,
-                biliResolution: config.biliResolution
-            });
-
+            const success = await updateYamlConfig(config);
             if (success) {
-                // 使用 daisyUI 的 toast 提示
                 document.getElementById('toast-success').classList.remove('hidden');
                 setTimeout(() => {
                     document.getElementById('toast-success').classList.add('hidden');
@@ -79,212 +77,67 @@ export default function Bili() {
         }
     };
 
-    // 重置配置
-    const handleReset = async () => {
-        const yamlConfig = await readYamlConfig();
-        if (yamlConfig) {
-            setConfig({
-                biliSessData: yamlConfig.biliSessData || '',
-                biliDuration: yamlConfig.biliDuration || 480,
-                biliIntroLenLimit: yamlConfig.biliIntroLenLimit || 50,
-                biliDisplayCover: yamlConfig.biliDisplayCover ?? true,
-                biliDisplayInfo: yamlConfig.biliDisplayInfo ?? true,
-                biliDisplayIntro: yamlConfig.biliDisplayIntro ?? true,
-                biliDisplayOnline: yamlConfig.biliDisplayOnline ?? true,
-                biliDisplaySummary: yamlConfig.biliDisplaySummary ?? false,
-                biliUseBBDown: yamlConfig.biliUseBBDown ?? false,
-                biliCDN: yamlConfig.biliCDN || 0,
-                biliDownloadMethod: yamlConfig.biliDownloadMethod || 0,
-                biliResolution: yamlConfig.biliResolution || 5
-            });
-        }
+    const handleConfigChange = (key, value) => {
+        setConfig(prev => ({ ...prev, [key]: value }));
     };
 
     return (
         <div className="p-6 mx-auto container">
-            {/* 成功提示 */}
             <Toast id="toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">Bilibili 配置</h2>
 
-                {/* 基础配置部分 */}
                 <div className="card bg-base-200 shadow-xl mb-6">
                     <div className="card-body">
                         <h3 className="card-title mb-4">基础配置</h3>
 
-                        {/* SESSDATA配置 */}
-                        <div className="form-control w-full mb-4">
-                            <label className="label">
-                                <span className="label-text">SESSDATA</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={config.biliSessData}
-                                onChange={(e) => setConfig({ ...config, biliSessData: e.target.value })}
-                                placeholder="请输入Bilibili SESSDATA"
-                                className="input input-bordered w-full"
-                            />
-                        </div>
-
-                        {/* 数值配置部分 */}
+                        {/* 输入框配置 */}
                         <div className="grid md:grid-cols-2 gap-4 mb-4">
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">视频时长限制（秒）</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={config.biliDuration}
-                                    onChange={(e) => setConfig({ ...config, biliDuration: parseInt(e.target.value) })}
-                                    className="input input-bordered"
+                            {BILI_CONFIG.inputs.map(item => (
+                                <ConfigInput
+                                    key={item.key}
+                                    label={item.label}
+                                    type={item.type}
+                                    value={config[item.key]}
+                                    onChange={(value) => handleConfigChange(item.key, value)}
+                                    placeholder={item.placeholder}
                                 />
-                            </div>
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">简介长度限制</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={config.biliIntroLenLimit}
-                                    onChange={(e) => setConfig({ ...config, biliIntroLenLimit: parseInt(e.target.value) })}
-                                    className="input input-bordered"
-                                />
-                            </div>
+                            ))}
                         </div>
 
-                        {/* 开关配置部分 */}
+                        {/* 开关配置 */}
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">显示封面</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliDisplayCover}
-                                        onChange={(e) => setConfig({ ...config, biliDisplayCover: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">显示视频信息</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliDisplayInfo}
-                                        onChange={(e) => setConfig({ ...config, biliDisplayInfo: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">显示简介</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliDisplayIntro}
-                                        onChange={(e) => setConfig({ ...config, biliDisplayIntro: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">显示在线人数</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliDisplayOnline}
-                                        onChange={(e) => setConfig({ ...config, biliDisplayOnline: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">显示总结</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliDisplaySummary}
-                                        onChange={(e) => setConfig({ ...config, biliDisplaySummary: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">使用BBDown</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.biliUseBBDown}
-                                        onChange={(e) => setConfig({ ...config, biliUseBBDown: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
+                            {BILI_CONFIG.toggles.map(item => (
+                                <ConfigToggle
+                                    key={item.key}
+                                    label={item.label}
+                                    checked={config[item.key]}
+                                    onChange={(value) => handleConfigChange(item.key, value)}
+                                />
+                            ))}
                         </div>
 
-                        {/* 下拉选择配置部分 */}
+                        {/* 选择框配置 */}
                         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">CDN选择</span>
-                                </label>
-                                <select
-                                    className="select select-bordered"
-                                    value={config.biliCDN}
-                                    onChange={(e) => setConfig({ ...config, biliCDN: parseInt(e.target.value) })}>
-                                    {
-                                        BILI_CDN_SELECT_LIST.map(item => {
-                                            return (
-                                                <option value={ item.value }>{ item.label }</option>
-                                            )
-                                        })
-                                    }
-                                </select>
-                            </div>
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">下载方式</span>
-                                </label>
-                                <select
-                                    className="select select-bordered"
-                                    value={config.biliDownloadMethod}
-                                    onChange={(e) => setConfig({ ...config, biliDownloadMethod: parseInt(e.target.value) })}>
-                                    {
-                                        BILI_DOWNLOAD_METHOD.map(item => {
-                                            return (
-                                                <option value={ item.value }>{ item.label }</option>
-                                            )
-                                        })
-                                    }
-                                </select>
-                            </div>
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">视频画质</span>
-                                </label>
-                                <select
-                                    className="select select-bordered"
-                                    value={config.biliResolution}
-                                    onChange={(e) => setConfig({ ...config, biliResolution: parseInt(e.target.value) })}>
-                                    {
-                                        BILI_RESOLUTION_LIST.map(item => {
-                                            return (
-                                                <option value={ item.value }>{ item.label }</option>
-                                            )
-                                        })
-                                    }
-                                </select>
-                            </div>
+                            {BILI_CONFIG.selects.map(item => (
+                                <ConfigSelect
+                                    key={item.key}
+                                    label={item.label}
+                                    value={config[item.key]}
+                                    onChange={(value) => handleConfigChange(item.key, value)}
+                                    options={item.options}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>
 
-                {/* 保存按钮 */}
+                {/* 操作按钮 */}
                 <div className="flex justify-end gap-4">
                     <button
                         className="btn btn-ghost"
-                        onClick={handleReset}
+                        onClick={() => setConfig(DEFAULT_CONFIG)}
                         disabled={loading}
                     >
                         重置
@@ -299,5 +152,5 @@ export default function Bili() {
                 </div>
             </div>
         </div>
-    )
+    );
 }

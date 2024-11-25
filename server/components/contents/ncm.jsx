@@ -2,57 +2,85 @@ import { useState, useEffect } from 'react';
 import { NETEASECLOUD_QUALITY_LIST } from "../../../constants/constant.js";
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
 import Toast from "../toast.jsx";
+import { ConfigToggle, ConfigInput, ConfigSelect } from '../common/ConfigItem';
+
+// 定义配置项
+const NCM_CONFIG = {
+    textareas: [
+        {
+            key: 'neteaseCookie',
+            label: 'Cookie',
+            placeholder: '请输入网易云Cookie...'
+        }
+    ],
+    inputs: [
+        {
+            key: 'neteaseCloudAPIServer',
+            label: '自建API服务器地址',
+            type: 'text',
+            placeholder: '请输入API服务器地址...'
+        },
+        {
+            key: 'neteaseUserId',
+            label: '用户ID',
+            type: 'text',
+            placeholder: '网易云用户ID',
+            hint: '不要手动更改！'
+        },
+        {
+            key: 'songRequestMaxList',
+            label: '点歌最大列表数',
+            type: 'number'
+        }
+    ],
+    toggles: [
+        { key: 'useLocalNeteaseAPI', label: '使用自建API' },
+        { key: 'useNeteaseSongRequest', label: '开启点歌功能' },
+        { key: 'isSendVocal', label: '发送群语音' }
+    ],
+    selects: [
+        {
+            key: 'neteaseCloudAudioQuality',
+            label: '音频质量',
+            options: NETEASECLOUD_QUALITY_LIST
+        }
+    ]
+};
+
+// 默认配置
+const DEFAULT_CONFIG = {
+    useLocalNeteaseAPI: false,
+    useNeteaseSongRequest: false,
+    isSendVocal: true,
+    songRequestMaxList: 10,
+    neteaseCookie: '',
+    neteaseCloudAPIServer: '',
+    neteaseCloudAudioQuality: 'exhigh',
+    neteaseUserId: ''
+};
 
 export default function Ncm() {
-    const [config, setConfig] = useState({
-        useLocalNeteaseAPI: false,
-        useNeteaseSongRequest: false,
-        isSendVocal: true,
-        songRequestMaxList: 10,
-        neteaseCookie: '',
-        neteaseCloudAPIServer: '',
-        neteaseCloudAudioQuality: 'exhigh',
-        neteaseUserId: ''
-    });
-
+    const [config, setConfig] = useState(DEFAULT_CONFIG);
     const [loading, setLoading] = useState(false);
 
-    // 读取配置
     useEffect(() => {
         const loadConfig = async () => {
             const yamlConfig = await readYamlConfig();
             if (yamlConfig) {
-                setConfig({
-                    useLocalNeteaseAPI: yamlConfig.useLocalNeteaseAPI ?? false,
-                    useNeteaseSongRequest: yamlConfig.useNeteaseSongRequest ?? false,
-                    isSendVocal: yamlConfig.isSendVocal ?? true,
-                    songRequestMaxList: yamlConfig.songRequestMaxList || 10,
-                    neteaseCookie: yamlConfig.neteaseCookie || '',
-                    neteaseCloudAPIServer: yamlConfig.neteaseCloudAPIServer || '',
-                    neteaseCloudAudioQuality: yamlConfig.neteaseCloudAudioQuality || 'exhigh',
-                    neteaseUserId: yamlConfig.neteaseUserId || ''
+                const newConfig = {};
+                Object.keys(DEFAULT_CONFIG).forEach(key => {
+                    newConfig[key] = yamlConfig[key] ?? DEFAULT_CONFIG[key];
                 });
+                setConfig(newConfig);
             }
         };
-
         loadConfig();
     }, []);
 
-    // 保存配置
     const handleSave = async () => {
         setLoading(true);
         try {
-            const success = await updateYamlConfig({
-                useLocalNeteaseAPI: config.useLocalNeteaseAPI,
-                useNeteaseSongRequest: config.useNeteaseSongRequest,
-                isSendVocal: config.isSendVocal,
-                songRequestMaxList: config.songRequestMaxList,
-                neteaseCookie: config.neteaseCookie,
-                neteaseCloudAPIServer: config.neteaseCloudAPIServer,
-                neteaseCloudAudioQuality: config.neteaseCloudAudioQuality,
-                neteaseUserId: config.neteaseUserId
-            });
-
+            const success = await updateYamlConfig(config);
             if (success) {
                 document.getElementById('ncm-toast-success').classList.remove('hidden');
                 setTimeout(() => {
@@ -66,141 +94,79 @@ export default function Ncm() {
         }
     };
 
-    // 重置配置
-    const handleReset = async () => {
-        const yamlConfig = await readYamlConfig();
-        if (yamlConfig) {
-            setConfig({
-                useLocalNeteaseAPI: yamlConfig.useLocalNeteaseAPI ?? false,
-                useNeteaseSongRequest: yamlConfig.useNeteaseSongRequest ?? false,
-                isSendVocal: yamlConfig.isSendVocal ?? true,
-                songRequestMaxList: yamlConfig.songRequestMaxList || 10,
-                neteaseCookie: yamlConfig.neteaseCookie || '',
-                neteaseCloudAPIServer: yamlConfig.neteaseCloudAPIServer || '',
-                neteaseCloudAudioQuality: yamlConfig.neteaseCloudAudioQuality || 'exhigh',
-                neteaseUserId: yamlConfig.neteaseUserId || ''
-            });
-        }
+    const handleConfigChange = (key, value) => {
+        setConfig(prev => ({ ...prev, [key]: value }));
     };
 
     return (
         <div className="p-6 mx-auto container">
-            {/* 成功提示 */}
             <Toast id="ncm-toast-success" />
 
             <div className="max-w-5xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6">网易云音乐配置</h2>
 
-                {/* 基础配置部分 */}
                 <div className="card bg-base-200 shadow-xl mb-6">
                     <div className="card-body">
                         <h3 className="card-title mb-4">基础配置</h3>
 
-                        {/* 文本输入配置 */}
-                        <div className="space-y-4 mb-6">
-                            <div className="form-control w-full">
+                        {/* 文本域配置 */}
+                        {NCM_CONFIG.textareas.map(item => (
+                            <div key={item.key} className="form-control w-full mb-6">
                                 <label className="label">
-                                    <span className="label-text">Cookie</span>
+                                    <span className="label-text">{item.label}</span>
                                 </label>
                                 <textarea
-                                    value={config.neteaseCookie}
-                                    onChange={(e) => setConfig({ ...config, neteaseCookie: e.target.value })}
-                                    placeholder="请输入网易云Cookie..."
+                                    value={config[item.key]}
+                                    onChange={(e) => handleConfigChange(item.key, e.target.value)}
+                                    placeholder={item.placeholder}
                                     className="textarea textarea-bordered h-24"
                                 />
                             </div>
-                            <div className="form-control w-full">
-                                <label className="label">
-                                    <span className="label-text">自建API服务器地址</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={config.neteaseCloudAPIServer}
-                                    onChange={(e) => setConfig({ ...config, neteaseCloudAPIServer: e.target.value })}
-                                    placeholder="请输入API服务器地址..."
-                                    className="input input-bordered w-full"
-                                />
-                            </div>
-                            <div className="form-control w-full">
-                                <label className="label">
-                                    <span className="label-text">用户ID</span>
-                                    <span className="label-text-alt text-xs text-warning">不要手动更改！</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={config.neteaseUserId}
-                                    onChange={(e) => setConfig({ ...config, neteaseUserId: e.target.value })}
-                                    placeholder="网易云用户ID"
-                                    className="input input-bordered w-full"
-                                />
-                            </div>
+                        ))}
+
+                        {/* 输入框配置 */}
+                        <div className="space-y-4 mb-6">
+                            {NCM_CONFIG.inputs.map(item => (
+                                <div key={item.key} className="form-control w-full">
+                                    <ConfigInput
+                                        label={item.label}
+                                        type={item.type}
+                                        value={config[item.key]}
+                                        onChange={(value) => handleConfigChange(item.key, value)}
+                                        placeholder={item.placeholder}
+                                    />
+                                    {item.hint && (
+                                        <span className="text-xs text-warning mt-1">
+                                            {item.hint}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
                         </div>
 
-                        {/* 开关配置部分 */}
+                        {/* 开关配置 */}
                         <div className="grid md:grid-cols-2 gap-4 mb-6">
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">使用自建API</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.useLocalNeteaseAPI}
-                                        onChange={(e) => setConfig({ ...config, useLocalNeteaseAPI: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">开启点歌功能</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.useNeteaseSongRequest}
-                                        onChange={(e) => setConfig({ ...config, useNeteaseSongRequest: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
-                            <div className="form-control">
-                                <label className="label cursor-pointer">
-                                    <span className="label-text">发送群语音</span>
-                                    <input
-                                        type="checkbox"
-                                        checked={config.isSendVocal}
-                                        onChange={(e) => setConfig({ ...config, isSendVocal: e.target.checked })}
-                                        className="toggle toggle-primary"
-                                    />
-                                </label>
-                            </div>
+                            {NCM_CONFIG.toggles.map(item => (
+                                <ConfigToggle
+                                    key={item.key}
+                                    label={item.label}
+                                    checked={config[item.key]}
+                                    onChange={(value) => handleConfigChange(item.key, value)}
+                                />
+                            ))}
                         </div>
 
-                        {/* 其他配置 */}
+                        {/* 选择框配置 */}
                         <div className="grid md:grid-cols-2 gap-4">
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">点歌最大列表数</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={config.songRequestMaxList}
-                                    onChange={(e) => setConfig({ ...config, songRequestMaxList: parseInt(e.target.value) })}
-                                    className="input input-bordered"
+                            {NCM_CONFIG.selects.map(item => (
+                                <ConfigSelect
+                                    key={item.key}
+                                    label={item.label}
+                                    value={config[item.key]}
+                                    onChange={(value) => handleConfigChange(item.key, value)}
+                                    options={item.options}
                                 />
-                            </div>
-                            <div className="form-control">
-                                <label className="label">
-                                    <span className="label-text">音频质量</span>
-                                </label>
-                                <select
-                                    className="select select-bordered"
-                                    value={config.neteaseCloudAudioQuality}
-                                    onChange={(e) => setConfig({ ...config, neteaseCloudAudioQuality: e.target.value })}>
-                                    {NETEASECLOUD_QUALITY_LIST.map(option => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -209,7 +175,7 @@ export default function Ncm() {
                 <div className="flex justify-end gap-4">
                     <button
                         className="btn btn-ghost"
-                        onClick={handleReset}
+                        onClick={() => setConfig(DEFAULT_CONFIG)}
                         disabled={loading}
                     >
                         重置

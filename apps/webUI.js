@@ -29,9 +29,7 @@ export class WebUI extends plugin {
         this.isOpenWebUI = this.toolsConfig.isOpenWebUI;
     }
 
-    async rWebSwitch(e) {
-        config.updateField("tools", "isOpenWebUI", !this.isOpenWebUI);
-        const realIsOpenWebUI = config.getConfig("tools").isOpenWebUI;
+    async initData(e, realIsOpenWebUI) {
         if (realIsOpenWebUI) {
             Promise.all([getBotStatus(e), getBotVersionInfo(e), getBotLoginInfo(e)]).then(values => {
                 const status = values[0].data;
@@ -44,13 +42,20 @@ export class WebUI extends plugin {
                 })
             })
         }
+    }
+
+    async rWebSwitch(e) {
+        config.updateField("tools", "isOpenWebUI", !this.isOpenWebUI);
+        const realIsOpenWebUI = config.getConfig("tools").isOpenWebUI;
+        // 初始化数据
+        await this.initData(e, realIsOpenWebUI);
         // 这里有点延迟，需要写反
-        e.reply(`R插件 WebUI：${ realIsOpenWebUI ? "开启\n🚀 请重启以启动 WebUI" : "关闭" }`);
+        e.reply(`R插件可视化面板：${ realIsOpenWebUI ? "✅已开启" : "❌已关闭" }，重启后生效`);
         return true;
     }
 
     async rWebStatus(e) {
-        e.reply(`R插件 WebUI：${ this.toolsConfig.isOpenWebUI ? "开启" : "关闭" }`);
+        e.reply(`R插件可视化面板：${ this.toolsConfig.isOpenWebUI ? "✅开启" : "❌关闭" }`);
         return true;
     }
 }
