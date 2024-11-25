@@ -27,6 +27,7 @@ import {
     TWITTER_BEARER_TOKEN,
     XHS_NO_WATERMARK_HEADER
 } from "../constants/constant.js";
+import { REDIS_YUNZAI_RESOLVE_CONTROLLER, RESOLVE_CONTROLLER_NAME_ENUM } from "../constants/resolve.js";
 import {
     ANIME_SERIES_SEARCH_LINK,
     ANIME_SERIES_SEARCH_LINK2,
@@ -99,7 +100,7 @@ import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { deepSeekChat, llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
+import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
@@ -341,6 +342,11 @@ export class tools extends plugin {
 
     // 抖音解析
     async douyin(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.douyin))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.douyin } 已拦截`);
+            return true;
+        }
         const urlRex = /(http:\/\/|https:\/\/)(v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/;
         // 检测无效链接，例如：v.douyin.com
         if (!urlRex.test(e.msg)) {
@@ -610,6 +616,11 @@ export class tools extends plugin {
 
     // tiktok解析
     async tiktok(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.tiktok))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.tiktok } 已拦截`);
+            return true;
+        }
         // 判断海外
         const isOversea = await this.isOverseasServer();
         // 如果不是海外用户且没有梯子直接返回
@@ -712,6 +723,11 @@ export class tools extends plugin {
 
     // B 站解析
     async bili(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.bili))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.bili } 已拦截`);
+            return true;
+        }
         const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
         const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
@@ -1232,6 +1248,11 @@ export class tools extends plugin {
 
     // 使用现有api解析小蓝鸟
     async twitter_x(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.twitter_x))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.twitter_x } 已拦截`);
+            return true;
+        }
         if (!(await this.isTrustUser(e.user_id))) {
             e.reply("你没有权限使用此命令");
             return;
@@ -1297,6 +1318,11 @@ export class tools extends plugin {
 
     // acfun解析
     async acfun(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.acfun))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.acfun } 已拦截`);
+            return true;
+        }
         const path = `${ this.getCurDownloadPath(e) }/temp/`;
         await mkdirIfNotExists(path);
 
@@ -1324,6 +1350,11 @@ export class tools extends plugin {
 
     // 小红书解析
     async xhs(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.xhs))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.xhs } 已拦截`);
+            return true;
+        }
         // 正则说明：匹配手机链接、匹配小程序、匹配PC链接
         let msgUrl =
             /(http:|https:)\/\/(xhslink|xiaohongshu).com\/[A-Za-z\d._?%&+\-=\/#@]*/.exec(
@@ -1447,6 +1478,11 @@ export class tools extends plugin {
 
     // 波点音乐解析
     async bodianMusic(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.bodianMusic))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.bodianMusic } 已拦截`);
+            return true;
+        }
         // 音频例子：https://h5app.kuwo.cn/m/bodian/playMusic.html?uid=3216773&musicId=192015898&opusId=&extendType=together
         // 视频例子：https://h5app.kuwo.cn/m/bodian/play.html?uid=3216773&mvId=118987&opusId=770096&extendType=together
         const id =
@@ -1644,6 +1680,11 @@ export class tools extends plugin {
 
     // 网易云解析
     async netease(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.netease))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.netease } 已拦截`);
+            return true;
+        }
         let message =
             e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         // 处理短号，此时会变成y.music.163.com
@@ -1901,6 +1942,11 @@ export class tools extends plugin {
 
     // 微博解析
     async weibo(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.weibo))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.weibo } 已拦截`);
+            return true;
+        }
         let weiboId;
         const weiboUrl = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
         // 对已知情况进行判断
@@ -1994,6 +2040,11 @@ export class tools extends plugin {
      * @return {Promise<void>}
      */
     async general(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.general))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.general } 已拦截`);
+            return true;
+        }
         try {
             const adapter = await GeneralLinkAdapter.create(e.msg);
             e.reply(`${ this.identifyPrefix }识别：${ adapter.name }${ adapter.desc ? `, ${ adapter.desc }` : '' }`);
@@ -2026,6 +2077,11 @@ export class tools extends plugin {
 
     // 油管解析
     async sy2b(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.sy2b))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.sy2b } 已拦截`);
+            return true;
+        }
         const timeRange = ytbFormatTime(this.youtubeClipTime);
         const isOversea = await this.isOverseasServer();
         if (!isOversea && !(await testProxy(this.proxyAddr, this.proxyPort))) {
@@ -2098,6 +2154,11 @@ export class tools extends plugin {
 
     // 米游社
     async miyoushe(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.miyoushe))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.miyoushe } 已拦截`);
+            return true;
+        }
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         let msg = /(?:https?:\/\/)?(m|www)\.miyoushe\.com\/[A-Za-z\d._?%&+\-=\/#]*/.exec(url)?.[0];
         const id = /\/(\d+)$/.exec(msg)?.[0].replace("\/", "");
@@ -2169,6 +2230,11 @@ export class tools extends plugin {
 
     // 微视
     async weishi(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.weishi))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.weishi } 已拦截`);
+            return true;
+        }
         let url = e.msg;
         const urlRegex = /https?:\/\/video\.weishi\.qq\.com\/\S+/g;
         // 执行匹配
@@ -2216,6 +2282,11 @@ export class tools extends plugin {
     }
 
     async zuiyou(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.zuiyou))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.zuiyou } 已拦截`);
+            return true;
+        }
         // #最右#分享一条有趣的内容给你，不好看算我输。请戳链接>>https://share.xiaochuankeji.cn/hybrid/share/post?pid=365367131&zy_to=applink&share_count=1&m=dc114ccc8e55492642f6a702b510c1f6&d=9e18ca2dace030af656baea96321e0ea353fe5c46097a7f3962b93f995641e962796dd5faa231feea5531ac65547045f&app=zuiyou&recommend=r0&name=n0&title_type=t0
         let msg = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
         const url = /(?:https?:\/\/)?(share|share.xiaochuankeji)\.cn\/[A-Za-z\d._?%&+\-=\/#]*/.exec(msg)[0];
@@ -2279,6 +2350,11 @@ export class tools extends plugin {
     }
 
     async freyr(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.freyr))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.freyr } 已拦截`);
+            return true;
+        }
         // https://music.apple.com/cn/album/hectopascal-from-yagate-kimi-ni-naru-piano-arrangement/1468323115?i=1468323724
         // 过滤参数
         const message = e.msg.replace("&ls", "");
@@ -2415,6 +2491,11 @@ export class tools extends plugin {
 
     // q q m u s i c 解析
     async qqMusic(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.qqMusic))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.qqMusic } 已拦截`);
+            return true;
+        }
         // case1:　Taylor Swift/Bleachers《Anti-Hero (Feat. Bleachers) (Explicit)》 https://c6.y.qq.com/base/fcgi-bin/u?__=lg19lFgQerbo @QQ音乐
         /** case 2:
          * {"app":"com.tencent.structmsg","config":{"ctime":1722497864,"forward":1,"token":"987908ab4a1c566d3645ef0ca52a162a","type":"normal"},"extra":{"app_type":1,"appid":100497308,"uin":542716863},"meta":{"news":{"action":"","android_pkg_name":"","app_type":1,"appid":100497308,"ctime":1722497864,"desc":"Taylor Swift/Bleachers","jumpUrl":"https://i.y.qq.com/v8/playsong.html?hosteuin=7KvA7i6sNeCi&sharefrom=gedan&from_id=1674373010&from_idtype=10014&from_name=(7rpl)&songid=382775503&songmid=&type=0&platform=1&appsongtype=1&_wv=1&source=qq&appshare=iphone&media_mid=000dKYJS3KCzpu&ADTAG=qfshare","preview":"https://pic.ugcimg.cn/1070bf5a6962b75263eee1404953c9b2/jpg1","source_icon":"https://p.qpic.cn/qqconnect/0/app_100497308_1626060999/100?max-age=2592000&t=0","source_url":"","tag":"QQ音乐","title":"Anti-Hero (Feat. Bleachers) (E…","uin":542716863}},"prompt":"[分享]Anti-Hero (Feat. Bleachers) (E…","ver":"0.0.0.1","view":"news"}
@@ -2461,6 +2542,11 @@ export class tools extends plugin {
 
     // 汽水音乐
     async qishuiMusic(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.qishuiMusic))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.qishuiMusic } 已拦截`);
+            return true;
+        }
         const normalRegex = /^(.*?)\s*https?:\/\//;
         const musicInfo = normalRegex.exec(e.msg)?.[1].trim().replace("@汽水音乐", "");
         logger.info(`[R插件][qishuiMusic] 识别音乐为：${ musicInfo }`);
@@ -2483,6 +2569,11 @@ export class tools extends plugin {
 
     // 小飞机下载
     async aircraft(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.aircraft))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.aircraft } 已拦截`);
+            return true;
+        }
         if (!(await this.isTrustUser(e.user_id))) {
             e.reply("你没有权限使用此命令");
             return;
@@ -2539,6 +2630,11 @@ export class tools extends plugin {
 
     // 贴吧
     async tieba(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.tieba))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.tieba } 已拦截`);
+            return true;
+        }
         // 提取链接和ID
         const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(e.msg)?.[0];
         const id = /\/p\/([A-Za-z0-9]+)/.exec(msg)?.[1];
@@ -3020,6 +3116,26 @@ export class tools extends plugin {
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${ err }`);
         }
+    }
+
+    /**
+     * 判断是否启用解析
+     * @param resolveName
+     * @returns {Promise<boolean>}
+     */
+    async isEnableResolve(resolveName) {
+        const controller = await redisExistAndGetKey(REDIS_YUNZAI_RESOLVE_CONTROLLER);
+        // 如果不存在说明用户没有启动过webui，那么直接放行
+        if (controller == null) {
+            return true;
+        }
+        const foundItem = controller.find(item => item.label === resolveName);
+        // 未知解析，可能是写错，放行
+        if (!foundItem) {
+            logger.warn(`[R插件][启用解析] 未知解析，可能存在写错`);
+            return true;
+        }
+        return foundItem.value === 1;
     }
 
     /**

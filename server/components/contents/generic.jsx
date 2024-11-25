@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { readYamlConfig, updateYamlConfig } from '../../utils/yamlHelper';
+import { ConfigInput, ConfigSelect, ConfigToggle } from '../common/ConfigItem';
+import TagSelector from "../TagSelector.jsx";
 import Toast from "../toast.jsx";
-import { ConfigToggle, ConfigInput, ConfigSelect } from '../common/ConfigItem';
-import { AI_MODEL_LIST } from "../../../constants/constant.js";
 
 // 定义配置项
 const GENERIC_CONFIG = {
@@ -146,6 +146,8 @@ const DEFAULT_CONFIG = Object.values(GENERIC_CONFIG).reduce((acc, group) => {
 export default function Generic() {
     const [config, setConfig] = useState(DEFAULT_CONFIG);
     const [loading, setLoading] = useState(false);
+    const [resolveOptions, setResolveOptions] = useState([]);
+    const [selectedResolveTags, setSelectedResolveTags] = useState([]);
 
     useEffect(() => {
         const loadConfig = async () => {
@@ -159,6 +161,25 @@ export default function Generic() {
             }
         };
         loadConfig();
+    }, []);
+
+    useEffect(() => {
+        // 获取解析控制器配置
+        const fetchResolveControl = async () => {
+            try {
+                const response = await fetch('/r/api/resolveControl');
+                const data = await response.json();
+                const enabledTags = data
+                    .filter(item => item.value === 1)
+                    .map(item => item.label);
+                setSelectedResolveTags(enabledTags);
+                setResolveOptions(data.map(item => item.label));
+            } catch (error) {
+                console.error('获取解析控制器配置失败:', error);
+            }
+        };
+
+        fetchResolveControl();
     }, []);
 
     const handleSave = async () => {
@@ -180,6 +201,24 @@ export default function Generic() {
 
     const handleConfigChange = (key, value) => {
         setConfig(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleResolveTagsChange = async (tags) => {
+        try {
+            const response = await fetch('/r/api/resolveControl', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ selectedTags: tags }),
+            });
+
+            if (response.ok) {
+                setSelectedResolveTags(tags);
+            }
+        } catch (error) {
+            console.error('更新解析控制器配置失败:', error);
+        }
     };
 
     // 渲染输入框组
@@ -217,6 +256,14 @@ export default function Generic() {
 
                         {/* 基础配置 */}
                         {renderInputGroup(GENERIC_CONFIG.basicInputs)}
+
+                        {/* 解析控制 */}
+                        <h4 className="font-semibold mt-6 mb-4">全局解析控制</h4>
+                        <TagSelector
+                            options={resolveOptions}
+                            initialTags={selectedResolveTags}
+                            onChange={handleResolveTagsChange}
+                        />
 
                         {/* 代理配置 */}
                         <h4 className="font-semibold mt-6 mb-4">代理设置</h4>

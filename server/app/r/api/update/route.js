@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { REDIS_UPDATE_PATH, REDIS_UPDATE_STATUS } from "../../../../constants/redis.js";
 import { redis } from "../../../../utils/redis.js";
 
 const execAsync = promisify(exec);
@@ -20,7 +21,7 @@ function handleGitError(error, stderr) {
     if (error.message.includes('Timed out')) {
         return '连接超时，请检查网络后重试';
     }
-    if (error.message.includes('Could not resolve host')) {
+    if (error.message.includes('Could not resolveControl host')) {
         return '无法解析主机地址，请检查网络';
     }
     if (error.message.includes('Permission denied')) {
@@ -60,8 +61,8 @@ async function cleanupUpdate(tempDir) {
         // 清理临时文件
         await fs.rm(tempDir, { recursive: true, force: true });
         // 清理Redis中的更新状态
-        await redis.del('rconsole:update:status');
-        await redis.del('rconsole:update:paths');
+        await redis.del(REDIS_UPDATE_STATUS);
+        await redis.del(REDIS_UPDATE_PATH);
         console.log('清理完成');
     } catch (error) {
         console.error('清理失败:', error);
@@ -77,7 +78,7 @@ export async function GET(req) {
 
         // 如果是检查请求
         if (isCheck) {
-            const updateStatus = await redis.get('rconsole:update:status');
+            const updateStatus = await redis.get(REDIS_UPDATE_STATUS);
             return new Response(JSON.stringify({
                 needsRestore: updateStatus === 'restoring'
             }), {
@@ -87,8 +88,8 @@ export async function GET(req) {
 
         // 如果是恢复请求
         if (isRestore) {
-            const updateStatus = await redis.get('rconsole:update:status');
-            const paths = JSON.parse(await redis.get('rconsole:update:paths') || '{}');
+            const updateStatus = await redis.get(REDIS_UPDATE_STATUS);
+            const paths = JSON.parse(await redis.get(REDIS_UPDATE_PATH) || '{}');
 
             if (updateStatus === 'restoring' && paths.tempDir && paths.configDir) {
                 try {
@@ -123,10 +124,10 @@ export async function GET(req) {
         const configDir = path.join(projectRoot, 'config');
 
         // 检查是否有未完成的更新
-        const updateStatus = await redis.get('rconsole:update:status');
+        const updateStatus = await redis.get(REDIS_UPDATE_STATUS);
         if (updateStatus === 'restoring') {
             // 如果有未完成的更新，尝试恢复
-            const paths = JSON.parse(await redis.get('rconsole:update:paths') || '{}');
+            const paths = JSON.parse(await redis.get(REDIS_UPDATE_PATH) || '{}');
             if (paths.tempDir && paths.configDir) {
                 try {
                     await copyConfig(paths.tempDir, paths.configDir);
@@ -140,11 +141,11 @@ export async function GET(req) {
         console.log('开始新的更新流程');
 
         // 保存路径信息到Redis
-        await redis.set('rconsole:update:paths', JSON.stringify({
+        await redis.set(REDIS_UPDATE_PATH, JSON.stringify({
             tempDir,
             configDir
         }));
-        await redis.set('rconsole:update:status', 'started');
+        await redis.set(REDIS_UPDATE_STATUS, 'started');
 
         // 确保临时目录存在
         await ensureDirectory(tempDir);
@@ -156,7 +157,7 @@ export async function GET(req) {
             await copyConfig(configDir, tempDir);
             configBackedUp = true;
             console.log('配置文件备份成功');
-            await redis.set('rconsole:update:status', 'backed_up');
+            await redis.set(REDIS_UPDATE_STATUS, 'backed_up');
         } catch (error) {
             console.log('无配置文件需要备份或备份失败:', error.message);
         }
@@ -169,7 +170,7 @@ export async function GET(req) {
             }
 
             // 标记状态为需要恢复
-            await redis.set('rconsole:update:status', 'restoring');
+            await redis.set(REDIS_UPDATE_STATUS, 'restoring');
 
             console.log('执行git pull...');
             const { stdout } = await execAsync(`git -C "${projectRoot}" pull --no-rebase`);
@@ -225,7 +226,7 @@ export async function GET(req) {
         console.error('更新过程出错:', error);
 
         // 确保清理所有临时状态
-        const paths = JSON.parse(await redis.get('rconsole:update:paths') || '{}');
+        const paths = JSON.parse(await redis.get(REDIS_UPDATE_PATH) || '{}');
         if (paths.tempDir) {
             await cleanupUpdate(paths.tempDir);
         }

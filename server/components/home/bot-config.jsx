@@ -80,7 +80,7 @@ export function BotConfig() {
                         </div>
                         <div className="flex gap-2">
                             <button
-                                className={`btn btn-primary ${updating ? 'loading' : ''}`}
+                                className={`btn btn-ghost ${updating ? 'loading' : ''}`}
                                 onClick={() => handleUpdate(false)}
                                 disabled={updating}>
                                 普通更新

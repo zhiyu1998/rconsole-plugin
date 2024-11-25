@@ -116,7 +116,7 @@ async function downloadM3u8Videos(m3u8FullUrls, outputFolderName) {
         });
     });
     /** 写入下载链接列表文件 */
-    // fs.writeFileSync(path.resolve(outPath, "urls.txt"), str下载参数文件);
+    // fs.writeFileSync(path.resolveControl(outPath, "urls.txt"), str下载参数文件);
     return Promise.all(strDownloadParamFiles);
 }
 
