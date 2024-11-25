@@ -136,6 +136,8 @@ source ~/.zshrc   # 如果你使用 zsh
 
 2. 查看机器人发送给你的私信地址，重启 Yunzai 后即可看到
 
+![PixPin_2024-11-25_20-08-57.png](https://s2.loli.net/2024/11/25/VQeCRZ7ojvSqBzm.png)
+
 3. 通过 `#rws` 可以查看 WebUI的状态
 
 ### 🍏 Apple Music 和 Spotify 使用说明
