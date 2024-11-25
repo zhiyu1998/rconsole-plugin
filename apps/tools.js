@@ -1913,10 +1913,10 @@ export class tools extends plugin {
         });
         // const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
+        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.url ?? vipMusicData.data?.music;
         const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song_name ?? vipMusicData.data?.title;
-        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.song_singer ?? vipMusicData.data?.singer;
+        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song ?? vipMusicData.data?.title;
+        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.singer ?? vipMusicData.data?.singer;
         const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
         if (musicType === "网易云音乐") {
             musicInfo.size = id;

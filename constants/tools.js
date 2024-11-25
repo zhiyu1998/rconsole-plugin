@@ -207,10 +207,10 @@ export const NETEASE_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php
 
 /**
  * 下载VIP的临时接口2
- * 备用：https://api.lolimi.cn/API/qqdg/?word={}&n=1
+ * 备用：https://www.hhlqilongzhu.cn/api/dg_qqmusic.php?gm={}&n=1&type=json
  * @type {string}
  */
-export const QQ_MUSIC_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_qqmusic.php?gm={}&n=1&type=json"
+export const QQ_MUSIC_TEMP_API = "https://api.lolimi.cn/API/qqdg/?word={}&n=1"
 
 /**
  * 下载VIP的临时接口3
