@@ -1,3 +1,5 @@
+import os from "os";
+
 /**
  * 将只有 text 类型的数组转换为原生的 {Bot.makeForwardMsg}
  * @param e
@@ -151,4 +153,17 @@ export async function getBotStatus(e) {
  */
 export async function getBotVersionInfo(e) {
     return await e.bot.sendApi("get_version_info");
+}
+
+/**
+ * 发送私聊消息
+ * @param e
+ * @param message
+ * @returns {Promise<void>}
+ */
+export async function sendPrivateMsg(e, message) {
+    e.bot.sendApi("send_private_msg", {
+        user_id: e.user_id,
+        message: message,
+    })
 }

@@ -1,7 +1,8 @@
 import { REDIS_YUNZAI_WEBUI } from "../constants/constant.js";
 import config from "../model/config.js";
 import { redisSetKey } from "../utils/redis-util.js";
-import { getBotLoginInfo, getBotStatus, getBotVersionInfo } from "../utils/yunzai-util.js";
+import { getBotLoginInfo, getBotStatus, getBotVersionInfo, sendPrivateMsg } from "../utils/yunzai-util.js";
+import os from "os";
 
 export class WebUI extends plugin {
     constructor() {
@@ -51,6 +52,13 @@ export class WebUI extends plugin {
         await this.initData(e, realIsOpenWebUI);
         // 这里有点延迟，需要写反
         e.reply(`R插件可视化面板：${ realIsOpenWebUI ? "✅已开启" : "❌已关闭" }，重启后生效`);
+        if (realIsOpenWebUI) {
+            const networkInterfaces = os.networkInterfaces();
+            const ipAddress = Object.values(networkInterfaces)
+                .flat()
+                .filter(detail => detail.family === 'IPv4' && !detail.internal)[0].address;
+            await sendPrivateMsg(e, `R插件可视化面板地址：${ ipAddress }:4016`);
+        }
         return true;
     }
 
