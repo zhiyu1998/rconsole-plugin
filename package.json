@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "cd server && next dev -p 4016",
+    "dev6": "cd server && HOST=:: next dev -p 4016",
     "start": "cd server && next start -p 4016",
     "build": "cd server && next build"
   },

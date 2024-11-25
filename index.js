@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "path";
 import config from "./model/config.js";
+import { constructPublicIPsMsg } from "./utils/network.js";
 import { startNextJs } from "./utils/start-nextjs.js";
 if (!global.segment) {
     global.segment = (await import("oicq")).segment
@@ -41,7 +42,8 @@ for (let i in files) {
 
 // 检查是否启动 webui
 if (isOpenWebUI) {
-    startNextJs('dev')
+    startNextJs('dev');
+    logger.info(constructPublicIPsMsg());
 }
 
 export { apps };

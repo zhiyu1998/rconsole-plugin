@@ -1,4 +1,5 @@
 import { spawn } from 'child_process';
+import { hasIPv6Only } from "./network.js";
 
 logger.mark(`[R插件][WebUI], 父进程 PID: ${process.pid}`);
 
@@ -6,9 +7,13 @@ let nextjsProcess = null;
 
 // 启动子进程运行 Next.js
 export const startNextJs = (mode = 'start') => {
-    const script = mode === 'start' ? 'start' : 'dev';
+    let script = mode === 'start' ? 'start' : 'dev';
 
     logger.info(logger.yellow(`[R插件][WebUI监测]，启动 WebUI ${mode} 进程...`));
+
+    if (hasIPv6Only()) {
+        script = 'dev6';
+    }
 
     nextjsProcess = spawn('pnpm', ['run', script], {
         cwd: './plugins/rconsole-plugin', // 指定工作目录
