@@ -1385,7 +1385,7 @@ export class tools extends plugin {
                 // 一般情况下不会出现问题就使用这个正则
                 id = /noteId=(\w+)/.exec(uri)?.[1] ?? verify?.[1];
                 // 提取 xsec_source 和 xsec_token 参数
-                xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
+                xsecSource = parsedUrl.searchParams.get("xsec_source") || "pc_feed";
                 xsecToken = parsedUrl.searchParams.get("xsec_token");
             });
         } else {
@@ -1398,7 +1398,7 @@ export class tools extends plugin {
             const parsedUrl = new URL(xhsUrlMatch[0]);
             id = /explore\/(\w+)/.exec(msgUrl)?.[1] || /discovery\/item\/(\w+)/.exec(msgUrl)?.[1];
             // 提取 xsec_source 和 xsec_token 参数
-            xsecSource = parsedUrl.searchParams.get("xsec_source") ?? "pc_feed";
+            xsecSource = parsedUrl.searchParams.get("xsec_source") || "pc_feed";
             xsecToken = parsedUrl.searchParams.get("xsec_token");
         }
         const downloadPath = `${ this.getCurDownloadPath(e) }`;
