@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-11-07T03:16:09.945Z</updated>
+    <updated>2024-11-25T12:07:22.190Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -148,6 +148,18 @@ export PATH=&quot;/home/YtDlpHome:$PATH&quot;
 source ~/.bashrc  # 如果你使用 bash
 source ~/.zshrc   # 如果你使用 zsh
 </code></pre>
+<h3>🚀 WebUI启动方法</h3>
+<ol>
+<li>
+<p>在群里发送 <code>#rwss</code> 以构建和启动网页：</p>
+</li>
+<li>
+<p>查看机器人发送给你的私信地址，重启 Yunzai 后即可看到</p>
+</li>
+<li>
+<p>通过 <code>#rws</code> 可以查看 WebUI的状态</p>
+</li>
+</ol>
 <h3>🍏 Apple Music 和 Spotify 使用说明</h3>
 <p><code>AM解析</code>和<code>Spotify解析</code>需要使用两个依赖<code>freyr</code>、<code>atomicparsley</code>，现在只以Debian系统为例：</p>
 <pre><code class="language-shell">npm install -g freyr
@@ -333,36 +345,6 @@ git clone -b 1.6.7-lts https://gitee.com/kyrzy0416/rconsole-plugin.git
 <blockquote>
 <p>2024/2/26 目前的替代方案：使用第三方解析，但是无法解析组图，只能解析单个图片，望周知！</p>
 </blockquote>
-<h3>☀️ 拉格朗日配置</h3>
-<p>使用拉格朗日作为驱动的同学要进行两步：</p>
-<ol>
-<li>配置文件，将拉格朗日的配置文件<code>appsettings.json</code>中<code>Implementations</code>加入一个正向连接<code>ForwardWebSocket</code><br>
-，如（最好是9091，这样就不用改tools配置文件）：</li>
-</ol>
-<pre><code class="language-yaml">&quot;Implementations&quot;: [
-  {
-    &quot;Type&quot;: &quot;ReverseWebSocket&quot;,
-    &quot;Host&quot;: &quot;127.0.0.1&quot;,
-    &quot;Port&quot;: 9090,
-    &quot;Suffix&quot;: &quot;/onebot/v11/&quot;,
-    &quot;ReconnectInterval&quot;: 5000,
-    &quot;HeartBeatInterval&quot;: 5000,
-    &quot;AccessToken&quot;: &quot;&quot;
-  },
-  {
-    &quot;Type&quot;: &quot;ForwardWebSocket&quot;,
-    &quot;Host&quot;: &quot;127.0.0.1&quot;,
-    &quot;Port&quot;: 9091,
-    &quot;HeartBeatInterval&quot;: 5000,
-    &quot;HeartBeatEnable&quot;: true,
-    &quot;AccessToken&quot;: &quot;&quot;
-  }
-]
-</code></pre>
-<ol start="2">
-<li>在任意群里发送<code>#设置拉格朗日</code>，转换一下视频发送方式即可</li>
-</ol>
-<p><img src="https://s2.loli.net/2024/08/19/G5A72aojsUezKg1.webp" alt=""></p>
 <h3>🗂️ 微信文章总结 （完全免费总结）</h3>
 <p>官方Kimi API 暂时没有看到可以联网搜索的选项，所以选用开源的<a href="https://github.com/LLM-Red-Team/kimi-free-api">kimi-free-api</a></p>
 <ol>
