@@ -11,6 +11,7 @@ export const startNextJs = (mode = 'start') => {
 
     logger.info(logger.yellow(`[R插件][WebUI监测]，启动 WebUI ${mode} 进程...`));
 
+    // 判断是不是只有ipv6地址
     if (hasIPv6Only()) {
         script = 'dev6';
     }

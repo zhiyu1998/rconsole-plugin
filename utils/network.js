@@ -86,6 +86,10 @@ export function getPublicIPs() {
     return publicIPs;
 }
 
+/**
+ * 构造内网、公网消息
+ * @returns {`R插件可视化面板内网地址：${string}:4016`}
+ */
 export function constructPublicIPsMsg() {
     const networkInterfaces = os.networkInterfaces();
     const ipAddress = Object.values(networkInterfaces)
