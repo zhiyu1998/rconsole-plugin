@@ -1,8 +1,8 @@
+import os from "os";
 import { REDIS_YUNZAI_WEBUI } from "../constants/constant.js";
 import config from "../model/config.js";
 import { redisSetKey } from "../utils/redis-util.js";
 import { getBotLoginInfo, getBotStatus, getBotVersionInfo, sendPrivateMsg } from "../utils/yunzai-util.js";
-import os from "os";
 
 export class WebUI extends plugin {
     constructor() {
@@ -40,8 +40,8 @@ export class WebUI extends plugin {
                     ...status,
                     ...versionInfo,
                     ...loginInfo
-                })
-            })
+                });
+            });
         }
     }
 
