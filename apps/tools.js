@@ -756,7 +756,7 @@ export class tools extends plugin {
         }
         // 直播间分享
         // logger.info(url)
-        if (url.includes("live")) {
+        if (url.includes("live.bilibili.com")) {
             // 提取直播间id
             const idPattern = /\/(\d+)$/;
             const parsedUrl = new URL(url);
@@ -783,6 +783,7 @@ export class tools extends plugin {
                     `${ tags ? `🔖 标签：${ tags }` : '' }`,
                     `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
                     `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
+                    `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
                 ].filter(item => item.trim() !== "").join("\n")
             ]);
             const streamData = await this.getBiliStream(streamId);
