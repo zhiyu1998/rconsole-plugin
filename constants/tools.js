@@ -10,7 +10,7 @@ export const BILI_SUMMARY = "https://api.bilibili.com/x/web-interface/view/concl
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/videostream_url.md
  * @type {string}
  */
-export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/playurl?cid={cid}&bvid={bvid}&qn={qn}&fnval=16"
+export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/wbi/playurl?cid={cid}&bvid={bvid}&qn={qn}&fnval=16"
 
 /**
  * 动态信息
