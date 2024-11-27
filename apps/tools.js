@@ -2196,7 +2196,6 @@ export class tools extends plugin {
       const normalMsg = `${this.identifyPrefix}识别：米游社，${subject}\n${realContent?.describe || ''}`
       const replyMsg = cover ? [segment.image(cover), normalMsg] : normalMsg
       e.reply(replyMsg)
-      logger.warn('[R]图片数量:', images.length)
       // 图片处理
       if (images && images.length > 1) {
         const replyImagesPromises = images.map(async (item) => {
