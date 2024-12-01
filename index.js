@@ -1,16 +1,12 @@
 import fs from "node:fs";
 import path from "path";
 import config from "./model/config.js";
-import { constructPublicIPsMsg } from "./utils/network.js";
-import { startNextJs } from "./utils/start-nextjs.js";
 if (!global.segment) {
     global.segment = (await import("oicq")).segment
 }
 
 // 加载版本号
 const versionData = config.getConfig("version");
-// 加载是否使用WebUI
-const isOpenWebUI = config.getConfig("tools").isOpenWebUI;
 // 加载名称
 const packageJsonPath = path.join('./plugins', 'rconsole-plugin', 'package.json');
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
@@ -38,12 +34,6 @@ for (let i in files) {
         continue;
     }
     apps[name] = ret[i].value[Object.keys(ret[i].value)[0]];
-}
-
-// 检查是否启动 webui
-if (isOpenWebUI) {
-    startNextJs('start');
-    logger.info(constructPublicIPsMsg());
 }
 
 export { apps };

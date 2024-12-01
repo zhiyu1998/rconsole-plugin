@@ -92,12 +92,6 @@ export const REDIS_YUNZAI_CLOUDSONGLIST = "Yz:rconsole:tools:cloudsonglist";
  */
 export const REDIS_YUNZAI_WHITELIST = "Yz:rconsole:tools:whitelist";
 
-/**
- * WEBUI需要数据的缓存
- * @type {string}
- */
-export const REDIS_YUNZAI_WEBUI = "Yz:rconsole:tools:webui";
-
 export const TWITTER_BEARER_TOKEN = "";
 
 /**

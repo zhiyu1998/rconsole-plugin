@@ -102,7 +102,10 @@ sudo apt-get install ffmpeg
 |     春日野穹OvO     | 25   |
 |       MiX       | 30   |
 |       AO        | 26   |
-|       Chino        | 30   |
+|      Chino      | 80   |
+|        辰        | 50   |
+|       非酋        | 1杯瑞幸   |
+|       白洲梓        | 1杯瑞幸   |
 
 
 

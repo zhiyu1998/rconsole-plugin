@@ -1,4 +1,3 @@
-isOpenWebUI: false # 是否开启webui
 defaultPath: './data/rcmp4/' # 保存视频的位置
 videoSizeLimit: 70 # 视频大小限制（单位MB），超过大小则转换成群文件上传
 proxyAddr: '127.0.0.1' # 魔法地址
