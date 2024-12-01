@@ -204,14 +204,27 @@ export async function getMediaFilesAndOthers(folderPath) {
 }
 
 /**
- * 将输入统一为数组形式，方便处理单个和多个路径
- * @param {string|string[]} input - 一个或多个文件路径
- *
- * fileName：文件的完整名称，包括文件名和扩展名
- * extension：文件的扩展名
- * dir：文件所在的目录路径
- * baseFileName：不包含扩展名的文件名
- * @returns {{fileName: string, extension: string, dir: string, baseFileName: string}[]} - 一个包含文件信息的对象数组
+ * 将文件路径解析为标准格式
+ * @param {string|string[]} input - 输入的文件路径,支持单个字符串路径或路径数组
+ * @returns {Array<Object>} 返回解析后的文件信息数组,每个对象包含:
+ * - dir: 文件所在目录的完整路径
+ * - fileName: 完整的文件名(包含扩展名)
+ * - extension: 文件扩展名(如 .js、.txt 等)
+ * - baseFileName: 不含扩展名的文件名
+ * 
+ * @example
+ * // 单个文件路径
+ * splitPaths('/root/test.txt')  
+ * // 返回: [{
+ * //   dir: '/root',
+ * //   fileName: 'test.txt',
+ * //   extension: '.txt',
+ * //   baseFileName: 'test'
+ * // }]
+ * 
+ * // 多个文件路径
+ * splitPaths(['/root/a.js', '/root/b.css'])
+ * @returns {{fileName: string, extension: string, dir: string, baseFileName: string}[]} 返回一个包含文件信息的对象数组
  */
 export function splitPaths(input) {
     const paths = Array.isArray(input) ? input : [input];
