@@ -65,7 +65,7 @@ export class Update extends plugin {
         let isForce = !!e.msg.includes("强制");
 
         // 保存配置文件
-        await copyFiles(`./plugins/${Update.pluginName}/config`, "./temp/rconsole-update-tmp");
+        await copyFiles(`./plugins/${Update.pluginName}/config`, "./temp/rconsole-update-tmp", ['tools.yaml']);
 
         let command = `git -C ./plugins/${Update.pluginName}/ pull --no-rebase`;
         if (isForce) {
