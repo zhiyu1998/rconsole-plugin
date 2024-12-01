@@ -1,14 +1,7 @@
 import axios from "axios";
-import _ from "lodash";
 import fetch from "node-fetch";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
-import { LINUX_AI_PROMPT, LINUX_QUERY, REDIS_YUNZAI_LINUX } from "../constants/query.js";
-// 配置文件
-import config from "../model/config.js";
-import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistAndGetKey, redisExistAndInsertObject, redisExistAndUpdateObject } from "../utils/redis-util.js";
-import { textArrayToMakeForward } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
 
@@ -42,23 +35,9 @@ export class query extends plugin {
                 {
                     reg: "^#竹白(.*)",
                     fnc: "zhubaiSearch",
-                },
-                {
-                    reg: "^#(linux|Linux)(.*)",
-                    fnc: "linuxQuery"
                 }
             ],
         });
-        // 配置文件
-        this.toolsConfig = config.getConfig("tools");
-        // 视频保存路径
-        this.defaultPath = this.toolsConfig.defaultPath;
-        // ai接口
-        this.aiBaseURL = this.toolsConfig.aiBaseURL;
-        // ai api key
-        this.aiApiKey = this.toolsConfig.aiApiKey;
-        // ai模型
-        this.aiModel = this.toolsConfig.aiModel;
     }
 
     async doctor(e) {
@@ -229,113 +208,6 @@ export class query extends plugin {
                 e.reply(await Bot.makeForwardMsg(content));
             });
         return true;
-    }
-
-    async linuxQuery(e) {
-        const order = e.msg.replace(/^#([lL])inux/, "").trim();
-        // 查询 Redis 中是否存在这个命令如果存在直接返回没有的话就发起网络请求
-        const linuxInRedis = await redisExistAndGetKey(REDIS_YUNZAI_LINUX)
-        let linuxOrderData;
-        // 判断这个命令是否在缓存里
-        const isOrderInRedis = linuxInRedis && Object.keys(linuxInRedis).includes(order);
-        if (!isOrderInRedis) {
-            // 没有在缓存里，直接发起网络请求
-            const resp = await fetch(LINUX_QUERY.replace("{}", order), {
-                headers: {
-                    "User-Agent": COMMON_USER_AGENT
-                }
-            });
-            linuxOrderData = (await resp.json()).data;
-            // 如果缓存里没有就保存一份到缓存里
-            linuxOrderData && await redisExistAndInsertObject(REDIS_YUNZAI_LINUX, { [order]: linuxOrderData });
-        } else {
-            // 在缓存里就取出
-            linuxOrderData = linuxInRedis[order];
-        }
-        try {
-            const builder = await new OpenaiBuilder()
-                .setBaseURL(this.aiBaseURL)
-                .setApiKey(this.aiApiKey)
-                .setModel(this.aiModel)
-                .setPrompt(LINUX_AI_PROMPT)
-                .build();
-            let aiBuilder;
-            if (linuxOrderData) {
-                const { linux, content, link } = linuxOrderData;
-                // 发送消息
-                e.reply(`识别：Linux命令 <${ linux }>\n\n功能：${ content }`);
-                aiBuilder = await builder.kimi(`能否帮助根据${ link }网站的Linux命令内容返回一些常见的用法，内容简洁明了即可`)
-            } else {
-                aiBuilder = await builder.kimi(`我现在需要一个Linux命令去完成：“${ order }”，你能否帮助我查询到相关的一些命令用法和示例，内容简洁明了即可`);
-            }
-            // 如果填了写 AI 才总结
-            if (this.aiApiKey && this.aiBaseURL) {
-                const { ans: kimiAns, model } = aiBuilder;
-                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
-                await e.reply(Msg);
-                // 提取AI返回的内容并进行解析
-                if (_.isEmpty(linuxInRedis[order]?.content.trim())) {
-                    const parsedData = this.parseAiResponse(order, kimiAns);
-                    await redisExistAndUpdateObject(REDIS_YUNZAI_LINUX, order, parsedData);
-                    e.reply(`已重新学习命令 ${ order } 的用法，当前已经更新功能为：${ parsedData.content }`);
-                }
-            }
-        } catch (err) {
-            e.reply(`暂时无法查询到当前命令！`);
-            logger.error(logger.red(`[R插件][linux]: ${ err }`));
-        }
-        return true;
-    }
-
-    /**
-     * AI响应解析函数
-     * @param order
-     * @param aiResponse
-     * @returns {{linux, link: string, content: (*|string)}}
-     */
-    parseAiResponse(order, aiResponse) {
-        // 检查 aiResponse 是否为有效字符串
-        if (!aiResponse || typeof aiResponse !== 'string') {
-            return {
-                linux: order,
-                content: '',
-                link: `https://www.linuxcool.com/${ order }` // 默认参考链接
-            };
-        }
-
-        // 初始化保存数据的对象
-        let parsedData = {
-            linux: order,
-            content: '',
-            link: `https://www.linuxcool.com/${ order }`  // 默认参考链接
-        };
-
-        // 清理多余的换行符，避免意外的分隔问题
-        const lines = aiResponse.split('\n').map(line => line.trim()).filter(line => line);
-
-        // 遍历每一行查找命令相关的描述
-        lines.forEach(line => {
-            // 允许命令带有可选的路径，修改正则表达式以适应路径变化
-            const match = line.match(/[`'“](.+?)[`'”]\s*[:：—-]?\s*(.*)/);
-
-            if (match) {
-                logger.info(match)
-                const command = match[1].trim();  // 提取命令部分
-                const description = match[2].trim();  // 提取描述部分// 同样忽略路径
-
-                // 如果命令和参数部分匹配，保存描述
-                if (command.includes(order)) {
-                    parsedData.content = description;
-                }
-            }
-        });
-
-        // 如果没有找到具体的描述内容，则给出默认提示
-        if (!parsedData.content) {
-            parsedData.content = '';
-        }
-
-        return parsedData;
     }
 
     // 删除标签
