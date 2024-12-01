@@ -242,7 +242,7 @@ export async function mergeFileToMp4(vFullFileName, aFullFileName, outputFileNam
             PATH: '/usr/local/bin:' + child_process.execSync('echo $PATH').toString(),
         };
     } else {
-        logger.error("暂时不支持当前操作系统！")
+        logger.warn("[R插件][合并视频和音频] 检测到未知系统，可能是MacOS.");
     }
     const execFile = util.promisify(child_process.execFile);
     try {
