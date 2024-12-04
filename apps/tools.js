@@ -239,6 +239,8 @@ export class tools extends plugin {
         this.defaultPath = this.toolsConfig.defaultPath;
         // 视频限制大小
         this.videoSizeLimit = this.toolsConfig.videoSizeLimit;
+        // 获取全局禁用的解析
+        this.globalBlackList = this.toolsConfig.globalBlackList;
         // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
@@ -3125,18 +3127,15 @@ export class tools extends plugin {
      * @returns {Promise<boolean>}
      */
     async isEnableResolve(resolveName) {
-        const controller = await redisExistAndGetKey(REDIS_YUNZAI_RESOLVE_CONTROLLER);
-        // 如果不存在说明用户没有启动过webui，那么直接放行
+        const controller = this.globalBlackList;
+        // 如果不存在，那么直接放行
         if (controller == null) {
             return true;
         }
-        const foundItem = controller.find(item => item.label === resolveName);
-        // 未知解析，可能是写错，放行
-        if (!foundItem) {
-            logger.warn(`[R插件][启用解析] 未知解析，可能存在写错`);
-            return true;
-        }
-        return foundItem.value === 1;
+        // 找到禁用列表中是否包含 `resolveName`
+        const foundItem = controller.find(item => item === resolveName);
+        // 如果 undefined 说明不在禁用列表就放行
+        return foundItem === undefined;
     }
 
     /**

@@ -1,12 +1,15 @@
 import _ from "lodash";
 import path from "path";
 import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST } from "./constants/constant.js";
+import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
 const pluginName = `rconsole-plugin`;
 
 const _path = process.cwd() + `/plugins/${pluginName}`;
 export function supportGuoba() {
+    let globalWhitelist = Object.values(RESOLVE_CONTROLLER_NAME_ENUM).map(value => ({ value }));
+    const globalWhitelistComponent = globalWhitelist.length === 0 ? 'GTags' : 'Select'
     return {
         pluginInfo: {
             name: "R插件",
@@ -29,6 +32,18 @@ export function supportGuoba() {
         },
         configInfo: {
             schemas: [
+                {
+                    field: 'tools.globalBlackList',
+                    label: '全局解析黑名单',
+                    component: globalWhitelistComponent,
+                    bottomHelpMessage: '添加后将全局禁用',
+                    componentProps: {
+                        allowAdd: true,
+                        allowDel: true,
+                        mode: 'multiple',
+                        options: globalWhitelist,
+                    },
+                },
                 {
                     field: "tools.proxyAddr",
                     label: "魔法地址",
@@ -428,10 +443,17 @@ export function supportGuoba() {
             },
             setConfigData(data, { Result }) {
                 let config = {};
+                let cfg = model.getConfig("tools");
                 for (let [key, value] of Object.entries(data)) {
+                    // 特殊处理这个，需要全覆盖
+                    if (key === "tools.globalBlackList") {
+                        _.set(cfg, "globalBlackList", value);
+                    }
                     _.set(config, key, value);
                 }
-                config = _.merge({}, model.getConfig("tools"), config.tools);
+                // 合并配置项
+                config = _.merge({}, cfg, config.tools);
+                // 保存
                 model.saveAllConfig("tools", config);
                 return Result.ok({}, "保存成功~");
             },
