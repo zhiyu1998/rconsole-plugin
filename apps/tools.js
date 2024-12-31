@@ -149,7 +149,7 @@ export class tools extends plugin {
                     permission: 'master',
                 },
                 {
-                    reg: "(bilibili.com|b23.tv|t.bilibili.com|^BV[1-9a-zA-Z]{10}$)",
+                    reg: "(bilibili.com|b23.tv|bili2233.cn|t.bilibili.com|^BV[1-9a-zA-Z]{10}$)",
                     fnc: "bili",
                 },
                 {
@@ -731,7 +731,7 @@ export class tools extends plugin {
             return true;
         }
         const urlRex = /(?:https?:\/\/)?www\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
-        const bShortRex = /(http:|https:)\/\/b23.tv\/[A-Za-z\d._?%&+\-=\/#]*/g;
+        const bShortRex = /(http:|https:)\/\/(b23.tv|bili2233.cn)\/[A-Za-z\d._?%&+\-=\/#]*/g;
         let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
         // 直接发送BV号的处理
         if (/^BV[1-9a-zA-Z]{10}$/.exec(url)?.[0]) {
@@ -739,7 +739,7 @@ export class tools extends plugin {
             logger.info(url);
         }
         // 短号处理
-        if (url.includes("b23.tv")) {
+        if (url.includes("b23.tv") || url.includes("bili2233.cn")) {
             const bShortUrl = bShortRex.exec(url)?.[0];
             await fetch(bShortUrl, {
                 method: "HEAD"
