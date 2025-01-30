@@ -781,11 +781,11 @@ export class tools extends plugin {
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${ this.identifyPrefix }识别：哔哩哔哩直播，${ title }`,
-                    `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
-                    `${ tags ? `🔖 标签：${ tags }` : '' }`,
-                    `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
-                    `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
-                    `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
+                `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
+                `${ tags ? `🔖 标签：${ tags }` : '' }`,
+                `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
+                `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
+                `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
                 ].filter(item => item.trim() !== "").join("\n")
             ]);
             const streamData = await this.getBiliStream(streamId);
@@ -1916,10 +1916,10 @@ export class tools extends plugin {
         });
         // const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.url ?? vipMusicData.data?.music;
+        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
         const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song ?? vipMusicData.data?.title;
-        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.singer ?? vipMusicData.data?.singer;
+        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song_name ?? vipMusicData.data?.title;
+        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.song_singer ?? vipMusicData.data?.singer;
         const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
         if (musicType === "网易云音乐") {
             musicInfo.size = id;
@@ -2505,7 +2505,7 @@ export class tools extends plugin {
          */
         let musicInfo;
         // applet判定
-        if (e.msg.includes(`"app":"com.tencent.structmsg"`)) {
+        if (e.msg.includes(`"app":"com.tencent.music.lua"`) || e.msg.includes(`"app":"com.tencent.structmsg"`)) {
             logger.info("[R插件][qqMusic] 识别为小程序分享");
             const musicInfoJson = JSON.parse(e.msg);
             // 歌手和歌名
@@ -2525,7 +2525,13 @@ export class tools extends plugin {
         }
         // 删除特殊字符
         musicInfo = cleanFilename(musicInfo);
+        // 判断音乐信息是否存在
+        if (!musicInfo) {
+            console.log('[R插件][qqMusic]: 暂不支持此类链接');
+            return true;
+        }
         logger.info(`[R插件][qqMusic] 识别音乐为：${ musicInfo }`);
+
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
         // 下载音乐
