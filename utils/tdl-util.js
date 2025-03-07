@@ -14,7 +14,7 @@ export async function startTDL(url, curPath, isOversea, proxyAddr, videoDownload
     return new Promise((resolve, reject) => {
         curPath = path.resolve(curPath);
         const proxyStr = isOversea ? `` : `--proxy ${ proxyAddr }`;
-        const concurrencyStr = videoDownloadConcurrency > 1 ? `-t ${ videoDownloadConcurrency } -s 524288 -l ${ videoDownloadConcurrency }` : '';
+        const concurrencyStr = videoDownloadConcurrency > 1 ? `-t ${ videoDownloadConcurrency } -l ${ videoDownloadConcurrency }` : '';
         const command = `tdl dl -u ${ url } -d ${ curPath } ${ concurrencyStr } ${ proxyStr }`
         logger.mark(`[R插件][TDL] ${ command }`);
         exec(command, (error, stdout, stderr) => {
