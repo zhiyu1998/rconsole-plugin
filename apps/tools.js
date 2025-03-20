@@ -1116,7 +1116,11 @@ export class tools extends plugin {
         const summaryUrl = `${ BILI_SUMMARY }?${ wbi }`;
         logger.info(summaryUrl);
         // 构造结果：https://api.bilibili.com/x/web-interface/view/conclusion/get?bvid=BV1L94y1H7CV&cid=1335073288&up_mid=297242063&wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634
-        return axios.get(summaryUrl)
+        return axios.get(summaryUrl, {
+            headers: {
+                Cookie: `SESSDATA=${ this.biliSessData }`
+            }
+        })
             .then(resp => {
                 const data = resp.data.data?.model_result;
                 // logger.info(data)
