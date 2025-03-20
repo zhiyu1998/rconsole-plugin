@@ -781,11 +781,11 @@ export class tools extends plugin {
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${ this.identifyPrefix }识别：哔哩哔哩直播，${ title }`,
-                `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
-                `${ tags ? `🔖 标签：${ tags }` : '' }`,
-                `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
-                `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
-                `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
+                    `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
+                    `${ tags ? `🔖 标签：${ tags }` : '' }`,
+                    `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
+                    `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
+                    `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
                 ].filter(item => item.trim() !== "").join("\n")
             ]);
             const streamData = await this.getBiliStream(streamId);
@@ -1116,9 +1116,13 @@ export class tools extends plugin {
         const summaryUrl = `${ BILI_SUMMARY }?${ wbi }`;
         logger.info(summaryUrl);
         // 构造结果：https://api.bilibili.com/x/web-interface/view/conclusion/get?bvid=BV1L94y1H7CV&cid=1335073288&up_mid=297242063&wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634
-        return axios.get(summaryUrl)
+        return axios.get(summaryUrl, {
+			headers: {
+				Cookie: `SESSDATA=${ this.biliSessData }`
+			}
+		})
             .then(resp => {
-                const data = resp.data.data?.model_result;
+				const data = resp.data.data?.model_result;
                 // logger.info(data)
                 const summary = data?.summary;
                 const outline = data?.outline;
@@ -1916,10 +1920,10 @@ export class tools extends plugin {
         });
         // const messageTitle = title + "\nR插件检测到当前为VIP音乐，正在转换...";
         // ??后的内容是适配`QQ_MUSIC_TEMP_API`、最后是汽水
-        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.music_url ?? vipMusicData.data?.music;
+        const url = vipMusicData.data?.music_url ?? vipMusicData.data?.data?.url ?? vipMusicData.data?.music;
         const cover = vipMusicData.data?.cover ?? vipMusicData.data?.data?.cover ?? vipMusicData.data?.cover;
-        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song_name ?? vipMusicData.data?.title;
-        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.song_singer ?? vipMusicData.data?.singer;
+        const name = vipMusicData.data?.title ?? vipMusicData.data?.data?.song ?? vipMusicData.data?.title;
+        const singer = vipMusicData.data?.singer ?? vipMusicData.data?.data?.singer ?? vipMusicData.data?.singer;
         const id = vipMusicData.data?.id ?? vipMusicData.data?.data?.quality ?? vipMusicData.data?.pay;
         if (musicType === "网易云音乐") {
             musicInfo.size = id;
@@ -2505,7 +2509,7 @@ export class tools extends plugin {
          */
         let musicInfo;
         // applet判定
-        if (e.msg.includes(`"app":"com.tencent.music.lua"`) || e.msg.includes(`"app":"com.tencent.structmsg"`)) {
+        if (e.msg.includes(`"app":"com.tencent.structmsg"`)) {
             logger.info("[R插件][qqMusic] 识别为小程序分享");
             const musicInfoJson = JSON.parse(e.msg);
             // 歌手和歌名
@@ -2525,13 +2529,7 @@ export class tools extends plugin {
         }
         // 删除特殊字符
         musicInfo = cleanFilename(musicInfo);
-        // 判断音乐信息是否存在
-        if (!musicInfo) {
-            console.log('[R插件][qqMusic]: 暂不支持此类链接');
-            return true;
-        }
         logger.info(`[R插件][qqMusic] 识别音乐为：${ musicInfo }`);
-
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
         // 下载音乐
@@ -3167,7 +3165,7 @@ export class tools extends plugin {
      */
     async isTrustUser(userId) {
         // 如果当前用户是机器人主人
-        if (this.e.isMaster) {
+        if (this。e。isMaster) {
             return true;
         }
         // 如果不存在则返回
@@ -3175,7 +3173,7 @@ export class tools extends plugin {
             return false;
         }
         const whiteList = await redisGetKey(REDIS_YUNZAI_WHITELIST);
-        return whiteList.includes(userId.toString()) || whiteList.includes(userId);
+        return whiteList。includes(userId。toString()) || whiteList。includes(userId);
     }
 
     /**
@@ -3184,23 +3182,23 @@ export class tools extends plugin {
      * @param path           视频所在路径
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
      */
-    async sendVideoToUpload(e, path, videoSizeLimit = this.videoSizeLimit) {
+    async sendVideoToUpload(e， path， videoSizeLimit = this。videoSizeLimit) {
         try {
             // 判断文件是否存在
-            if (!fs.existsSync(path)) {
-                return e.reply('视频不存在');
+            if (!fs。existsSync(path)) {
+                return e。reply('视频不存在');
             }
-            const stats = fs.statSync(path);
-            const videoSize = Math.floor(stats.size / (1024 * 1024));
+            const stats = fs。statSync(path);
+            const videoSize = Math。floor(stats。size / (1024 * 1024));
             // 正常发送视频
             if (videoSize > videoSizeLimit) {
-                e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制：${ videoSizeLimit }MB，\n改为上传群文件`);
-                await this.uploadGroupFile(e, path);
+                e。reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制：${ videoSizeLimit }MB，\n改为上传群文件`);
+                await this。uploadGroupFile(e， path);
             } else {
-                e.reply(segment.video(path));
+                e。reply(segment。video(path));
             }
         } catch (err) {
-            logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${ err }`);
+            logger。error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${ err }`);
             // logger.info(logger.yellow(`上传发生错误，R插件正在为你采用备用策略，请稍等，如果发不出来请再次尝试！`));
             // e.reply(segment.video(path));
         }
@@ -3212,12 +3210,12 @@ export class tools extends plugin {
      * @param path          上传的文件所在路径
      * @return {Promise<void>}
      */
-    async uploadGroupFile(e, path) {
+    async uploadGroupFile(e， path) {
         // 判断是否是ICQQ
-        if (e.bot?.sendUni) {
-            await e.group.fs.upload(path);
+        if (e。bot?.sendUni) {
+            await e。group。fs。upload(path);
         } else {
-            await e.group.sendFile(path);
+            await e。group。sendFile(path);
         }
     }
 }
