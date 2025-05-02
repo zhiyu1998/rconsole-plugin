@@ -2175,10 +2175,9 @@ export class tools extends plugin {
                 "Accept-Encoding": "gzip, deflate, br",
                 "Accept-Language": "zh-cn",
                 "Connection": "keep-alive",
-                "Host": "api-takumi.mihoyo.com",
-                "x-rpc-app_version": "2.11.0",
+                "x-rpc-app_version": "2.87.0",
                 "x-rpc-client_type": "4",
-                "Referer": "https://bbs.mihoyo.com/",
+                "Referer": "https://www.miyoushe.com/",
                 "DS": getDS(),
             }
         }).then(async resp => {
