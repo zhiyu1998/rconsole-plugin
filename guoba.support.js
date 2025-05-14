@@ -67,7 +67,7 @@ export function supportGuoba() {
                 {
                     field: "tools.forceOverseasServer",
                     label: "强制使用海外服务器",
-                    bottomHelpMessage: "设置为开启时，Twitter、TikTok等平台将强制使用代理",
+                    bottomHelpMessage: "设置为开启时，Twitter、TikTok等平台将强制不使用代理",
                     component: "Switch",
                     required: false,
                 },
