@@ -65,6 +65,13 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.forceOverseasServer",
+                    label: "强制使用海外服务器",
+                    bottomHelpMessage: "设置为开启时，Twitter、TikTok等平台将强制使用代理",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.identifyPrefix",
                     label: "识别前缀",
                     bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
