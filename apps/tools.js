@@ -314,6 +314,8 @@ export class tools extends plugin {
         this.aiApiKey = this.toolsConfig.aiApiKey;
         // ai模型
         this.aiModel = this.toolsConfig.aiModel;
+        // 强制使用海外服务器
+        this.forceOverseasServer = this.toolsConfig.forceOverseasServer;
     }
 
     // 翻译插件
@@ -3152,12 +3154,16 @@ export class tools extends plugin {
      * @return {Promise<Boolean>}
      */
     async isOverseasServer() {
+        // 如果配置了强制使用海外服务器，则返回true
+        if (this.forceOverseasServer) {
+            return true;
+        }
         // 如果第一次使用没有值就设置
         if (!(await redisExistKey(REDIS_YUNZAI_ISOVERSEA))) {
             await redisSetKey(REDIS_YUNZAI_ISOVERSEA, {
-                os: false,
+                os: false,  // 默认不使用海外服务器
             });
-            return true;
+            return false;
         }
         // 如果有就取出来
         return (await redisGetKey(REDIS_YUNZAI_ISOVERSEA)).os;
