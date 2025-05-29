@@ -783,11 +783,11 @@ export class tools extends plugin {
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${ this.identifyPrefix }识别：哔哩哔哩直播，${ title }`,
-                `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
-                `${ tags ? `🔖 标签：${ tags }` : '' }`,
-                `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
-                `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
-                `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
+                    `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
+                    `${ tags ? `🔖 标签：${ tags }` : '' }`,
+                    `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
+                    `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
+                    `📺 独立播放器: https://www.bilibili.com/blackboard/live/live-activity-player.html?enterTheRoom=0&cid=${ streamId }`
                 ].filter(item => item.trim() !== "").join("\n")
             ]);
             const streamData = await this.getBiliStream(streamId);
@@ -825,14 +825,40 @@ export class tools extends plugin {
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
         // 请求视频信息
         const videoInfo = await getVideoInfo(url);
+        // 打印获取到的视频信息，用于调试时长问题
+        logger.debug(`[R插件][Bili Debug] Video Info for ${url}: duration=${videoInfo.duration}, pages=${JSON.stringify(videoInfo.pages)}`);
         const { duration, bvid, cid, owner, pages } = videoInfo;
-        // 限制时长 & 考虑分页视频情况
-        const query = querystring.parse(url);
-        const curPage = query?.p || 0;
-        const curDuration = pages?.[curPage]?.duration || duration;
-        const isLimitDuration = curDuration > this.biliDuration;
+        
+        let durationForCheck;
+        let displayTitle = videoInfo.title; // 默认使用总标题
+        let targetPageInfo = null; // 用于后续下载决策
+
+        const urlParts = url.split('?');
+        const queryParams = urlParts.length > 1 ? querystring.parse(urlParts[1]) : {};
+        const pParam = queryParams.p ? parseInt(queryParams.p, 10) : null;
+
+        if (pParam && pages && pages.length >= pParam && pParam > 0) {
+            // 如果URL指定了有效的p参数 (p从1开始计数)
+            targetPageInfo = pages[pParam - 1];
+            durationForCheck = targetPageInfo.duration;
+            displayTitle = targetPageInfo.part;
+            logger.info(`[R插件][Bili Duration] 分析到合集 P${pParam} (标题: ${displayTitle}), 时长: ${durationForCheck}s`);
+        } else if (pages && pages.length > 0) {
+            // 否则，如果存在分P，默认检查第一个分P
+            targetPageInfo = pages[0];
+            durationForCheck = targetPageInfo.duration;
+            displayTitle = targetPageInfo.part;
+            logger.info(`[R插件][Bili Duration] 分析到合集 P1 (标题: ${displayTitle}), 时长: ${durationForCheck}s`);
+        } else {
+            // 如果没有分P信息（或pages为空），使用总时长
+            durationForCheck = duration;
+            // displayTitle 保持为 videoInfo.title
+            logger.info(`[R插件][Bili Duration] Using total duration (Title: ${displayTitle}): ${durationForCheck}s`);
+        }
+
+        const isLimitDuration = durationForCheck > this.biliDuration;
         // 动态构造哔哩哔哩信息
-        let biliInfo = await this.constructBiliInfo(videoInfo);
+        let biliInfo = await this.constructBiliInfo(videoInfo, displayTitle);
         // 总结
         if (this.biliDisplaySummary) {
             const summary = await this.getBiliSummary(bvid, cid, owner.mid);
@@ -841,7 +867,7 @@ export class tools extends plugin {
         }
         // 限制视频解析
         if (isLimitDuration) {
-            const durationInMinutes = (curDuration / 60).toFixed(0);
+            const durationInMinutes = (durationForCheck / 60).toFixed(0); // 使用 durationForCheck
             biliInfo.push(`${ DIVIDING_LINE.replace('{}', '限制说明') }\n当前视频时长约：${ durationInMinutes }分钟，\n大于管理员设置的最大时长 ${ (this.biliDuration / 60).toFixed(2).replace(/\.00$/, '') } 分钟！`);
             e.reply(biliInfo);
             return true;
@@ -893,8 +919,8 @@ export class tools extends plugin {
      * @param videoInfo
      * @returns {Promise<(string|string)[]>}
      */
-    async constructBiliInfo(videoInfo) {
-        const { title, desc, bvid, cid, pic } = videoInfo;
+    async constructBiliInfo(videoInfo, displayTitle) { // displayTitle 参数
+        const { desc, bvid, cid, pic } = videoInfo; // 移除了 title
         // 视频信息
         const { view, danmaku, reply, favorite, coin, share, like } = videoInfo.stat;
         // 格式化数据
@@ -925,7 +951,7 @@ export class tools extends plugin {
             const onlineTotal = await this.biliOnlineTotal(bvid, cid);
             combineContent += `\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
         }
-        let biliInfo = [`${ this.identifyPrefix }识别：哔哩哔哩，${ title }`, combineContent];
+        let biliInfo = [`${ this.identifyPrefix }识别：哔哩哔哩，${ displayTitle }`, combineContent]; // 使用 displayTitle
         // 是否显示封面
         if (this.biliDisplayCover) {
             // 加入图片
@@ -1119,13 +1145,14 @@ export class tools extends plugin {
         logger.info(summaryUrl);
         // 构造结果：https://api.bilibili.com/x/web-interface/view/conclusion/get?bvid=BV1L94y1H7CV&cid=1335073288&up_mid=297242063&wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634
         return axios.get(summaryUrl, {
-            headers: {
-                Cookie: `SESSDATA=${ this.biliSessData }`
-            }
-        })
+			headers: {
+				Cookie: `SESSDATA=${ this.biliSessData }`
+			}
+		})
             .then(resp => {
-                const data = resp.data.data?.model_result;
-                // logger.info(data)
+                logger.debug(resp)
+				const data = resp.data.data?.model_result;
+                logger.debug(data)
                 const summary = data?.summary;
                 const outline = data?.outline;
                 let resReply = "";
@@ -2056,9 +2083,21 @@ export class tools extends plugin {
         }
         try {
             const adapter = await GeneralLinkAdapter.create(e.msg);
+            logger.debug(`[R插件][General Adapter Debug] Adapter object: ${JSON.stringify(adapter, null, 2)}`);
             e.reply(`${ this.identifyPrefix }识别：${ adapter.name }${ adapter.desc ? `, ${ adapter.desc }` : '' }`);
-            logger.mark(adapter);
-            if (adapter.images && adapter.images.length > 0) {
+            logger.debug(adapter);
+            logger.debug(`[R插件][General Adapter Debug] adapter.images: ${JSON.stringify(adapter.images)}`);
+            logger.debug(`[R插件][General Adapter Debug] adapter.video: ${adapter.video}`);
+            if (adapter.video && adapter.video !== '') {
+                logger.debug(`[R插件][General Adapter Debug] Entering video sending logic for ${adapter.name}. Video URL: ${adapter.video}`);
+                // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
+                const url = adapter.video;
+                this.downloadVideo(url).then(path => {
+                    logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
+                    this.sendVideoToUpload(e, `${ path }/temp.mp4`);
+                });
+            } else if (adapter.images && adapter.images.length > 0) {
+                logger.debug(`[R插件][General Adapter Debug] Entering image sending logic for ${adapter.name}`);
                 const images = adapter.images.map(item => {
                     return {
                         message: segment.image(item),
@@ -2067,14 +2106,8 @@ export class tools extends plugin {
                     };
                 });
                 e.reply(Bot.makeForwardMsg(images));
-            } else if (adapter.video && adapter.video !== '') {
-                // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
-                const url = adapter.video;
-                this.downloadVideo(url).then(path => {
-                    logger.info(path);
-                    this.sendVideoToUpload(e, `${ path }/temp.mp4`);
-                });
             } else {
+                logger.debug(`[R插件][General Adapter Debug] No images or video found for ${adapter.name}. Replying with failure message.`);
                 e.reply("解析失败：无法获取到资源");
             }
         } catch (err) {
@@ -2536,7 +2569,6 @@ export class tools extends plugin {
             return true;
         }
         logger.info(`[R插件][qqMusic] 识别音乐为：${ musicInfo }`);
-
         // 使用临时接口下载
         const url = await this.musicTempApi(e, musicInfo, "QQ音乐");
         // 下载音乐
