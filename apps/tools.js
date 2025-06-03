@@ -641,7 +641,7 @@ export class tools extends plugin {
         // 下载逻辑
         const path = this.getCurDownloadPath(e);
         await checkAndRemoveFile(path + "/temp.mp4");
-        const title = ytDlpGetTilt(url, isOversea, this.myProxy);
+        const title = await ytDlpGetTilt(url, isOversea, this.myProxy);
         e.reply(`${ this.identifyPrefix }识别：TikTok，视频下载中请耐心等待 \n${ title }`);
         await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency);
         await this.sendVideoToUpload(e, `${ path }/temp.mp4`);
@@ -2150,7 +2150,7 @@ export class tools extends plugin {
             await checkAndRemoveFile(path + "/temp.flac");
             await checkAndRemoveFile(path + "/thumbnail.png");
             await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath);
-            const title = ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath).toString().replace(/\n/g, '');
+            const title = (await ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, '');
 
             // 音频逻辑
             if (url.includes("music")) {
@@ -2168,7 +2168,7 @@ export class tools extends plugin {
             }
 
             // 下面为视频逻辑
-            const Duration = convertToSeconds(ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath).toString().replace(/\n/g, ''));
+            const Duration = convertToSeconds((await ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, ''));
             // logger.info('时长------',Duration)
             if (Duration > this.youtubeDuration) {
                 e.reply([
