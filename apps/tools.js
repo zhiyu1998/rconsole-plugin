@@ -640,11 +640,21 @@ export class tools extends plugin {
         const cleanedTiktokUrl = parsedUrl.toString();
         // 下载逻辑
         const path = this.getCurDownloadPath(e);
-        await checkAndRemoveFile(path + "/temp.mp4");
-        const title = await ytDlpGetTilt(url, isOversea, this.myProxy);
-        e.reply(`${ this.identifyPrefix }识别：TikTok，视频下载中请耐心等待 \n${ title }`);
-        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency);
-        await this.sendVideoToUpload(e, `${ path }/temp.mp4`);
+        const rawTitle = (await ytDlpGetTilt(url, isOversea, this.myProxy)).toString().replace(/\n/g, '');
+        // 清理文件名并截断到10个字符
+        const safeTitlePrefix = cleanFilename(rawTitle).substring(0, 10);
+        const videoFilename = `${safeTitlePrefix}.mp4`;
+
+        // 清理可能存在的旧文件或同名文件
+        await checkAndRemoveFile(`${path}/${videoFilename}`);
+        // 清理旧的 temp 文件
+        await checkAndRemoveFile(`${path}/temp.mp4`);
+
+
+        e.reply(`${ this.identifyPrefix }识别：TikTok，视频下载中请耐心等待 \n${ rawTitle }`);
+        // 注意：ytDlpHelper 的 outputFilename 参数位置在 maxThreads 之后
+        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix);
+        await this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
         return true;
     }
 
@@ -2146,23 +2156,42 @@ export class tools extends plugin {
             }
 
             const path = this.getCurDownloadPath(e);
+            const rawTitle = (await ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, '');
+            // 清理文件名并截断到10个字符
+            const safeTitlePrefix = cleanFilename(rawTitle).substring(0, 10);
+
+            // 使用安全标题作为文件名前缀
+            const videoFilename = `${safeTitlePrefix}.mp4`;
+            const audioFilename = `${safeTitlePrefix}.flac`;
+            const thumbnailFilename = `${safeTitlePrefix}_thumbnail.png`; // 确保缩略图文件名也唯一
+
+            // 清理可能存在的旧文件或同名文件
+            await checkAndRemoveFile(path + "/" + videoFilename);
+            await checkAndRemoveFile(path + "/" + audioFilename);
+            await checkAndRemoveFile(path + "/" + thumbnailFilename);
+            // 清理旧的 temp 文件，以防万一
             await checkAndRemoveFile(path + "/temp.mp4");
             await checkAndRemoveFile(path + "/temp.flac");
             await checkAndRemoveFile(path + "/thumbnail.png");
-            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath);
-            const title = (await ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, '');
+
+
+            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, safeTitlePrefix + "_thumbnail"); // 传递不带扩展名的前缀
+            const fullThumbnailPath = `${path}/${thumbnailFilename}`;
+
 
             // 音频逻辑
             if (url.includes("music")) {
                 e.reply([
-                    segment.image(`${ path }/thumbnail.png`),
-                    `${ this.identifyPrefix }识别：油管音乐\n视频标题：${ title }`
+                    segment.image(fullThumbnailPath),
+                    `${ this.identifyPrefix }识别：油管音乐\n视频标题：${ rawTitle }`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                const fullAudioPath = `${path}/${audioFilename}`;
                 if (this.isSendVocal) {
-                    e.reply(segment.record(`${ path }/temp.flac`));
+                    await e.reply(segment.record(fullAudioPath));
                 }
-                this.uploadGroupFile(e, `${ path }/temp.flac`);
+                await this.uploadGroupFile(e, fullAudioPath); // uploadGroupFile 内部会删除 fullAudioPath
+                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
                 // 发送完就截断
                 return;
             }
@@ -2172,20 +2201,20 @@ export class tools extends plugin {
             // logger.info('时长------',Duration)
             if (Duration > this.youtubeDuration) {
                 e.reply([
-                    segment.image(`${ path }/thumbnail.png`),
-                    `${ this.identifyPrefix }识别：油管，视频时长超限 \n视频标题：${ title }\n⌚${ DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '') }⌚\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定解析时长：${ (this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`
+                    segment.image(fullThumbnailPath),
+                    `${ this.identifyPrefix }识别：油管，视频时长超限 \n视频标题：${ rawTitle }\n⌚${ DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '') }⌚\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定解析时长：${ (this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`
                 ]);
             } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
                 e.reply([
-                    segment.image(`${ path }/thumbnail.png`),
-                    `${ this.identifyPrefix }识别：油管，视频截取中请耐心等待 \n视频标题：${ title }\n✂️${ DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '') }✂️\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定截取时长：${ (this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n将截取视频片段`
+                    segment.image(fullThumbnailPath),
+                    `${ this.identifyPrefix }识别：油管，视频截取中请耐心等待 \n视频标题：${ rawTitle }\n✂️${ DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '') }✂️\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定截取时长：${ (this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n将截取视频片段`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
-                this.sendVideoToUpload(e, `${ path }/temp.mp4`);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
             } else {
-                e.reply([segment.image(`${ path }/thumbnail.png`), `${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ title }\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, true, graphics, timeRange, this.youtubeCookiePath);
-                this.sendVideoToUpload(e, `${ path }/temp.mp4`);
+                e.reply([segment.image(fullThumbnailPath), `${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ rawTitle }\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
             }
         } catch (error) {
             logger.error(error);
@@ -3236,14 +3265,15 @@ export class tools extends plugin {
             // 正常发送视频
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${ videoSize }MB，\n大于设置的最大限制：${ videoSizeLimit }MB，\n改为上传群文件`);
-                await this.uploadGroupFile(e, path);
+                await this.uploadGroupFile(e, path); // uploadGroupFile 内部会处理删除
             } else {
-                e.reply(segment.video(path));
+                await e.reply(segment.video(path));
+                await checkAndRemoveFile(path); // 发送成功后删除
             }
         } catch (err) {
             logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${ err }`);
-            // logger.info(logger.yellow(`上传发生错误，R插件正在为你采用备用策略，请稍等，如果发不出来请再次尝试！`));
-            // e.reply(segment.video(path));
+            // 如果发送失败，也尝试删除，避免残留
+            await checkAndRemoveFile(path);
         }
     }
 
@@ -3260,5 +3290,6 @@ export class tools extends plugin {
         } else {
             await e.group.sendFile(path);
         }
+        await checkAndRemoveFile(path); // 上传成功后删除
     }
 }
