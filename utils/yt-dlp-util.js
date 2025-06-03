@@ -1,4 +1,4 @@
-import { exec, execSync } from "child_process";
+import { exec } from "child_process";
 
 /**
  * 构建梯子参数
@@ -40,9 +40,19 @@ function constructEncodingParam(url) {
  * @returns string
  */
 export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    return execSync(`yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`);
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        const command = `yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetDuration: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+    });
 }
 
 /**
@@ -54,11 +64,21 @@ export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    // 构造 编码 参数
-    const encodingParam = constructEncodingParam(url);
-    return execSync(`yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`);
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        // 构造 编码 参数
+        const encodingParam = constructEncodingParam(url);
+        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetTilt: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+    });
 }
 
 /**
@@ -69,10 +89,20 @@ export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
  * @param proxy
  * @param cookiePath
  */
-export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath= "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    return execSync(`yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P ${path} -o "thumbnail.%(ext)s"`);
+export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "") {
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P "${path}" -o "thumbnail.%(ext)s"`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetThumbnail: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(); // The return value is not used
+            }
+        });
+    });
 }
 
 /**
