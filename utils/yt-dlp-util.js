@@ -27,7 +27,7 @@ function constructCookiePath(url, cookiePath) {
  * @returns {string}
  */
 function constructEncodingParam(url) {
-    return url.includes("youtu") ? "--encoding UTF-8" : "";
+    return "--encoding UTF-8"; // 始终为标题获取使用 UTF-8 编码
 }
 
 
