@@ -405,16 +405,30 @@ export async function getDynamic(dynamicId, SESSDATA) {
             Cookie: `SESSDATA=${ SESSDATA }`
         },
     }).then(resp => {
-        const dynamicData = resp.data.data.card
-        const card = JSON.parse(dynamicData.card)
-        const dynamicOrigin = card.item
-        const dynamicDesc = dynamicOrigin.description || dynamicOrigin.content
-        const pictures = dynamicOrigin.pictures || ''
+        const innerCardObject = resp.data.data.card;
+        const card = JSON.parse(innerCardObject.card);
+        const dynamicType = innerCardObject.desc?.type;
 
-        let dynamicSrc = []
-        for (let pic of pictures) {
-            const img_src = pic.img_src
-            dynamicSrc.push(img_src)
+        let dynamicDesc = '';
+        let pictures = [];
+        // 目前的api只有返回专栏部分文字以及专栏封面
+        if (dynamicType === 64) {
+            dynamicDesc = `【专栏】${card.title || ''}\n${card.summary || ''}`;
+            pictures = card.image_urls || [];
+        } else {
+            const dynamicOrigin = card.item;
+            dynamicDesc = dynamicOrigin?.description || dynamicOrigin?.content;
+            pictures = dynamicOrigin?.pictures || [];
+        }
+
+        let dynamicSrc = [];
+        if (Array.isArray(pictures)) {
+            for (let pic of pictures) {
+                const img_src = typeof pic === 'string' ? pic : pic?.img_src;
+                if (img_src) {
+                    dynamicSrc.push(img_src);
+                }
+            }
         }
         // console.log(dynamic_src)
         return {
