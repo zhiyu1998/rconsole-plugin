@@ -1,4 +1,4 @@
-import { exec, execSync } from "child_process";
+import { exec } from "child_process";
 
 /**
  * 构建梯子参数
@@ -27,7 +27,7 @@ function constructCookiePath(url, cookiePath) {
  * @returns {string}
  */
 function constructEncodingParam(url) {
-    return url.includes("youtu") ? "--encoding UTF-8" : "";
+    return "--encoding UTF-8"; // 始终为标题获取使用 UTF-8 编码
 }
 
 
@@ -40,9 +40,19 @@ function constructEncodingParam(url) {
  * @returns string
  */
 export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    return execSync(`yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`);
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        const command = `yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetDuration: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+    });
 }
 
 /**
@@ -54,11 +64,21 @@ export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
  * @returns string
  */
 export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    // 构造 编码 参数
-    const encodingParam = constructEncodingParam(url);
-    return execSync(`yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`);
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        // 构造 编码 参数
+        const encodingParam = constructEncodingParam(url);
+        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetTilt: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+    });
 }
 
 /**
@@ -68,11 +88,23 @@ export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
  * @param isOversea
  * @param proxy
  * @param cookiePath
+ * @param thumbnailFilenamePrefix 缩略图文件名前缀 (不含扩展名)
  */
-export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath= "") {
-    // 构造 cookie 参数
-    const cookieParam = constructCookiePath(url, cookiePath);
-    return execSync(`yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P ${path} -o "thumbnail.%(ext)s"`);
+export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "", thumbnailFilenamePrefix = "thumbnail") {
+    return new Promise((resolve, reject) => {
+        // 构造 cookie 参数
+        const cookieParam = constructCookiePath(url, cookiePath);
+        const finalThumbnailName = thumbnailFilenamePrefix || "thumbnail"; // 确保有默认值
+        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P "${path}" -o "${finalThumbnailName}.%(ext)s"`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetThumbnail: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(); // The return value is not used
+            }
+        });
+    });
 }
 
 /**
@@ -86,22 +118,26 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath= "") {
  * @param graphics   YouTube画质参数
  * @param timeRange  截取时间段
  * @param maxThreads 最大并发
+ * @param outputFilename 输出文件名 (不含扩展名)
  * @param cookiePath Cookie所在位置
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, merge = false, graphics, timeRange, cookiePath = "") {
+export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outputFilename, merge = false, graphics, timeRange, cookiePath = "") {
     return new Promise((resolve, reject) => {
         let command = "";
         // 构造 cookie 参数
         const cookieParam = constructCookiePath(url, cookiePath);
+        // 确保 outputFilename 不为空，提供一个默认值以防万一
+        const finalOutputFilename = outputFilename || "temp_download";
+
         if (url.includes("music")) {
             // 这里是 YouTube Music的处理逻辑
             // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
-            command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.flac" ${url}`;
+            command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.flac" ${url}`;
         } else {
             // 正常情况下的处理逻辑
             const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
 
-            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P ${path} -o "temp.%(ext)s" ${url}`;
+            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" ${url}`;
         }
 
         logger.info(`[R插件][yt-dlp审计] ${command}`);
