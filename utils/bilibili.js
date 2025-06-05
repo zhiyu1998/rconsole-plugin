@@ -205,21 +205,97 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  */
 export async function getDownloadUrl(url, SESSDATA, qn) {
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    // 转换画质数字为分辨率
+    let qualityText;
+    switch(parseInt(qn)) {
+        case 80: qualityText = "1080P"; break;
+        case 64: qualityText = "720P"; break;
+        case 32: qualityText = "480P"; break;
+        case 16: qualityText = "360P"; break;
+        default: qualityText = "480P"; break;
+    }
+    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}`);
     const dash = await getBiliVideoWithSession(videoId, "", SESSDATA, qn);
     // 获取关键信息
     const { video, audio } = dash;
-    const videoData = video?.[0];
-    const audioData = audio?.[0];
-    // saveJsonToFile(dash);
+    
+    // 根据请求的画质选择对应的视频流
+    let targetHeight;
+    switch(parseInt(qn)) {
+        case 80: targetHeight = 1080; break;  // 1080P
+        case 64: targetHeight = 720; break;   // 720P
+        case 32: targetHeight = 480; break;   // 480P
+        case 16: targetHeight = 360; break;   // 360P
+        default: targetHeight = 480;         // 默认480P
+    }
+    
+    // 获取目标分辨率的所有视频流
+    let matchingVideos = video.filter(v => v.height === targetHeight);
+    
+    // 如果找不到完全匹配的，找最接近但不超过目标分辨率的
+    if (matchingVideos.length === 0) {
+        matchingVideos = video
+            .filter(v => v.height <= targetHeight)
+            .sort((a, b) => b.height - a.height);
+        
+        // 获取最高的可用分辨率的所有视频流
+        if (matchingVideos.length > 0) {
+            const maxHeight = matchingVideos[0].height;
+            matchingVideos = matchingVideos.filter(v => v.height === maxHeight);
+        }
+    }
+    
+    // 如果还是找不到，使用所有可用的最低分辨率视频流
+    if (matchingVideos.length === 0) {
+        const minHeight = Math.min(...video.map(v => v.height));
+        matchingVideos = video.filter(v => v.height === minHeight);
+    }
+
+    // 在相同分辨率中选择编码优先级：hevc > av1 > avc
+    let videoData;
+    if (matchingVideos.length > 0) {
+        // 记录编码信息
+        const codecInfo = matchingVideos.map(v => 
+            `${v.height}p(${v.codecs}): ${Math.round(v.bandwidth / 1024)}kbps`
+        ).join(', ');
+        logger.debug(`[R插件][BILI下载] 可选编码: ${codecInfo}`);
+
+        // 按照编码和码率排序
+        const codecPriority = { hevc: 1, av1: 2, avc: 3 };
+        videoData = matchingVideos.sort((a, b) => {
+            const codecA = a.codecs.toLowerCase();
+            const codecB = b.codecs.toLowerCase();
+            // 获取编码类型的优先级
+            const priorityA = Object.entries(codecPriority).find(([key]) => codecA.includes(key))?.[1] || 999;
+            const priorityB = Object.entries(codecPriority).find(([key]) => codecB.includes(key))?.[1] || 999;
+            // 如果编码优先级相同，选择码率较低的
+            if (priorityA === priorityB) {
+                return a.bandwidth - b.bandwidth;
+            }
+            return priorityA - priorityB;
+        })[0];
+    }
+    
+    if (!videoData) {
+        logger.error(`[R插件][BILI下载] 获取视频数据失败，请检查画质参数是否正确`);
+        return { videoUrl: null, audioUrl: null };
+    }
+
+    logger.debug(`[R插件][BILI下载] 请求画质: ${qualityText}, 实际获取画质: ${videoData.height}p，分辨率: ${videoData.width}x${videoData.height}, 编码: ${videoData.codecs}, 码率: ${Math.round(videoData.bandwidth / 1024)}kbps`);
+    
     // 提取信息
     const { backupUrl: videoBackupUrl, baseUrl: videoBaseUrl } = videoData;
     const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl);
-    // 有部分视频可能存在没有音频，例如：https://www.bilibili.com/video/BV1CxvseRE8n/?p=1
+    
+    // 音频处理 - 选择对应画质的音频流
+    const audioData = audio?.[0];
     let audioUrl = null;
-    if (audioData != null || audioData !== undefined) {
+    if (audioData != null && audioData !== undefined) {
         const { backupUrl: audioBackupUrl, baseUrl: audioBaseUrl } = audioData;
         audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
+        logger.debug(`[R插件][BILI下载] 音频码率: ${Math.round(audioData.bandwidth / 1024)}kbps`);
     }
+    
     return { videoUrl, audioUrl };
 }
 
@@ -330,23 +406,38 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn) {
     if (!cid) {
         cid = await fetchCID(bvid).catch((err) => logger.error(err))
     }
-    logger.info(`[R插件][BILI请求审计]：${ BILI_PLAY_STREAM
+    const apiUrl = BILI_PLAY_STREAM
         .replace("{bvid}", bvid)
         .replace("{cid}", cid)
-        .replace("{qn}", qn) }`);
-    // 返回一个fetch的promise
+        .replace("{qn}", qn);
+    logger.debug(`[R插件][BILI请求审计] 请求URL: ${apiUrl}`);
+    
     return (new Promise((resolve, reject) => {
-        fetch(BILI_PLAY_STREAM
-            .replace("{bvid}", bvid)
-            .replace("{cid}", cid)
-            .replace("{qn}", qn), {
+        fetch(apiUrl, {
             headers: {
                 ...BILI_HEADER,
-                Cookie: `SESSDATA=${ SESSDATA }`
+                Cookie: `SESSDATA=${SESSDATA}`
             }
         })
             .then(res => res.json())
-            .then(json => resolve(json.data.dash));
+            .then(json => {
+                if (json.code !== 0) {
+                    logger.error(`[R插件][BILI请求审计] 请求失败: ${json.message}`);
+                    reject(new Error(json.message));
+                } else {
+                    // 记录每个视频流的画质信息
+                    const qualityInfo = json.data.dash.video
+                        .sort((a, b) => b.height - a.height)  // 按分辨率从高到低排序
+                        .map(v => `${v.height}p(${v.codecs}): ${Math.round(v.bandwidth / 1024)}kbps`)
+                        .join(', ');
+                    logger.debug(`[R插件][BILI请求审计] 请求成功，可用画质列表: ${qualityInfo}`);
+                    resolve(json.data.dash);
+                }
+            })
+            .catch(err => {
+                logger.error(`[R插件][BILI请求审计] 请求异常: ${err.message}`);
+                reject(err);
+            });
     }))
 }
 
