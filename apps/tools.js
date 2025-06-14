@@ -3290,6 +3290,5 @@ export class tools extends plugin {
         } else {
             await e.group.sendFile(path);
         }
-        await checkAndRemoveFile(path); // 上传成功后删除
     }
 }
