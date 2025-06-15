@@ -840,35 +840,40 @@ export class tools extends plugin {
         const { duration, bvid, cid, owner, pages } = videoInfo;
         
         let durationForCheck;
-        let displayTitle = videoInfo.title; // 默认使用总标题
+        let displayTitle = videoInfo.title; // 始终使用总标题
+        let partTitle = null; // 用于存储分P标题
         let targetPageInfo = null; // 用于后续下载决策
 
         const urlParts = url.split('?');
         const queryParams = urlParts.length > 1 ? querystring.parse(urlParts[1]) : {};
         const pParam = queryParams.p ? parseInt(queryParams.p, 10) : null;
 
-        if (pParam && pages && pages.length >= pParam && pParam > 0) {
-            // 如果URL指定了有效的p参数 (p从1开始计数)
-            targetPageInfo = pages[pParam - 1];
-            durationForCheck = targetPageInfo.duration;
-            displayTitle = targetPageInfo.part;
-            logger.info(`[R插件][Bili Duration] 分析到合集 P${pParam} (标题: ${displayTitle}), 时长: ${durationForCheck}s`);
-        } else if (pages && pages.length > 0) {
-            // 否则，如果存在分P，默认检查第一个分P
-            targetPageInfo = pages[0];
-            durationForCheck = targetPageInfo.duration;
-            displayTitle = targetPageInfo.part;
-            logger.info(`[R插件][Bili Duration] 分析到合集 P1 (标题: ${displayTitle}), 时长: ${durationForCheck}s`);
+        // 只有当分P数量大于1时才认为是多P，并处理分P标题
+        if (pages && pages.length > 1) {
+            if (pParam && pages.length >= pParam && pParam > 0) {
+                // 如果URL指定了有效的p参数
+                targetPageInfo = pages[pParam - 1];
+                durationForCheck = targetPageInfo.duration;
+                partTitle = targetPageInfo.part; // 存储分P标题
+                logger.info(`[R插件][Bili Duration] 分析到合集 P${pParam} (分P标题: ${partTitle}), 时长: ${durationForCheck}s`);
+            } else {
+                // 否则，默认检查第一个分P
+                targetPageInfo = pages[0];
+                durationForCheck = targetPageInfo.duration;
+                // 在多P情况下，即使用户没有指定p，也显示第一个分p的标题
+                partTitle = targetPageInfo.part;
+                logger.info(`[R插件][Bili Duration] 分析到合集 P1 (分P标题: ${partTitle}), 时长: ${durationForCheck}s`);
+            }
         } else {
-            // 如果没有分P信息（或pages为空），使用总时长
+            // 单P或无分P信息
             durationForCheck = duration;
-            // displayTitle 保持为 videoInfo.title
+            // 对于单P视频，我们不设置 partTitle，以避免混淆
             logger.info(`[R插件][Bili Duration] Using total duration (Title: ${displayTitle}): ${durationForCheck}s`);
         }
 
         const isLimitDuration = durationForCheck > this.biliDuration;
         // 动态构造哔哩哔哩信息
-        let biliInfo = await this.constructBiliInfo(videoInfo, displayTitle);
+        let biliInfo = await this.constructBiliInfo(videoInfo, displayTitle, partTitle, pParam || (pages && pages.length > 1 ? 1 : null));
         // 总结
         if (this.biliDisplaySummary) {
             const summary = await this.getBiliSummary(bvid, cid, owner.mid);
@@ -927,10 +932,13 @@ export class tools extends plugin {
     /**
      * 构造哔哩哔哩信息
      * @param videoInfo
-     * @returns {Promise<(string|string)[]>}
+     * @param displayTitle
+     * @param partTitle
+     * @param pParam
+     * @returns {Promise<(string|string|*)[]>}
      */
-    async constructBiliInfo(videoInfo, displayTitle) { // displayTitle 参数
-        const { desc, bvid, cid, pic } = videoInfo; // 移除了 title
+    async constructBiliInfo(videoInfo, displayTitle, partTitle, pParam) { // 增加 partTitle 和 pParam 参数
+        const { desc, bvid, cid, pic } = videoInfo;
         // 视频信息
         const { view, danmaku, reply, favorite, coin, share, like } = videoInfo.stat;
         // 格式化数据
@@ -961,7 +969,14 @@ export class tools extends plugin {
             const onlineTotal = await this.biliOnlineTotal(bvid, cid);
             combineContent += `\n🏄‍♂️️ 当前视频有 ${ onlineTotal.total } 人在观看，其中 ${ onlineTotal.count } 人在网页端观看`;
         }
-        let biliInfo = [`${ this.identifyPrefix }识别：哔哩哔哩，${ displayTitle }`, combineContent]; // 使用 displayTitle
+
+        let finalTitle = `${ this.identifyPrefix }识别：哔哩哔哩，${ displayTitle }`;
+        // 如果有多P标题，并且它和主标题不一样，则添加
+        if (partTitle && partTitle !== displayTitle) {
+            finalTitle += `|${pParam}P: ${ partTitle }`;
+        }
+
+        let biliInfo = [finalTitle, combineContent];
         // 是否显示封面
         if (this.biliDisplayCover) {
             // 加入图片
@@ -2169,7 +2184,6 @@ export class tools extends plugin {
             await checkAndRemoveFile(`${path}/${videoFilename}`);
             await checkAndRemoveFile(`${path}/${audioFilename}`);
             await checkAndRemoveFile(`${path}/${thumbnailFilenamePrefix}.png`);
-
             // 下载缩略图并获取实际文件名
             const actualThumbnailFilename = await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, thumbnailFilenamePrefix);
             const fullThumbnailPath = `${path}/${actualThumbnailFilename}`;
@@ -3290,6 +3304,5 @@ export class tools extends plugin {
         } else {
             await e.group.sendFile(path);
         }
-        await checkAndRemoveFile(path); // 上传成功后删除
     }
 }
