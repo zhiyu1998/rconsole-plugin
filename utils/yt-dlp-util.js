@@ -43,7 +43,7 @@ export function ytDlpGetDuration(url, isOversea, proxy, cookiePath = "") {
     return new Promise((resolve, reject) => {
         // 构造 cookie 参数
         const cookieParam = constructCookiePath(url, cookiePath);
-        const command = `yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url}`;
+        const command = `yt-dlp --get-duration --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}"`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetDuration: ${error}. Stderr: ${stderr}`);
@@ -69,7 +69,7 @@ export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
         const cookieParam = constructCookiePath(url, cookiePath);
         // 构造 编码 参数
         const encodingParam = constructEncodingParam(url);
-        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } ${ url } ${encodingParam}`;
+        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } "${url}" ${encodingParam}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetTilt: ${error}. Stderr: ${stderr}`);
@@ -92,16 +92,29 @@ export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
  */
 export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "", thumbnailFilenamePrefix = "thumbnail") {
     return new Promise((resolve, reject) => {
-        // 构造 cookie 参数
         const cookieParam = constructCookiePath(url, cookiePath);
-        const finalThumbnailName = thumbnailFilenamePrefix || "thumbnail"; // 确保有默认值
-        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} ${url} -P "${path}" -o "${finalThumbnailName}.%(ext)s"`;
+        const finalThumbnailName = thumbnailFilenamePrefix || "thumbnail";
+        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}" -P "${path}" -o "${finalThumbnailName}.%(ext)s"`;
+
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetThumbnail: ${error}. Stderr: ${stderr}`);
-                reject(error);
+                return reject(error);
+            }
+            // 从yt-dlp的输出中提取文件名
+            const match = stdout.match(/Writing thumbnail to: (.*)/);
+            if (match && match[1]) {
+                const thumbnailPath = match[1].trim();
+                // 只返回文件名部分
+                const thumbnailFilename = thumbnailPath.split(/[\\/]/).pop();
+                logger.info(`[R插件][yt-dlp审计] Thumbnail downloaded: ${thumbnailFilename}`);
+                resolve(thumbnailFilename);
             } else {
-                resolve(); // The return value is not used
+                // 兜底方案：如果无法从输出中解析，则按原逻辑拼接
+                logger.warn("[R插件][yt-dlp审计] Could not parse thumbnail filename from stdout. Falling back to default.");
+                // 尝试查找文件，因为yt-dlp可能没有输出我们期望的格式
+                const expectedPngPath = `${finalThumbnailName}.png`;
+                resolve(expectedPngPath);
             }
         });
     });
@@ -132,12 +145,12 @@ export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outpu
         if (url.includes("music")) {
             // 这里是 YouTube Music的处理逻辑
             // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
-            command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.flac" ${url}`;
+            command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.flac" "${url}"`;
         } else {
             // 正常情况下的处理逻辑
             const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
 
-            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" ${url}`;
+            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" "${url}"`;
         }
 
         logger.info(`[R插件][yt-dlp审计] ${command}`);

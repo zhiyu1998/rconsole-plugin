@@ -2163,20 +2163,16 @@ export class tools extends plugin {
             // 使用安全标题作为文件名前缀
             const videoFilename = `${safeTitlePrefix}.mp4`;
             const audioFilename = `${safeTitlePrefix}.flac`;
-            const thumbnailFilename = `${safeTitlePrefix}_thumbnail.png`; // 确保缩略图文件名也唯一
+            const thumbnailFilenamePrefix = `${safeTitlePrefix}_thumbnail`;
 
             // 清理可能存在的旧文件或同名文件
-            await checkAndRemoveFile(path + "/" + videoFilename);
-            await checkAndRemoveFile(path + "/" + audioFilename);
-            await checkAndRemoveFile(path + "/" + thumbnailFilename);
-            // 清理旧的 temp 文件，以防万一
-            await checkAndRemoveFile(path + "/temp.mp4");
-            await checkAndRemoveFile(path + "/temp.flac");
-            await checkAndRemoveFile(path + "/thumbnail.png");
+            await checkAndRemoveFile(`${path}/${videoFilename}`);
+            await checkAndRemoveFile(`${path}/${audioFilename}`);
+            await checkAndRemoveFile(`${path}/${thumbnailFilenamePrefix}.png`);
 
-
-            await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, safeTitlePrefix + "_thumbnail"); // 传递不带扩展名的前缀
-            const fullThumbnailPath = `${path}/${thumbnailFilename}`;
+            // 下载缩略图并获取实际文件名
+            const actualThumbnailFilename = await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, thumbnailFilenamePrefix);
+            const fullThumbnailPath = `${path}/${actualThumbnailFilename}`;
 
 
             // 音频逻辑
@@ -2204,17 +2200,21 @@ export class tools extends plugin {
                     segment.image(fullThumbnailPath),
                     `${ this.identifyPrefix }识别：油管，视频时长超限 \n视频标题：${ rawTitle }\n⌚${ DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '') }⌚\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定解析时长：${ (this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`
                 ]);
+                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
                 e.reply([
                     segment.image(fullThumbnailPath),
                     `${ this.identifyPrefix }识别：油管，视频截取中请耐心等待 \n视频标题：${ rawTitle }\n✂️${ DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '') }✂️\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n大于管理员限定截取时长：${ (this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '') } 分钟\n将截取视频片段`
                 ]);
+                // 注意：sendVideoToUpload 内部会删除视频文件，但不会删除缩略图
                 await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
-                this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
+                await this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
+                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else {
                 e.reply([segment.image(fullThumbnailPath), `${ this.identifyPrefix }识别：油管，视频下载中请耐心等待 \n视频标题：${ rawTitle }\n视频时长：${ (Duration / 60).toFixed(2).replace(/\.00$/, '') } 分钟`]);
                 await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
-                this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
+                await this.sendVideoToUpload(e, `${ path }/${ videoFilename }`);
+                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             }
         } catch (error) {
             logger.error(error);
