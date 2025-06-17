@@ -246,7 +246,7 @@ export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q=";
  * HIBI API
  * @type {string}
  */
-export const HIBI_API_SERVICE = "https://hibi.moecube.com/api";
+export const HIBI_API_SERVICE = "http://0d00.us.kg:8080/api";
 
 /**
  * 临时 AI LLM爬虫
