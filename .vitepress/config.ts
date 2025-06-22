@@ -5,7 +5,7 @@ import mathjax3 from "markdown-it-mathjax3";
 
 async function config() {
   return {
-    lang: "en-US",
+    lang: "zh-CN",
     base: "/rconsole-plugin/",
     title: "R-Plugin",
     description: "Home of R-Plugin",

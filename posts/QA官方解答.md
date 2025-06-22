@@ -1,7 +1,7 @@
 ---
 title: QA官方解答
 description: R插件的问题解答
-date: 2024-08-14
+date: 2025-06-22
 tags:
   - 问题解答
 ---
@@ -10,14 +10,20 @@ tags:
 
 ### 📢 太子专用的 AI 文档问答
 
-1. 进群后发送命令，命令是：`#R文档 xxx`，比如：`#R文档 如何使用yt-dlp`
+~~#R文档 已弃用~~
+
+~~现已升级为 **v🐔奇** 智能文档~~
+
+有问题进群后咨询群里大佬即可( •̀ ω •́ )✧
+
+1. ~~进群后发送命令，命令是：`#R文档 xxx`，比如：`#R文档 如何使用yt-dlp`~~
 
 ![](https://s2.loli.net/2024/09/17/dxMhfTZr4jw6CzX.png)
 
 示例回答：
 ![](https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png)
 
-如果要进行文档更新，可以使用：`#R文档 更新`
+~~如果要进行文档更新，可以使用：`#R文档 更新`~~
 
 ![](https://s2.loli.net/2024/09/28/AsvmJLpylbZQoex.png)
 
@@ -25,22 +31,51 @@ tags:
 
 ![](https://camo.githubusercontent.com/db979437e758fc465e2cc8496e5cb64370281f8eebb23c89ae45c104d53a0c85/68747470733a2f2f73322e6c6f6c692e6e65742f323032342f31302f31322f6544693646635949546b4d557053622e706e67)
 
-### 🧴 关于双容器解决方案
 
-由我的朋友@春日野穹提供的方案，重装下napcat就可以，`xxx`记得改成QQ号：
+### 🧴 关于容器视频文件发送解决方案
+
+造成此原因是 nc 被隔离在容器中无法获取宿主机下 yunzai 目录下载好的视频文件
+
+1. 由我的朋友@春日野穹提供的方案，重装下 napcat 就可以
+
+> 此方法适用于 nc 为容器，yunzai 运行在宿主机
 ```shell
 docker run -d \
-  -e ACC0UNT=xxx \
-  -e WSR_ENABLE=true \
-  -e WS_URLS='["ws://localhost:2536/0neBotv11"]' \
-  -e NAPCAT_GID=01 \
-  -e NAPCAT_UID=0 \
-  -v /root/TRsS_AiiBot:/root/TRsS_AilBot1 \
-  --restart always \
-  --network host \
-  --name napcat \
-  mlikiowa/napcat-docker:latest
+-e NAPCAT_GID=$(id -g) \
+-e NAPCAT_UID=$(id -u) \
+-v /root/TRSS_AllBot:/root/TRSS_AllBot \
+--network host \
+--name napcat \
+--restart=always \
+mlikiowa/napcat-docker:latest
 ```
+
+> 相较于原命令，将容器网络改为host，避免萌新无法ws链接宿主机网络
+
+> 重点是 `-v <主机路径>:<容器路径> \ `映射 yunzai 宿主机文件目录至 nc 容器
+
+2. 或简单一点使用 base64 发送文件 由@湘潭提供
+
+修改 `yunzai目录/plugins/adapter/OneBotv11.js` (大约在42行左右)
+
+```js
+  async makeFile(file, opts) {
+    file = await Bot.Buffer(file, {
+      http: true, size: 10485760, ...opts,
+    })
+    if (Buffer.isBuffer(file))
+      return `base64://${file.toString("base64")}`
+    return file
+  }
+```
+将其中的 `10485760` 数字后加两个零
+
+> 此方法性能消耗较大且长视频可能无法发送
+
+
+3. 如果你yunzai和nc都为容器？？？？？
+- 将两个容器目录映射宿主机再互相映射
+- 或创建并挂载共享数据卷
 
 ### ♻️ 关于更新问题
 
@@ -51,6 +86,8 @@ docker run -d \
 #R更新
 #R强制更新
 ```
+
+> 注意：R为大写
 
 ✅ 正确演示：
 
@@ -131,6 +168,8 @@ source ~/.zshrc   # 如果你使用 zsh
 ```
 
 ### 🚀 WebUI启动方法
+
+> 此功能已于2024.12.1分离，后续版本默认不支持
 
 1. 在群里发送 `#rwss` 以构建和启动网页：
 
