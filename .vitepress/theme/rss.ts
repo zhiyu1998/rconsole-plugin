@@ -24,8 +24,8 @@ const OPTIONS: FeedOptions = {
     rss: DOMAIN + "/feed.xml",
   },
   author: AUTHOR,
-  image: "https://zhiyu1998.github.io/rconsole-plugin/horse.svg",
-  favicon: "https://zhiyu1998.github.io/rconsole-plugin/horse.svg",
+  image: "https://zhiyu1998.github.io/rconsole-plugin/logo.svg",
+  favicon: "https://zhiyu1998.github.io/rconsole-plugin/logo.svg",
 };
 
 const markdown = MarkdownIt({
