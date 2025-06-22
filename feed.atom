@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2024-11-25T12:09:47.001Z</updated>
+    <updated>2025-06-22T13:42:32.124Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -12,81 +12,88 @@
     <link rel="alternate" href="https://zhiyu1998.github.io/rconsole-plugin/"/>
     <link rel="self" href="https://zhiyu1998.github.io/rconsole-plugin/feed.atom"/>
     <subtitle>Plugin' Blog</subtitle>
-    <logo>https://zhiyu1998.github.io/rconsole-plugin/horse.svg</logo>
-    <icon>https://zhiyu1998.github.io/rconsole-plugin/horse.svg</icon>
+    <logo>https://zhiyu1998.github.io/rconsole-plugin/logo.svg</logo>
+    <icon>https://zhiyu1998.github.io/rconsole-plugin/logo.svg</icon>
     <rights>MIT License</rights>
-    <entry>
-        <title type="html"><![CDATA[最近的一些更新日志]]></title>
-        <id>https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html</id>
-        <link href="https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html"/>
-        <updated>2024-08-15T00:00:00.000Z</updated>
-        <summary type="html"><![CDATA[R插件的最近更新]]></summary>
-        <content type="html"><![CDATA[<h2>前言</h2>
-<p>只写一些比较重要的特性，具体可以看<code>commit</code></p>
-<blockquote>
-<p><a href="https://github.com/zhiyu1998/rconsole-plugin/commits/master/">https://github.com/zhiyu1998/rconsole-plugin/commits/master/</a></p>
-</blockquote>
-<h2>2024 年</h2>
-<h3>9月的一些更新</h3>
-<ul>
-<li>加入 dy 直播切片</li>
-<li>修复了 <code>wb</code></li>
-<li>修复了 <code>ytb</code> 在 <code>Windows</code> 端乱码</li>
-<li>更新了帮助页面</li>
-</ul>
-<h3>8月的一些特性</h3>
-<ul>
-<li>加入了<code>小飞机</code>的<code>文件上传</code></li>
-<li>加入了<code>Aria2</code>和<code>Axel</code>辅助下载</li>
-<li>加入<code>小飞机解析</code></li>
-</ul>
-]]></content>
-        <author>
-            <name>zhiyu1998</name>
-            <email>renzhiyu0416@gmail.com</email>
-            <uri>https://zhiyu1998.github.io/rconsole-plugin</uri>
-        </author>
-    </entry>
     <entry>
         <title type="html"><![CDATA[QA官方解答]]></title>
         <id>https://zhiyu1998.github.io/rconsole-plugin/posts/QA官方解答.html</id>
         <link href="https://zhiyu1998.github.io/rconsole-plugin/posts/QA官方解答.html"/>
-        <updated>2024-08-14T00:00:00.000Z</updated>
+        <updated>2025-06-22T00:00:00.000Z</updated>
         <summary type="html"><![CDATA[R插件的问题解答]]></summary>
         <content type="html"><![CDATA[<h2>🐤 Q&amp;A</h2>
 <h3>📢 太子专用的 AI 文档问答</h3>
+<p><s>#R文档 已弃用</s></p>
+<p><s>现已升级为 <strong>v🐔奇</strong> 智能文档</s></p>
+<p>有问题进群后咨询群里大佬即可( •̀ ω •́ )✧</p>
 <ol>
-<li>进群后发送命令，命令是：<code>#R文档 xxx</code>，比如：<code>#R文档 如何使用yt-dlp</code></li>
+<li><s>进群后发送命令，命令是：<code>#R文档 xxx</code>，比如：<code>#R文档 如何使用yt-dlp</code></s></li>
 </ol>
 <p><img src="https://s2.loli.net/2024/09/17/dxMhfTZr4jw6CzX.png" alt=""></p>
 <p>示例回答：<br>
 <img src="https://s2.loli.net/2024/09/17/zLEpRq9s6rXNPAc.png" alt=""></p>
-<p>如果要进行文档更新，可以使用：<code>#R文档 更新</code></p>
+<p><s>如果要进行文档更新，可以使用：<code>#R文档 更新</code></s></p>
 <p><img src="https://s2.loli.net/2024/09/28/AsvmJLpylbZQoex.png" alt=""></p>
 <ol start="2">
 <li>通过 GLM 进行问答（暂时的）</li>
 </ol>
 <p><img src="https://camo.githubusercontent.com/db979437e758fc465e2cc8496e5cb64370281f8eebb23c89ae45c104d53a0c85/68747470733a2f2f73322e6c6f6c692e6e65742f323032342f31302f31322f6544693646635949546b4d557053622e706e67" alt=""></p>
-<h3>🧴 关于双容器解决方案</h3>
-<p>由我的朋友@春日野穹提供的方案，重装下napcat就可以，<code>xxx</code>记得改成QQ号：</p>
+<h3>🧴 关于容器视频文件发送解决方案</h3>
+<p>造成此原因是 nc 被隔离在容器中无法获取宿主机下 yunzai 目录下载好的视频文件</p>
+<ol>
+<li>由我的朋友@春日野穹提供的方案，重装下 napcat 就可以</li>
+</ol>
+<blockquote>
+<p>此方法适用于 nc 为容器，yunzai 运行在宿主机</p>
+</blockquote>
 <pre><code class="language-shell">docker run -d \
-  -e ACC0UNT=xxx \
-  -e WSR_ENABLE=true \
-  -e WS_URLS='[&quot;ws://localhost:2536/0neBotv11&quot;]' \
-  -e NAPCAT_GID=01 \
-  -e NAPCAT_UID=0 \
-  -v /root/TRsS_AiiBot:/root/TRsS_AilBot1 \
-  --restart always \
-  --network host \
-  --name napcat \
-  mlikiowa/napcat-docker:latest
+-e NAPCAT_GID=$(id -g) \
+-e NAPCAT_UID=$(id -u) \
+-v /root/TRSS_AllBot:/root/TRSS_AllBot \
+--network host \
+--name napcat \
+--restart=always \
+mlikiowa/napcat-docker:latest
 </code></pre>
+<blockquote>
+<p>相较于原命令，将容器网络改为host，避免萌新无法ws链接宿主机网络</p>
+</blockquote>
+<blockquote>
+<p>重点是 <code>-v &lt;主机路径&gt;:&lt;容器路径&gt; \ </code>映射 yunzai 宿主机文件目录至 nc 容器</p>
+</blockquote>
+<ol start="2">
+<li>或简单一点使用 base64 发送文件 由@湘潭提供</li>
+</ol>
+<p>修改 <code>yunzai目录/plugins/adapter/OneBotv11.js</code> (大约在42行左右)</p>
+<pre><code class="language-js">  async makeFile(file, opts) {
+    file = await Bot.Buffer(file, {
+      http: true, size: 10485760, ...opts,
+    })
+    if (Buffer.isBuffer(file))
+      return `base64://${file.toString(&quot;base64&quot;)}`
+    return file
+  }
+</code></pre>
+<p>将其中的 <code>10485760</code> 数字后加两个零</p>
+<blockquote>
+<p>此方法性能消耗较大且长视频可能无法发送</p>
+</blockquote>
+<ol start="3">
+<li>如果你yunzai和nc都为容器？？？？？</li>
+</ol>
+<ul>
+<li>将两个容器目录映射宿主机再互相映射</li>
+<li>或创建并挂载共享数据卷</li>
+</ul>
 <h3>♻️ 关于更新问题</h3>
 <p>请使用我开发的可以携带数据的更新，而不是 Yunzai 的全局更新方法，防止丢失cookie</p>
 <p>命令集合：</p>
 <pre><code class="language-shell">#R更新
 #R强制更新
 </code></pre>
+<blockquote>
+<p>注意：R为大写</p>
+</blockquote>
 <p>✅ 正确演示：</p>
 <blockquote>
 <p><img src="https://s2.loli.net/2024/09/28/BIcV4XM5J1TroYg.png" alt=""></p>
@@ -149,6 +156,9 @@ source ~/.bashrc  # 如果你使用 bash
 source ~/.zshrc   # 如果你使用 zsh
 </code></pre>
 <h3>🚀 WebUI启动方法</h3>
+<blockquote>
+<p>此功能已于2024.12.1分离，后续版本默认不支持</p>
+</blockquote>
 <ol>
 <li>
 <p>在群里发送 <code>#rwss</code> 以构建和启动网页：</p>
@@ -503,6 +513,38 @@ apt install axel
 <a href="https://gitee.com/kyrzy0416/rconsole-plugin/issues/I7KQVY">#I7KQVY</a></p>
 </blockquote>
 <img src="https://s2.loli.net/2024/08/19/uo1J35V4vMDUSbN.webp" alt="小程序解析" width="50%" height="50%" />
+]]></content>
+        <author>
+            <name>zhiyu1998</name>
+            <email>renzhiyu0416@gmail.com</email>
+            <uri>https://zhiyu1998.github.io/rconsole-plugin</uri>
+        </author>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[最近的一些更新日志]]></title>
+        <id>https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html</id>
+        <link href="https://zhiyu1998.github.io/rconsole-plugin/posts/最近的一些更新日志.html"/>
+        <updated>2024-08-15T00:00:00.000Z</updated>
+        <summary type="html"><![CDATA[R插件的最近更新]]></summary>
+        <content type="html"><![CDATA[<h2>前言</h2>
+<p>只写一些比较重要的特性，具体可以看<code>commit</code></p>
+<blockquote>
+<p><a href="https://github.com/zhiyu1998/rconsole-plugin/commits/master/">https://github.com/zhiyu1998/rconsole-plugin/commits/master/</a></p>
+</blockquote>
+<h2>2024 年</h2>
+<h3>9月的一些更新</h3>
+<ul>
+<li>加入 dy 直播切片</li>
+<li>修复了 <code>wb</code></li>
+<li>修复了 <code>ytb</code> 在 <code>Windows</code> 端乱码</li>
+<li>更新了帮助页面</li>
+</ul>
+<h3>8月的一些特性</h3>
+<ul>
+<li>加入了<code>小飞机</code>的<code>文件上传</code></li>
+<li>加入了<code>Aria2</code>和<code>Axel</code>辅助下载</li>
+<li>加入<code>小飞机解析</code></li>
+</ul>
 ]]></content>
         <author>
             <name>zhiyu1998</name>
