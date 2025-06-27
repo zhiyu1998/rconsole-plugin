@@ -43,7 +43,7 @@ class GeneralLinkAdapter {
         // 例子：https://www.kuaishou.com/short-video/3xkfs8p4pnd67p4?authorId=3xkznsztpwetngu&streamSource=find&area=homexxbrilliant
         // https://v.m.chenzhongtech.com/fw/photo/3xburnkmj3auazc
         // https://v.kuaishou.com/1ff8QP
-        let msg = /(?:https?:\/\/)?(www|v)\.kuaishou\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(link)[0];
+        let msg = /(?:https?:\/\/)?(www|v)\.(kuaishou|m\.chenzhongtech)\.com\/[A-Za-z\d._?%&+\-=\/#]*/g.exec(link)[0];
         // 跳转短号
         if (msg.includes("v.kuaishou")) {
             msg = await this.fetchUrl(msg, true);
@@ -127,7 +127,7 @@ class GeneralLinkAdapter {
     async init(link) {
         logger.mark("[R插件][通用解析]", link)
         const handlers = new Map([
-            [/kuaishou.com/, this.ks.bind(this)],
+            [/(kuaishou.com|chenzhongtech.com)/, this.ks.bind(this)],
             [/ixigua.com/, this.xigua.bind(this)],
             [/h5.pipix.com/, this.pipixia.bind(this)],
             [/h5.pipigx.com/, this.pipigx.bind(this)],
