@@ -365,10 +365,125 @@ export class tools extends plugin {
             ttwid = ttwidValue;
             douUrl = location;
         }
-        // TODO 如果有新的好解决方案可以删除，如果遇到https://www.iesdouyin.com/share/slides，这类动图暂时交付给其他API解析
+        // TODO 如果有新的好解决方案可以删除，如果遇到https://www.iesdouyin.com/share/slides，这类动图暂时交付给其他API解析，感谢群u:"Error: Cannot find id"提供的服务器
         if (douUrl.includes("share/slides")) {
-            this.general(e);
-            return;
+            const detailIdMatch = douUrl.match(/\/slides\/(\d+)/);
+            const detailId = detailIdMatch[1];
+            const apiUrl = 'http://tk.xigua.wiki:5555/douyin/detail';
+            const postData = {
+                cookie: "",
+                proxy: "",
+                source: false,
+                detail_id: detailId
+            };
+            // 用于存储下载的文件路径
+            const downloadedFilePaths = [];
+            try {
+                const apiResponse = await axios.post(apiUrl, postData, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'accept': 'application/json'
+                    },
+                    timeout: 15000
+                });
+                if (apiResponse.status !== 200 || !apiResponse.data || !apiResponse.data.data) {
+                    logger.error(`[R插件][抖音解析] API返回异常状态码或数据结构错误: ${apiResponse.status}, ${JSON.stringify(apiResponse.data)}`);
+                    e.reply("解析抖音动图失败，请稍后再试！");
+                    return true;
+                }
+                const apiData = apiResponse.data.data;
+                const downloads = apiData.downloads;
+                const desc = apiData.desc || "无简介";
+                const authorNickname = apiData.nickname || "未知作者";
+
+                const replyMessages = [];
+                replyMessages.push(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+
+                const messageSegments = [];
+                const downloadPath = this.getCurDownloadPath(e);
+                await mkdirIfNotExists(downloadPath);
+                await e.reply(replyMessages.join('\n'));
+                for (const [index, downloadUrl] of downloads.entries()) {
+                    let filePath;
+                    let fileName;
+
+                    try {
+                        if (downloadUrl.includes(".mp4") || downloadUrl.includes("video_id")) {
+                            fileName = `temp${index > 0 ? index : ''}.mp4`;
+                            filePath = `${downloadPath}/${fileName}`;
+                            logger.info(`[R插件][抖音动图] 下载视频: ${downloadUrl}`);
+                            const response = await axios({
+                                method: 'get',
+                                url: downloadUrl,
+                                responseType: 'stream'
+                            });
+                            const writer = fs.createWriteStream(filePath);
+                            response.data.pipe(writer);
+                            await new Promise((resolve, reject) => {
+                                writer.on('finish', resolve);
+                                writer.on('error', reject);
+                            });
+                            logger.info(`[R插件][抖音动图] 视频下载完成: ${filePath}`);
+                            messageSegments.push({
+                                message: segment.video(filePath),
+                                nickname: e.sender.card || e.user_id,
+                                user_id: e.user_id,
+                            });
+                            downloadedFilePaths.push(filePath);
+
+                        } else {
+                            fileName = `temp${index > 0 ? index : ''}.png`;
+                            filePath = `${downloadPath}/${fileName}`;
+                            logger.info(`[R插件][抖音动图] 下载图片: ${downloadUrl}`);
+                            const response = await axios({
+                                method: 'get',
+                                url: downloadUrl,
+                                responseType: 'stream'
+                            });
+                            const writer = fs.createWriteStream(filePath);
+                            response.data.pipe(writer);
+                            await new Promise((resolve, reject) => {
+                                writer.on('finish', resolve);
+                                writer.on('error', reject);
+                            });
+                            logger.info(`[R插件][抖音动图] 图片下载完成: ${filePath}`);
+                            messageSegments.push({
+                                message: segment.image(filePath),
+                                nickname: e.sender.card || e.user_id,
+                                user_id: e.user_id,
+                            });
+                            downloadedFilePaths.push(filePath);
+                        }
+                    } catch (downloadError) {
+                        logger.error(`[R插件][抖音动图] 下载文件失败: ${downloadUrl}, 错误: ${downloadError.message}`);
+                        messageSegments.push({
+                            message: { type: "text", text: `下载文件失败: ${downloadUrl}` },
+                            nickname: e.sender.card || e.user_id,
+                            user_id: e.user_id,
+                        });
+                    }
+                }
+                if (messageSegments.length > 0) {
+                    const forwardMsg = await Bot.makeForwardMsg(messageSegments);
+                    await e.reply(forwardMsg);
+
+                    // 删除文件
+                    for (const filePath of downloadedFilePaths) {
+                        await checkAndRemoveFile(filePath);
+                    }
+                }
+                const headers = {
+                    "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+                    "User-Agent": COMMON_USER_AGENT,
+                    Referer: "https://www.douyin.com/",
+                    cookie: this.douyinCookie,
+                };
+                await this.douyinComment(e, detailId, headers);
+
+            } catch (error) {
+                logger.error(`[R插件][抖音动图] 调用API或处理下载时发生错误: ${error.message}`);
+            }
+            return true;
         }
         // 获取 ID
         const douId = /note\/(\d+)/g.exec(douUrl)?.[1] ||
