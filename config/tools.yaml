@@ -51,6 +51,7 @@ videoDownloadConcurrency: 1 # 下载视频是否使用多线程，如果不使�
 
 autoclearTrashtime: '0 0 8 * * ?' #每天早上8点自动清理视频缓存，cron可自定义时间
 
+aiWebFetch: false # 是否开启AI网页抓取，开启时先进行网页内容抓取再传递给AI模型，默认不开启
 aiBaseURL: '' # 用于识图的接口，kimi默认接口为：https://api.moonshot.cn，其他服务商自己填写
 aiApiKey: '' # 用于识图的api key，kimi接口申请：https://platform.moonshot.cn/console/api-keys
 aiModel: 'moonshot-v1-8k' # 模型，使用kimi不用填写，其他要填写

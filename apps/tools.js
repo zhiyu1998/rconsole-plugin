@@ -308,6 +308,8 @@ export class tools extends plugin {
         this.queue = new PQueue({ concurrency: Number(this.toolsConfig.queueConcurrency) });
         // 视频下载的并发数量
         this.videoDownloadConcurrency = this.toolsConfig.videoDownloadConcurrency;
+        // ai总结 先获取网页
+        this.aiWebFetch = this.toolsConfig.aiWebFetch;
         // ai接口
         this.aiBaseURL = this.toolsConfig.aiBaseURL;
         // ai api key
@@ -2662,12 +2664,24 @@ export class tools extends plugin {
             .setPrompt(SUMMARY_PROMPT)
             .build();
         e.reply(`${ this.identifyPrefix }识别：${ name }，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
-        const { ans: kimiAns, model } = await builder.kimi(summaryLink);
+
+        let result;
+        if (this.aiWebFetch) {
+            try {
+                result = await builder.openai(summaryLink);
+            } catch (error) {
+                logger.warn('[R插件][AI总结] OpenAI接口调用失败', error.message);
+            }
+        } else {
+            result = await builder.kimi(summaryLink);
+        }
+
+        const { ans: aiAns, model } = result;
         // 计算阅读时间
-        const stats = estimateReadingTime(kimiAns);
-        const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
+        const stats = estimateReadingTime(aiAns);
+        const titleMatch = aiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
         e.reply(`《${ titleMatch }》 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`);
-        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
+        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, aiAns]));
         await e.reply(Msg);
         return true;
     }

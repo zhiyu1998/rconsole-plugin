@@ -409,6 +409,14 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.aiWebFetch",
+                    label: "AI网页抓取",
+                    bottomHelpMessage:
+                        "开启时先进行网页内容抓取再传递给AI模型，关闭时直接把网页链接传递给AI模型",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.aiBaseURL",
                     label: "AI接口地址",
                     bottomHelpMessage:
@@ -434,7 +442,7 @@ export function supportGuoba() {
                     field: "tools.aiModel",
                     label: "AI的模型",
                     bottomHelpMessage:
-                        "默认使用的是moonshot-v1-8k，也可以自定义模型，只要能联网就能使用！",
+                        "默认使用的是moonshot-v1-8k，也可以自定义模型",
                     component: "Input",
                     required: false,
                     componentProps: {
