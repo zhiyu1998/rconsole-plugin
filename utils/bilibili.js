@@ -204,7 +204,14 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @returns {Promise<any>}
  */
 export async function getDownloadUrl(url, SESSDATA, qn) {
-    const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    const videoInfo = await getVideoInfo(url);
+    const { bvid, cid } = videoInfo;
+
+    if (!bvid || !cid) {
+        logger.error(`[R插件][BILI下载] 无法从视频信息中获取bvid或cid`);
+        throw new Error("获取bvid或cid失败");
+    }
+    
     // 转换画质数字为分辨率
     let qualityText;
     switch(parseInt(qn)) {
@@ -214,8 +221,8 @@ export async function getDownloadUrl(url, SESSDATA, qn) {
         case 16: qualityText = "360P"; break;
         default: qualityText = "480P"; break;
     }
-    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}`);
-    const dash = await getBiliVideoWithSession(videoId, "", SESSDATA, qn);
+    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${bvid}, 请求画质: ${qualityText}`);
+    const dash = await getBiliVideoWithSession(bvid, cid, SESSDATA, qn);
     // 获取关键信息
     const { video, audio } = dash;
     
@@ -460,19 +467,31 @@ export const fetchCID = async (bvid) => {
  * @returns {Promise<{duration: *, owner: *, bvid: *, stat: *, pages: *, dynamic: *, pic: *, title: *, aid: *, desc: *, cid: *}>}
  */
 export async function getVideoInfo(url) {
-    // const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    let apiUrl;
+
+    if (videoId.toLowerCase().startsWith('av')) {
+        const aid = videoId.substring(2);
+        apiUrl = `${BILI_VIDEO_INFO}?aid=${aid}`;
+    } else {
+        apiUrl = `${BILI_VIDEO_INFO}?bvid=${videoId}`;
+    }
+
     // 获取视频信息，然后发送
-    return fetch(`${ BILI_VIDEO_INFO }?bvid=${ videoId }`)
+    return fetch(apiUrl)
         .then(async resp => {
             const respJson = await resp.json();
+            if (respJson.code !== 0) {
+                logger.error(`[R插件] 获取视频信息失败: ${respJson.message}`, `ID: ${videoId}`);
+                throw new Error(`获取视频信息失败: ${respJson.message || '请求错误'}`);
+            }
             const respData = respJson.data;
             return {
                 title: respData.title,
                 pic: respData.pic,
                 desc: respData.desc,
                 duration: respData.duration,
-                dynamic: respJson.data.dynamic,
+                dynamic: respData.dynamic,
                 stat: respData.stat,
                 bvid: respData.bvid,
                 aid: respData.aid,

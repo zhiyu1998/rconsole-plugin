@@ -65,7 +65,6 @@ import NeteaseMusicInfo from '../model/neteaseMusicInfo.js';
 import * as aBogus from "../utils/a-bogus.cjs";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import { startBBDown } from "../utils/bbdown-util.js";
-import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import {
     BILI_HEADER,
     downloadBFile,
@@ -878,11 +877,7 @@ export class tools extends plugin {
         }
         // 补充https
         url = url.startsWith("https://") ? url : "https://" + url;
-        // av处理
-        const matched = url.match(/\/(AV|av)(\w+)/);
-        if (matched) {
-            url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
-        }
+        
         // 直播间分享
         // logger.info(url)
         if (url.includes("live.bilibili.com")) {
@@ -908,7 +903,7 @@ export class tools extends plugin {
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${ this.identifyPrefix }识别：哔哩哔哩直播，${ title }`,
-                    `${ description ? `📝 简述：${ description.replace(`&lt;p&gt;`, '').replace(`&lt;/p&gt;`, '') }` : '' }`,
+                    `${ description ? `📝 简述：${ description.replace(`<p>`, '').replace(`</p>`, '') }` : '' }`,
                     `${ tags ? `🔖 标签：${ tags }` : '' }`,
                     `📍 分区：${ parent_area_name ? `${ parent_area_name }` : '' }${ area_name ? `-${ area_name }` : '' }`,
                     `${ live_time ? `⏰ 直播时间：${ live_time }` : '' }`,
