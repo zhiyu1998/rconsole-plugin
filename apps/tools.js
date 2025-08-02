@@ -56,7 +56,8 @@ import {
     TWITTER_TWEET_INFO,
     WEIBO_SINGLE_INFO,
     WEISHI_VIDEO_INFO,
-    XHS_REQ_LINK
+    XHS_REQ_LINK,
+    CRAWL_TOOL
 } from "../constants/tools.js";
 import BiliInfoModel from "../model/bili-info.js";
 import config from "../model/config.js";
@@ -2644,31 +2645,113 @@ export class tools extends plugin {
 
         if (e.msg.startsWith("#总结一下")) {
             name = "网页总结";
-            summaryLink = e.msg.replace("#总结一下", ""); // 如果需要进一步处理 summaryLink，可以在这里添加相关逻辑
+            summaryLink = e.msg.replace("#总结一下", "");
         } else {
-            ({ name: name, summaryLink: summaryLink } = contentEstimator(e.msg));
+            ({ name, summaryLink } = contentEstimator(e.msg));
         }
 
         // 判断是否有总结的条件
-        if (_.isEmpty(this.aiApiKey) || _.isEmpty(this.aiApiKey)) {
+        if (_.isEmpty(this.aiApiKey)) {
             // e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
             await this.tempSummary(name, summaryLink, e);
             return true;
         }
+
         const builder = await new OpenaiBuilder()
             .setBaseURL(this.aiBaseURL)
             .setApiKey(this.aiApiKey)
             .setModel(this.aiModel)
-            .setPrompt(SUMMARY_PROMPT)
-            .build();
-        e.reply(`${ this.identifyPrefix }识别：${ name }，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
-        const { ans: kimiAns, model } = await builder.kimi(summaryLink);
-        // 计算阅读时间
-        const stats = estimateReadingTime(kimiAns);
-        const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
-        e.reply(`《${ titleMatch }》 预计阅读时间: ${ stats.minutes } 分钟，总字数: ${ stats.words }`);
-        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${ model }」联合为您总结内容：`, kimiAns]));
-        await e.reply(Msg);
+            .setPrompt(SUMMARY_PROMPT);
+
+        if (this.aiModel.includes('deepseek')) {
+            builder.setProvider('deepseek');
+        }
+
+        await builder.build();
+
+        e.reply(`${this.identifyPrefix}识别：${name}，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
+
+        let messages = [{ role: "user", content: summaryLink }];
+
+        // 兜底策略：检测模型是否支持 tool_calls
+        if (!this.aiModel.includes("kimi") && !this.aiModel.includes("moonshot")) {
+            // 不支持 tool_calls 的模型，直接爬取内容并总结
+            try {
+                // 直接使用llmRead爬取链接内容
+                const crawled_content = await llmRead(summaryLink);
+                // 重新构造消息，将爬取到的内容直接放入对话历史
+                messages = [
+                    { role: "user", content: `这是网页链接: ${summaryLink}` },
+                    { role: "assistant", content: `好的，我已经爬取了网页内容，内容如下：\n${crawled_content}` },
+                    { role: "user", content: "请根据以上内容进行总结。" }
+                ];
+                
+                // 调用kimi进行总结，此时不传递任何工具
+                const response = await builder.chat(messages); // 不传递 CRAWL_TOOL
+                const { ans: kimiAns, model } = response;
+                // 估算阅读时间并提取标题
+                const stats = estimateReadingTime(kimiAns);
+                const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*)/)?.[3];
+                e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
+                // 将总结内容格式化为合并转发消息
+                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
+                await e.reply(Msg);
+            } catch (error) {
+                e.reply(`总结失败: ${error.message}`);
+            }
+            return true;
+        }
+
+        // 为了防止无限循环，设置一个最大循环次数
+        for (let i = 0; i < 5; i++) { 
+            const response = await builder.chat(messages, [CRAWL_TOOL]);
+
+            // 如果Kimi返回了工具调用
+            if (response.tool_calls) {
+                const tool_calls = response.tool_calls;
+                messages.push({
+                    role: 'assistant',
+                    content: null,
+                    tool_calls: tool_calls,
+                });
+
+                // 遍历并处理每一个工具调用
+                for (const tool_call of tool_calls) {
+                    if (tool_call.function.name === 'crawl') {
+                        try {
+                            const args = JSON.parse(tool_call.function.arguments);
+                            const urlToCrawl = args.url;
+                            // 执行爬取操作
+                            const crawled_content = await llmRead(urlToCrawl);
+                            messages.push({
+                                role: 'tool',
+                                tool_call_id: tool_call.id,
+                                name: 'crawl',
+                                content: crawled_content,
+                            });
+                        } catch (error) {
+                             messages.push({
+                                role: 'tool',
+                                tool_call_id: tool_call.id,
+                                name: 'crawl',
+                                content: `爬取错误: ${error.message}`,
+                            });
+                        }
+                    }
+                }
+            } else {
+                // 如果没有工具调用，说明得到了最终的总结
+                const { ans: kimiAns, model } = response;
+                // 计算阅读时间
+                const stats = estimateReadingTime(kimiAns);
+                const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
+                e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
+                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
+                await e.reply(Msg);
+                return true;
+            }
+        }
+        e.reply("处理超出限制，请重试");
         return true;
     }
 

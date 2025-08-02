@@ -259,3 +259,26 @@ export const PearAPI_CRAWLER = "https://api.pearktrue.cn/api/llmreader/?url={}&t
  * @type {string}
  */
 export const PearAPI_DEEPSEEK = "https://api.pearktrue.cn/api/deepseek/";
+
+/**
+ * TOOL_CALL 爬虫工具
+ * 用于Kimi模型Tool-Calling的爬虫工具
+ * 当Kimi模型判断需要从网页获取信息时，会调用此工具。
+ */
+export const CRAWL_TOOL = {
+    type: "function",
+    function: {
+        name: "crawl",
+        description: "根据网站地址（URL）获取网页内容。",
+        parameters: {
+            type: "object",
+            required: ["url"],
+            properties: {
+                url: {
+                    type: "string",
+                    description: "需要获取内容的网站地址（URL），通常情况下从搜索结果中可以获取网站的地址。"
+                }
+            }
+        }
+    }
+};

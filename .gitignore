@@ -23,3 +23,5 @@ yarn.lock
 .vitepress
 bun.lockb
 .next
+CLAUDE.md
+.claude
