@@ -202,7 +202,7 @@ export class tools extends plugin {
                     fnc: "freyr"
                 },
                 {
-                    reg: "(^#总结一下(http|https):\/\/.*|mp.weixin|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com)",
+                    reg: "(^#总结一下(http|https):\/\/.*|mp.weixin.qq.com|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com)",
                     fnc: "linkShareSummary"
                 },
                 {
@@ -2669,7 +2669,7 @@ export class tools extends plugin {
 
         await builder.build();
 
-        e.reply(`${this.identifyPrefix}识别：${name}，正在为您总结，请稍等...`, true, { recallMsg: MESSAGE_RECALL_TIME });
+        e.reply(`${this.identifyPrefix}识别：${name}，正在为您总结，请稍等...`, true);
 
         let messages = [{ role: "user", content: summaryLink }];
 
