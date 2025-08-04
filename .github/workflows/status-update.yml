@@ -134,17 +134,17 @@ jobs:
             });
             
             const report = `📊 **本周活动报告** (${oneWeekAgo.toISOString().split('T')[0]} ~ ${new Date().toISOString().split('T')[0]})
-
-## 📈 统计数据
-- 🎯 新增 Issues: ${newIssues.total_count}
-- 🔀 新增 PRs: ${newPRs.total_count}  
-- ✅ 关闭 Issues: ${closedIssues.total_count}
-
-## 🏷️ Issue 分类
-${newIssues.items.length > 0 ? newIssues.items.slice(0, 5).map(issue => 
-  `- [${issue.title}](${issue.html_url}) - ${issue.labels.map(l => l.name).join(', ') || '未分类'}`
-).join('\n') : '本周暂无新issue'}
-
-感谢所有贡献者的参与！ 🙏`;
+            
+            ## 📈 统计数据
+            - 🎯 新增 Issues: ${newIssues.total_count}
+            - 🔀 新增 PRs: ${newPRs.total_count}  
+            - ✅ 关闭 Issues: ${closedIssues.total_count}
+            
+            ## 🏷️ Issue 分类
+            ${newIssues.items.length > 0 ? newIssues.items.slice(0, 5).map(issue => 
+              \`- [\${issue.title}](\${issue.html_url}) - \${issue.labels.map(l => l.name).join(', ') || '未分类'}\`
+            ).join('\\n') : '本周暂无新issue'}
+            
+            感谢所有贡献者的参与！ 🙏`;
             
             console.log(report);
