@@ -21,27 +21,27 @@ jobs:
             const prFiles = context.payload.pull_request.changed_files;
             
             let replyMessage = `🎉 Hi @${prAuthor}! 
-
-感谢您的贡献！您的Pull Request已经提交，我们会尽快进行代码审核。
-
-## 📋 审核清单
-期间请确保以下项目已完成：
-- [ ] 代码符合项目规范和风格
-- [ ] 已测试新功能或修复
-- [ ] 更新了相关文档（如有需要）
-- [ ] 提交信息清晰明确
-
-## 📊 PR 统计
-- 📁 修改文件数：${prFiles}
-- 🏷️ PR类型：${prTitle.toLowerCase().includes('fix') ? '🐛 Bug修复' : 
-                    prTitle.toLowerCase().includes('feat') ? '✨ 新功能' :
-                    prTitle.toLowerCase().includes('doc') ? '📖 文档更新' :
-                    prTitle.toLowerCase().includes('refactor') ? '♻️ 重构' : '🔧 其他改进'}
-
-## 🔄 下一步
-我们会在1-3个工作日内完成初步审核。如有问题会及时与您沟通。
-
-再次感谢您对项目的贡献！ 🙏`;
+            
+            感谢您的贡献！您的Pull Request已经提交，我们会尽快进行代码审核。
+            
+            ## 📋 审核清单
+            期间请确保以下项目已完成：
+            - [ ] 代码符合项目规范和风格
+            - [ ] 已测试新功能或修复
+            - [ ] 更新了相关文档（如有需要）
+            - [ ] 提交信息清晰明确
+            
+            ## 📊 PR 统计
+            - 📁 修改文件数：${prFiles}
+            - 🏷️ PR类型：${prTitle.toLowerCase().includes('fix') ? '🐛 Bug修复' : 
+                            prTitle.toLowerCase().includes('feat') ? '✨ 新功能' :
+                            prTitle.toLowerCase().includes('doc') ? '📖 文档更新' :
+                            prTitle.toLowerCase().includes('refactor') ? '♻️ 重构' : '🔧 其他改进'}
+            
+            ## 🔄 下一步
+            我们会在1-3个工作日内完成初步审核。如有问题会及时与您沟通。
+            
+            再次感谢您对项目的贡献！ 🙏`;
             
             await github.rest.issues.createComment({
               owner: context.repo.owner,

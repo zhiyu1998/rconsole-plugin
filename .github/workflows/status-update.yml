@@ -47,13 +47,13 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issue.number,
                   body: `👋 这个issue已经一周没有更新了。
-
-如果问题仍然存在，请提供更多信息：
-- 是否还能复现？
-- 有没有新的错误信息？
-- 是否尝试了其他解决方案？
-
-如果问题已解决，欢迎关闭此issue。如果30天内没有响应，此issue将被自动关闭。`
+                  
+                  如果问题仍然存在，请提供更多信息：
+                  - 是否还能复现？
+                  - 有没有新的错误信息？
+                  - 是否尝试了其他解决方案？
+                  
+                  如果问题已解决，欢迎关闭此issue。如果30天内没有响应，此issue将被自动关闭。`
                 });
                 
                 await github.rest.issues.addLabels({
@@ -73,8 +73,8 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issue.number,
                   body: `🤖 此issue因长期无响应被自动关闭。
-
-如果问题仍然存在，请创建新的issue并提供详细信息。感谢您的理解！`
+                  
+                  如果问题仍然存在，请创建新的issue并提供详细信息。感谢您的理解！`
                 });
                 
                 await github.rest.issues.update({
@@ -95,8 +95,8 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issue.number,
                   body: `⏰ 提醒：此issue等待回复已超过3天。
-
-我们会尽快处理，感谢您的耐心等待！`
+                  
+                  我们会尽快处理，感谢您的耐心等待！`
                 });
                 
                 updatedCount++;
