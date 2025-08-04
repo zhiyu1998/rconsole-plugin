@@ -43,6 +43,19 @@ body:
       value: |
         [在这里上传图片]
   - type: dropdown
+    id: severity
+    attributes:
+      label: 问题严重程度
+      description: 这个bug对使用的影响程度？
+      options:
+        - 低 - 轻微影响，有变通方案
+        - 中 - 影响正常使用，但不阻塞
+        - 高 - 严重影响使用或导致崩溃
+        - 紧急 - 完全无法使用，需立即修复
+      default: 1
+    validations:
+      required: true
+  - type: dropdown
     id: yunzai
     attributes:
       label: 使用的本体
@@ -75,5 +88,20 @@ body:
         - Arch
         - CentOS
         - 其他
+    validations:
+      required: false
+  - type: dropdown
+    id: component
+    attributes:
+      label: 相关功能模块
+      description: 此bug涉及哪个功能模块？
+      options:
+        - Bilibili下载
+        - 抖音/TikTok下载
+        - YouTube下载
+        - 音乐功能
+        - 链接总结
+        - 其他功能
+        - 不确定
     validations:
       required: false

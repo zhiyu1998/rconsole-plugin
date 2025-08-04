@@ -35,6 +35,32 @@ body:
       description: 在此处添加有关功能请求的任何其他上下文或截图。
     validations:
       required: false
+  - type: dropdown
+    id: feature_type
+    attributes:
+      label: 功能类型
+      description: 这个功能建议属于哪个类别？
+      options:
+        - 新平台支持 (如新的视频网站)
+        - 现有功能增强
+        - 用户体验改进
+        - 性能优化
+        - 安全相关
+        - 其他
+    validations:
+      required: true
+  - type: dropdown
+    id: priority_suggestion
+    attributes:
+      label: 建议优先级
+      description: 你认为这个功能的重要程度？
+      options:
+        - 低 - 有了更好，没有也可以
+        - 中 - 比较有用的功能
+        - 高 - 非常需要的功能
+      default: 1
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: 意向参与贡献

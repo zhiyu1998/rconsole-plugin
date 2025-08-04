@@ -50,11 +50,13 @@ jobs:
               labels.push('security');
             }
             
-            // 根据关键词添加优先级标签
+            // 根据关键词和表单内容添加优先级标签
             if (title.includes('紧急') || title.includes('urgent') || title.includes('critical') ||
-                body.includes('紧急') || body.includes('严重')) {
+                body.includes('紧急') || body.includes('严重') || body.includes('紧急 - 完全无法使用') ||
+                body.includes('高 - 严重影响使用')) {
               labels.push('priority/high');
-            } else if (title.includes('minor') || title.includes('小') || body.includes('小问题')) {
+            } else if (title.includes('minor') || title.includes('小') || body.includes('小问题') ||
+                body.includes('低 - 轻微影响')) {
               labels.push('priority/low');
             } else {
               labels.push('priority/medium');
@@ -71,18 +73,24 @@ jobs:
               labels.push('platform/mac');
             }
             
-            // 根据组件关键词添加标签
-            if (title.includes('bilibili') || title.includes('bili') || body.includes('bilibili')) {
+            // 根据组件关键词和表单选择添加标签
+            if (title.includes('bilibili') || title.includes('bili') || body.includes('bilibili') || 
+                body.includes('Bilibili下载')) {
               labels.push('component/bilibili');
             }
-            if (title.includes('tiktok') || title.includes('抖音') || body.includes('tiktok')) {
+            if (title.includes('tiktok') || title.includes('抖音') || body.includes('tiktok') ||
+                body.includes('抖音/TikTok下载')) {
               labels.push('component/tiktok');
             }
-            if (title.includes('youtube') || body.includes('youtube')) {
+            if (title.includes('youtube') || body.includes('youtube') || body.includes('YouTube下载')) {
               labels.push('component/youtube');
             }
-            if (title.includes('music') || title.includes('音乐') || body.includes('音乐')) {
+            if (title.includes('music') || title.includes('音乐') || body.includes('音乐') ||
+                body.includes('音乐功能')) {
               labels.push('component/music');
+            }
+            if (title.includes('总结') || title.includes('summary') || body.includes('链接总结')) {
+              labels.push('component/summary');
             }
             
             if (labels.length > 0) {

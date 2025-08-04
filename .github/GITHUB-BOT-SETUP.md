@@ -68,6 +68,7 @@ component/bilibili - 📺 - #00a1d6 - B站相关
 component/tiktok - 🎵 - #ff0050 - 抖音相关
 component/youtube - ▶️ - #ff0000 - YouTube相关
 component/music - 🎵 - #1db954 - 音乐功能
+component/summary - 📄 - #6f42c1 - 链接总结功能
 ```
 
 #### 状态标签
