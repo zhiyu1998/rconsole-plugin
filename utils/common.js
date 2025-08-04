@@ -351,6 +351,32 @@ export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) 
 }
 
 /**
+ * 重试 fetch 请求
+ * @param {string} url 请求的URL
+ * @param {object} [options] 传递给fetch的选项
+ * @param {number} [retries=3] 重试次数
+ * @param {number} [delay=1000] 重试之间的延迟（毫秒）
+ * @returns {Promise<Response>}
+ */
+export async function retryFetch(url, options, retries = 3, delay = 1000) {
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            throw new Error(`请求失败，状态码: ${response.status}`);
+        }
+        return response;
+    } catch (error) {
+        if (retries > 0) {
+            logger.mark(`[R插件][重试模块] 请求失败: ${error.message}，重试中... (${3 - retries + 1}/3) 次`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return retryFetch(url, options, retries - 1, delay);
+        } else {
+            throw error;
+        }
+    }
+}
+
+/**
  * 统计给定文本中的中文字数
  *
  * @param {string} text - The text to count words in

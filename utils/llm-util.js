@@ -1,3 +1,4 @@
+import { retryFetch } from "./common.js";
 import { PearAPI_CRAWLER, PearAPI_DEEPSEEK } from "../constants/tools.js";
 
 /**
@@ -6,7 +7,7 @@ import { PearAPI_CRAWLER, PearAPI_DEEPSEEK } from "../constants/tools.js";
  * @returns {Promise<string>}
  */
 export async function llmRead(summaryLink) {
-    const llmCrawler = await fetch(PearAPI_CRAWLER.replace("{}", summaryLink));
+    const llmCrawler = await retryFetch(PearAPI_CRAWLER.replace("{}", summaryLink));
     return (await llmCrawler.json())?.data;
 }
 
