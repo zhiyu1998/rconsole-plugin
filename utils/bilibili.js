@@ -204,7 +204,15 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @returns {Promise<any>}
  */
 export async function getDownloadUrl(url, SESSDATA, qn) {
-    const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    let videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    // AV号特殊处理
+    let cid = "";
+    if (videoId.toLowerCase().startsWith('av')) {
+        // 将 AV 转换为 BV
+        const { bvid, cid: newCid } = await getVideoInfo(url);
+        videoId = bvid;
+        cid = newCid;
+    }
     // 转换画质数字为分辨率
     let qualityText;
     switch(parseInt(qn)) {
@@ -215,7 +223,7 @@ export async function getDownloadUrl(url, SESSDATA, qn) {
         default: qualityText = "480P"; break;
     }
     logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}`);
-    const dash = await getBiliVideoWithSession(videoId, "", SESSDATA, qn);
+    const dash = await getBiliVideoWithSession(videoId, cid, SESSDATA, qn);
     // 获取关键信息
     const { video, audio } = dash;
     
@@ -388,7 +396,7 @@ export async function m4sToMp3(m4sUrl, path) {
 export async function getBiliAudio(bvid, cid) {
     // 转换cid
     if (!cid)
-        cid = await fetchCID(bvid).catch((err) => console.log(err))
+        cid = await fetchCID(bvid).catch((err) => logger.info(err))
 
     // 返回一个fetch的promise
     return (new Promise((resolve, reject) => {
@@ -447,11 +455,11 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn) {
  * @returns {Promise<*>}
  */
 export const fetchCID = async (bvid) => {
-    //console.log('Data.js Calling fetchCID:' + URL_BVID_TO_CID.replace("{bvid}", bvid))
-    const res = await fetch(BILI_BVID_TO_CID.replace("{bvid}", bvid))
-    const json = await res.json()
-    const cid = json.data[0].cid
-    return cid
+    //logger.info('Data.js Calling fetchCID:' + URL_BVID_TO_CID.replace("{bvid}", bvid))
+    const res = await fetch(BILI_BVID_TO_CID.replace("{bvid}", bvid));
+    const json = await res.json();
+    const cid = json.data[0].cid;
+    return cid;
 }
 
 /**
@@ -462,8 +470,16 @@ export const fetchCID = async (bvid) => {
 export async function getVideoInfo(url) {
     // const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
+    // 如果匹配到的是AV号特殊处理
+    let finalUrl = `${ BILI_VIDEO_INFO }?`;
+    if (videoId.toLowerCase().startsWith('av')) {
+        finalUrl += `aid=${ videoId.slice(2) }`;
+    } else {
+        finalUrl += `bvid=${ videoId }`;
+    }
+    logger.debug(finalUrl);
     // 获取视频信息，然后发送
-    return fetch(`${ BILI_VIDEO_INFO }?bvid=${ videoId }`)
+    return fetch(finalUrl)
         .then(async resp => {
             const respJson = await resp.json();
             const respData = respJson.data;
@@ -521,7 +537,7 @@ export async function getDynamic(dynamicId, SESSDATA) {
                 }
             }
         }
-        // console.log(dynamic_src)
+        // logger.info(dynamic_src)
         return {
             dynamicSrc,
             dynamicDesc

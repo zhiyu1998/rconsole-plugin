@@ -66,7 +66,6 @@ import NeteaseMusicInfo from '../model/neteaseMusicInfo.js';
 import * as aBogus from "../utils/a-bogus.cjs";
 import { downloadM3u8Videos, mergeAcFileToMp4, parseM3u8, parseUrl } from "../utils/acfun.js";
 import { startBBDown } from "../utils/bbdown-util.js";
-import { av2BV } from "../utils/bilibili-bv-av-convert.js";
 import {
     BILI_HEADER,
     downloadBFile,
@@ -879,11 +878,6 @@ export class tools extends plugin {
         }
         // 补充https
         url = url.startsWith("https://") ? url : "https://" + url;
-        // av处理
-        const matched = url.match(/\/(AV|av)(\w+)/);
-        if (matched) {
-            url = url.replace(matched[0].replace("\/", ""), av2BV(Number(matched[2])));
-        }
         // 直播间分享
         // logger.info(url)
         if (url.includes("live.bilibili.com")) {
