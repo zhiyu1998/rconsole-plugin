@@ -45,6 +45,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "globalImageLimit",
+                    label: "解析图片是否合并转发",
+                    bottomHelpMessage:
+                        "超过配置的数字就会折叠。目前实现了此能的主要有米游社、b站动态专栏、微博、小红书",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入合并转发最大阈值",
+                    },
+                },
+                {
                     field: "tools.proxyAddr",
                     label: "魔法地址",
                     bottomHelpMessage: "tiktok/小蓝鸟等要使用魔法时需要填写",
