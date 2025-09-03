@@ -149,7 +149,7 @@ export class tools extends plugin {
                     permission: 'master',
                 },
                 {
-                    reg: "(bilibili.com|b23.tv|bili2233.cn|t.bilibili.com|^BV[1-9a-zA-Z]{10}$)",
+                    reg: "(bilibili.com|b23.tv|bili2233.cn|m.bilibili.com|t.bilibili.com|^BV[1-9a-zA-Z]{10}$)",
                     fnc: "bili",
                 },
                 {
@@ -316,6 +316,8 @@ export class tools extends plugin {
         this.aiModel = this.toolsConfig.aiModel;
         // 强制使用海外服务器
         this.forceOverseasServer = this.toolsConfig.forceOverseasServer;
+        // 解析图片是否合并转发
+        this.globalImageLimit = this.toolsConfig.globalImageLimit;
     }
 
     // 翻译插件
@@ -921,7 +923,7 @@ export class tools extends plugin {
             return true;
         }
         // 动态处理
-        if (url.includes("t.bilibili.com") || url.includes("bilibili.com\/opus")) {
+        if (url.includes("t.bilibili.com") || url.includes("bilibili.com\/opus") || url.includes("bilibili.com\/dynamic")){
             if (_.isEmpty(this.biliSessData)) {
                 e.reply("检测到没有填写biliSessData，无法解析动态");
                 return true;
@@ -1243,18 +1245,30 @@ export class tools extends plugin {
         const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
         getDynamic(dynamicId, session).then(async resp => {
             if (resp.dynamicSrc.length > 0 || resp.dynamicDesc) {
-                e.reply(`${ this.identifyPrefix }识别：哔哩哔哩动态\n${ resp.dynamicDesc }`);
-                let dynamicSrcMsg = [];
-                resp.dynamicSrc.forEach(item => {
-                    dynamicSrcMsg.push({
-                        message: segment.image(item),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    });
-                });
-                await e.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
+                // 先发送动态描述文本
+                if (resp.dynamicDesc) {
+                    e.reply(`${this.identifyPrefix}识别：哔哩哔哩动态\n${resp.dynamicDesc}`);
+                }
+
+                // 处理图片消息
+                if (resp.dynamicSrc.length > 0) {
+                    if (resp.dynamicSrc.length > this.globalImageLimit) {
+                        let dynamicSrcMsg = [];
+                        resp.dynamicSrc.forEach(item => {
+                            dynamicSrcMsg.push({
+                                message: segment.image(item),
+                                nickname: e.sender.card || e.user_id,
+                                user_id: e.user_id,
+                            });
+                        });
+                        await e.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
+                    } else {
+                        const images = resp.dynamicSrc.map(item => segment.image(item));
+                        await e.reply(images);
+                    }
+                }
             } else {
-                e.reply(`识别：哔哩哔哩动态, 但是失败！`);
+                await e.reply(`${this.identifyPrefix}识别：哔哩哔哩动态, 但是失败！`);
             }
         });
         return url;
@@ -1629,17 +1643,24 @@ export class tools extends plugin {
             // 等待所有图片下载完成
             const paths = await Promise.all(imagePromises);
 
-            // 直接构造 imagesData 数组
-            const imagesData = await Promise.all(paths.map(async (item) => {
-                return {
-                    message: segment.image(await fs.promises.readFile(item)),
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                };
-            }));
 
-            // 回复带有转发消息的图片数据
-            e.reply(await Bot.makeForwardMsg(imagesData));
+            if (paths.length > this.globalImageLimit) {
+                // 直接构造 imagesData 数组
+                const imagesData = await Promise.all(paths.map(async (item) => {
+                    return {
+                        message: segment.image(await fs.promises.readFile(item)),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                }));
+
+                // 回复带有转发消息的图片数据
+                e.reply(await Bot.makeForwardMsg(imagesData));
+            } else {
+                // 如果图片数量小于限制，直接发送图片
+                const images = await Promise.all(paths.map(async (item) => segment.image(await fs.promises.readFile(item))));
+                e.reply(images);
+            }
 
             // 批量删除下载的文件
             await Promise.all(paths.map(item => fs.promises.rm(item, { force: true })));
@@ -2176,8 +2197,11 @@ export class tools extends plugin {
                     // 等待所有图片处理完
                     const images = await Promise.all(imagesPromise);
 
-                    // 回复合并的消息
-                    await e.reply(await Bot.makeForwardMsg(images));
+                    // 大于判定数量则回复合并的消息
+                    if (images.length > this.globalImageLimit)
+                        await e.reply(await Bot.makeForwardMsg(images));
+                    else
+                        await e.reply(images.map(item => item.message));
 
                     // 并行删除文件
                     await Promise.all(images.map(({ filePath }) => checkAndRemoveFile(filePath)));
@@ -2393,15 +2417,20 @@ export class tools extends plugin {
             const replyMsg = cover ? [segment.image(cover), normalMsg] : normalMsg;
             e.reply(replyMsg);
             // 图片
-            if (images && images.length > 1) {
-                const replyImages = images.map(item => {
-                    return {
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
-                });
-                e.reply(Bot.makeForwardMsg(replyImages));
+            if (images) {
+                if (images.length > this.globalImageLimit) {
+                    const replyImages = images.map(item => {
+                        return {
+                            message: segment.image(item),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        };
+                    });
+                    e.reply(Bot.makeForwardMsg(replyImages));
+                } else {
+                    const imageSegments = images.map(item => segment.image(item));
+                    e.reply(imageSegments);
+                }
             }
             // 视频
             let vod_list = respJson.data.post?.vod_list;
