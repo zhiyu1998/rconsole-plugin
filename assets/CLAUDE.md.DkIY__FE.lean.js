@@ -1,1 +1,0 @@
-import{_ as e,c as o,o as i,ab as t}from"./chunks/framework.BA8ZoOPC.js";const m=JSON.parse('{"title":"CLAUDE.md","description":"","frontmatter":{},"headers":[],"relativePath":"CLAUDE.md","filePath":"CLAUDE.md"}'),a={name:"CLAUDE.md"},s=t("",30),n=[s];function l(r,d,c,h,p,u){return i(),o("div",null,n)}const f=e(a,[["render",l]]);export{m as __pageData,f as default};
