@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://zhiyu1998.github.io/rconsole-plugin/</id>
     <title>R-Plugin</title>
-    <updated>2025-10-04T12:52:21.692Z</updated>
+    <updated>2025-10-04T12:52:29.420Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <author>
         <name>zhiyu1998</name>
@@ -452,6 +452,18 @@ apt install axel
 <p><img src="https://s2.loli.net/2024/08/15/QVmNrKnsJPlpX9S.webp" alt=""></p>
 <ol start="5">
 <li>开始使用！</li>
+</ol>
+<h3>关于微博 Cookie 的获取</h3>
+<h1>如何获取cookie</h1>
+<ol>
+<li>用Chrome打开<a href="https://passport.weibo.cn/signin/login">https://passport.weibo.cn/signin/login</a>；</li>
+<li>输入微博的用户名、密码，登录，如图所示：<br>
+<img src="https://github.com/dataabc/media/blob/master/weiboSpider/images/cookie1.png" alt="weibo log in page"><br>
+登录成功后会跳转到<a href="https://m.weibo.cn">https://m.weibo.cn</a>;</li>
+<li>按F12键打开Chrome开发者工具，在地址栏输入并跳转到<a href="https://weibo.cn">https://weibo.cn</a>，跳转后会显示如下类似界面:<br>
+<img src="https://github.com/dataabc/media/blob/master/weiboSpider/images/cookie2.png" alt="chrome debugger network tab"></li>
+<li>依此点击Chrome开发者工具中的Network-&gt;Name中的weibo.cn-&gt;Headers-&gt;Request Headers，&quot;Cookie:&quot;后的值即为我们要找的cookie值，复制即可，如图所示：<br>
+<img src="https://github.com/dataabc/media/blob/master/weiboSpider/images/cookie3.png" alt="cookie in request headers section"></li>
 </ol>
 <h3>👀 关于 weibo 问题汇总</h3>
 <p>关于issue提出了相关：<a href="https://github.com/zhiyu1998/rconsole-plugin/issues/19">希望文档里加入微博使用说明</a></p>
