@@ -398,6 +398,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.weiboCookie",
+                    label: "微博的Cookie",
+                    bottomHelpMessage:
+                        "登陆https://m.weibo.cn/ - F12 - 格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xxx; XSRF-TOKEN=xxx; M_WEIBOCN_PARAMS=xxx",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入微博的Cookie",
+                    },
+                },
+                {
                     field: "tools.queueConcurrency",
                     label: "（高级）队列长度",
                     bottomHelpMessage:

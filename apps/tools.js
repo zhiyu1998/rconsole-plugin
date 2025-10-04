@@ -318,6 +318,8 @@ export class tools extends plugin {
         this.forceOverseasServer = this.toolsConfig.forceOverseasServer;
         // 解析图片是否合并转发
         this.globalImageLimit = this.toolsConfig.globalImageLimit;
+        // 加载微博Cookie
+        this.weiboCookie = this.toolsConfig.weiboCookie;
     }
 
     // 翻译插件
@@ -2160,11 +2162,17 @@ export class tools extends plugin {
         }
         const id = weiboId.split("/")[1] || weiboId;
 
+        // 检测是否填写微博Cookie
+        if (_.isEmpty(this.weiboCookie)) {
+            e.reply(`检测到没有填写微博Cookie，无法解析微博${ HELP_DOC }`);
+            return;
+        }
+
         axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
                 "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-                "cookie": "_T_WM=40835919903; WEIBOCN_FROM=1110006030; MLOGIN=0; XSRF-TOKEN=4399c8",
+                "cookie": this.weiboCookie,
                 "Referer": `https://m.weibo.cn/detail/${ id }`,
             }
         })

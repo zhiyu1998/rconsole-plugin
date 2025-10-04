@@ -47,6 +47,8 @@ douyinComments: false # true-开启评论，false-关闭评论
 
 xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 
+weiboCookie: '' # 微博Cookie，格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xxx; XSRF-TOKEN=xxx; M_WEIBOCN_PARAMS=xxx
+
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
 
 videoDownloadConcurrency: 1 # 下载视频是否使用多线程，如果不使用默认是1，如果使用根据服务器进行选择，如果不确定是否可以用4即可，高性能服务器随意4~12都可以，看CPU的实力
