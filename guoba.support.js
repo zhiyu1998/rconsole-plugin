@@ -45,7 +45,7 @@ export function supportGuoba() {
                     },
                 },
                 {
-                    field: "globalImageLimit",
+                    field: "tools.globalImageLimit",
                     label: "解析图片是否合并转发",
                     bottomHelpMessage:
                         "超过配置的数字就会折叠。目前实现了此能的主要有米游社、b站动态专栏、微博、小红书",
