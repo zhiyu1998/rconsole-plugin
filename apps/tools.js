@@ -3301,32 +3301,24 @@ export class tools extends plugin {
 
             // 执行aria2c命令
             const command = `aria2c ${ aria2cArgs.join(' ') }`;
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    logger.error(`下载视频发生错误！\ninfo:${ stderr }`);
-                    throw error;
-                } else {
-                    logger.mark(`下载完成: ${ url }`);
-                }
-            });
-
-            // 监听文件生成完成
-            let count = 0;
             return new Promise((resolve, reject) => {
-                const checkInterval = setInterval(() => {
-                    logger.info(logger.red(`[R插件][Aria2] 没有检测到文件！重试第${ count + 1 }次`));
-                    count += 1;
-                    if (fs.existsSync(target)) {
-                        logger.info("[R插件][Aria2] 检测到文件！");
-                        clearInterval(checkInterval);
+                exec(command, { timeout: DOWNLOAD_WAIT_DETECT_FILE_TIME * 10 }, (error, stdout, stderr) => {
+                    if (error) {
+                        if (error.killed) {
+                            logger.error(`[R插件][Aria2] 下载文件超时！`);
+                        }
+                        logger.error(`下载视频发生错误！\ninfo:${stderr || error.message}`);
+                        return reject(new Error(`Aria2 进程执行失败: ${stderr || error.message}`));
+                    }
+                    logger.mark(`下载完成: ${url}`);
+                    if (fs.existsSync(target) && fs.statSync(target).size > 0) {
+                        logger.info(`[R插件][Aria2] 文件校验成功: ${target}`);
                         resolve(groupPath);
+                    } else {
+                        logger.error(`[R插件][Aria2] 下载完成但文件无效 (不存在或为空): ${target}`);
+                        reject(new Error("Aria2 下载的文件无效。"));
                     }
-                    if (count === 6) {
-                        logger.error(`[R插件][Aria2] 下载视频发生错误！`);
-                        clearInterval(checkInterval);
-                        reject();
-                    }
-                }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
+                });
             });
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${ err }`);
@@ -3371,33 +3363,24 @@ export class tools extends plugin {
 
             // 执行axel命令
             const command = `axel ${ axelArgs.join(' ') }`;
-            exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    logger.error(`下载视频发生错误！\ninfo:${ stderr }`);
-                    throw error;
-                } else {
-                    logger.mark(`下载完成: ${ url }`);
-                }
-            });
-
-            let count = 0;
-            // 监听文件生成完成
             return new Promise((resolve, reject) => {
-                const checkInterval = setInterval(() => {
-                    logger.info(logger.red(`[R插件][Aria2] 没有检测到文件！重试第${ count + 1 }次`));
-                    count += 1;
-                    if (fs.existsSync(target)) {
-                        logger.info("[R插件][Axel] 检测到文件！");
-                        clearInterval(checkInterval);
-                        logger.info(`[R插件][Axel] 下载到${ groupPath }`);
+                exec(command, { timeout: DOWNLOAD_WAIT_DETECT_FILE_TIME * 10 }, (error, stdout, stderr) => {
+                    if (error) {
+                        if (error.killed) {
+                            logger.error(`[R插件][Axel] 下载文件超时！`);
+                        }
+                        logger.error(`下载视频发生错误！\ninfo:${stderr || error.message}`);
+                        return reject(new Error(`Axel 进程执行失败: ${stderr || error.message}`));
+                    }
+                    logger.mark(`下载完成: ${url}`);
+                    if (fs.existsSync(target) && fs.statSync(target).size > 0) {
+                        logger.info(`[R插件][Axel] 文件校验成功: ${target}`);
                         resolve(groupPath);
+                    } else {
+                        logger.error(`[R插件][Axel] 下载完成但文件无效 (不存在或为空): ${target}`);
+                        reject(new Error("Axel 下载的文件无效。"));
                     }
-                    if (count === 6) {
-                        logger.error(`[R插件][Axel] 下载视频发生错误！`);
-                        clearInterval(checkInterval);
-                        reject();
-                    }
-                }, DOWNLOAD_WAIT_DETECT_FILE_TIME);
+                });
             });
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${ err }`);
