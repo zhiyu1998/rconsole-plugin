@@ -1893,11 +1893,14 @@ export class tools extends plugin {
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
-        const id =
+        const programUrlReg = /program\?id=(\d+)/;
+        const djUrlReg = /dj\?id=(\d+)/;
+        const id = programUrlReg.exec(message)?.[1] ||
+            djUrlReg.exec(message)?.[1] ||
             musicUrlReg2.exec(message)?.[3] ||
             musicUrlReg.exec(message)?.[2] ||
             musicUrlReg3.exec(message)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(message)[1];
+            /(?<!user)id=(\d+)/.exec(message)?.[1];
         // 如果没有下载地址跳出if
         if (_.isEmpty(id)) {
             e.reply(`识别：网易云音乐，解析失败！`);
@@ -1961,6 +1964,62 @@ export class tools extends plugin {
                 this.sendVideoToUpload(e, `${ path }/temp.mp4`);
             });
             return;
+        }
+        // 播客截断
+        if (/\/program\?|\/dj\?/.test(message)) {
+            const AUTO_NETEASE_PROGRAM_DETAIL = autoSelectNeteaseApi + "/dj/program/detail?id={}";
+            const programDetail = await axios.get(AUTO_NETEASE_PROGRAM_DETAIL.replace("{}", id), {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    "Cookie": this.neteaseCookie
+                }
+            }).then(res => res.data.program);
+            if (!programDetail) {
+                e.reply(`识别：网易云播客，解析失败！`);
+                logger.error("[R插件][网易云解析] 没有找到id，无法进行下一步！");
+                return true;
+            }
+            const { mainSong, dj, coverUrl, name } = programDetail;
+            const songId = mainSong.id;
+            const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
+            const downloadUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songId);
+            const resp = await axios.get(downloadUrl, {
+                headers: {
+                    "User-Agent": COMMON_USER_AGENT,
+                    "Cookie": this.neteaseCookie
+                },
+            });
+            let url = resp.data.data?.[0]?.url || null;
+            const title = `${dj.nickname} - ${name}`;
+            const AudioSize = (resp.data.data?.[0]?.size / (1024 * 1024)).toFixed(2);
+            const typelist = [programDetail.category, programDetail.secondCategory, '播客'];
+            // 获取歌曲信息
+            let musicInfo = {
+                'cover': coverUrl,
+                'songName': name,
+                'singerName': dj.nickname,
+                'size': AudioSize + " MB",
+                'musicType': typelist
+            };
+            const data = await new NeteaseMusicInfo(e).getData(musicInfo);
+            let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+            await e.reply(img);
+            // 动态判断后缀名
+            let musicExt = resp.data.data?.[0]?.type;
+            // 下载音乐
+            downloadAudio(url, this.getCurDownloadPath(e), title, 'follow', musicExt).then(async path => {
+                // 发送群文件
+                await this.uploadGroupFile(e, path);
+                // 发送语音
+                if (musicExt != 'mp4' && this.isSendVocal) {
+                    await e.reply(segment.record(path));
+                }
+                // 删除文件
+                await checkAndRemoveFile(path);
+            }).catch(err => {
+                logger.error(`下载音乐失败，错误信息为: ${ err }`);
+            });
+            return true;
         }
         const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + id;
         // 国内解决方案，替换为国内API (其中，NETEASE_API_CN是国内基址)
