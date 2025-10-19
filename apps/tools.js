@@ -221,12 +221,12 @@ export class tools extends plugin {
                     fnc: "tieba"
                 },
                 {
-                    reg: "^#(网易状态|rns|RNS)$",
+                    reg: "^#(网易云状态|rns|RNS|网易云云盘状态|rncs|RNCS)$",
                     fnc: "neteaseStatus",
                     permission: 'master',
                 },
                 {
-                    reg: "^#(rnq|RNQ)$",
+                    reg: "^#(rnq|RNQ|rncq|RNCQ)$",
                     fnc: 'netease_scan',
                     permission: 'master',
                 },
@@ -271,6 +271,7 @@ export class tools extends plugin {
         this.biliCDN = this.toolsConfig.biliCDN;
         // 加载网易云Cookie
         this.neteaseCookie = this.toolsConfig.neteaseCookie;
+        this.neteaseCloudCookie = this.toolsConfig.neteaseCloudCookie;
         // 加载是否转化群语音
         this.isSendVocal = this.toolsConfig.isSendVocal;
         // 加载是否自建服务器
@@ -1713,6 +1714,10 @@ export class tools extends plugin {
 
     // 网易云登录状态
     async neteaseStatus(e, reck) {
+        const isCloud = /云盘状态|rncs|RNCS/i.test(e.msg);
+        const cookie = reck ? reck : (isCloud ? this.neteaseCloudCookie : this.neteaseCookie);
+        const cookieName = isCloud ? "网易云云盘" : "网易云";
+
         // 优先判断是否使用自建 API
         let autoSelectNeteaseApi = this.useLocalNeteaseAPI ? this.neteaseCloudAPIServer : (await this.isOverseasServer() ? NETEASE_SONG_DOWNLOAD : NETEASE_API_CN);
         const statusUrl = `${ autoSelectNeteaseApi }/login/status`;
@@ -1721,19 +1726,19 @@ export class tools extends plugin {
             const statusResponse = await axios.get(statusUrl, {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT,
-                    "Cookie": reck ? reck : this.neteaseCookie,
+                    "Cookie": cookie,
                 },
             });
             const userInfo = statusResponse.data?.data?.profile;
             if (!userInfo) {
-                e.reply('暂未登录，请发 #RNQ 或者 #rnq 进行登陆绑定ck');
+                e.reply(`暂未登录${ cookieName }，请发 ${ isCloud ? '#rncq' : '#rnq' } 进行登陆绑定ck`);
                 return;
             }
 
             const vipResponse = await axios.get(`${ autoSelectNeteaseApi }/vip/info?uid=${ userInfo.userId }`, {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT,
-                    "Cookie": reck ? reck : this.neteaseCookie,
+                    "Cookie": cookie,
                 },
             });
             const vipInfo = vipResponse.data?.data;
@@ -1748,6 +1753,7 @@ export class tools extends plugin {
                         vipLevel: vipLevelData[0],
                         musicQuality: vipLevelData[2],
                         expireDate: expireDate.toLocaleString(),
+                        cookieName: cookieName,
                     });
                     let img = await puppeteer.screenshot("netease", neteaseData);
                     e.reply(img, true);
@@ -1770,20 +1776,22 @@ export class tools extends plugin {
                 vipLevel: vipInfo.redplus.vipCode !== 0 ? `SVIP${ vipInfo.redplus.vipLevel }(已过期)` : vipInfo.associator.vipCode !== 0 ? `VIP${ vipInfo.associator.vipLevel }(已过期)` : '未开通',
                 musicQuality: 'standard(标准)',
                 expireDate: '未开通',
+                cookieName: cookieName,
             });
             let img = await puppeteer.screenshot("netease", neteaseData);
             e.reply(img, true);
         } catch (error) {
-            logger.error('获取网易云状态时出错:', error);
-            e.reply('获取网易云状态时出错，请稍后再试');
+            logger.error(`获取${ cookieName }状态时出错:`, error);
+            e.reply(`获取${ cookieName }状态时出错，请稍后再试`);
         }
     }
 
     // 轮询网易云状态
-    async pollLoginStatus(autoSelectNeteaseApi, unikey, e) {
+    async pollLoginStatus(autoSelectNeteaseApi, unikey, e, isCloud) {
         let pollCount = 0;
         const maxPolls = 8;
         const intervalTime = 5000;
+        const cookieName = isCloud ? "网易云云盘" : "网易云";
 
         const pollRequest = async () => {
             try {
@@ -1802,12 +1810,13 @@ export class tools extends plugin {
                     if (match) {
                         try {
                             const ck = `${ match[0] }; os=pc`;
-                            await config.updateField("tools", "neteaseCookie", ck);
+                            const fieldToUpdate = isCloud ? "neteaseCloudCookie" : "neteaseCookie";
+                            await config.updateField("tools", fieldToUpdate, ck);
                             this.neteaseStatus(e, ck);
-                            e.reply(`扫码登录成功，ck已自动保存`);
+                            e.reply(`扫码登录${ cookieName }成功，ck已自动保存`);
                         } catch (error) {
-                            logger.error('更新ck时出错:', error);
-                            e.reply('更新ck时出错，请稍后重试');
+                            logger.error(`更新${ cookieName } ck时出错:`, error);
+                            e.reply(`更新${ cookieName } ck时出错，请稍后重试`);
                         }
                     }
                     clearInterval(intervalId);
@@ -1830,8 +1839,10 @@ export class tools extends plugin {
         const intervalId = setInterval(pollRequest, intervalTime);
     }
 
-    // 网易扫码登录
+    // 网易云扫码登录
     async netease_scan(e) {
+        const isCloud = /rncq|RNCQ/i.test(e.msg);
+        const cookieName = isCloud ? "网易云云盘" : "网易云";
         try {
             // 优先判断是否使用自建 API
             const isOversea = await this.isOverseasServer();
@@ -1857,17 +1868,17 @@ export class tools extends plugin {
             e.reply([segment.image(saveCodePath), '请在40秒内使用网易云APP进行扫码']);
 
             // 轮询检查登录状态
-            await this.pollLoginStatus(autoSelectNeteaseApi, unikey, e);
+            await this.pollLoginStatus(autoSelectNeteaseApi, unikey, e, isCloud);
         } catch (error) {
             if (error.code == 'ERR_INVALID_URL') {
-                logger.error('执行网易云扫码登录时出错:非法地址，请检查API服务地址', error);
-                e.reply(`执行网易云扫码登录时出错${ error.code }请检查API服务器地址`);
+                logger.error(`执行${ cookieName }扫码登录时出错:非法地址，请检查API服务地址`, error);
+                e.reply(`执行${ cookieName }扫码登录时出错${ error.code }请检查API服务器地址`);
             } else if (error.code == 'ECONNRESET') {
-                logger.error('执行网易云扫码登录时出错:API请求错误，请检查API服务状态', error);
-                e.reply(`执行扫码登录时发生错误${ error.code }请检查API服务状态`);
+                logger.error(`执行${ cookieName }扫码登录时出错:API请求错误，请检查API服务状态`, error);
+                e.reply(`执行${ cookieName }扫码登录时发生错误${ error.code }请检查API服务状态`);
             } else {
-                logger.error('执行网易云扫码登录时出错:', error);
-                e.reply('执行扫码登录时发生错误，请稍后再试');
+                logger.error(`执行${ cookieName }扫码登录时出错:`, error);
+                e.reply(`执行${ cookieName }扫码登录时发生错误，请稍后再试`);
             }
         }
     }
