@@ -354,6 +354,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.neteaseCloudCookie",
+                    label: "网易云云盘Cookie",
+                    bottomHelpMessage:
+                        "可以发送 #RNCQ / #rncq 快捷获取 或 者在网易云官网自己获取，格式为：MUSIC_U=xxx",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "使用vip账号登陆获取更高音质解析",
+                    },
+                },
+                {
                     field: "tools.neteaseCloudAudioQuality",
                     label: "网易云解析最高音质",
                     bottomHelpMessage:

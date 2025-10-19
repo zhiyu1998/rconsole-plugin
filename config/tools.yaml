@@ -32,9 +32,11 @@ useNeteaseSongRequest: false # 是否开启网易云点歌功能
 isSendVocal: true # 是否开启发送群语音
 songRequestMaxList: 10 # 网易云点歌请求最大列表数
 neteaseCookie: '' # 网易云ck
+neteaseCloudCookie: '' # 网易云云盘ck
 neteaseCloudAPIServer: '' # 网易云自建服务器地址
 neteaseCloudAudioQuality: exhigh # 网易云解析最高音质 默认exhigh(极高) 分类：standard => 标准,higher => 较高, exhigh=>极高, lossless=>无损, hires=>Hi-Res, jyeffect => 高清环绕声, sky => 沉浸环绕声, dolby => 杜比全景声, jymaster => 超清母带
 neteaseUserId: '' # 网易云用户ID 不要手动更改！！！！除非你非常清楚你在做什么
+neteaseCloudUserId:  '' # 网易云云盘用户ID 不要手动更改！！！！除非你非常清楚你在做什么
 
 youtubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
 youtubeClipTime: 0 # YouTobe限制的最大视频时长（默认不开启），单位：秒 最好不要超过5分钟，否则截取效率非常低
