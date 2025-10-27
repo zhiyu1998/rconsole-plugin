@@ -9,7 +9,7 @@ import { COMMON_USER_AGENT, REDIS_YUNZAI_ISOVERSEA, REDIS_YUNZAI_SONGINFO, REDIS
 import { downloadAudio, retryAxiosReq } from "../utils/common.js";
 import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { checkAndRemoveFile, checkFileExists, splitPaths } from "../utils/file.js";
-import { sendMusicCard, getGroupFileUrl, getReplyMsg } from "../utils/yunzai-util.js";
+import { sendMusicCard, sendCustomMusicCard, getGroupFileUrl, getReplyMsg } from "../utils/yunzai-util.js";
 import config from "../model/config.js";
 import FormData from 'form-data';
 import NodeID3 from 'node-id3';
@@ -24,11 +24,11 @@ export class songRequest extends plugin {
             priority: 300,
             rule: [
                 {
-                    reg: '^#点歌\s*|#听[1-9][0-9]*|#听[1-9]*$',//^#点歌|#听[1-9][0-9]*|#听[1-9]*$
+                    reg: '^#点歌\\s*(.+?)(?:\\s+([12]))?$|#听[1-9][0-9]*|#听[1-9]*$',
                     fnc: 'pickSong'
                 },
                 {
-                    reg: "^#播放\s*(.*)",
+                    reg: "^#播放\\s*(.+?)(?:\\s+([12]))?$",
                     fnc: "playSong"
                 },
                 {
@@ -104,10 +104,10 @@ export class songRequest extends plugin {
         let musicDate = { 'group_id': group_id, data: [] }
         // 获取搜索歌曲列表信息
         let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}&time=" + Date.now() //歌曲详情API
-        if (e.msg.match(/^#点歌\s*(.+)/)) {
-            const songKeyWord = e.msg.match(/^#点歌\s*(.+)/)[1];
-            //if (e.msg.replace(/\s+/g, "").match(/点歌(.+)/)) {
-            //const songKeyWord = e.msg.replace(/\s+/g, "").match(/点歌(.+)/)[1].replace(/[^\w\u4e00-\u9fa5]/g, '')
+        const match = e.msg.match(/^#点歌\s*(.+?)(?:\s+([12]))?$/);
+        if (match) {
+            const songKeyWord = match[1];
+            const songType = match[2] || '1';
             // 获取云盘歌单列表
             const cloudSongList = await this.getCloudSong()
             // 搜索云盘歌单并进行搜索
@@ -125,54 +125,77 @@ export class songRequest extends plugin {
                     'duration': matchedSongs[i].duration
                 });
             }
-            let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=' + searchCount//搜索API
+            let searchUrl;
+            if (songType === '2') {
+                searchUrl = `${autoSelectNeteaseApi}/search?keywords={}&type=2000&limit=${searchCount}`; // 播客声音接口(暂时只加入播客声音)
+            } else {
+                searchUrl = `${autoSelectNeteaseApi}/search?keywords={}&limit=${searchCount}`; // 歌曲接口
+            }
             searchUrl = searchUrl.replace("{}", encodeURIComponent(songKeyWord))
             await axios.get(searchUrl, {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT
                 },
             }).then(async res => {
-                if (res.data.result.songs || musicDate.data[0]) {
+                const results = songType === '2' ? res.data.data?.resources : res.data.result?.songs;
+                if (results || musicDate.data[0]) {
                     try {
-                        for (const info of res.data.result.songs) {
-                            musicDate.data.push({
-                                'id': info.id,
-                                'songName': info.name,
-                                'singerName': info.artists[0]?.name,
-                                'duration': formatTime(info.duration)
-                            });
+                        if (results) {
+                            for (const info of results) {
+                                if (songType === '2') {
+                                    musicDate.data.push({
+                                        'programId': info.baseInfo.id,
+                                        'id': info.baseInfo.mainSong.id,
+                                        'songName': info.baseInfo.mainSong.name,
+                                        'singerName': info.baseInfo.dj.nickname,
+                                        'duration': formatTime(info.baseInfo.duration),
+                                        'cover': info.baseInfo.coverUrl,
+                                        'type': 'podcast'
+                                    });
+                                } else {
+                                    musicDate.data.push({
+                                        'id': info.id,
+                                        'songName': info.name,
+                                        'singerName': info.artists[0]?.name,
+                                        'duration': formatTime(info.duration),
+                                        'type': 'song'
+                                    });
+                                }
+                            }
                         }
                     } catch (error) {
                         logger.info('并未获取云服务歌曲')
                     }
-                    const ids = musicDate.data.map(item => item.id).join(',');
-                    detailUrl = detailUrl.replace("{}", ids)
-                    await axios.get(detailUrl, {
-                        headers: {
-                            "User-Agent": COMMON_USER_AGENT
-                        },
-                    }).then(res => {
-                        let imgList = {};
-                        for (const songDetail of res.data.songs) {
-                            const songId = songDetail.id;
-                            if (songDetail.al.picUrl.includes('109951169484091680.jpg')) {
-                                imgList[songId] = 'def';
-                            } else {
-                                imgList[songId] = songDetail.al.picUrl;
+                    const songIds = musicDate.data.filter(item => item.type !== 'podcast').map(item => item.id).join(',');
+                    if (songIds) {
+                        detailUrl = detailUrl.replace("{}", songIds)
+                        await axios.get(detailUrl, {
+                            headers: {
+                                "User-Agent": COMMON_USER_AGENT
+                            },
+                        }).then(res => {
+                            let imgList = {};
+                            for (const songDetail of res.data.songs) {
+                                const songId = songDetail.id;
+                                if (songDetail.al.picUrl.includes('109951169484091680.jpg')) {
+                                    imgList[songId] = 'def';
+                                } else {
+                                    imgList[songId] = songDetail.al.picUrl;
+                                }
+                                const musicDataIndex = musicDate.data.findIndex(item => item.id === songId);
+                                if (musicDataIndex !== -1) {
+                                    musicDate.data[musicDataIndex].songName = songDetail.name;
+                                    musicDate.data[musicDataIndex].singerName = songDetail.ar[0]?.name;
+                                }
                             }
-                            const musicDataIndex = musicDate.data.findIndex(item => item.id === songId);
-                            if (musicDataIndex !== -1) {
-                                musicDate.data[musicDataIndex].songName = songDetail.name;
-                                musicDate.data[musicDataIndex].singerName = songDetail.ar[0]?.name;
+                            for (let i = 0; i < musicDate.data.length; i++) {
+                                const songId = musicDate.data[i].id;
+                                if (imgList[songId]) {
+                                    musicDate.data[i].cover = imgList[songId];
+                                }
                             }
-                        }
-                        for (let i = 0; i < musicDate.data.length; i++) {
-                            const songId = musicDate.data[i].id;
-                            if (imgList[songId]) {
-                                musicDate.data[i].cover = imgList[songId];
-                            }
-                        }
-                    })
+                        })
+                    }
                     if (saveId == -1) {
                         songInfo.push(musicDate)
                     } else {
@@ -195,6 +218,7 @@ export class songRequest extends plugin {
                 const saveId = songInfo.findIndex(item => item.group_id === e.group_id)
                 const selectedSong = songInfo[saveId].data[pickNumber];
                 const songId = selectedSong.id;
+                const songType = selectedSong.type || 'song';
                 const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
                 const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songId);
                 const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songId;
@@ -204,7 +228,7 @@ export class songRequest extends plugin {
                 // 检查 Cookie 有效性，根据歌曲来源选择 Cookie 类型
                 const isCkExpired = await this.checkCooike(statusUrl, isCloudSong ? 'cloud' : 'song');
                 // 请求netease数据并播放
-                this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo[saveId].data, pickNumber, isCkExpired, isCloudSong);
+                this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo[saveId].data, pickNumber, isCkExpired, isCloudSong, songType);
             }
         }
 
@@ -223,42 +247,48 @@ export class songRequest extends plugin {
         let songInfo = []
         // 获取搜索歌曲列表信息
         const AUTO_NETEASE_SONG_DOWNLOAD = autoSelectNeteaseApi + "/song/url/v1?id={}&level=" + this.neteaseCloudAudioQuality;
-        let searchUrl = autoSelectNeteaseApi + '/search?keywords={}&limit=1' //搜索API
-        let detailUrl = autoSelectNeteaseApi + "/song/detail?ids={}" //歌曲详情API
-        if (e.msg.match(/^#播放\s*(.+)/)) {
-            const songKeyWord = e.msg.match(/^#播放\s*(.+)/)[1]
+        const match = e.msg.match(/^#播放\s*(.+?)(?:\s+([12]))?$/);
+        if (match) {
+            const songKeyWord = match[1];
+            const songType = match[2] || '1';
+            let searchUrl;
+            if (songType === '2') {
+                searchUrl = `${autoSelectNeteaseApi}/search?keywords={}&type=2000&limit=1`; // 播客声音接口(暂时只加入播客声音)
+            } else {
+                searchUrl = `${autoSelectNeteaseApi}/cloudsearch?keywords={}&limit=1`; // 歌曲接口
+            }
             searchUrl = searchUrl.replace("{}", encodeURIComponent(songKeyWord))
             await axios.get(searchUrl, {
                 headers: {
                     "User-Agent": COMMON_USER_AGENT
                 },
             }).then(async res => {
-                if (res.data.result.songs) {
-                    for (const info of res.data.result.songs) {
-                        songInfo.push({
-                            'id': info.id,
-                            'songName': info.name,
-                            'singerName': info.artists[0]?.name,
-                            'duration': formatTime(info.duration)
-                        });
+                const results = songType === '2' ? res.data.data?.resources : res.data.result?.songs;
+                if (results && results.length > 0) {
+                    const info = results[0];
+                    let programId, id, songName, singerName, duration, cover, type;
+                    if (songType === '2') {
+                        programId = info.baseInfo.id
+                        id = info.baseInfo.mainSong.id;
+                        songName = info.baseInfo.mainSong.name;
+                        singerName = info.baseInfo.dj.nickname;
+                        duration = formatTime(info.baseInfo.duration);
+                        cover = info.baseInfo.coverUrl;
+                        type = 'podcast';
+                    } else {
+                        id = info.id;
+                        songName = info.name;
+                        singerName = info.ar[0]?.name;
+                        duration = formatTime(info.dt);
+                        cover = info.al.picUrl;
+                        type = 'song';
                     }
-                    const ids = songInfo.map(item => item.id).join(',');
-                    detailUrl = detailUrl.replace("{}", ids)
-                    await axios.get(detailUrl, {
-                        headers: {
-                            "User-Agent": COMMON_USER_AGENT
-                        },
-                    }).then(res => {
-                        for (let i = 0; i < res.data.songs.length; i++) {
-                            songInfo[i].cover = res.data.songs[i].al.picUrl
-                        }
-                    })
-                    const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", songInfo[0].id)
+                    songInfo.push({ programId, id, songName, singerName, duration, cover, type });
+                    const pickSongUrl = AUTO_NETEASE_SONG_DOWNLOAD.replace("{}", id)
                     const statusUrl = autoSelectNeteaseApi + '/login/status' //用户状态API
-                    const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songInfo[0].id
+                    const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + id;
                     const isCkExpired = await this.checkCooike(statusUrl, 'song')
-                    // 在playSong方法中，网易云搜索的歌曲不是云盘歌曲
-                    this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo, 0, isCkExpired, false)
+                    this.neteasePlay(e, pickSongUrl, songWikiUrl, songInfo, 0, isCkExpired, false, songType)
                 } else {
                     e.reply('暂未找到你想听的歌哦~')
                 }
@@ -306,17 +336,34 @@ export class songRequest extends plugin {
     // 上传音频文件
     async upLoad(e) {
         let msg = await getReplyMsg(e);
+        const autoSelectNeteaseApi = await this.pickApi()
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
-        const id =
+        let id =
             musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
             musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
             musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
             /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)?.[1] || "";
-        const title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
-        const desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
+        let title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
+        let desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
+        const jumpUrl = msg.message[0].data.data.match(/"jumpUrl":"([^"]+)"/)[1];
+        const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
+        if (isPodcast) {
+            const programDetailUrl = `${autoSelectNeteaseApi}/dj/program/detail?id=${id}`;
+            try {
+                const programRes = await axios.get(programDetailUrl);
+                const mainSong = programRes.data.program.mainSong;
+                id = mainSong.id;
+                title = mainSong.name;
+                desc = mainSong.artists[0].name || '喵喵~';
+            } catch (error) {
+                logger.error('出现错误，无法上传', error);
+                e.reply('出现错误，无法上传');
+                return;
+            }
+        }
         let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         const fileExists = await this.waitForFile(path, e);
         if (!fileExists) {
@@ -339,14 +386,30 @@ export class songRequest extends plugin {
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
-        const id =
+        let id =
             musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
             musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
             musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
             /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)[1] || "";
-        const title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
-        const desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
+        let title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
+        let desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
+        const jumpUrl = msg.message[0].data.data.match(/"jumpUrl":"([^"]+)"/)[1];
+        const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
+        if (isPodcast) {
+            const programDetailUrl = `${autoSelectNeteaseApi}/dj/program/detail?id=${id}`;
+            try {
+                const programRes = await axios.get(programDetailUrl);
+                const mainSong = programRes.data.program.mainSong;
+                id = mainSong.id;
+                title = mainSong.name;
+                desc = mainSong.artists[0].name || '喵喵~';
+            } catch (error) {
+                logger.error('出现错误，无法上传', error);
+                e.reply('出现错误，无法上传');
+                return;
+            }
+        }
         let path = this.getCurDownloadPath(e) + '/' + desc + '-' + title + '.' + FileSuffix
         const fileExists = await this.waitForFile(path, e);
         if (!fileExists) {
@@ -621,22 +684,22 @@ export class songRequest extends plugin {
             }).then(res => {
                 const wikiData = res.data.data.blocks[1]?.creatives || []
                 if (wikiData[0]) {
-                    typelist.push(wikiData[0].resources[0].uiElement.mainTitle.title)
+                    typelist.push(wikiData[0]?.resources?.[0]?.uiElement?.mainTitle?.title)
                     // 防止数据过深出错
                     const recTags = wikiData[1]
-                    if (recTags.resources[0]) {
+                    if (recTags?.resources?.[0]) {
                         for (let i = 0; i < Math.min(3, recTags.resources.length); i++) {
-                            if (recTags.resources[i] && recTags.resources[i].uiElement && recTags.resources[i].uiElement.mainTitle.title) {
+                            if (recTags.resources[i]?.uiElement?.mainTitle?.title) {
                                 typelist.push(recTags.resources[i].uiElement.mainTitle.title)
                             }
                         }
                     } else {
-                        if (recTags.uiElement.textLinks[0].text) typelist.push(recTags.uiElement.textLinks[0].text)
+                        if (recTags?.uiElement?.textLinks?.[0]?.text) typelist.push(recTags.uiElement.textLinks[0].text)
                     }
-                    if (wikiData[2].uiElement.mainTitle.title == 'BPM') {
-                        typelist.push('BPM ' + wikiData[2].uiElement.textLinks[0].text)
+                    if (wikiData[2]?.uiElement?.mainTitle?.title == 'BPM') {
+                        typelist.push('BPM ' + wikiData[2]?.uiElement?.textLinks?.[0]?.text)
                     } else {
-                        typelist.push(wikiData[2].uiElement.textLinks[0].text)
+                        typelist.push(wikiData[2]?.uiElement?.textLinks?.[0]?.text)
                     }
                 }
                 typelist.push(AudioLevel)
@@ -667,7 +730,16 @@ export class songRequest extends plugin {
             let cardSentSuccessfully = false;
             try {
                 // 发送卡片
-                await sendMusicCard(e, '163', songInfo[pickNumber].id);
+                const song = songInfo[pickNumber];
+                if (song.type === 'podcast') { //播客声音貌似只能用自定义卡片
+                    const musicurl = `https://music.163.com/dj?id=${song.programId}&userid=`; //暂时不知道怎么弄到userid(似乎也用不上)
+                    const musicaudio = resp.data.data[0].url;
+                    const musictitle = song.songName;
+                    const musicimage = song.cover;
+                    await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage);
+                } else {
+                    await sendMusicCard(e, '163', song.id);
+                }
                 cardSentSuccessfully = true;
             } catch (error) {
                 if (error.message) {
@@ -719,11 +791,11 @@ export class songRequest extends plugin {
         return url;
     }
 
-        /**
-     * 根据操作类型获取对应的Cookie
-     * @param {boolean} isCloud - 是否为云盘相关操作
-     * @returns {string} - 返回相应的Cookie字符串
-     */
+    /**
+ * 根据操作类型获取对应的Cookie
+ * @param {boolean} isCloud - 是否为云盘相关操作
+ * @returns {string} - 返回相应的Cookie字符串
+ */
     getCookie(isCloud = false) {
         if (isCloud) {
             // 云盘操作，优先使用云盘Cookie，否则回退到通用Cookie
