@@ -37,6 +37,32 @@ export async function sendMusicCard(e, platformType, musicId) {
 }
 
 /**
+ * 发送自定义群组音乐卡片
+ * @param e
+ * @param musicurl   音乐链接
+ * @param musicaudio 音乐音频
+ * @param musictitle 音乐标题
+ * @param musicimage 音乐封面
+ */
+export async function sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage) {
+    await e.bot.sendApi('send_group_msg', {
+        group_id: e.group_id,
+        message: [
+            {
+                type: 'music',
+                data: {
+                    type: 'custom',
+                    url: musicurl,
+                    audio: musicaudio,
+                    title: musictitle,
+                    image: musicimage
+                }
+            }
+        ]
+    });
+}
+
+/**
  * 获取群文件最新的图片
  * @param e
  * @param count     获取群聊条数
