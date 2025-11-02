@@ -420,6 +420,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.xiaoheiheCookie",
+                    label: "小黑盒的Cookie",
+                    bottomHelpMessage:
+                        "登陆https://www.xiaoheihe.cn/ - F12 - 格式：x_xhh_tokenid=xxx",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入小黑盒的Cookie",
+                    },
+                },
+                {
                     field: "tools.queueConcurrency",
                     label: "（高级）队列长度",
                     bottomHelpMessage:
