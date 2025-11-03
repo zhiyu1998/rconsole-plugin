@@ -3157,6 +3157,10 @@ export class tools extends plugin {
                     os_type: "web",
                     link_id: id,
                     limit: 20,
+                    web_version: '2.5',
+                    x_client_type: 'web',
+                    x_app: 'heybox_website',
+                    x_os_type: 'Android',
                     ...authParams,
                 };
                 const response = await axios.get(XHH_BBS_LINK, {
@@ -3174,40 +3178,147 @@ export class tools extends plugin {
                 }
 
                 const { link, comments } = data.result;
-                const mainMsgs = [
-                    `${ this.identifyPrefix }识别：小黑盒帖子`,
-                    `👤作者：${ link.user.username }`,
-                    `📝标题：${ link.title }`,
-                    `📄简介：${ link.description }`
-                ];
+                const messagesToSend = [];
+                // 封面
+                if (link.thumb) {
+                    messagesToSend.push(segment.image(link.thumb));
+                }
+                else if (link.video_thumb){
+                    messagesToSend.push(segment.image(link.video_thumb));
+                }
+                // 文字信息
+                const textMessages = [];
+                textMessages.push(`${this.identifyPrefix}识别：小黑盒帖子`);
+                textMessages.push(`👤作者：${link.user.username}`);
+                if (link.title) {
+                    textMessages.push(`📝标题：${link.title}`);
+                }
+                if (link.description) {
+                    textMessages.push(`📄简介：${link.description}`);
+                }
+                let tagsToDisplay = '';
                 if (link.hashtags && link.hashtags.length > 0) {
-                    const tagsToDisplay = link.hashtags
+                    tagsToDisplay = link.hashtags
                         .slice(0, 10) // 最多选择10个tag
-                        .map(tag => `#${ tag.name }`)
+                        .map(tag => `#${tag.name}`)
                         .join(' ');
-                    mainMsgs.push(`🏷️标签：${ tagsToDisplay }`);
+                } else if (link.content_tags && link.content_tags.length > 0) {
+                    tagsToDisplay = link.content_tags
+                        .slice(0, 10) // 最多选择10个tag
+                        .map(tag => `#${tag.text}`)
+                        .join(' ');
                 }
-                
-                // 提取图片链接
-                let imageUrls = [];
-                if (link.text && typeof link.text === 'string') {
-                    const textEntities = JSON.parse(link.text);
-                    imageUrls = textEntities.filter(item => item.type === 'img').map(img => img.url);
+                if (tagsToDisplay) {
+                    textMessages.push(`🏷️标签：${tagsToDisplay}`);
                 }
-                if (imageUrls.length > 0 && imageUrls.length <= this.globalImageLimit) {
-                    // 将文字和图片合并到同一个数组中
-                    const combinedMsgs = [...mainMsgs.map(text => ({ type: 'text', text: text + '\n' })), ...imageUrls.map(url => segment.image(url))];
-                    await e.reply(combinedMsgs.flat());
-                } else {
-                    await e.reply(mainMsgs.join('\n'));
-                    if (imageUrls.length > this.globalImageLimit) {
-                        const imgForwardMsgs = await Promise.all(imageUrls.map(async (url) => ({
-                            message: segment.image(url),
-                            nickname: this.e.sender.card || this.e.user_id,
-                            user_id: this.e.user_id,
-                        })));
-                        await e.reply(await Bot.makeForwardMsg(imgForwardMsgs));
+                messagesToSend.push(textMessages.join('\n'));
+
+                // 解析提取帖子内容
+                if (link.text && typeof link.text === 'string' && (link.text.startsWith('[') || link.text.startsWith('{'))) {
+                    try {
+                        const textEntities = JSON.parse(link.text);
+                        const htmlItem = textEntities.find(item => item.type === 'html' && item.text);
+                        if (htmlItem) {
+                            await e.reply(messagesToSend.flat()); // 先发送封面和基础信息
+                            
+                            const combinedMessage = [];
+                            const htmlString = htmlItem.text;
+                            const fullCleanedText = htmlString
+                                .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
+                                .replace(/<br\s*\/?>/g, '\n')
+                                .replace(/<[^>]+>/g, '')
+                                .trim();
+                            if (fullCleanedText !== link.description) {
+                                const imageRegex = /<img .*?data-original="([^"]+)".*?\/?>/g;
+                                let lastIndex = 0;
+                                let match;
+                                while ((match = imageRegex.exec(htmlString)) !== null) {
+                                    const textBefore = htmlString.substring(lastIndex, match.index);
+                                    const cleanedText = textBefore
+                                        .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
+                                        .replace(/<br\s*\/?>/g, '\n')
+                                        .replace(/<[^>]+>/g, '')
+                                        .trim();
+                                    if (cleanedText) combinedMessage.push(cleanedText);
+                                    const imageUrl = match[1];
+                                    if (imageUrl) combinedMessage.push(segment.image(imageUrl));
+                                    lastIndex = imageRegex.lastIndex;
+                                }
+                                const textAfter = htmlString.substring(lastIndex);
+                                const cleanedTextAfter = textAfter
+                                    .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
+                                    .replace(/<br\s*\/?>/g, '\n')
+                                    .replace(/<[^>]+>/g, '')
+                                    .trim();
+                                if (cleanedTextAfter) combinedMessage.push(cleanedTextAfter);
+                            }
+                            
+                            if (combinedMessage.length > 0) {
+                                const postContentForwardMsgs = [{
+                                    message: combinedMessage,
+                                    nickname: this.e.sender.card || this.e.user_id,
+                                    user_id: this.e.user_id,
+                                }];
+                                await e.reply(await Bot.makeForwardMsg(postContentForwardMsgs));
+                            }
+                        } else {
+                            const imageUrls = textEntities
+                                .filter(item => item.type === 'img' && item.url)
+                                .map(img => img.url);
+                            const textContent = textEntities
+                                .filter(item => item.type === 'text' && item.text)
+                                .map(t => t.text)
+                                .join('\n');
+                            const hasValidText = textContent && textContent !== link.description;
+                            if (hasValidText) {
+                                if (imageUrls.length > this.globalImageLimit) {
+                                    await e.reply(messagesToSend.flat());
+                                    const combinedMessage = [];
+                                    imageUrls.forEach(url => combinedMessage.push(segment.image(url)));
+                                    combinedMessage.push(textContent);
+                                    const forwardMsg = [{
+                                        message: combinedMessage,
+                                        nickname: this.e.sender.card || this.e.user_id,
+                                        user_id: this.e.user_id
+                                    }];
+                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+                                } else {
+                                    imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
+                                    await e.reply(messagesToSend.flat());
+                                    const textForwardMsg = [{
+                                        message: textContent,
+                                        nickname: this.e.sender.card || this.e.user_id,
+                                        user_id: this.e.user_id
+                                    }];
+                                    await e.reply(await Bot.makeForwardMsg(textForwardMsg));
+                                }
+                            } else {
+                                if (imageUrls.length > this.globalImageLimit) {
+                                    await e.reply(messagesToSend.flat());
+                                    const imageMessage = imageUrls.map(url => segment.image(url));
+                                    const forwardMsg = [{
+                                        message: imageMessage,
+                                        nickname: this.e.sender.card || this.e.user_id,
+                                        user_id: this.e.user_id
+                                    }];
+                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+                                } else {
+                                    imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
+                                    await e.reply(messagesToSend.flat());
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        logger.error(`[R插件][小黑盒帖子] 尝试解析JSON提取正文内容失败，错误: ${e.message}`);
                     }
+                } else {
+                    await e.reply(messagesToSend.flat());
+                }
+
+                // 处理并发送视频
+                if (link.has_video === 1 && link.video_url) {
+                    const videoPath = await this.downloadVideo(link.video_url);
+                    await this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
                 }
                 
                 // 处理并发送评论
