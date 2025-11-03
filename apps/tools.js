@@ -3174,33 +3174,55 @@ export class tools extends plugin {
                 }
 
                 const { link, comments } = data.result;
-                const mainMsgs = [
-                    `${ this.identifyPrefix }识别：小黑盒帖子`,
-                    `👤作者：${ link.user.username }`,
-                    `📝标题：${ link.title }`,
-                    `📄简介：${ link.description }`
-                ];
-                if (link.hashtags && link.hashtags.length > 0) {
-                    const tagsToDisplay = link.hashtags
-                        .slice(0, 10) // 最多选择10个tag
-                        .map(tag => `#${ tag.name }`)
-                        .join(' ');
-                    mainMsgs.push(`🏷️标签：${ tagsToDisplay }`);
+                const messagesToSend = [];
+                // 视频封面
+                if (link.video_thumb) {
+                    messagesToSend.push(segment.image(link.video_thumb));
                 }
-                
+                // 文字信息
+                const textMessages = [];
+                textMessages.push(`${this.identifyPrefix}识别：小黑盒帖子`);
+                textMessages.push(`👤作者：${link.user.username}`);
+                if (link.title) {
+                    textMessages.push(`📝标题：${link.title}`);
+                }
+                if (link.description) {
+                    textMessages.push(`📄简介：${link.description}`);
+                }
+                let tagsToDisplay = '';
+                if (link.hashtags && link.hashtags.length > 0) {
+                    tagsToDisplay = link.hashtags
+                        .slice(0, 10) // 最多选择10个tag
+                        .map(tag => `#${tag.name}`)
+                        .join(' ');
+                } else if (link.content_tags && link.content_tags.length > 0) {
+                    tagsToDisplay = link.content_tags
+                        .slice(0, 10) // 最多选择10个tag
+                        .map(tag => `#${tag.text}`)
+                        .join(' ');
+                }
+                if (tagsToDisplay) {
+                    textMessages.push(`🏷️标签：${tagsToDisplay}`);
+                }
+                messagesToSend.push(textMessages.join('\n'));
                 // 提取图片链接
                 let imageUrls = [];
-                if (link.text && typeof link.text === 'string') {
-                    const textEntities = JSON.parse(link.text);
-                    imageUrls = textEntities.filter(item => item.type === 'img').map(img => img.url);
+                if (link.text && typeof link.text === 'string' && (link.text.startsWith('[') || link.text.startsWith('{'))) {
+                    try {
+                        const textEntities = JSON.parse(link.text);
+                        if (Array.isArray(textEntities)) {
+                            imageUrls = textEntities.filter(item => item.type === 'img').map(img => img.url);
+                        }
+                    } catch (e) {
+                        logger.error(`[R插件][小黑盒帖子] 尝试解析JSON提取图片链接失败，错误: ${e.message}`);
+                    }
                 }
-                if (imageUrls.length > 0 && imageUrls.length <= this.globalImageLimit) {
-                    // 将文字和图片合并到同一个数组中
-                    const combinedMsgs = [...mainMsgs.map(text => ({ type: 'text', text: text + '\n' })), ...imageUrls.map(url => segment.image(url))];
-                    await e.reply(combinedMsgs.flat());
-                } else {
-                    await e.reply(mainMsgs.join('\n'));
-                    if (imageUrls.length > this.globalImageLimit) {
+                if (imageUrls.length > 0) {
+                    if (imageUrls.length <= this.globalImageLimit) {
+                        imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
+                        await e.reply(messagesToSend.flat());
+                    } else {
+                        await e.reply(messagesToSend.flat());
                         const imgForwardMsgs = await Promise.all(imageUrls.map(async (url) => ({
                             message: segment.image(url),
                             nickname: this.e.sender.card || this.e.user_id,
@@ -3208,6 +3230,14 @@ export class tools extends plugin {
                         })));
                         await e.reply(await Bot.makeForwardMsg(imgForwardMsgs));
                     }
+                } else {
+                    await e.reply(messagesToSend.flat());
+                }
+
+                // 处理并发送视频
+                if (link.has_video === 1 && link.video_url) {
+                    const videoPath = await this.downloadVideo(link.video_url);
+                    await this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
                 }
                 
                 // 处理并发送评论
