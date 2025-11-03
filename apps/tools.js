@@ -57,7 +57,11 @@ import {
     WEIBO_SINGLE_INFO,
     WEISHI_VIDEO_INFO,
     XHS_REQ_LINK,
-    CRAWL_TOOL
+    CRAWL_TOOL,
+    XHH_BBS_LINK,
+    XHH_GAME_LINK,
+    XHH_CONSOLE_LINK,
+    XHH_MOBILE_LINK
 } from "../constants/tools.js";
 import BiliInfoModel from "../model/bili-info.js";
 import config from "../model/config.js";
@@ -108,6 +112,7 @@ import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
+import { getAuthParams } from "../utils/xiaoheihe.js";
 
 
 export class tools extends plugin {
@@ -221,6 +226,10 @@ export class tools extends plugin {
                     fnc: "tieba"
                 },
                 {
+                    reg: "xiaoheihe.cn",
+                    fnc: "xiaoheihe"
+                },
+                {
                     reg: "^#(网易云状态|rns|RNS|网易云云盘状态|rncs|RNCS)$",
                     fnc: "neteaseStatus",
                     permission: 'master',
@@ -321,6 +330,8 @@ export class tools extends plugin {
         this.globalImageLimit = this.toolsConfig.globalImageLimit;
         // 加载微博Cookie
         this.weiboCookie = this.toolsConfig.weiboCookie;
+        // 加载小黑盒Cookie
+        this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
     }
 
     // 翻译插件
@@ -3096,6 +3107,423 @@ export class tools extends plugin {
         e.reply(await Bot.makeForwardMsg(reply));
         return true;
     }
+    
+    // 小黑盒
+    async xiaoheihe(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.xiaoheihe))) {
+            logger.info(`[R插件][全局解析控制] ${ RESOLVE_CONTROLLER_NAME_ENUM.xiaoheihe } 已拦截`);
+            return true;
+        }
+
+        const msg = e.msg;
+        let type = '';
+        let id = '';
+        // 提取 id
+        if (msg.includes('bbs')) {
+            type = 'bbs';
+            const bbsMatch = msg.match(/bbs\/link\/([a-zA-Z0-9]+)/) || msg.match(/bbs\/app\/api\/web\/share\?link_id=([a-zA-Z0-9]+)/);
+            if (bbsMatch) id = bbsMatch[1] || bbsMatch[2];
+        } else if (msg.includes('pc')) {
+            type = 'pc';
+            const pcMatch = msg.match(/game\/pc\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=pc/);
+            if (pcMatch) id = pcMatch[1] || pcMatch[2];
+        } else if (msg.includes('console')) {
+            type = 'console';
+            const consoleMatch = msg.match(/game\/console\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=console/);
+            if (consoleMatch) id = consoleMatch[1] || consoleMatch[2];
+        } else if (msg.includes('mobile')) {
+            type = 'mobile';
+            const mobileMatch = msg.match(/game\/mobile\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=mobile/);
+            if (mobileMatch) id = mobileMatch[1] || mobileMatch[2];
+        }
+        if (!type || !id) {
+            logger.info(`[R插件][小黑盒] 未获取到有效ID: ${e.msg}`);
+            return false;
+        }
+
+        // 检测是否填写小黑盒Cookie
+        if (!this.xiaoheiheCookie) {
+            e.reply(`检测到没有填写小黑盒Cookie，无法解析小黑盒`);
+            return;
+        }
+
+        // 帖子类型
+        if (type === 'bbs') {
+            try {
+                // 构造请求
+                const authParams = getAuthParams('bbs');
+                const params = {
+                    os_type: "web",
+                    link_id: id,
+                    limit: 20,
+                    ...authParams,
+                };
+                const response = await axios.get(XHH_BBS_LINK, {
+                    params,
+                    headers: {
+                        "Cookie": this.xiaoheiheCookie,
+                        "User-Agent": COMMON_USER_AGENT,
+                    }
+                });
+                const data = response.data;
+                if (data.status !== 'ok' || !data.result) {
+                    e.reply('小黑盒帖子解析失败，请检查链接是否正确或Cookie是否过期。');
+                    logger.error(`[R插件][小黑盒帖子] API返回错误: ${ JSON.stringify(data) }`);
+                    return true;
+                }
+
+                const { link, comments } = data.result;
+                const mainMsgs = [
+                    `${ this.identifyPrefix }识别：小黑盒帖子`,
+                    `👤作者：${ link.user.username }`,
+                    `📝标题：${ link.title }`,
+                    `📄简介：${ link.description }`
+                ];
+                if (link.hashtags && link.hashtags.length > 0) {
+                    const tagsToDisplay = link.hashtags
+                        .slice(0, 10) // 最多选择10个tag
+                        .map(tag => `#${ tag.name }`)
+                        .join(' ');
+                    mainMsgs.push(`🏷️标签：${ tagsToDisplay }`);
+                }
+                
+                // 提取图片链接
+                let imageUrls = [];
+                if (link.text && typeof link.text === 'string') {
+                    const textEntities = JSON.parse(link.text);
+                    imageUrls = textEntities.filter(item => item.type === 'img').map(img => img.url);
+                }
+                if (imageUrls.length > 0 && imageUrls.length <= this.globalImageLimit) {
+                    // 将文字和图片合并到同一个数组中
+                    const combinedMsgs = [...mainMsgs.map(text => ({ type: 'text', text: text + '\n' })), ...imageUrls.map(url => segment.image(url))];
+                    await e.reply(combinedMsgs.flat());
+                } else {
+                    await e.reply(mainMsgs.join('\n'));
+                    if (imageUrls.length > this.globalImageLimit) {
+                        const imgForwardMsgs = await Promise.all(imageUrls.map(async (url) => ({
+                            message: segment.image(url),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        })));
+                        await e.reply(await Bot.makeForwardMsg(imgForwardMsgs));
+                    }
+                }
+                
+                // 处理并发送评论
+                if (comments && comments.length > 0) {
+                    comments.sort((a, b) => a.comment[0].floor_num - b.comment[0].floor_num);
+                    const MAX_COMMENT_MESSAGES = 50; // 最大评论条数
+                    let processedCommentCount = 0;
+                    const commentForwardMsgs = [];
+                    for (const thread of comments) {
+                        if (processedCommentCount >= MAX_COMMENT_MESSAGES) break;
+                        for (const comment of thread.comment) {
+                            if (processedCommentCount >= MAX_COMMENT_MESSAGES) break;
+                            let msgText;
+                            const userInfo = `${ comment.user.username }`;
+                            const formattedTime = this.formatCommentTime(comment.create_at); // 格式化时间
+                            let commentContent = [];
+                            if (comment.replyuser) {
+                                msgText = `${ userInfo } 回复 ${ comment.replyuser.username }\n${ formattedTime }·${ comment.ip_location }\n\n${ comment.text }`;
+                            } else {
+                                msgText = `${ userInfo }\n${ comment.floor_num }楼 ${ formattedTime }·${ comment.ip_location }\n\n${ comment.text }`;
+                            }
+                            commentContent.push({ type: 'text', text: msgText });
+                            if (comment.imgs && comment.imgs.length > 0) {
+                                for (const img of comment.imgs) {
+                                    commentContent.push(segment.image(img.url));
+                                }
+                            }
+                            commentForwardMsgs.push({
+                                message: commentContent,
+                                nickname: comment.user.username,
+                                user_id: comment.userid,
+                            });
+                            processedCommentCount++;
+                        }
+                    }
+                    if (commentForwardMsgs.length > 0) {
+                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                    }
+                }
+            } catch (error) {
+                logger.error(`[R插件][小黑盒帖子] 解析失败: ${ error.message }`);
+                e.reply('小黑盒帖子解析时遇到问题，可能是网络错误或被风控了。');
+            }
+            // pc和主机和手机游戏类型
+        } else if (type === 'pc' || type === 'console' || type === 'mobile') {
+            try {
+                let apiUrl, authType, params;
+                if (type === 'pc') {
+                    apiUrl = XHH_GAME_LINK;
+                    authType = 'pc';
+                    params = {
+                        os_type: "web",
+                        steam_appid: id,
+                    };
+                } else if (type === 'console') {
+                    apiUrl = XHH_CONSOLE_LINK;
+                    authType = 'console';
+                    params = {
+                        os_type: "web",
+                        appid: id,
+                    };
+                } else if (type === 'mobile') {
+                    apiUrl = XHH_MOBILE_LINK;
+                    authType = 'mobile';
+                    params = {
+                        os_type: "web",
+                        appid: id,
+                    };
+                }
+                const authParams = getAuthParams(authType);
+                params = { ...params, ...authParams };
+                const response = await axios.get(apiUrl, {
+                    params: params,
+                    headers: {
+                        'Cookie': this.xiaoheiheCookie,
+                        "User-Agent": COMMON_USER_AGENT,
+                    },
+                });
+                const data = response.data.result;
+                if (!data) {
+                    e.reply('小黑盒游戏解析失败，请检查链接是否正确或Cookie是否过期。');
+                    logger.error(`[R插件][小黑盒游戏] API返回错误: ${JSON.stringify(response.data)}`);
+                    return true;
+                }
+                
+                const messageToSend = [];
+                // 识别信息
+                messageToSend.push(`${this.identifyPrefix}识别：小黑盒游戏`);
+                // 游戏主封面图
+                if (data.image) {
+                    messageToSend.push(segment.image(data.image));
+                }
+                const otherTextLines = [];
+                // 游戏名 (中文名和英文名)
+                const gameName = data.name;
+                const gameNameEn = data.name_en ? ` (${data.name_en})` : '';
+                if (gameName || gameNameEn) {
+                    otherTextLines.push(`🕹️ ${(gameName || '')}${gameNameEn}`);
+                }
+                // 小黑盒评分
+                if (data.score) {
+                    const commentCount = data.comment_stats?.score_comment || 0;
+                    otherTextLines.push(`🌟 小黑盒评分: ${data.score} (${commentCount}人评价)`);
+                }
+                // 价格信息
+                let priceDisplay = '';
+                if (data.game_type === 'pc' && data.price?.current) { // PC游戏价格
+                    priceDisplay = `¥${data.price.current}`;
+                } else if (data.game_type === 'console' && data.region_prices && data.region_prices.length > 0) { // 主机游戏地区价格
+                    const firstRegionPrice = data.region_prices[0];
+                    priceDisplay = `${firstRegionPrice.final_amount} (${firstRegionPrice.region_name})`;
+                }
+                if (priceDisplay) {
+                    otherTextLines.push(`💰 当前价格: ${priceDisplay}`);
+                }
+                if (otherTextLines.length > 0) {
+                    if (!data.image) {
+                        messageToSend.push('\n');
+                    }
+                    messageToSend.push(otherTextLines.join('\n'));
+                }
+                if (messageToSend.length > 0) {
+                    await e.reply(messageToSend);
+                }
+                
+                // 构建详细文本信息
+                let detailTextParts = [];
+                const forwardMessages = [];
+                // 游戏信息
+                let gameInfoLines = [];
+                if (data.name) gameInfoLines.push(`• 中文名: ${data.name}`);
+                if (data.name_en) gameInfoLines.push(`• 英文名: ${data.name_en}`);
+                const releaseDate = data.menu_v2?.find(item => item.type === 'release_date');
+                if (releaseDate?.value) gameInfoLines.push(`• 发行日期: ${releaseDate.value}`);
+                const developer = data.menu_v2?.find(item => item.type === 'developer');
+                if (developer?.value) gameInfoLines.push(`• 开发商: ${developer.value}`);
+                let publishers = [];
+                const menuV2Publisher = data.menu_v2?.find(item => item.type === 'publisher' && item.value);
+                if (menuV2Publisher) {
+                    publishers = menuV2Publisher.value.split('/').map(p => p.trim()).filter(Boolean);
+                } else if (data.publishers && data.publishers.length > 0) {
+                    publishers = data.publishers.map(p => p.value).filter(Boolean);
+                }
+                if (publishers.length > 0) {
+                    gameInfoLines.push(`• 发行商: ${publishers.join(', ')}`);
+                }
+                if (data.platforms && data.platforms.length > 0) {
+                    const platforms = data.platforms.join(' / ');
+                    gameInfoLines.push(`• 支持平台: ${platforms}`);
+                }
+                const qqGroup = data.menu_v2?.find(item => item.type === 'qq');
+                if (qqGroup?.value) {
+                    gameInfoLines.push(`• QQ交流群: ${qqGroup.value}`);
+                }
+                if (gameInfoLines.length > 0) {
+                    detailTextParts.push(`--- ✨ 游戏信息 ✨ ---\n${gameInfoLines.join('\n')}`);
+                }
+                // 游戏奖项
+                let awardInfoLines = [];
+                if (data.game_award && data.game_award.length > 0) {
+                    data.game_award.forEach(award => {
+                        const awardDetail = `${award.detail_name}${award.desc ? ` (${award.desc})` : ''}`;
+                        awardInfoLines.push(`• ${awardDetail}`);
+                    });
+                }
+                if (awardInfoLines.length > 0) {
+                    detailTextParts.push(`\n--- 🏆 游戏奖项 🏆 ---\n${awardInfoLines.join('\n')}`);
+                }
+                // 价格信息
+                let priceInfoLines = [];
+                if (data.game_type === 'pc' && data.price) { // PC/Steam价格
+                    if (data.price.current !== data.price.initial) {
+                        priceInfoLines.push(`• 当前价格: ¥${data.price.current} (原价: ¥${data.price.initial}, -${data.price.discount}%)`);
+                    } else if (data.price.current) {
+                        priceInfoLines.push(`• 当前价格: ¥${data.price.current}`);
+                    }
+                    if (data.price.lowest_price) {
+                        priceInfoLines.push(`• 史低价格: ¥${data.price.lowest_price} (-${data.price.lowest_discount}%)`);
+                    }
+                    if (data.heybox_price && data.heybox_price.cost_coin) {
+                        priceInfoLines.push(`• 小黑盒商城: ${data.heybox_price.cost_coin / 1000} 盒币`);
+                        if (data.heybox_price.discount > 0) {
+                            priceInfoLines.push(`  (折扣: -${data.heybox_price.discount}%, 原价: ${data.heybox_price.original_coin / 1000} 盒币)`);
+                        }
+                    }
+                    if (data.price?.deadline_date) {
+                        priceInfoLines.push(`• 优惠截止: ${data.price.deadline_date}`);
+                    }
+                }
+                if (data.game_type === 'console' && data.region_prices && data.region_prices.length > 0) { // 主机地区价格
+                    const regionPricesDisplay = data.region_prices.map(rp => {
+                        let priceStr = `${rp.region_name}: `;
+                        if (rp.current !== rp.initial) {
+                            priceStr += `${rp.final_amount} (原价: ${rp.initial_amount}, -${rp.discount}%)`;
+                        } else {
+                            priceStr += `${rp.final_amount}`;
+                        }
+                        if (rp.lowest_price && rp.lowest_price !== rp.final_amount) {
+                            priceStr += ` / 史低: ${rp.lowest_price}`;
+                        }
+                        return priceStr;
+                    }).join('\n  ');
+                    priceInfoLines.push(`🌐 地区价格:\n  ${regionPricesDisplay}`);
+                }
+                if (priceInfoLines.length > 0) {
+                    detailTextParts.push(`\n--- 💰 价格信息 💰 ---\n${priceInfoLines.join('\n')}`);
+                }
+                // 社区评价
+                let communityInfoLines = [];
+                if (data.score) {
+                    communityInfoLines.push(`• 小黑盒评分: ${data.score} (${data.comment_stats?.score_comment || 0}人评价)`);
+                }
+                if (data.comment_stats?.star_5) {
+                    const positiveRate = (parseFloat(data.comment_stats.star_5) / 100).toLocaleString('en-US', { style: 'percent' });
+                    communityInfoLines.push(`• 玩家好评率: ${positiveRate}`);
+                }
+                if (data.multidimensional_score_radar && data.multidimensional_score_radar.dimension_list.length > 0) {
+                    communityInfoLines.push(`• 多维度评分:`);
+                    data.multidimensional_score_radar.dimension_list.forEach(dim => {
+                        communityInfoLines.push(`  - ${dim.dimension_name}: ${dim.score}`);
+                    });
+                }
+                const tagsSource = (data.common_tags && data.common_tags.length > 0) ? data.common_tags : data.hot_tags;
+                const tags = tagsSource
+                    ?.map(tag => {
+                        if (tag && tag.desc) {
+                            return `#${tag.desc}`;
+                        }
+                        return null;
+                    })
+                    .filter(Boolean)
+                    .join(' ');
+                if (tags) communityInfoLines.push(`• 热门标签: ${tags}`);
+                if (data.user_num?.game_data) {
+                    const heyboxPlayers = data.user_num.game_data.find(item => item.desc === '小黑盒玩家数');
+                    if (heyboxPlayers?.value) communityInfoLines.push(`• 小黑盒玩家: ${heyboxPlayers.value}${heyboxPlayers.hb_rich_text?.attrs?.[1]?.text || ''}`);
+                    const avgPlayTime = data.user_num.game_data.find(item => item.desc === '平均游戏时间');
+                    if (avgPlayTime?.value) communityInfoLines.push(`• 平均游戏时长: ${avgPlayTime.value}`);
+                }
+                if (data.user_num?.game_data) {
+                    const currentOnline = data.user_num.game_data.find(item => item.desc === '当前在线');
+                    if (currentOnline?.value) communityInfoLines.push(`• 当前在线: ${currentOnline.value}人`);
+                    const yesterdayPeak = data.user_num.game_data.find(item => item.desc === '昨日峰值在线');
+                    if (yesterdayPeak?.value) communityInfoLines.push(`• 昨日峰值: ${yesterdayPeak.value}人`);
+                }
+                if (data.game_data) {
+                    const hotRanking = data.game_data.find(item => item.desc === '热门排名');
+                    if (hotRanking?.value) communityInfoLines.push(`• 热门排名: ${hotRanking.value}`);
+                    const followers = data.game_data.find(item => item.desc === '关注数');
+                    if (followers?.value) communityInfoLines.push(`• 关注数: ${followers.value}`);
+                }
+                if (communityInfoLines.length > 0) {
+                    detailTextParts.push(`\n--- 🌟 社区评价 🌟 ---\n${communityInfoLines.join('\n')}`);
+                }
+                // 兼容性信息 (PC游戏特有)
+                if (data.game_type === 'pc') {
+                    const steamAggreTag = data.common_tags?.find(tag => tag.type === 'steam_aggre');
+                    if (steamAggreTag && steamAggreTag.detail_list) {
+                        const steamDeckStatusItem = steamAggreTag.detail_list.find(item => item.name === '支持Steam Deck');
+                        
+                        if (steamDeckStatusItem && steamDeckStatusItem.desc) {
+                            detailTextParts.push(`\n--- 🎮 兼容性信息 🎮 ---\n• Steam Deck: ${steamDeckStatusItem.desc}`);
+                        }
+                    }
+                }
+                // DLCs信息 (主机游戏特有)
+                const dlcsInfo = data.menu_v2?.find(item => item.type === 'dlc');
+                if (dlcsInfo?.value) {
+                    detailTextParts.push(`\n--- 🧩 DLCs信息 🧩 ---\n• ${dlcsInfo.value} (点击原链接查看详情)`);
+                }
+                // 游戏简介
+                if (data.about_the_game) {
+                    detailTextParts.push(`\n--- 📖 游戏简介 📖 ---\n${data.about_the_game}`);
+                }
+                // 将所有构建好的文本合并
+                if (detailTextParts.length > 0) {
+                    forwardMessages.push({
+                        message: detailTextParts.join('\n'),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    });
+                }
+                
+                // 添加游戏截图
+                const imageUrls = data.screenshots
+                    ?.filter(m => m.type === 'image')
+                    .map(m => m.url || m.thumbnail)
+                    .filter(Boolean)
+                    || [];
+                if (imageUrls.length > 0) {
+                    const combinedImageMessage = {
+                        message: [
+                            `  🖼️ 游戏截图 🖼️\n`,
+                            ...imageUrls.map(url => segment.image(url))
+                        ],
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                    forwardMessages.push(combinedImageMessage);
+                }
+                // 发送合并后的转发消息
+                await e.reply(await Bot.makeForwardMsg(forwardMessages));
+                
+                // 发送游戏视频
+                const video = data.screenshots?.find(m => m.type === 'movie');
+                if (video) {
+                    const videoPath = await this.downloadVideo(video.url);
+                    this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
+                }
+            } catch (error) {
+                logger.error(`[R插件][小黑盒游戏] 解析失败: ${ error.message }`);
+                e.reply('小黑盒游戏解析时遇到问题，可能是网络错误或被风控了。');
+            }
+        }
+        return true;
+    }
 
     /**
      * 哔哩哔哩下载
@@ -3179,6 +3607,65 @@ export class tools extends plugin {
         } catch (error) {
             logger.error(error);
             throw error;
+        }
+    }
+
+        
+    /**
+     * 格式化时间戳为用户友好的字符串
+     * @param timestamp Unix 时间戳 (秒)
+     * @returns {string} 格式化后的时间字符串
+     */
+    formatCommentTime(timestamp) {
+        const now = Date.now(); // 当前时间戳 (毫秒)
+        const commentTime = timestamp * 1000; // 评论时间戳 (毫秒)
+        const diff = now - commentTime; // 时间差 (毫秒)
+        const oneMinute = 60 * 1000;
+        const oneHour = 60 * oneMinute;
+        const oneDay = 24 * oneHour;
+        const oneMonth = 30 * oneDay; // 简单按30天算一个月
+        const oneYear = 365 * oneDay; // 简单按365天算一年
+        const commentDate = new Date(commentTime);
+        const today = new Date(now);
+        const yesterday = new Date(now - oneDay);
+        // 设置日期为当天的0点0分0秒，用于比较
+        today.setHours(0, 0, 0, 0);
+        yesterday.setHours(0, 0, 0, 0);
+        commentDate.setHours(0, 0, 0, 0);
+        // 格式化时间为 HH:MM
+        const formatHourMinute = (date) => {
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${hours}:${minutes}`;
+        };
+        // 格式化日期为 YYYY年MM月DD日
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}年${month}月${day}日`;
+        };
+        if (diff < oneMinute) {
+            return "刚刚";
+        } else if (diff < oneHour) {
+            return `${Math.floor(diff / oneMinute)}分钟前`;
+        } else if (diff < oneDay && commentDate.getTime() === today.getTime()) {
+            // 今天，显示 HH:MM
+            return `今天${formatHourMinute(new Date(commentTime))}`;
+        } else if (diff < (2 * oneDay) && commentDate.getTime() === yesterday.getTime()) {
+            // 昨天，显示 昨天 HH:MM
+            return `昨天${formatHourMinute(new Date(commentTime))}`;
+        } else if (diff < oneMonth) {
+            // 几天前
+            return `${Math.floor(diff / oneDay)}天前`;
+        } else if (diff < oneYear) {
+            // 几个月前，显示 MM月DD日 HH:MM
+            const month = String(new Date(commentTime).getMonth() + 1).padStart(2, '0');
+            const day = String(new Date(commentTime).getDate()).padStart(2, '0');
+            return `${month}月${day}日 ${formatHourMinute(new Date(commentTime))}`;
+        } else {
+            // 几年前，显示 YYYY年MM月DD日
+            return formatDate(new Date(commentTime));
         }
     }
 

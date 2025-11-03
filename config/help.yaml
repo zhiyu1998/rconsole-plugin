@@ -74,6 +74,9 @@
     - icon: telegram
       title: "小飞机（学习版）"
       desc: 解析小飞机
+    - icon: xiaoheihe
+      title: "小黑盒"
+      desc: 小黑盒分享实时下载
 - group: 其他指令
   list:
     - icon: update

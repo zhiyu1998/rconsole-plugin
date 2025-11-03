@@ -20,4 +20,5 @@ export const RESOLVE_CONTROLLER_NAME_ENUM = {
     "qishuiMusic": "汽水音乐",
     "aircraft": "小飞机",
     "tieba": "贴吧",
+    "xiaoheihe": "小黑盒",
 }

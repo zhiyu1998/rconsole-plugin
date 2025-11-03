@@ -249,6 +249,30 @@ export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q=";
 export const HIBI_API_SERVICE = "http://0d00.us.kg:8080/api";
 
 /**
+ * 小黑盒帖子API
+ * @type {string}
+ */
+export const XHH_BBS_LINK = "https://api.xiaoheihe.cn/bbs/app/link/tree";
+
+/**
+ * 小黑盒PC游戏API
+ * @type {string}
+ */
+export const XHH_GAME_LINK = "https://api.xiaoheihe.cn/game/get_game_detail";
+
+/**
+ * 小黑盒主机游戏API
+ * @type {string}
+ */
+export const XHH_CONSOLE_LINK = "https://api.xiaoheihe.cn/game/console/get_game_detail";
+
+/**
+ * 小黑盒手机游戏API
+ * @type {string}
+ */
+export const XHH_MOBILE_LINK = "https://api.xiaoheihe.cn/game/mobile/get_game_detail";
+
+/**
  * 临时 AI LLM爬虫
  * @type {string}
  */
