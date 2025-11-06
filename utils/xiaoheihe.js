@@ -54,7 +54,13 @@ function HA(path, timestamp, nonce) {
     return `${zA(o.substring(0, 5), SALT, -4)}${a}`;
 }
 
-export function getAuthParams(type = 'bbs') {
+/**
+ * 获取小黑盒完整的API请求参数
+ * @param {string} type - 请求类型 ('bbs', 'pc', 'console', 'mobile')
+ * @param {string} id - 帖子的 link_id 或 游戏的 appid/steam_appid
+ * @returns {object} 可直接用于axios请求的params对象
+ */
+export function getApiParams(type, id) {
     const pathMap = {
         bbs: 'bbs/app/link/tree',
         pc: 'game/get_game_detail',
@@ -62,13 +68,42 @@ export function getAuthParams(type = 'bbs') {
         mobile: 'game/mobile/get_game_detail'
     }
     const path = pathMap[type] || pathMap.bbs;
-    let timestamp = ~~(Date.now() / 1e3);
-    let nonce = md5(timestamp + Math.random().toString()).toString().toLocaleUpperCase();
-    let hkey = HA(path, timestamp + 1, nonce);
-    return {
+    const timestamp = ~~(Date.now() / 1e3);
+    const nonce = md5(timestamp + Math.random().toString()).toString().toLocaleUpperCase();
+    const hkey = HA(path, timestamp + 1, nonce);
+    const authParams = {
         version: "999.0.4",
         hkey: hkey,
         _time: timestamp,
         nonce: nonce
+    };
+    let baseParams = {
+        os_type: "web",
+        ...authParams
+    };
+    switch (type) {
+        case 'bbs':
+            return {
+                ...baseParams,
+                link_id: id,
+                limit: 20,
+                web_version: '2.5',
+                x_client_type: 'web',
+                x_app: 'heybox_website',
+                x_os_type: 'Android',
+            };
+        case 'pc':
+            return {
+                ...baseParams,
+                steam_appid: id,
+            };
+        case 'console':
+        case 'mobile':
+            return {
+                ...baseParams,
+                appid: id,
+            };
+        default:
+            return baseParams;
     }
 }

@@ -112,7 +112,7 @@ import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward } from "../utils/yunzai-util.js";
-import { getAuthParams } from "../utils/xiaoheihe.js";
+import { getApiParams } from "../utils/xiaoheihe.js";
 
 
 export class tools extends plugin {
@@ -3152,17 +3152,7 @@ export class tools extends plugin {
         if (type === 'bbs') {
             try {
                 // 构造请求
-                const authParams = getAuthParams('bbs');
-                const params = {
-                    os_type: "web",
-                    link_id: id,
-                    limit: 20,
-                    web_version: '2.5',
-                    x_client_type: 'web',
-                    x_app: 'heybox_website',
-                    x_os_type: 'Android',
-                    ...authParams,
-                };
+                const params = getApiParams('bbs', id);
                 const response = await axios.get(XHH_BBS_LINK, {
                     params,
                     headers: {
@@ -3213,44 +3203,167 @@ export class tools extends plugin {
                 }
                 messagesToSend.push(textMessages.join('\n'));
 
+                // 清理HTML文本
+                const cleanHtmlText = (html) => {
+                    if (!html) return '';
+                    return html
+                        .replace(/<a[^>]*?href="([^"]*?)"[^>]*?>(.*?)<\/a>/g, (match, href, text) => {
+                            const cleanText = text.replace(/<[^>]+>/g, '').trim();
+                            if (!cleanText) return '';
+                            const cleanHref = href.replace(/\\/g, '');
+                            const formattedText = `『${cleanText}』`;
+                            try {
+                                const decodedHref = decodeURIComponent(cleanHref);
+                                const heyboxMatch = decodedHref.match(/heybox:\/\/({.*})/);
+                                if (heyboxMatch && heyboxMatch[1]) {
+                                    const jsonString = heyboxMatch[1];
+                                    const linkData = JSON.parse(jsonString);
+                                    const protocolType = linkData.protocol_type;
+                                    if (protocolType === 'openUser' && linkData.user_id) {
+                                        return `${formattedText} (https://www.xiaoheihe.cn/app/user/profile/${linkData.user_id})`;
+                                    } else if (protocolType === 'openGameDetail' && linkData.app_id) {
+                                        const gameType = linkData.game_type || 'pc';
+                                        return `${formattedText} (https://www.xiaoheihe.cn/app/topic/game/${gameType}/${linkData.app_id})`;
+                                    } else if (protocolType === 'openLink' && linkData.link?.linkid) {
+                                        return `${formattedText} (https://www.xiaoheihe.cn/app/bbs/link/${linkData.link.linkid})`;
+                                    }
+                                }
+                            } catch (e) {
+                                return formattedText;
+                            }
+                            if (cleanHref.startsWith('http')) {
+                                return `${formattedText} (${cleanHref})`;
+                            }
+                            return formattedText;
+                        })
+                        .replace(/<span[^>]*?data-emoji="([^"]*?)"[^>]*?>.*?<\/span>/g, (match, emoji) => `[${emoji}]`)
+                        .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>|<br\s*\/?>/g, '\n\n')
+                        .replace(/<[^>]+>/g, '')
+                        .trim();
+                };
+
                 // 解析提取帖子内容
                 if (link.text && typeof link.text === 'string' && (link.text.startsWith('[') || link.text.startsWith('{'))) {
                     try {
                         const textEntities = JSON.parse(link.text);
                         const htmlItem = textEntities.find(item => item.type === 'html' && item.text);
                         if (htmlItem) {
+                            // 图文混排的情况
                             await e.reply(messagesToSend.flat()); // 先发送封面和基础信息
                             
                             const combinedMessage = [];
                             const htmlString = htmlItem.text;
-                            const fullCleanedText = htmlString
-                                .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
-                                .replace(/<br\s*\/?>/g, '\n')
-                                .replace(/<[^>]+>/g, '')
-                                .trim();
-                            if (fullCleanedText !== link.description) {
-                                const imageRegex = /<img .*?data-original="([^"]+)".*?\/?>/g;
-                                let lastIndex = 0;
-                                let match;
-                                while ((match = imageRegex.exec(htmlString)) !== null) {
-                                    const textBefore = htmlString.substring(lastIndex, match.index);
-                                    const cleanedText = textBefore
-                                        .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
-                                        .replace(/<br\s*\/?>/g, '\n')
-                                        .replace(/<[^>]+>/g, '')
-                                        .trim();
-                                    if (cleanedText) combinedMessage.push(cleanedText);
-                                    const imageUrl = match[1];
-                                    if (imageUrl) combinedMessage.push(segment.image(imageUrl));
-                                    lastIndex = imageRegex.lastIndex;
+                            const parts = htmlString.split(/(<img .*?\/?>|<iframe.*?<\/iframe>)/g).filter(Boolean);
+                            let textBuffer = '';
+                            for (let i = 0; i < parts.length; i++) {
+                                const part = parts[i];
+                                if (part.startsWith('<img')) {
+                                    const cleanedText = cleanHtmlText(textBuffer);
+                                    if (cleanedText) {
+                                        combinedMessage.push(cleanedText);
+                                    }
+                                    textBuffer = '';
+                                    // 貌似只有id 无法确定类型 暂使用并发
+                                    const gameMatch = part.match(/data-gameid="(\d+)"/);
+                                    const imgMatch = part.match(/data-original="([^"]+)"/);
+                                    if (gameMatch && gameMatch[1]) {
+                                        const gameId = gameMatch[1];
+                                        const gameTypes = [
+                                            'pc',
+                                            'console',
+                                            'mobile'
+                                        ];
+                                        const apiUrls = {
+                                            pc: XHH_GAME_LINK,
+                                            console: XHH_CONSOLE_LINK,
+                                            mobile: XHH_MOBILE_LINK
+                                        };
+                                        const promises = gameTypes.map(gt => 
+                                            axios.get(apiUrls[gt], {
+                                                params: getApiParams(gt, gameId),
+                                                headers: {
+                                                    'Cookie': this.xiaoheiheCookie,
+                                                    "User-Agent": COMMON_USER_AGENT
+                                                },
+                                            }).then(res => res.data).catch(() => null)
+                                        );
+                                        const results = await Promise.all(promises);
+                                        const validResult = results.find(res => res && res.status === 'ok' && res.result);
+                                        if (validResult) {
+                                            const gameData = validResult.result;
+                                            // 封面
+                                            if (gameData.image) {
+                                                combinedMessage.push(segment.image(gameData.image));
+                                            }
+                                            
+                                            // 评分
+                                            const textLines = [];
+                                            const commentCount = gameData.comment_stats?.score_comment || 0;
+                                            let scoreText = '🌟 评分: ';
+                                            if (gameData.score) {
+                                                scoreText += `${gameData.score}${commentCount > 0 ? ` (${commentCount}人)` : ''}`;
+                                            } else {
+                                                scoreText += `暂无评分${commentCount > 0 ? ` (${commentCount}人)` : ''}`;
+                                            }
+                                            textLines.push(scoreText);
+                                            
+                                            //价格
+                                            let priceText = '💰 价格: ';
+                                            let priceFound = false;
+                                            if (gameData.price?.current) {
+                                                priceText += `¥${gameData.price.current}${gameData.price.discount > 0 ? ` (-${gameData.price.discount}%)` : ''}`;
+                                                priceFound = true;
+                                            } else if (gameData.region_prices?.[0]) {
+                                                const rp = gameData.region_prices[0];
+                                                priceText += `${rp.final_amount}${rp.discount > 0 ? ` (-${rp.discount}%)` : ''} (${rp.region_name})`;
+                                                priceFound = true;
+                                            }
+                                            if (!priceFound) {
+                                                priceText += `暂无价格${gameData.price?.discount > 0 ? ` (折扣-${gameData.price.discount}%)` : ''}`;
+                                            }
+                                            textLines.push(priceText);
+                                            
+                                            let finalCardText = textLines.join('\n');
+                                            const nextPartIndex = i + 1;
+                                            if (nextPartIndex < parts.length && !parts[nextPartIndex].startsWith('<img')) {
+                                                if (cleanHtmlText(parts[nextPartIndex])) {
+                                                    finalCardText += '\n';
+                                                }
+                                            }
+                                            combinedMessage.push(finalCardText);
+                                        } else {
+                                            logger.warn(`[R插件][小黑盒帖子] 游戏ID: ${gameId} 未找到。`);
+                                        }
+                                    } else if (imgMatch && imgMatch[1]) {
+                                        // 普通图片
+                                        combinedMessage.push(segment.image(imgMatch[1]));
+                                    } else {
+                                        // 无法识别 当作文本
+                                        textBuffer += part;
+                                    }
+                                } else if (part.startsWith('<iframe')) {
+                                    const cleanedText = cleanHtmlText(textBuffer);
+                                    if (cleanedText) {
+                                        combinedMessage.push(cleanedText);
+                                    }
+                                    textBuffer = '';
+                                    const srcMatch = part.match(/src="([^"]+)"/);
+                                    if (srcMatch && srcMatch[1]) {
+                                        let src = srcMatch[1].replace(/\\/g, '');
+                                        // 补全协议头
+                                        if (src.startsWith('//')) {
+                                            src = 'https:' + src;
+                                        }
+                                        combinedMessage.push(`\n(${src})\n`);
+                                    }
+                                } else {
+                                    // 文本部分
+                                    textBuffer += part;
                                 }
-                                const textAfter = htmlString.substring(lastIndex);
-                                const cleanedTextAfter = textAfter
-                                    .replace(/<\/p>|<\/h[1-6]>|<\/blockquote>/g, '\n\n')
-                                    .replace(/<br\s*\/?>/g, '\n')
-                                    .replace(/<[^>]+>/g, '')
-                                    .trim();
-                                if (cleanedTextAfter) combinedMessage.push(cleanedTextAfter);
+                            }
+                            const finalCleanedText = cleanHtmlText(textBuffer);
+                            if (finalCleanedText) {
+                                combinedMessage.push(finalCleanedText);
                             }
                             
                             if (combinedMessage.length > 0) {
@@ -3262,6 +3375,7 @@ export class tools extends plugin {
                                 await e.reply(await Bot.makeForwardMsg(postContentForwardMsgs));
                             }
                         } else {
+                            // 图文分离的情况
                             const imageUrls = textEntities
                                 .filter(item => item.type === 'img' && item.url)
                                 .map(img => img.url);
@@ -3271,6 +3385,7 @@ export class tools extends plugin {
                                 .join('\n');
                             const hasValidText = textContent && textContent !== link.description;
                             if (hasValidText) {
+                                // 有有效文本
                                 if (imageUrls.length > this.globalImageLimit) {
                                     await e.reply(messagesToSend.flat());
                                     const combinedMessage = [];
@@ -3293,6 +3408,7 @@ export class tools extends plugin {
                                     await e.reply(await Bot.makeForwardMsg(textForwardMsg));
                                 }
                             } else {
+                                // 无有效文本
                                 if (imageUrls.length > this.globalImageLimit) {
                                     await e.reply(messagesToSend.flat());
                                     const imageMessage = imageUrls.map(url => segment.image(url));
@@ -3331,14 +3447,15 @@ export class tools extends plugin {
                         if (processedCommentCount >= MAX_COMMENT_MESSAGES) break;
                         for (const comment of thread.comment) {
                             if (processedCommentCount >= MAX_COMMENT_MESSAGES) break;
+                            const cleanedCommentText = cleanHtmlText(comment.text);
                             let msgText;
                             const userInfo = `${ comment.user.username }`;
                             const formattedTime = this.formatCommentTime(comment.create_at); // 格式化时间
                             let commentContent = [];
                             if (comment.replyuser) {
-                                msgText = `${ userInfo } 回复 ${ comment.replyuser.username }\n${ formattedTime }·${ comment.ip_location }\n\n${ comment.text }`;
+                                msgText = `${ userInfo } 回复 ${ comment.replyuser.username }\n${ formattedTime }·${ comment.ip_location }\n\n${ cleanedCommentText }`;
                             } else {
-                                msgText = `${ userInfo }\n${ comment.floor_num }楼 ${ formattedTime }·${ comment.ip_location }\n\n${ comment.text }`;
+                                msgText = `${ userInfo }\n${ comment.floor_num }楼 ${ formattedTime }·${ comment.ip_location }\n\n${ cleanedCommentText }`;
                             }
                             commentContent.push({ type: 'text', text: msgText });
                             if (comment.imgs && comment.imgs.length > 0) {
@@ -3365,31 +3482,15 @@ export class tools extends plugin {
             // pc和主机和手机游戏类型
         } else if (type === 'pc' || type === 'console' || type === 'mobile') {
             try {
-                let apiUrl, authType, params;
-                if (type === 'pc') {
+                let apiUrl;
+                if (type === 'pc')
                     apiUrl = XHH_GAME_LINK;
-                    authType = 'pc';
-                    params = {
-                        os_type: "web",
-                        steam_appid: id,
-                    };
-                } else if (type === 'console') {
+                else if (type === 'console')
                     apiUrl = XHH_CONSOLE_LINK;
-                    authType = 'console';
-                    params = {
-                        os_type: "web",
-                        appid: id,
-                    };
-                } else if (type === 'mobile') {
+                else if (type === 'mobile')
                     apiUrl = XHH_MOBILE_LINK;
-                    authType = 'mobile';
-                    params = {
-                        os_type: "web",
-                        appid: id,
-                    };
-                }
-                const authParams = getAuthParams(authType);
-                params = { ...params, ...authParams };
+                    
+                const params = getApiParams(type, id);
                 const response = await axios.get(apiUrl, {
                     params: params,
                     headers: {
