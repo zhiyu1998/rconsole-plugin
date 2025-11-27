@@ -2758,6 +2758,8 @@ export class tools extends plugin {
             return false;
         }
 
+        let name, summaryLink;
+
         if (e.msg.startsWith("#总结一下")) {
             name = "网页总结";
             summaryLink = e.msg.replace("#总结一下", "");
@@ -2867,7 +2869,7 @@ export class tools extends plugin {
             }
         }
         e.reply("处理超出限制，请重试");
-        return true;
+        return false;
     }
 
     /**
