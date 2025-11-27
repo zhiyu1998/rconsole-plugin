@@ -2771,7 +2771,7 @@ export class tools extends plugin {
         if (_.isEmpty(this.aiApiKey)) {
             // e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
             await this.tempSummary(name, summaryLink, e);
-            return true;
+            return false;
         }
 
         const builder = await new OpenaiBuilder()
@@ -2816,7 +2816,7 @@ export class tools extends plugin {
             } catch (error) {
                 e.reply(`总结失败: ${error.message}`);
             }
-            return true;
+            return false;
         }
 
         // 为了防止无限循环，设置一个最大循环次数
@@ -2865,7 +2865,7 @@ export class tools extends plugin {
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
                 await e.reply(Msg);
-                return true;
+                return false;
             }
         }
         e.reply("处理超出限制，请重试");
