@@ -21,4 +21,5 @@ export const RESOLVE_CONTROLLER_NAME_ENUM = {
     "aircraft": "小飞机",
     "tieba": "贴吧",
     "xiaoheihe": "小黑盒",
+    "linkShareSummary": "AI总结"
 }
