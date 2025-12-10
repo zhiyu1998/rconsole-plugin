@@ -3127,19 +3127,19 @@ export class tools extends plugin {
         // 提取 id
         if (msg.includes('bbs')) {
             type = 'bbs';
-            const bbsMatch = msg.match(/bbs\/link\/([a-zA-Z0-9]+)/) || msg.match(/bbs\/app\/api\/web\/share\?link_id=([a-zA-Z0-9]+)/);
+            const bbsMatch = msg.match(/bbs\/link\/([a-zA-Z0-9]+)/) || msg.match(/bbs\/app\/api\/web\/share\?.*?link_id=([a-zA-Z0-9]+)/);
             if (bbsMatch) id = bbsMatch[1] || bbsMatch[2];
         } else if (msg.includes('pc')) {
             type = 'pc';
-            const pcMatch = msg.match(/game\/pc\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=pc/);
+            const pcMatch = msg.match(/game\/pc\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?.*?appid=([a-zA-Z0-9]+)&game_type=pc/);
             if (pcMatch) id = pcMatch[1] || pcMatch[2];
         } else if (msg.includes('console')) {
             type = 'console';
-            const consoleMatch = msg.match(/game\/console\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=console/);
+            const consoleMatch = msg.match(/game\/console\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?.*?appid=([a-zA-Z0-9]+)&game_type=console/);
             if (consoleMatch) id = consoleMatch[1] || consoleMatch[2];
         } else if (msg.includes('mobile')) {
             type = 'mobile';
-            const mobileMatch = msg.match(/game\/mobile\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?appid=([a-zA-Z0-9]+)&game_type=mobile/);
+            const mobileMatch = msg.match(/game\/mobile\/([a-zA-Z0-9]+)/) || msg.match(/game\/share_game_detail\?.*?appid=([a-zA-Z0-9]+)&game_type=mobile/);
             if (mobileMatch) id = mobileMatch[1] || mobileMatch[2];
         }
         if (!type || !id) {

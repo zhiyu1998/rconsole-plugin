@@ -423,7 +423,7 @@ export function supportGuoba() {
                     field: "tools.xiaoheiheCookie",
                     label: "小黑盒的Cookie",
                     bottomHelpMessage:
-                        "登陆https://www.xiaoheihe.cn/ - F12 - 格式：x_xhh_tokenid=xxx",
+                        "登陆https://www.xiaoheihe.cn/ - F12 - 格式：x_xhh_tokenid=xxx，小黑盒目前用的硬编码ck，有概率会出现需要验证码的情况，通常使用分享链接而不是web链接即可解决，后续有大佬出手的话可以换成动态ck",
                     component: "Input",
                     required: false,
                     componentProps: {
