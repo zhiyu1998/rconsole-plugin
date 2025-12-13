@@ -10,7 +10,7 @@ export const BILI_SUMMARY = "https://api.bilibili.com/x/web-interface/view/concl
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/video/videostream_url.md
  * @type {string}
  */
-export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/wbi/playurl?cid={cid}&bvid={bvid}&qn={qn}&fnval=16";
+export const BILI_PLAY_STREAM = "https://api.bilibili.com/x/player/wbi/playurl?cid={cid}&bvid={bvid}&qn={qn}&fnval={fnval}&fourk={fourk}";
 
 /**
  * 动态信息
@@ -88,6 +88,13 @@ export const BILI_ONLINE = "https://api.bilibili.com/x/player/online/total?bvid=
  * @type {string}
  */
 export const BILI_EP_INFO = "https://api.bilibili.com/pgc/view/web/season?ep_id={}";
+
+/**
+ * 番剧视频流
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/bangumi/videostream_url.md
+ * @type {string}
+ */
+export const BILI_BANGUMI_STREAM = "https://api.bilibili.com/pgc/player/web/playurl?ep_id={ep_id}&cid={cid}&qn={qn}&fnval={fnval}&fourk={fourk}";
 
 /**
  * 剧集基本信息
