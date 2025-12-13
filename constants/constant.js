@@ -168,7 +168,7 @@ export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '腾讯CDN【推荐】', value: 1, sign: BILI_CDN_TEMPLATE.replace('{}', 'cos') },
     { label: '百度CDN', value: 2, sign: BILI_CDN_TEMPLATE.replace('{}', 'bd') },
     { label: '华为CDN', value: 3, sign: BILI_CDN_TEMPLATE.replace('{}', 'hw') },
-    { label: '阿卡迈（海外）', value: 4 , sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai')},
+    { label: '阿卡迈（海外）', value: 4, sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai') },
     { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') }
 ]);
 
@@ -180,12 +180,16 @@ export const BILI_DOWNLOAD_METHOD = Object.freeze([
 
 export const BILI_RESOLUTION_LIST = Object.freeze([
     { label: '8K 超高清', value: 0, qn: 127 },
-    { label: '4K 超清', value: 1, qn: 120 },
-    { label: '1080P 高码率', value: 2, qn: 112 },
-    { label: '1080P 高清', value: 3, qn: 80 },
-    { label: '720P 高清', value: 4, qn: 64 },
-    { label: '480P 清晰', value: 5, qn: 32 },
-    { label: '360P 流畅', value: 6, qn: 16 },
+    { label: '杜比视界', value: 1, qn: 126 },
+    { label: 'HDR 真彩', value: 2, qn: 125 },
+    { label: '4K 超清', value: 3, qn: 120 },
+    { label: '1080P60 高帧率', value: 4, qn: 116 },
+    { label: '1080P+ 高码率', value: 5, qn: 112 },
+    { label: '1080P 高清', value: 6, qn: 80 },
+    { label: '720P60 高帧率', value: 7, qn: 74 },
+    { label: '720P 高清', value: 8, qn: 64 },
+    { label: '480P 清晰', value: 9, qn: 32 },
+    { label: '360P 流畅', value: 10, qn: 16 },
 ]);
 
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
