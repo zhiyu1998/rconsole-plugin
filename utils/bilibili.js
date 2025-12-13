@@ -7,8 +7,10 @@ import qrcode from "qrcode"
 import util from "util";
 import { BILI_RESOLUTION_LIST } from "../constants/constant.js";
 import {
+    BILI_BANGUMI_STREAM,
     BILI_BVID_TO_CID,
     BILI_DYNAMIC,
+    BILI_EP_INFO,
     BILI_PLAY_STREAM,
     BILI_SCAN_CODE_DETECT,
     BILI_SCAN_CODE_GENERATE,
@@ -20,6 +22,86 @@ export const BILI_HEADER = {
     'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36',
     referer: 'https://www.bilibili.com',
+}
+
+/**
+ * 从cookie字符串中提取SESSDATA的值
+ * 支持两种格式：
+ * 1. 直接SESSDATA值：abc123%2C...
+ * 2. 完整cookie字符串：CURRENT_QUALITY=120;...;SESSDATA=abc123%2C...;...
+ * @param {string} cookieOrSessData cookie字符串或SESSDATA值
+ * @returns {string} 提取的SESSDATA值
+ */
+export function extractSessData(cookieOrSessData) {
+    if (!cookieOrSessData) return '';
+
+    // 如果包含 SESSDATA= 则是完整cookie字符串，需要提取
+    if (cookieOrSessData.includes('SESSDATA=')) {
+        const match = cookieOrSessData.match(/SESSDATA=([^;]+)/);
+        if (match && match[1]) {
+            logger.debug(`[R插件][SESSDATA] 从完整cookie中提取SESSDATA`);
+            return match[1];
+        }
+    }
+
+    // 否则认为是直接的SESSDATA值
+    return cookieOrSessData;
+}
+
+/**
+ * 根据请求的画质(qn)计算对应的fnval值
+ * fnval是二进制标志位组合：16(DASH) | 特定功能 | 2048(AV1)
+ * @param {number} qn 画质代码
+ * @param {boolean} smartResolution 是否启用智能分辨率
+ * @returns {{fnval: number, fourk: number}} fnval和fourk参数
+ */
+export function calculateFnval(qn, smartResolution = false) {
+    const baseDash = 16;    // DASH格式
+    const av1Codec = 2048;  // AV1编码
+
+    let fnval = baseDash | av1Codec; // 基础：DASH + AV1
+    let fourk = 0;
+
+    // 智能分辨率：请求所有可能的画质（8K+4K+HDR+杜比视界+AV1）
+    if (smartResolution) {
+        fnval = baseDash | av1Codec | 1024 | 128 | 64 | 512; // DASH + AV1 + 8K + 4K + HDR + 杜比
+        fourk = 1;
+        logger.info(`[R插件][fnval计算] 智能分辨率模式：请求所有画质 (fnval=${fnval}, fourk=${fourk})`);
+        return { fnval, fourk };
+    }
+
+    switch (parseInt(qn)) {
+        case 127: // 8K
+            fnval |= 1024; // 需要8K支持
+            fourk = 1;
+            break;
+        case 126: // 杜比视界
+            fnval |= 512; // 需要杜比视界
+            fourk = 1;
+            break;
+        case 125: // HDR
+            fnval |= 64; // 需要HDR
+            fourk = 1;
+            break;
+        case 120: // 4K
+            fnval |= 128; // 需要4K支持
+            fourk = 1;
+            break;
+        case 116: // 1080P60高帧率
+        case 112: // 1080P+高码率
+        case 80:  // 1080P
+        case 74:  // 720P60高帧率
+        case 64:  // 720P
+        case 32:  // 480P
+        case 16:  // 360P
+            // 普通画质只需要基础DASH+AV1
+            break;
+        default:
+            logger.warn(`[R插件][fnval计算] 未知的QN值: ${qn}，使用默认fnval`);
+            break;
+    }
+
+    return { fnval, fourk };
 }
 
 /**
@@ -101,8 +183,8 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
             '--console-log-level=warn', // 减少日志 verbosity
             '--download-result=hide',   // 隐藏下载结果概要
             '--header', 'referer: https://www.bilibili.com', // 添加自定义标头
-            `--max-connection-per-server=${ videoDownloadConcurrency }`, // 每个服务器的最大连接数
-            `--split=${ videoDownloadConcurrency }`,               // 分成 6 个部分进行下载
+            `--max-connection-per-server=${videoDownloadConcurrency}`, // 每个服务器的最大连接数
+            `--split=${videoDownloadConcurrency}`,               // 分成 6 个部分进行下载
             url
         ];
 
@@ -125,7 +207,7 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
 
         // 处理aria2c的stderr以捕获错误
         aria2c.stderr.on('data', (data) => {
-            console.error(`aria2c error: ${ data }`);
+            console.error(`aria2c error: ${data}`);
         });
 
         // 处理进程退出
@@ -133,7 +215,7 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
             if (code === 0) {
                 resolve({ fullFileName, totalLen });
             } else {
-                reject(new Error(`aria2c exited with code ${ code }`));
+                reject(new Error(`aria2c exited with code ${code}`));
             }
         });
     });
@@ -154,23 +236,23 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
 
         // 构建 -H 参数
         const headerParams = Object.entries(BILI_HEADER).map(
-            ([key, value]) => `--header="${ key }: ${ value }"`
+            ([key, value]) => `--header="${key}: ${value}"`
         ).join(' ');
 
         let command = '';
         let downloadTool = 'wget';
         if (videoDownloadConcurrency === 1) {
             // wget 命令
-            command = `${ downloadTool } -O ${ fullFileName } ${ headerParams } '${ url }'`;
+            command = `${downloadTool} -O ${fullFileName} ${headerParams} '${url}'`;
         } else {
             // AXEL 命令行
             downloadTool = 'axel';
-            command = `${ downloadTool } -n ${ videoDownloadConcurrency } -o ${ fullFileName } ${ headerParams } '${ url }'`;
+            command = `${downloadTool} -n ${videoDownloadConcurrency} -o ${fullFileName} ${headerParams} '${url}'`;
         }
 
         // 执行命令
         const axel = exec(command);
-        logger.info(`[R插件][axel/wget] 执行命令：${ downloadTool } 下载方式为：${ downloadTool === 'wget' ? '单线程' : '多线程' }`);
+        logger.info(`[R插件][axel/wget] 执行命令：${downloadTool} 下载方式为：${downloadTool === 'wget' ? '单线程' : '多线程'}`);
 
         axel.stdout.on('data', (data) => {
             const match = data.match(/(\d+)%/);
@@ -181,7 +263,7 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
         });
 
         axel.stderr.on('data', (data) => {
-            logger.info(`[R插件][${ downloadTool }]: ${ data }`);
+            logger.info(`[R插件][${downloadTool}]: ${data}`);
         });
 
         axel.on('close', (code) => {
@@ -191,7 +273,7 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
                     totalLen: fs.statSync(fullFileName).size,
                 });
             } else {
-                reject(new Error(`[R插件][${ downloadTool }] 错误：${ code }`));
+                reject(new Error(`[R插件][${downloadTool}] 错误：${code}`));
             }
         });
     });
@@ -201,100 +283,412 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * 获取下载链接
  * @param url
  * @param SESSDATA
+ * @param qn 画质参数
+ * @param duration 视频时长（秒），如果提供则用于文件大小估算
+ * @param smartResolution 是否启用智能分辨率
+ * @param fileSizeLimit 文件大小限制（MB）
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url, SESSDATA, qn) {
-    let videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
-    // AV号特殊处理
+export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100) {
+    let videoId = "";
     let cid = "";
-    if (videoId.toLowerCase().startsWith('av')) {
-        // 将 AV 转换为 BV
-        const { bvid, cid: newCid } = await getVideoInfo(url);
-        videoId = bvid;
-        cid = newCid;
+    let isBangumi = false;
+    let epId = "";
+
+    // 检查是否是番剧URL
+    const epMatch = /bangumi\/play\/ep(\d+)/.exec(url);
+    if (epMatch) {
+        isBangumi = true;
+        epId = epMatch[1];
+        logger.info(`[R插件][BILI下载] 检测到番剧链接，EP ID: ${epId}`);
+        const epInfo = await getBangumiVideoInfo(epId);
+        if (!epInfo) {
+            throw new Error(`无法获取番剧信息，EP ID: ${epId}`);
+        }
+        videoId = epInfo.bvid;
+        cid = epInfo.cid;
+    } else {
+        // 普通视频URL
+        const videoMatch = /video\/[^\?\/ ]+/.exec(url);
+        if (!videoMatch) {
+            throw new Error(`无法识别的URL格式: ${url}`);
+        }
+        videoId = videoMatch[0].split("/")[1];
+        // AV号特殊处理
+        if (videoId.toLowerCase().startsWith('av')) {
+            // 将 AV 转换为 BV
+            const { bvid, cid: newCid } = await getVideoInfo(url);
+            videoId = bvid;
+            cid = newCid;
+        }
     }
+
     // 转换画质数字为分辨率
     let qualityText;
-    switch(parseInt(qn)) {
-        case 80: qualityText = "1080P"; break;
-        case 64: qualityText = "720P"; break;
-        case 32: qualityText = "480P"; break;
-        case 16: qualityText = "360P"; break;
-        default: qualityText = "480P"; break;
+    switch (parseInt(qn)) {
+        case 127: qualityText = "8K超高清"; break;
+        case 126: qualityText = "杜比视界"; break;
+        case 125: qualityText = "HDR真彩"; break;
+        case 120: qualityText = "4K超清"; break;
+        case 116: qualityText = "1080P60高帧率"; break;
+        case 112: qualityText = "1080P+高码率"; break;
+        case 80: qualityText = "1080P高清"; break;
+        case 74: qualityText = "720P60高帧率"; break;
+        case 64: qualityText = "720P高清"; break;
+        case 32: qualityText = "480P清晰"; break;
+        case 16: qualityText = "360P流畅"; break;
+        default: qualityText = `未知画质(QN:${qn})`; break;
     }
-    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}`);
-    const dash = await getBiliVideoWithSession(videoId, cid, SESSDATA, qn);
-    // 获取关键信息
-    const { video, audio } = dash;
-    
+    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}, QN: ${qn}`);
+
+    let streamData;
+    let streamType = 'dash'; // 默认为dash格式
+
+    if (isBangumi) {
+        // 番剧使用专门的API，可能返回dash或durl格式
+        const bangumiResult = await getBangumiBiliVideoWithSession(epId, cid, SESSDATA, qn, smartResolution);
+        streamType = bangumiResult.type;
+        // 保存完整的bangumiResult，包含result对象用于提取timelength
+        streamData = bangumiResult;
+
+        // 如果是DURL格式，直接返回视频URL（不需要音频）
+        if (streamType === 'durl') {
+            const durlData = streamData.durl;
+            if (!durlData || durlData.length === 0) {
+                logger.error(`[R插件][BILI下载] 番剧DURL数据为空`);
+                return { videoUrl: null, audioUrl: null };
+            }
+            const firstDurl = durlData[0];
+            // 选择URL，优先使用backup_url来避免mcdn
+            logger.info(`[R插件][BILI下载] 可用URL数量: 1个主URL + ${(firstDurl.backup_url || []).length}个备用URL`);
+            const videoUrl = selectAndAvoidMCdnUrl(firstDurl.url, firstDurl.backup_url || []);
+            logger.info(`[R插件][BILI下载] 番剧DURL格式，视频大小: ${Math.round(firstDurl.size / 1024 / 1024)}MB, 时长: ${Math.round(firstDurl.length / 1000)}秒`);
+            logger.info(`[R插件][BILI下载] 选中的下载URL: ${new URL(videoUrl).hostname}`);
+            return { videoUrl, audioUrl: null };
+        }
+    } else {
+        // 普通视频
+        streamData = await getBiliVideoWithSession(videoId, cid, SESSDATA, qn, smartResolution);
+    }
+
+    // 以下是DASH格式处理逻辑
+    // 番剧的DASH数据在streamData.data中，普通视频直接在streamData中
+    const dashData = isBangumi ? streamData.data : streamData;
+    const { video, audio } = dashData;
+
     // 根据请求的画质选择对应的视频流
     let targetHeight;
-    switch(parseInt(qn)) {
+    switch (parseInt(qn)) {
+        case 127: targetHeight = 4320; break; // 8K
+        case 126: targetHeight = 2160; break; // 杜比视界 (通常是4K)
+        case 125: targetHeight = 2160; break; // HDR (通常是4K)
+        case 120: targetHeight = 2160; break; // 4K
+        case 116: targetHeight = 1080; break; // 1080P60高帧率
+        case 112: targetHeight = 1080; break; // 1080P+高码率
         case 80: targetHeight = 1080; break;  // 1080P
+        case 74: targetHeight = 720; break;   // 720P60高帧率
         case 64: targetHeight = 720; break;   // 720P
         case 32: targetHeight = 480; break;   // 480P
         case 16: targetHeight = 360; break;   // 360P
-        default: targetHeight = 480;         // 默认480P
-    }
-    
-    // 获取目标分辨率的所有视频流
-    let matchingVideos = video.filter(v => v.height === targetHeight);
-    
-    // 如果找不到完全匹配的，找最接近但不超过目标分辨率的
-    if (matchingVideos.length === 0) {
-        matchingVideos = video
-            .filter(v => v.height <= targetHeight)
-            .sort((a, b) => b.height - a.height);
-        
-        // 获取最高的可用分辨率的所有视频流
-        if (matchingVideos.length > 0) {
-            const maxHeight = matchingVideos[0].height;
-            matchingVideos = matchingVideos.filter(v => v.height === maxHeight);
-        }
-    }
-    
-    // 如果还是找不到，使用所有可用的最低分辨率视频流
-    if (matchingVideos.length === 0) {
-        const minHeight = Math.min(...video.map(v => v.height));
-        matchingVideos = video.filter(v => v.height === minHeight);
+        default:
+            // 未知QN，尝试从视频流中选择最高画质
+            targetHeight = Math.max(...video.map(v => v.height));
+            logger.warn(`[R插件][BILI下载] 未知的QN值: ${qn}，使用最高可用分辨率: ${targetHeight}p`);
+            break;
     }
 
-    // 在相同分辨率中选择编码优先级：hevc > av1 > avc
+    // 获取目标分辨率的所有视频流
+    let matchingVideos;
+
+    // 智能分辨率：使用所有可用画质，从最高开始选择
+    if (smartResolution) {
+        matchingVideos = video; // 使用所有视频流
+        const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
+        logger.info(`[R插件][BILI下载] 智能分辨率模式：使用所有可用画质 ${availableHeights.join('p, ')}p`);
+    } else {
+        // 非智能分辨率：按请求画质筛选
+        matchingVideos = video.filter(v => v.height === targetHeight);
+
+        // 如果找不到完全匹配的，找最接近但不超过目标分辨率的
+        if (matchingVideos.length === 0) {
+            // 记录所有可用的分辨率
+            const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
+            logger.warn(`[R插件][BILI下载] ⚠️ 请求的${targetHeight}p画质不可用，API返回的最高画质: ${availableHeights[0]}p`);
+            logger.info(`[R插件][BILI下载] API可用分辨率列表: ${availableHeights.join('p, ')}p`);
+
+            matchingVideos = video
+                .filter(v => v.height <= targetHeight)
+                .sort((a, b) => b.height - a.height);
+
+            // 获取最高的可用分辨率的所有视频流
+            if (matchingVideos.length > 0) {
+                const maxHeight = matchingVideos[0].height;
+                matchingVideos = matchingVideos.filter(v => v.height === maxHeight);
+                logger.warn(`[R插件][BILI下载] 降级使用: ${maxHeight}p`);
+            }
+        } else {
+            logger.info(`[R插件][BILI下载] ✅ 找到匹配的${targetHeight}p画质`);
+        }
+
+        // 如果还是找不到，使用所有可用的最低分辨率视频流
+        if (matchingVideos.length === 0) {
+            const minHeight = Math.min(...video.map(v => v.height));
+            matchingVideos = video.filter(v => v.height === minHeight);
+            logger.error(`[R插件][BILI下载] 所有视频流都高于请求画质，使用最低可用: ${minHeight}p`);
+        }
+    }
+
+    // 智能选择最佳视频流：优先编码AV1>HEVC>AVC，并考虑文件大小限制
     let videoData;
     if (matchingVideos.length > 0) {
         // 记录编码信息
-        const codecInfo = matchingVideos.map(v => 
+        const codecInfo = matchingVideos.map(v =>
             `${v.height}p(${v.codecs}): ${Math.round(v.bandwidth / 1024)}kbps`
         ).join(', ');
-        logger.debug(`[R插件][BILI下载] 可选编码: ${codecInfo}`);
+        logger.info(`[R插件][BILI下载] 可选编码: ${codecInfo}`);
 
-        // 按照编码和码率排序
-        const codecPriority = { hevc: 1, av1: 2, avc: 3 };
-        videoData = matchingVideos.sort((a, b) => {
-            const codecA = a.codecs.toLowerCase();
-            const codecB = b.codecs.toLowerCase();
-            // 获取编码类型的优先级
-            const priorityA = Object.entries(codecPriority).find(([key]) => codecA.includes(key))?.[1] || 999;
-            const priorityB = Object.entries(codecPriority).find(([key]) => codecB.includes(key))?.[1] || 999;
-            // 如果编码优先级相同，选择码率较低的
-            if (priorityA === priorityB) {
-                return a.bandwidth - b.bandwidth;
+        // 估算文件大小（带宽 * 时长）
+        const estimateSize = (stream, audioStream, timelength) => {
+            const videoBandwidth = stream.bandwidth || 0;
+            const audioBandwidth = audioStream?.bandwidth || 0;
+            const totalBandwidth = videoBandwidth + audioBandwidth;
+            // bandwidth单位是bps，除以8得到字节/秒
+            const bytesPerSecond = totalBandwidth / 8;
+            // 优先使用timelength（毫秒），否则使用duration（秒）
+            const durationSeconds = timelength ? (timelength / 1000) : (stream.duration || audioStream?.duration || 0);
+            if (durationSeconds === 0) {
+                logger.warn(`[R插件][BILI下载] 无法获取视频时长，文件大小估算可能不准确`);
             }
-            return priorityA - priorityB;
-        })[0];
+            return (bytesPerSecond * durationSeconds) / (1024 * 1024); // 转换为MB
+        };
+
+        // 按照编码优先级排序：av1 > hevc > avc
+        // 注意：av01表示AV1, hev1表示HEVC, avc1表示AVC
+        const getCodecType = (codecs) => {
+            const codecLower = codecs.toLowerCase();
+            if (codecLower.includes('av01') || codecLower.includes('av1')) return 'av1';
+            if (codecLower.includes('hev1') || codecLower.includes('hevc')) return 'hevc';
+            if (codecLower.includes('avc1') || codecLower.includes('avc')) return 'avc';
+            return 'unknown';
+        };
+
+        const codecPriority = { av1: 1, hevc: 2, avc: 3, unknown: 999 };
+        const sortedVideos = matchingVideos.sort((a, b) => {
+            const codecTypeA = getCodecType(a.codecs);
+            const codecTypeB = getCodecType(b.codecs);
+            const priorityA = codecPriority[codecTypeA];
+            const priorityB = codecPriority[codecTypeB];
+
+            // 优先使用更高优先级的编码（数字越小越优先）
+            if (priorityA !== priorityB) {
+                return priorityA - priorityB;
+            }
+
+            // 相同编码下，默认选择码率较低的（文件更小）
+            // 只有明确请求1080P+高码率(QN=112)时才选择高码率
+            return a.bandwidth - b.bandwidth; // 默认：码率从低到高
+        });
+
+        // 获取音频流和视频时长用于估算总大小
+        const audioData = audio?.[0];
+
+        // 尝试从API响应获取timelength（毫秒）
+        // 优先使用传入的duration参数（秒）
+        let timelength = duration > 0 ? duration * 1000 : 0;
+
+        // 如果没有传入duration，尝试从API响应获取
+        if (timelength === 0) {
+            // 不同类型视频的响应结构不同
+            if (isBangumi && streamData?.result?.timelength) {
+                // 番剧：使用 result.timelength
+                timelength = streamData.result.timelength;
+                logger.info(`[R插件][BILI下载] 从番剧API获取时长: ${Math.round(timelength / 1000)}秒`);
+            } else if (!isBangumi && streamData?.data?.timelength) {
+                // 普通视频：使用 data.timelength  
+                timelength = streamData.data.timelength;
+            } else if (video[0]?.duration) {
+                // Fallback: 使用视频流中的duration（秒）
+                timelength = video[0].duration * 1000;
+            } else if (audioData?.duration) {
+                // 最后尝试使用音频duration
+                timelength = audioData.duration * 1000;
+            }
+        }
+
+        logger.debug(`[R插件][BILI下载] 时长信息: ${timelength > 0 ? Math.round(timelength / 1000) + '秒' : '未获取到'}${duration > 0 ? ' (来自参数)' : ''}`);
+
+        // 番剧不使用文件大小限制和智能分辨率
+        if (isBangumi) {
+            smartResolution = false;
+            logger.info(`[R插件][BILI下载] 番剧使用独立配置，不启用智能分辨率`);
+        }
+
+        // 使用传入的文件大小限制
+        const sizeLimit = fileSizeLimit; // MB
+        if (smartResolution) {
+            logger.info(`[R插件][BILI下载] 智能分辨率已启用，大小限制: ${sizeLimit}MB`);
+        }
+
+        // 如果无法获取时长，使用基于码率的fallback策略
+        if (timelength === 0 && !isBangumi) {
+            logger.warn(`[R插件][BILI下载] 无法获取视频时长，使用码率限制策略`);
+
+            // 假设平均视频时长为5分钟（300秒），计算对应100MB的最大码率
+            // 100MB = 100 * 1024 * 1024 * 8 bits = 838860800 bits
+            // 300秒 -> 838860800 / 300 = 2796202 bps ≈ 2800 kbps (视频+音频总码率)
+            const assumedDuration = 300; // 秒
+            const maxTotalBandwidth = (sizeLimit * 1024 * 1024 * 8) / assumedDuration; // bps
+
+            logger.info(`[R插件][BILI下载] 假设视频时长${assumedDuration}秒，计算最大总码率: ${Math.round(maxTotalBandwidth / 1024)}kbps`);
+
+            // 尝试找到总码率不超过限制的最佳视频流
+            for (const candidate of sortedVideos) {
+                const videoBandwidth = candidate.bandwidth || 0;
+                const audioBandwidth = audioData?.bandwidth || 0;
+                const totalBandwidth = videoBandwidth + audioBandwidth;
+
+                if (totalBandwidth <= maxTotalBandwidth) {
+                    videoData = candidate;
+                    const codecType = getCodecType(candidate.codecs);
+                    logger.info(`[R插件][BILI下载] 选择视频流: ${candidate.height}p, 编码: ${codecType.toUpperCase()}(${candidate.codecs}), 总码率: ${Math.round(totalBandwidth / 1024)}kbps (预估≈${Math.round((totalBandwidth * assumedDuration) / (8 * 1024 * 1024))}MB)`);
+                    break;
+                } else {
+                    logger.debug(`[R插件][BILI下载] 跳过高码率视频流: ${candidate.height}p, 总码率: ${Math.round(totalBandwidth / 1024)}kbps (预估超过100MB)`);
+                }
+            }
+
+            // 如果所有流都超过码率限制，选择最后一个（码率最低的）
+            if (!videoData) {
+                videoData = sortedVideos[sortedVideos.length - 1];
+                const totalBandwidth = (videoData.bandwidth || 0) + (audioData?.bandwidth || 0);
+                const codecType = getCodecType(videoData.codecs);
+                logger.warn(`[R插件][BILI下载] 所有视频流码率都较高，选择最小码率: ${videoData.height}p, 编码: ${codecType.toUpperCase()}, 总码率: ${Math.round(totalBandwidth / 1024)}kbps`);
+            }
+        } else {
+            // 有时长信息，使用精确的文件大小估算
+            logger.info(`[R插件][BILI下载] 使用精确时长(${Math.round(timelength / 1000)}秒)进行文件大小估算`);
+
+            // 智能分辨率：从最高画质开始遍历，找到不超过限制的最高画质
+            if (smartResolution) {
+                // 获取所有可用的分辨率，从高到低排序
+                const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
+                const maxHeight = availableHeights[0];
+
+                logger.info(`[R插件][BILI下载] 智能分辨率：从最高${maxHeight}p开始，符合${sizeLimit}MB限制`);
+                logger.info(`[R插件][BILI下载] 可用画质: ${availableHeights.map(h => h + 'p').join(' → ')}`);
+
+                // 从最高画质开始尝试
+                for (const height of availableHeights) {
+                    logger.debug(`[R插件][BILI下载] 尝试${height}p分辨率`);
+
+                    // 获取该分辨率的所有流并按编码优先级排序
+                    const heightVideos = video.filter(v => v.height === height);
+                    const sortedHeightVideos = heightVideos.sort((a, b) => {
+                        const codecTypeA = getCodecType(a.codecs);
+                        const codecTypeB = getCodecType(b.codecs);
+                        const priorityA = codecPriority[codecTypeA];
+                        const priorityB = codecPriority[codecTypeB];
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB;
+                        }
+                        return a.bandwidth - b.bandwidth;
+                    });
+
+                    // 尝试找到符合大小的流（优先AV1）
+                    for (const candidate of sortedHeightVideos) {
+                        const estimatedSizeMB = estimateSize(candidate, audioData, timelength);
+                        if (estimatedSizeMB <= sizeLimit) {
+                            videoData = candidate;
+                            const codecType = getCodecType(candidate.codecs);
+                            logger.info(`[R插件][BILI下载] ✅ 智能分辨率选择: ${candidate.height}p, 编码: ${codecType.toUpperCase()}(${candidate.codecs}), 预估大小: ${Math.round(estimatedSizeMB)}MB`);
+                            break;
+                        }
+                    }
+
+                    if (videoData) break;
+                }
+
+                // 如果所有画质都超过限制，选择最低分辨率的最低码率
+                if (!videoData) {
+                    const lowestHeight = availableHeights[availableHeights.length - 1];
+                    const lowestVideos = video.filter(v => v.height === lowestHeight);
+                    videoData = lowestVideos.sort((a, b) => a.bandwidth - b.bandwidth)[0];
+                    const estimatedSizeMB = estimateSize(videoData, audioData, timelength);
+                    const codecType = getCodecType(videoData.codecs);
+                    logger.warn(`[R插件][BILI下载] 所有画质都超过${sizeLimit}MB，选择最低: ${videoData.height}p, 编码: ${codecType.toUpperCase()}, 预估大小: ${Math.round(estimatedSizeMB)}MB`);
+                }
+            } else {
+                // 非智能分辨率（包括番剧）
+                if (isBangumi) {
+                    // ===== 番剧特殊处理 =====
+                    // 番剧不受文件大小限制，直接选择请求画质的最佳编码
+                    // 但如果请求画质不可用，则选择可用的最高画质
+
+                    // 1. 先尝试找到请求画质
+                    let bangumiVideos = video.filter(v => v.height === targetHeight);
+
+                    if (bangumiVideos.length === 0) {
+                        // 2. 如果请求画质不可用，找最高可用画质
+                        const maxHeight = Math.max(...video.map(v => v.height));
+                        bangumiVideos = video.filter(v => v.height === maxHeight);
+                        logger.warn(`[R插件][BILI下载] 番剧：请求画质${targetHeight}p不可用，使用最高画质${maxHeight}p`);
+                    }
+
+                    // 3. 按编码优先级排序（AV1>HEVC>AVC）
+                    bangumiVideos.sort((a, b) => {
+                        const codecTypeA = getCodecType(a.codecs);
+                        const codecTypeB = getCodecType(b.codecs);
+                        const priorityA = codecPriority[codecTypeA];
+                        const priorityB = codecPriority[codecTypeB];
+
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB;
+                        }
+                        return a.bandwidth - b.bandwidth; // 相同编码选低码率
+                    });
+
+                    videoData = bangumiVideos[0];
+                    const estimatedSizeMB = estimateSize(videoData, audioData, timelength);
+                    const codecType = getCodecType(videoData.codecs);
+                    logger.info(`[R插件][BILI下载] 番剧选择最佳编码: ${videoData.height}p, 编码: ${codecType.toUpperCase()}(${videoData.codecs}), 预估大小: ${Math.round(estimatedSizeMB)}MB`);
+                } else {
+                    // 普通视频：使用请求的画质，按编码优先级和文件大小选择
+                    for (const candidate of sortedVideos) {
+                        const estimatedSizeMB = estimateSize(candidate, audioData, timelength);
+
+                        if (estimatedSizeMB <= sizeLimit) {
+                            videoData = candidate;
+                            const codecType = getCodecType(candidate.codecs);
+                            logger.info(`[R插件][BILI下载] 选择视频流: ${candidate.height}p, 编码: ${codecType.toUpperCase()}(${candidate.codecs}), 预估大小: ${Math.round(estimatedSizeMB)}MB`);
+                            break;
+                        } else {
+                            logger.debug(`[R插件][BILI下载] 跳过超大视频流: ${candidate.height}p, 编码: ${candidate.codecs}, 预估大小: ${Math.round(estimatedSizeMB)}MB (超过${sizeLimit}MB限制)`);
+                        }
+                    }
+
+                    // 如果所有流都超过大小，选择最小码率的
+                    if (!videoData) {
+                        videoData = sortedVideos[sortedVideos.length - 1];
+                        const estimatedSizeMB = estimateSize(videoData, audioData, timelength);
+                        const codecType = getCodecType(videoData.codecs);
+                        logger.warn(`[R插件][BILI下载] 所有视频流都超过${sizeLimit}MB限制，选择最小码率: ${videoData.height}p, 编码: ${codecType.toUpperCase()}, 预估大小: ${Math.round(estimatedSizeMB)}MB`);
+                    }
+                }
+            }
+        }
     }
-    
+
     if (!videoData) {
         logger.error(`[R插件][BILI下载] 获取视频数据失败，请检查画质参数是否正确`);
         return { videoUrl: null, audioUrl: null };
     }
 
     logger.debug(`[R插件][BILI下载] 请求画质: ${qualityText}, 实际获取画质: ${videoData.height}p，分辨率: ${videoData.width}x${videoData.height}, 编码: ${videoData.codecs}, 码率: ${Math.round(videoData.bandwidth / 1024)}kbps`);
-    
+
     // 提取信息
     const { backupUrl: videoBackupUrl, baseUrl: videoBaseUrl } = videoData;
     const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl);
-    
+
     // 音频处理 - 选择对应画质的音频流
     const audioData = audio?.[0];
     let audioUrl = null;
@@ -303,7 +697,7 @@ export async function getDownloadUrl(url, SESSDATA, qn) {
         audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
         logger.debug(`[R插件][BILI下载] 音频码率: ${Math.round(audioData.bandwidth / 1024)}kbps`);
     }
-    
+
     return { videoUrl, audioUrl };
 }
 
@@ -372,7 +766,7 @@ export async function m4sToMp3(m4sUrl, path) {
             return new Promise((resolve, reject) => {
                 fileStream.on("finish", () => {
                     fileStream.close(() => {
-                        const transformCmd = `ffmpeg -i ${ path } ${ path.replace(".m4s", ".mp3") } -y -loglevel quiet`;
+                        const transformCmd = `ffmpeg -i ${path} ${path.replace(".m4s", ".mp3")} -y -loglevel quiet`;
                         child_process.execSync(transformCmd)
                         logger.mark("bili: mp3下载完成")
                         resolve(path);
@@ -410,21 +804,34 @@ export async function getBiliAudio(bvid, cid) {
     }))
 }
 
-export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn) {
+export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn, smartResolution = false) {
     if (!cid) {
         cid = await fetchCID(bvid).catch((err) => logger.error(err))
     }
+
+    // 计算对应的fnval和fourk参数
+    const { fnval, fourk } = calculateFnval(qn, smartResolution);
+
     const apiUrl = BILI_PLAY_STREAM
         .replace("{bvid}", bvid)
         .replace("{cid}", cid)
-        .replace("{qn}", qn);
+        .replace("{qn}", qn)
+        .replace("{fnval}", fnval)
+        .replace("{fourk}", fourk);
     logger.debug(`[R插件][BILI请求审计] 请求URL: ${apiUrl}`);
-    
+    logger.debug(`[R插件][BILI请求审计] 计算的fnval: ${fnval} (${fnval.toString(2)}), fourk: ${fourk}`);
+
+    // 从cookie字符串中提取SESSDATA值
+    const sessDataValue = extractSessData(SESSDATA);
+
+    // 确定发送哪种Cookie格式
+    const cookieHeader = SESSDATA.includes('SESSDATA=') ? SESSDATA : `SESSDATA=${sessDataValue}`;
+
     return (new Promise((resolve, reject) => {
         fetch(apiUrl, {
             headers: {
                 ...BILI_HEADER,
-                Cookie: `SESSDATA=${SESSDATA}`
+                Cookie: cookieHeader
             }
         })
             .then(res => res.json())
@@ -444,6 +851,152 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn) {
             })
             .catch(err => {
                 logger.error(`[R插件][BILI请求审计] 请求异常: ${err.message}`);
+                reject(err);
+            });
+    }))
+}
+
+/**
+ * 获取番剧视频流（使用PGC专用API）
+ * @param epId    EP ID
+ * @param cid     CID
+ * @param SESSDATA 登录凭证
+ * @param qn      画质参数
+ * @returns {Promise<{type: 'dash'|'durl', data: any}>} 返回格式类型和数据
+ */
+export async function getBangumiBiliVideoWithSession(epId, cid, SESSDATA, qn, smartResolution = false) {
+    // 计算对应的fnval和fourk参数
+    const { fnval, fourk } = calculateFnval(qn, smartResolution);
+
+    const apiUrl = BILI_BANGUMI_STREAM
+        .replace("{ep_id}", epId)
+        .replace("{cid}", cid)
+        .replace("{qn}", qn)
+        .replace("{fnval}", fnval)
+        .replace("{fourk}", fourk);
+
+    // 从cookie字符串中提取SESSDATA值
+    const sessDataValue = extractSessData(SESSDATA);
+
+    // 调试：检查SESSDATA是否正确传递
+    const hasValidSessData = sessDataValue && sessDataValue.length > 10;
+    logger.info(`[R插件][番剧请求审计] 请求URL: ${apiUrl}`);
+    logger.info(`[R插件][番剧请求审计] SESSDATA状态: ${hasValidSessData ? '已配置(' + sessDataValue.substring(0, 8) + '...)' : '未配置或无效'}`);
+    logger.info(`[R插件][番剧请求审计] 请求画质QN: ${qn}, 计算的fnval: ${fnval}, fourk: ${fourk}`);
+
+    // 确定发送哪种Cookie格式
+    // 如果传入的是完整cookie字符串（包含其他字段），就发送完整cookie
+    // 否则只发送SESSDATA
+    const cookieHeader = SESSDATA.includes('SESSDATA=') ? SESSDATA : `SESSDATA=${sessDataValue}`;
+    logger.debug(`[R插件][番剧请求审计] Cookie格式: ${SESSDATA.includes('SESSDATA=') ? '完整cookie' : '仅SESSDATA'}`);
+
+    return (new Promise((resolve, reject) => {
+        fetch(apiUrl, {
+            headers: {
+                ...BILI_HEADER,
+                Cookie: cookieHeader
+            }
+        })
+            .then(res => res.json())
+            .then(json => {
+                if (json.code !== 0) {
+                    logger.error(`[R插件][番剧请求审计] 请求失败: code=${json.code}, message=${json.message}`);
+                    reject(new Error(`番剧API错误: ${json.message} (code: ${json.code})`));
+                    return;
+                }
+
+                const result = json.result;
+                if (!result) {
+                    logger.error(`[R插件][番剧请求审计] 返回数据为空`);
+                    reject(new Error(`番剧API返回数据为空`));
+                    return;
+                }
+
+                // 调试：输出番剧API返回的关键信息
+                logger.info(`[R插件][番剧API调试] timelength: ${result.timelength || '无'}ms`);
+                logger.info(`[R插件][番剧API调试] quality: ${result.quality || '无'}`);
+                logger.info(`[R插件][番剧API调试] format: ${result.format || '无'}`);
+                logger.info(`[R插件][番剧API调试] type: ${result.type || '无'}`);
+
+                // 检查返回格式：dash 或 durl
+                if (result.dash) {
+                    // DASH 格式（分离的音视频流）
+                    const qualityInfo = result.dash.video
+                        .sort((a, b) => b.height - a.height)
+                        .map(v => `${v.height}p(${v.codecs}): ${Math.round(v.bandwidth / 1024)}kbps`)
+                        .join(', ');
+                    logger.info(`[R插件][番剧请求审计] DASH格式，可用画质列表: ${qualityInfo}`);
+                    // 返回dash数据和完整的result对象（用于提取timelength等）
+                    resolve({ type: 'dash', data: result.dash, result: result });
+                } else if (result.durl || result.durls) {
+                    // DURL 格式（完整视频文件）
+                    const requestedQn = qn;
+                    const currentQuality = result.quality;
+                    const supportFormats = result.support_formats || [];
+                    const isPreview = result.is_preview === 1;
+                    const errorCode = result.error_code;
+
+                    // 记录详细信息
+                    logger.info(`[R插件][番剧请求审计] DURL格式 - ${isPreview ? '⚠️预览模式' : '完整视频'}`);
+                    logger.info(`[R插件][番剧请求审计] 请求画质QN: ${requestedQn}, API返回画质QN: ${currentQuality}`);
+                    if (errorCode) {
+                        logger.warn(`[R插件][番剧请求审计] API错误码: ${errorCode}`);
+                    }
+
+                    // 选择匹配请求画质的durl
+                    let targetDurl = result.durl;
+                    let actualQuality = currentQuality;
+
+                    if (result.durls && result.durls.length > 0) {
+                        // 记录所有可用画质
+                        const availableQualities = result.durls.map(d => d.quality).sort((a, b) => b - a);
+                        logger.info(`[R插件][番剧请求审计] durls中可用画质QN: [${availableQualities.join(', ')}]`);
+
+                        // 尝试匹配请求的画质
+                        let matchedDurl = result.durls.find(d => d.quality === requestedQn);
+
+                        if (matchedDurl) {
+                            // 找到匹配的画质
+                            targetDurl = matchedDurl.durl;
+                            actualQuality = matchedDurl.quality;
+                            logger.info(`[R插件][番剧请求审计] ✅ 使用匹配的画质: ${actualQuality}`);
+                        } else {
+                            // 未找到匹配的画质，使用最高可用画质
+                            const sorted = result.durls.sort((a, b) => b.quality - a.quality);
+                            targetDurl = sorted[0].durl;
+                            actualQuality = sorted[0].quality;
+
+                            const requestedFormat = supportFormats.find(f => f.quality === requestedQn);
+                            const actualFormat = supportFormats.find(f => f.quality === actualQuality);
+
+                            logger.warn(`[R插件][番剧请求审计] ⚠️ 请求的画质 ${requestedQn}(${requestedFormat?.description || '未知'}) 不可用`);
+                            logger.warn(`[R插件][番剧请求审计] 降级到最高可用画质: ${actualQuality}(${actualFormat?.description || '未知'})`);
+
+                            if (requestedFormat?.need_vip) {
+                                logger.error(`[R插件][番剧请求审计] ❌ 该画质需要大会员！请检查SESSDATA是否为大会员账号`);
+                            }
+                        }
+                    } else if (result.durl) {
+                        logger.info(`[R插件][番剧请求审计] 使用单一durl，画质: ${currentQuality}`);
+                    }
+
+                    resolve({
+                        type: 'durl',
+                        data: {
+                            durl: targetDurl,
+                            quality: actualQuality,
+                            supportFormats: supportFormats,
+                            isPreview: isPreview,
+                            errorCode: errorCode
+                        }
+                    });
+                } else {
+                    logger.error(`[R插件][番剧请求审计] 未知的返回格式: ${JSON.stringify(result).substring(0, 500)}`);
+                    reject(new Error(`番剧API返回未知格式`));
+                }
+            })
+            .catch(err => {
+                logger.error(`[R插件][番剧请求审计] 请求异常: ${err.message}`);
                 reject(err);
             });
     }))
@@ -471,11 +1024,11 @@ export async function getVideoInfo(url) {
     // const baseVideoInfo = "http://api.bilibili.com/x/web-interface/view";
     const videoId = /video\/[^\?\/ ]+/.exec(url)[0].split("/")[1];
     // 如果匹配到的是AV号特殊处理
-    let finalUrl = `${ BILI_VIDEO_INFO }?`;
+    let finalUrl = `${BILI_VIDEO_INFO}?`;
     if (videoId.toLowerCase().startsWith('av')) {
-        finalUrl += `aid=${ videoId.slice(2) }`;
+        finalUrl += `aid=${videoId.slice(2)}`;
     } else {
-        finalUrl += `bvid=${ videoId }`;
+        finalUrl += `bvid=${videoId}`;
     }
     logger.debug(finalUrl);
     // 获取视频信息，然后发送
@@ -500,6 +1053,54 @@ export async function getVideoInfo(url) {
 }
 
 /**
+ * 获取番剧视频信息
+ * @param epId EP ID
+ * @returns {Promise<{bvid: string, cid: string} | null>}
+ */
+export async function getBangumiVideoInfo(epId) {
+    try {
+        const resp = await fetch(BILI_EP_INFO.replace("{}", epId), {
+            headers: BILI_HEADER
+        });
+        const json = await resp.json();
+        if (json.code !== 0) {
+            logger.error(`[R插件][番剧信息] 获取番剧信息失败: ${json.message}`);
+            return null;
+        }
+        const result = json.result;
+        // 从episodes中找到对应的EP信息
+        let targetEp = null;
+        for (const section of [result.episodes, ...(result.section || []).map(s => s.episodes)]) {
+            if (!section) continue;
+            targetEp = section.find(ep => ep.id.toString() === epId || ep.ep_id?.toString() === epId);
+            if (targetEp) break;
+        }
+        if (!targetEp) {
+            // 尝试从main_section获取
+            if (result.main_section?.episodes) {
+                targetEp = result.main_section.episodes.find(ep => ep.id.toString() === epId || ep.ep_id?.toString() === epId);
+            }
+        }
+        if (!targetEp) {
+            // 如果还是找不到，使用第一个episode
+            targetEp = result.episodes?.[0];
+            logger.info(`[R插件][番剧信息] 未找到EP ${epId}，使用第一集: ${targetEp?.bvid}`);
+        }
+        if (!targetEp) {
+            logger.error(`[R插件][番剧信息] 无法获取番剧EP信息`);
+            return null;
+        }
+        return {
+            bvid: targetEp.bvid,
+            cid: targetEp.cid?.toString() || ""
+        };
+    } catch (err) {
+        logger.error(`[R插件][番剧信息] 获取番剧信息异常: ${err.message}`);
+        return null;
+    }
+}
+
+/**
  * 获取动态
  * @param dynamicId
  * @returns {Promise<any>}
@@ -509,7 +1110,7 @@ export async function getDynamic(dynamicId, SESSDATA) {
     return axios.get(dynamicApi, {
         headers: {
             ...BILI_HEADER,
-            Cookie: `SESSDATA=${ SESSDATA }`
+            Cookie: `SESSDATA=${SESSDATA}`
         },
     }).then(resp => {
         const innerCardObject = resp.data.data.card;
@@ -624,21 +1225,72 @@ export async function filterBiliDescLink(link) {
  * @returns {string}
  */
 function selectAndAvoidMCdnUrl(baseUrl, backupUrls) {
-    // 判断BaseUrl
-    if (!baseUrl.includes(".mcdn.bilivideo.cn")) {
+    // mcdn 慢速节点的特征（需要避免）
+    const slowCdnPatterns = [
+        '.mcdn.bilivideo.cn',
+        'mountaintoys.cn',
+        '.szbdyd.com'
+    ];
+
+    // 快速 CDN 的特征（优先选择）
+    const fastCdnPatterns = [
+        /^cn-[a-z]+-[a-z]+-\d+-\d+\.bilivideo\.com$/,  // 如 cn-jsnt-ct-01-07.bilivideo.com
+        /upos-sz-mirror.*\.bilivideo\.com$/,
+        /upos-hz-mirror.*\.bilivideo\.com$/
+    ];
+
+    // 检查是否是慢速CDN
+    const isSlowCdn = (url) => {
+        try {
+            const hostname = new URL(url).hostname;
+            return slowCdnPatterns.some(pattern => hostname.includes(pattern));
+        } catch {
+            return false;
+        }
+    };
+
+    // 检查是否是快速CDN
+    const isFastCdn = (url) => {
+        try {
+            const hostname = new URL(url).hostname;
+            return fastCdnPatterns.some(pattern => pattern.test ? pattern.test(hostname) : hostname.includes(pattern));
+        } catch {
+            return false;
+        }
+    };
+
+    // 如果 baseUrl 是快速CDN，直接返回
+    if (isFastCdn(baseUrl)) {
+        logger.info(`[R插件][CDN选择] 使用快速CDN: ${new URL(baseUrl).hostname}`);
         return baseUrl;
     }
-    // backUrls, 找不到返回undefined
-    const backupUrl = backupUrls.find(backupUrl => {
-        return !backupUrl.includes(".mcdn.bilivideo.cn");
-    })
-    // 找到直接返回
-    if (backupUrl !== undefined) {
-        return backupUrl;
+
+    // 如果 baseUrl 不是慢速CDN，也可以接受
+    if (!isSlowCdn(baseUrl)) {
+        logger.info(`[R插件][CDN选择] 使用默认CDN: ${new URL(baseUrl).hostname}`);
+        return baseUrl;
     }
-    logger.info("[R插件][bili-MCDN] 检测到 mcdn 开始替换为源站的 cdn");
-    // 找不到替换 backupUrls 的第一个链接
-    return replaceP2PUrl(backupUrls?.[0]);
+
+    // baseUrl 是慢速CDN，尝试从 backupUrls 中找快速CDN
+    if (backupUrls && backupUrls.length > 0) {
+        // 优先找快速CDN
+        const fastUrl = backupUrls.find(url => isFastCdn(url));
+        if (fastUrl) {
+            logger.info(`[R插件][CDN选择] 切换到快速CDN: ${new URL(fastUrl).hostname}`);
+            return fastUrl;
+        }
+
+        // 找不到快速CDN，找任何非慢速CDN
+        const goodUrl = backupUrls.find(url => !isSlowCdn(url));
+        if (goodUrl) {
+            logger.info(`[R插件][CDN选择] 避开mcdn，使用: ${new URL(goodUrl).hostname}`);
+            return goodUrl;
+        }
+    }
+
+    // 所有URL都是慢速CDN，尝试替换
+    logger.info("[R插件][CDN选择] 所有URL都是慢速CDN，尝试替换为源站");
+    return replaceP2PUrl(baseUrl) || baseUrl;
 }
 
 /**
@@ -654,22 +1306,22 @@ function replaceP2PUrl(url) {
         if (urlObj.hostname.match(/upos-sz-mirror08[ch]\.bilivideo\.com/) || urlObj.hostname.match(/upos-hz-mirrorakam\.akamaized\.net/)) {
             urlObj.host = 'upos-sz-mirrorhwo1.bilivideo.com'
             urlObj.port = 443;
-            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            logger.info(`更换视频源: ${hostName} -> ${urlObj.host}`);
             return urlObj.toString();
         } else if (urlObj.hostname.match(/upos-sz-estgoss\.bilivideo\.com/) || urlObj.hostname.match(/upos-sz-mirrorali(ov|b)?\.bilivideo\.com/)) {
             urlObj.host = 'upos-sz-mirroralio1.bilivideo.com'
             urlObj.port = 443;
-            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            logger.info(`更换视频源: ${hostName} -> ${urlObj.host}`);
             return urlObj.toString();
         } else if (urlObj.hostname.endsWith(".mcdn.bilivideo.cn") || urlObj.hostname.match(/cn(-[a-z]+){2}(-\d{2}){2}\.bilivideo\.com/)) {
             urlObj.host = 'upos-sz-mirrorcoso1.bilivideo.com';
             urlObj.port = 443;
-            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            logger.info(`更换视频源: ${hostName} -> ${urlObj.host}`);
             return urlObj.toString();
         } else if (urlObj.hostname.endsWith(".szbdyd.com")) {
             urlObj.host = urlObj.searchParams.get('xy_usource');
             urlObj.port = 443;
-            logger.info(`更换视频源: ${ hostName } -> ${ urlObj.host }`);
+            logger.info(`更换视频源: ${hostName} -> ${urlObj.host}`);
             return urlObj.toString();
         }
         return url;
