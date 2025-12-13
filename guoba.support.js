@@ -32,6 +32,19 @@ export function supportGuoba() {
         },
         configInfo: {
             schemas: [
+                // ==================== 全局配置 ====================
+                {
+                    label: '全局配置',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "全局配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
                 {
                     field: 'tools.globalBlackList',
                     label: '全局解析黑名单',
@@ -53,6 +66,16 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入合并转发最大阈值",
+                    },
+                },
+                {
+                    field: "tools.identifyPrefix",
+                    label: "识别前缀",
+                    bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入识别前缀",
                     },
                 },
                 {
@@ -83,45 +106,6 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
-                    field: "tools.identifyPrefix",
-                    label: "识别前缀",
-                    bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入识别前缀",
-                    },
-                },
-                {
-                    field: "tools.deeplApiUrls",
-                    label: "DeeplX API地址集合",
-                    bottomHelpMessage: "可以参考：https://github.com/OwO-Network/DeepLX，进行搭建，也可以使用内置",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入DeeplX API地址集合",
-                    },
-                },
-                {
-                    field: "tools.streamDuration",
-                    label: "解析直播时长",
-                    bottomHelpMessage:
-                        "解析直播（目前涉及哔哩哔哩、抖音）时长，单位：秒（默认：10秒），建议时间为10~60，不然也没人看",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入最大解析直播时长",
-                    },
-                },
-                {
-                    field: "tools.streamCompatibility",
-                    label: "直播是否开启兼容模式",
-                    bottomHelpMessage:
-                        "兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启",
-                    component: "Switch",
-                    required: false,
-                },
-                {
                     field: "tools.defaultPath",
                     label: "视频暂存位置",
                     bottomHelpMessage:
@@ -144,6 +128,39 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.streamDuration",
+                    label: "解析直播时长",
+                    bottomHelpMessage:
+                        "解析直播（目前涉及哔哩哔哩、抖音）时长，单位：秒（默认：10秒），建议时间为10~60，不然也没人看",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入最大解析直播时长",
+                    },
+                },
+                {
+                    field: "tools.streamCompatibility",
+                    label: "直播是否开启兼容模式",
+                    bottomHelpMessage:
+                        "兼容模式，NCQQ不用开，其他ICQQ、LLO需要开启",
+                    component: "Switch",
+                    required: false,
+                },
+
+                // ==================== 哔哩哔哩 ====================
+                {
+                    label: '哔哩哔哩',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "哔哩哔哩配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
                     field: "tools.biliSessData",
                     label: "哔哩哔哩SESSDATA",
                     bottomHelpMessage:
@@ -152,6 +169,91 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入哔哩哔哩SESSDATA",
+                    },
+                },
+                {
+                    field: "tools.biliResolution",
+                    label: "bili最高分辨率",
+                    bottomHelpMessage:
+                        "【开不开BBDown都同步】哔哩哔哩的最高分辨率，默认为480p，可以自行根据服务器进行调整",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_RESOLUTION_LIST,
+                    }
+                },
+                {
+                    field: "tools.biliDownloadMethod",
+                    label: "bili下载方式",
+                    bottomHelpMessage:
+                        "哔哩哔哩的下载方式：默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_DOWNLOAD_METHOD,
+                    }
+                },
+                {
+                    field: "tools.biliSmartResolution",
+                    label: "智能分辨率",
+                    bottomHelpMessage:
+                        "从API最高画质开始，自动选择不超过文件大小限制的最佳画质（优先AV1编码）",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.biliFileSizeLimit",
+                    label: "文件大小限制",
+                    bottomHelpMessage:
+                        "视频大小限制（单位MB），超过大小则转换成群文件上传，配合智能分辨率使用",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入文件大小限制（MB，默认100）",
+                    },
+                },
+                {
+                    field: "tools.biliUseBBDown",
+                    label: "BBDown接管下载",
+                    bottomHelpMessage:
+                        "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后下载更强劲，并且一劳永逸！",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.biliCDN",
+                    label: "强制使用CDN",
+                    bottomHelpMessage: "BBDown强制使用CDN：【只影响开启后的BBDown，一定程度可以影响BBDown速度】哔哩哔哩的CDN地址更换，如果不需要默认不使用，如果选择了其他的CDN将会使用",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_CDN_SELECT_LIST,
+                    }
+                },
+                {
+                    field: "tools.biliBangumiDirect",
+                    label: "番剧直接解析",
+                    bottomHelpMessage:
+                        "开启后番剧将使用正常视频解析流程进行下载",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.biliBangumiResolution",
+                    label: "番剧独立画质",
+                    bottomHelpMessage:
+                        "番剧独立画质设置，开启番剧直接解析后生效，默认为480p",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_RESOLUTION_LIST,
+                    }
+                },
+                {
+                    field: "tools.biliBangumiDuration",
+                    label: "番剧最大时长限制",
+                    bottomHelpMessage:
+                        "番剧超过此时长将不解析（单位：秒），默认30分钟（1800秒）",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入番剧最大限制时长（默认30分钟）",
                     },
                 },
                 {
@@ -216,42 +318,56 @@ export function supportGuoba() {
                     component: "Switch",
                     required: true,
                 },
+
+                // ==================== 抖音 ====================
                 {
-                    field: "tools.biliUseBBDown",
-                    label: "BBDown接管下载",
+                    label: '抖音',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "抖音配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: "tools.douyinCookie",
+                    label: "抖音的Cookie",
                     bottomHelpMessage:
-                        "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后下载更强劲，并且一劳永逸！",
+                        "登陆https://www.douyin.com/ - F12 - 自己替换一下：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入抖音的Cookie",
+                    },
+                },
+                {
+                    field: "tools.douyinCompression",
+                    label: "抖音是否使用压缩格式",
                     component: "Switch",
                     required: false,
                 },
                 {
-                    field: "tools.biliCDN",
-                    label: "强制使用CDN",
-                    bottomHelpMessage: "BBDown强制使用CDN：【只影响开启后的BBDown，一定程度可以影响BBDown速度】哔哩哔哩的CDN地址更换，如果不需要默认不使用，如果选择了其他的CDN将会使用",
-                    component: "Select",
-                    componentProps: {
-                        options: BILI_CDN_SELECT_LIST,
-                    }
+                    field: "tools.douyinComments",
+                    label: "抖音是否开启评论",
+                    component: "Switch",
+                    required: false,
+                },
+
+                // ==================== 油管YouTube ====================
+                {
+                    label: '油管YouTube',
+                    component: 'SOFT_GROUP_BEGIN'
                 },
                 {
-                    field: "tools.biliDownloadMethod",
-                    label: "bili下载方式",
-                    bottomHelpMessage:
-                        "哔哩哔哩的下载方式：默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载",
-                    component: "Select",
+                    component: "Divider",
+                    label: "油管YouTube配置",
                     componentProps: {
-                        options: BILI_DOWNLOAD_METHOD,
-                    }
-                },
-                {
-                    field: "tools.biliResolution",
-                    label: "bili最高分辨率",
-                    bottomHelpMessage:
-                        "【开不开BBDown都同步】哔哩哔哩的最高分辨率，默认为480p，可以自行根据服务器进行调整",
-                    component: "Select",
-                    componentProps: {
-                        options: BILI_RESOLUTION_LIST,
-                    }
+                        orientation: "left",
+                        plain: true,
+                    },
                 },
                 {
                     field: "tools.youtubeDuration",
@@ -294,6 +410,45 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入Youtube Cookie所在的路径，例如：/path/to/cookies.txt",
+                    },
+                },
+
+                // ==================== 小红书 ====================
+                {
+                    label: '小红书',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "小红书配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: "tools.xiaohongshuCookie",
+                    label: "小红书的Cookie",
+                    bottomHelpMessage:
+                        "2024-8-2后反馈必须使用ck，不然无法解析",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入小红书的Cookie",
+                    },
+                },
+
+                // ==================== 网易云音乐 ====================
+                {
+                    label: '网易云音乐',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "网易云音乐配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
                     },
                 },
                 {
@@ -374,38 +529,18 @@ export function supportGuoba() {
                         options: NETEASECLOUD_QUALITY_LIST,
                     }
                 },
+
+                // ==================== 其他平台 ====================
                 {
-                    field: "tools.douyinCookie",
-                    label: "抖音的Cookie",
-                    bottomHelpMessage:
-                        "登陆https://www.douyin.com/ - F12 - 自己替换一下：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;",
-                    component: "Input",
-                    required: false,
+                    label: '其他平台',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "其他平台配置",
                     componentProps: {
-                        placeholder: "请输入抖音的Cookie",
-                    },
-                },
-                {
-                    field: "tools.douyinCompression",
-                    label: "抖音是否使用压缩格式",
-                    component: "Switch",
-                    required: false,
-                },
-                {
-                    field: "tools.douyinComments",
-                    label: "抖音是否开启评论",
-                    component: "Switch",
-                    required: false,
-                },
-                {
-                    field: "tools.xiaohongshuCookie",
-                    label: "小红书的Cookie",
-                    bottomHelpMessage:
-                        "2024-8-2后反馈必须使用ck，不然无法解析",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入小红书的Cookie",
+                        orientation: "left",
+                        plain: true,
                     },
                 },
                 {
@@ -430,26 +565,18 @@ export function supportGuoba() {
                         placeholder: "请输入小黑盒的Cookie",
                     },
                 },
+
+                // ==================== AI配置 ====================
                 {
-                    field: "tools.queueConcurrency",
-                    label: "（高级）队列长度",
-                    bottomHelpMessage:
-                        "【目前只涉及哔哩哔哩的下载功能】允许队列下载个数：根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "如果你的服务器比较强劲，就写4~12（比如4，就是可以4个人同时下载），较弱就一个一个下载，写1",
-                    },
+                    label: 'AI配置',
+                    component: 'SOFT_GROUP_BEGIN'
                 },
                 {
-                    field: "tools.videoDownloadConcurrency",
-                    label: "（高级）下载并发个数",
-                    bottomHelpMessage:
-                        "【涉及哔哩哔哩、抖音、YouTuBe、tiktok】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
-                    component: "InputNumber",
-                    required: false,
+                    component: "Divider",
+                    label: "AI配置",
                     componentProps: {
-                        placeholder: "不确定用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                        orientation: "left",
+                        plain: true,
                     },
                 },
                 {
@@ -484,7 +611,123 @@ export function supportGuoba() {
                     componentProps: {
                         placeholder: "请输入AI的模型，例如：moonshot-v1-8k，使用kimi则不用填写",
                     },
-                }
+                },
+
+                // ==================== 高级配置 ====================
+                {
+                    label: '高级配置',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "高级配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: "tools.deeplApiUrls",
+                    label: "DeeplX API地址集合",
+                    bottomHelpMessage: "可以参考：https://github.com/OwO-Network/DeepLX，进行搭建，也可以使用内置",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入DeeplX API地址集合",
+                    },
+                },
+                {
+                    field: "tools.queueConcurrency",
+                    label: "队列长度",
+                    bottomHelpMessage:
+                        "【目前只涉及哔哩哔哩的下载功能】允许队列下载个数：根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "如果你的服务器比较强劲，就写4~12（比如4，就是可以4个人同时下载），较弱就一个一个下载，写1",
+                    },
+                },
+                {
+                    field: "tools.videoDownloadConcurrency",
+                    label: "下载并发个数",
+                    bottomHelpMessage:
+                        "【涉及哔哩哔哩、抖音、YouTuBe、tiktok】下载并发个数：与【允许多用户下载个数】不同，这个功能影响下载速度。默认是1表示不使用，使用根据服务器性能进行选择，如果不确定是否可以用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "不确定用1即可，高性能服务器随意4~12都可以，看CPU的实力",
+                    },
+                },
+
+                // ==================== 帮助与文档 ====================
+                {
+                    label: '帮助与文档',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "官方资源",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: 'pluginHome',
+                    label: '插件首页（必读）🔥',
+                    component: 'Input',
+                    componentProps: {
+                        readonly: true,
+                        defaultValue: 'https://github.com/zhiyu1998/rconsole-plugin'
+                    }
+                },
+                {
+                    field: 'helpDoc',
+                    label: '官方文档 📚',
+                    component: 'Input',
+                    componentProps: {
+                        readonly: true,
+                        defaultValue: 'https://zhiyu1998.github.io/rconsole-plugin/'
+                    }
+                },
+                {
+                    component: "Divider",
+                    label: "相关项目推荐",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: 'tgChannel',
+                    label: 'TG频道 📢',
+                    bottomHelpMessage: '分享日常冲浪互联网看到好玩的网站、app应用',
+                    component: 'Input',
+                    componentProps: {
+                        readonly: true,
+                        defaultValue: 'https://t.me/RrOrangeAndFriends'
+                    }
+                },
+                {
+                    field: 'orangeSideBar',
+                    label: '大橘侧边栏 🍊',
+                    bottomHelpMessage: '一个开源的网页侧边栏 AI 对话总结工具，支持 OpenAI、Gemini、Anthropic 规范的 API，支持自动摘要、联网搜索、多轮对话、视频字幕总结、论文模式等功能',
+                    component: 'Input',
+                    componentProps: {
+                        readonly: true,
+                        defaultValue: 'https://github.com/zhiyu1998/OrangeSideBar'
+                    }
+                },
+                {
+                    field: 'complementarySet',
+                    label: 'R插件补集 🎁',
+                    bottomHelpMessage: '基于 Yunzai 的 R 插件补集，写给好朋友们的比较好玩的插件！',
+                    component: 'Input',
+                    componentProps: {
+                        readonly: true,
+                        defaultValue: 'https://github.com/zhiyu1998/rconsole-plugin-complementary-set'
+                    }
+                },
             ],
             getConfigData() {
                 const toolsData = {
