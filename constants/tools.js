@@ -168,10 +168,13 @@ export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/";
 
 /**
  * 通用解析的请求链接
+ * 更新时间：2025-12-1
+ * 支持平台：抖音、快手、巨量、新片场、tiktok、西瓜视频、今日头条、小红书、微视、
+ * 火山小视频、陌陌视频、映客视频、小咖秀、开眼、全民小视频、全民K歌、最右、小影、微博、美拍、皮皮虾、巨量等
  * @type {string}
  */
 export const GENERAL_REQ_LINK = {
-    link: "http://47.99.158.118/video-crack/v2/parse?content={}",
+    link: "https://proxy.layzz.cn/lyz/getAnalyse?token=uuic-qackd-fga-test&link={}",
     sign: 1
 };
 export const GENERAL_REQ_LINK_2 = {
@@ -182,6 +185,15 @@ export const GENERAL_REQ_LINK_2 = {
 export const GENERAL_REQ_LINK_3 = {
     link: "https://picseed.com/v1/parser?auth_key=1E9DC25C-E75F-11EE-A0DD-0A5A298C6C2D&content={}",
     sign: 3
+};
+
+/**
+ * 皮皮虾解析API
+ * @type {string}
+ */
+export const PIPIXIA_API = {
+    link: "https://api.bugpk.com/api/pipixia?url={}",
+    sign: 4
 };
 
 /**
