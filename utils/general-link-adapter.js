@@ -1,6 +1,7 @@
 import {
     GENERAL_REQ_LINK,
-    GENERAL_REQ_LINK_2, GENERAL_REQ_LINK_3
+    GENERAL_REQ_LINK_2,
+    GENERAL_REQ_LINK_3
 } from "../constants/tools.js";
 
 /**
@@ -56,7 +57,7 @@ class GeneralLinkAdapter {
         } else {
             throw Error("无法提取快手的信息，请重试或者换一个视频！");
         }
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK, `https://www.kuaishou.com/short-video/${ video_id }`);
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, `https://www.kuaishou.com/short-video/${video_id}`);
         // 提取视频
         return {
             name: "快手",
@@ -75,14 +76,17 @@ class GeneralLinkAdapter {
         }
 
         const id = /ixigua\.com\/(\d+)/.exec(msg)[1] || /\/video\/(\d+)/.exec(msg)[1];
-        const videoReq = `https://www.ixigua.com/${ id }`;
+        const videoReq = `https://www.ixigua.com/${id}`;
         const reqLink = this.createReqLink(GENERAL_REQ_LINK, videoReq);
         return { name: "西瓜", reqLink };
     }
 
     async pipixia(link) {
-        const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9]+/.exec(link)?.[0];
+        const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9_-]+/.exec(link)?.[0];
         const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
+        console.log('[R插件][皮皮虾解析] 提取的链接:', msg);
+        console.log('[R插件][皮皮虾解析] 使用API:', reqLink.link);
+        console.log('[R插件][皮皮虾解析] API标识 sign:', reqLink.sign);
         return { name: "皮皮虾", reqLink };
     }
 
@@ -170,12 +174,17 @@ class GeneralLinkAdapter {
             timeout: 10000
         }).then(async resp => {
             const data = await resp.json();
+            console.log('[R插件][通用API调试] 完整返回数据:', JSON.stringify(data, null, 2));
             if (sign === 1) {
                 // @link GENERAL_REQ_LINK
+                // 新API返回格式：{ code: "0001", message: "操作成功", data: { playAddr, cover, pics, desc } }
+                console.log('[R插件][通用API调试] playAddr:', data.data?.playAddr);
+                console.log('[R插件][通用API调试] pics:', data.data?.pics);
                 return {
                     name: adapter.name,
-                    images: data.data?.imageUrl,
-                    video: data.data?.url,
+                    images: data.data?.pics?.length > 0 ? data.data.pics : undefined,
+                    video: data.data?.playAddr,
+                    desc: data.data?.desc
                 }
             } else if (sign === 2) {
                 // @link GENERAL_REQ_LINK_2
@@ -190,6 +199,14 @@ class GeneralLinkAdapter {
                 return {
                     name: adapter.name,
                     images: data?.images.map(item => item.url),
+                }
+            } else if (sign === 4) {
+                // @link PIPIXIA_API
+                console.log('[R插件][皮皮虾API调试] 原始数据:', JSON.stringify(data, null, 2));
+                return {
+                    name: adapter.name,
+                    images: data.data?.imgurl?.length > 0 ? data.data.imgurl : undefined,
+                    video: data.data?.url,
                 }
             } else {
                 throw Error("[R插件][通用解析]错误Sign标识");
