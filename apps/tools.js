@@ -2448,6 +2448,83 @@ export class tools extends plugin {
         try {
             const adapter = await GeneralLinkAdapter.create(e.msg);
             logger.debug(`[R插件][General Adapter Debug] Adapter object: ${JSON.stringify(adapter, null, 2)}`);
+
+            // 特殊处理皮皮虾 - 显示封面和标题
+            if (adapter.name === "皮皮虾" && adapter.videoInfo) {
+                const messagesToSend = [];
+                // 1. 封面图
+                if (adapter.cover) {
+                    messagesToSend.push(segment.image(adapter.cover));
+                }
+                // 2. 文字信息
+                const textMessages = [];
+                textMessages.push(`${this.identifyPrefix}识别：皮皮虾`);
+                textMessages.push(`👤作者：${adapter.author || '未知'}`);
+                if (adapter.desc) {
+                    textMessages.push(`📝标题：${adapter.desc}`);
+                }
+                const videoInfo = adapter.videoInfo;
+                if (videoInfo.stats) {
+                    const stats = videoInfo.stats;
+                    const statsText = `👍${stats.likes || 0} 💬${stats.comments || 0} 🔄${stats.shares || 0} 👁️${stats.views || 0}`;
+                    textMessages.push(`📊数据：${statsText}`);
+                }
+                messagesToSend.push(textMessages.join('\n'));
+
+                // 发送封面和信息
+                await e.reply(messagesToSend.flat());
+
+                // 3. 发送视频
+                if (adapter.video && adapter.video !== '') {
+                    const url = adapter.video;
+                    this.downloadVideo(url).then(path => {
+                        logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
+                        this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                    });
+                }
+
+                // 4. 发送评论（如果有）
+                logger.info(`[R插件][皮皮虾] 收到评论数据: ${adapter.comments?.length || 0} 条`);
+                if (adapter.comments && adapter.comments.length > 0) {
+                    const MAX_COMMENT_COUNT = 50;
+                    const commentForwardMsgs = adapter.comments.slice(0, MAX_COMMENT_COUNT).map(comment => {
+                        const userName = comment.user?.name || '匿名用户';
+                        const content = comment.content || '';
+                        const likeCount = comment.likeCount || 0;
+                        const replyCount = comment.replyCount || 0;
+
+                        // 格式化时间
+                        const createTime = comment.createTime ? new Date(comment.createTime * 1000).toLocaleString('zh-CN') : '';
+
+                        // 格式：评论内容 -> 时间+互动（用户名已在nickname中显示）
+                        let msgText = content;
+
+                        // 底部添加时间和互动数据
+                        const footer = [];
+                        if (createTime) footer.push(createTime);
+                        if (likeCount > 0 || replyCount > 0) {
+                            footer.push(`👍 ${likeCount} 💬 ${replyCount}`);
+                        }
+                        if (footer.length > 0) {
+                            msgText += `\n\n${footer.join(' ')}`;
+                        }
+
+                        return {
+                            message: { type: 'text', text: msgText },
+                            nickname: userName,
+                            user_id: comment.user?.id || e.user_id
+                        };
+                    });
+
+                    if (commentForwardMsgs.length > 0) {
+                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                    }
+                }
+
+                return true;
+            }
+
+            // 通用处理逻辑（非皮皮虾）
             e.reply(`${this.identifyPrefix}识别：${adapter.name}${adapter.desc ? `, ${adapter.desc}` : ''}`);
             logger.debug(adapter);
             logger.debug(`[R插件][General Adapter Debug] adapter.images: ${JSON.stringify(adapter.images)}`);
