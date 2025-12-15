@@ -1,7 +1,8 @@
 import {
     GENERAL_REQ_LINK,
     GENERAL_REQ_LINK_2,
-    GENERAL_REQ_LINK_3
+    GENERAL_REQ_LINK_3,
+    GENERAL_REQ_LINK_4
 } from "../constants/tools.js";
 
 /**
@@ -83,10 +84,10 @@ class GeneralLinkAdapter {
 
     async pipixia(link) {
         const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9_-]+/.exec(link)?.[0];
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
-        console.log('[R插件][皮皮虾解析] 提取的链接:', msg);
-        console.log('[R插件][皮皮虾解析] 使用API:', reqLink.link);
-        console.log('[R插件][皮皮虾解析] API标识 sign:', reqLink.sign);
+        // 皮皮虾使用通用解析API
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK_2, msg);
+        logger.mark('[R插件][皮皮虾解析] 提取的链接:', msg);
+        logger.mark('[R插件][皮皮虾解析] 使用API:', reqLink.link);
         return { name: "皮皮虾", reqLink };
     }
 
@@ -96,24 +97,22 @@ class GeneralLinkAdapter {
         return { name: "皮皮搞笑", reqLink };
     }
 
-    async tieba(link) {
-        const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(link)?.[0];
-        // 这里必须使用{ ...GENERAL_REQ_LINK_2 }赋值，不然就是对象的引用赋值，会造成全局数据问题！
-        // ！！！这里加了 '\?' 是因为 API 问题
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg + "\"?")
-        return { name: "贴吧", reqLink };
-    }
-
     async qqSmallWorld(link) {
         const msg = /https:\/\/s.xsj\.qq\.com\/[A-Za-z0-9]+/.exec(link)?.[0];
         const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
         return { name: "QQ小世界", reqLink };
     }
 
+    async tieba(link) {
+        const msg = /https:\/\/tieba\.baidu\.com\/p\/[A-Za-z0-9]+/.exec(link)?.[0];
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
+        return { name: "贴吧", reqLink };
+    }
+
     async jike(link) {
         // https://m.okjike.com/originalPosts/6583b4421f0812cca58402a6?s=ewoidSI6ICI1YTgzMTY4ZmRmNDA2MDAwMTE5N2MwZmQiCn0=
         const msg = /https:\/\/m.okjike.com\/originalPosts\/[A-Za-z0-9]+/.exec(link)?.[0];
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK_3, msg);
+        const reqLink = this.createReqLink(GENERAL_REQ_LINK, msg);
         return { name: "即刻", reqLink };
     }
 
@@ -151,12 +150,19 @@ class GeneralLinkAdapter {
     /**
      * 通用解析适配器，将其他的第三方接口转换为统一的接口
      * @param adapter  通用解析适配器
-     * @param sign     通用解析标识：1、2 【在适配器的reqLink中】
-     * @returns {Promise<void>}
+     * @param sign     通用解析标识
+     * @returns {Promise<object>}
      */
     async resolve(adapter, sign) {
+        // 通用解析日志 - 显示平台、API和请求格式
+        logger.mark(`[R插件][通用解析] ========== 开始解析 ==========`);
+        logger.mark(`[R插件][通用解析] 平台名称: ${adapter.name}`);
+        logger.mark(`[R插件][通用解析] Sign标识: ${sign}`);
+        logger.mark(`[R插件][通用解析] 请求URL: ${adapter.reqLink.link}`);
+        logger.mark(`[R插件][通用解析] ================================`);
+
         // 发送GET请求
-        return fetch(adapter.reqLink.link, {
+        const resp = await fetch(adapter.reqLink.link, {
             headers: {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
                 'Accept-Language': 'zh-CN,zh;q=0.9',
@@ -169,62 +175,130 @@ class GeneralLinkAdapter {
                 'Sec-Fetch-User': '?1',
                 'Upgrade-Insecure-Requests': '1',
                 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-
             },
             timeout: 10000
-        }).then(async resp => {
-            const data = await resp.json();
-            console.log('[R插件][通用API调试] 完整返回数据:', JSON.stringify(data, null, 2));
-            if (sign === 1) {
-                // @link GENERAL_REQ_LINK
-                // 新API返回格式：{ code: "0001", message: "操作成功", data: { playAddr, cover, pics, desc } }
-                console.log('[R插件][通用API调试] playAddr:', data.data?.playAddr);
-                console.log('[R插件][通用API调试] pics:', data.data?.pics);
-                return {
-                    name: adapter.name,
-                    images: data.data?.pics?.length > 0 ? data.data.pics : undefined,
-                    video: data.data?.playAddr,
-                    desc: data.data?.desc
-                }
-            } else if (sign === 2) {
-                // @link GENERAL_REQ_LINK_2
-                return {
-                    name: adapter.name,
-                    images: data.data?.images,
-                    video: data.data?.videoUrl,
-                    desc: data.data?.desc
-                }
-            } else if (sign === 3) {
-                console.log(data)
-                return {
-                    name: adapter.name,
-                    images: data?.images.map(item => item.url),
-                }
-            } else if (sign === 4) {
-                // @link PIPIXIA_API
-                console.log('[R插件][皮皮虾API调试] 原始数据:', JSON.stringify(data, null, 2));
-                return {
-                    name: adapter.name,
-                    images: data.data?.imgurl?.length > 0 ? data.data.imgurl : undefined,
-                    video: data.data?.url,
-                }
-            } else {
-                throw Error("[R插件][通用解析]错误Sign标识");
-            }
-        })
+        });
+
+        const data = await resp.json();
+        logger.mark(`[R插件][通用解析] API响应状态: ${resp.status}`);
+        logger.mark(`[R插件][通用解析] 完整返回数据: ${JSON.stringify(data, null, 2)}`);
+
+        // 检测API是否返回失败（code=-2/400/404 或 data为null）
+        const isApiSuccess = this.isApiResponseSuccess(data);
+
+        if (!isApiSuccess) {
+            logger.mark(`[R插件][通用解析] API返回失败或不支持，code=${data.code}, msg=${data.msg}`);
+            return {
+                name: adapter.name,
+                success: false,
+                code: data.code,
+                msg: data.msg
+            };
+        }
+
+        // 通用字段提取 - 适配所有API返回格式
+        const videoUrl = data.data?.url || data.data?.playAddr;
+        const images = data.data?.images?.length > 0 ? data.data.images :
+            (data.data?.imageUrl?.length > 0 ? data.data.imageUrl :
+                (data.data?.pics?.length > 0 ? data.data.pics :
+                    (data.data?.imgurl?.length > 0 ? data.data.imgurl : undefined)));
+        const desc = data.data?.title || data.data?.desc || '';
+
+        logger.mark(`[R插件][通用解析] Sign=${sign} 提取结果 - video: ${videoUrl}, images: ${images?.length || 0}, desc: ${desc}`);
+
+        return {
+            name: adapter.name,
+            success: true,
+            images: images,
+            video: videoUrl,
+            desc: desc
+        };
     }
 
     /**
-     * 通过工厂方式创建一个通用解析的JSON对象
+     * 检测API响应是否成功
+     * @param data API返回数据
+     * @returns {boolean}
+     */
+    isApiResponseSuccess(data) {
+        // 失败的code值列表
+        const failCodes = [-2, 400, 404, -1, 500];
+        if (failCodes.includes(data.code)) {
+            return false;
+        }
+        // 检查data是否为null或没有有效内容
+        if (!data.data || (data.data.url === undefined && data.data.images === undefined && data.data.imageUrl === undefined)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 通过工厂方式创建一个通用解析的JSON对象（支持API轮换）
      * @param link
      * @returns {Promise<*>}
      */
     static async create(link) {
-        // 先正则匹配到函数进行出策略处理
-        const adapter = await new GeneralLinkAdapter();
+        const adapter = new GeneralLinkAdapter();
         const adapterHandler = await adapter.init(link);
-        // 对处理完的信息进行通用解析
-        return adapter.resolve(adapterHandler, adapterHandler.reqLink.sign);
+
+        if (!adapterHandler) {
+            logger.mark(`[R插件][通用解析] 未匹配到任何平台处理器`);
+            return null;
+        }
+
+        // API轮换列表
+        const apiList = [
+            GENERAL_REQ_LINK,
+            GENERAL_REQ_LINK_2,
+            GENERAL_REQ_LINK_3,
+            GENERAL_REQ_LINK_4
+        ];
+
+        // 获取原始链接
+        const originalLink = adapterHandler.originalLink || adapterHandler.reqLink.link.split('content=')[1] || adapterHandler.reqLink.link.split('url=')[1];
+
+        // 尝试当前API
+        let result = await adapter.resolve(adapterHandler, adapterHandler.reqLink.sign);
+
+        // 如果成功或有视频/图片，直接返回
+        if (result.success && (result.video || result.images)) {
+            return result;
+        }
+
+        // 失败则轮换尝试其他API
+        logger.mark(`[R插件][通用解析] 主API失败，开始轮换尝试其他API...`);
+
+        for (const api of apiList) {
+            // 跳过已经尝试过的API
+            if (api.sign === adapterHandler.reqLink.sign) {
+                continue;
+            }
+
+            logger.mark(`[R插件][通用解析] 尝试备用API: ${api.link.split('?')[0]}... (sign=${api.sign})`);
+
+            // 构造新的请求链接
+            const backupReqLink = adapter.createReqLink(api, originalLink);
+            const backupAdapter = {
+                ...adapterHandler,
+                reqLink: backupReqLink
+            };
+
+            try {
+                result = await adapter.resolve(backupAdapter, api.sign);
+
+                if (result.success && (result.video || result.images)) {
+                    logger.mark(`[R插件][通用解析] 备用API成功！sign=${api.sign}`);
+                    return result;
+                }
+            } catch (err) {
+                logger.mark(`[R插件][通用解析] 备用API失败: ${err.message}`);
+            }
+        }
+
+        // 所有API都失败
+        logger.mark(`[R插件][通用解析] 所有API都无法解析此链接`);
+        return result;
     }
 }
 

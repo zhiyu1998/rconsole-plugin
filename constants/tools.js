@@ -167,31 +167,43 @@ export const TWITTER_TWEET_INFO = "https://api.twitter.com/2/tweets?ids={}";
 export const XHS_REQ_LINK = "https://www.xiaohongshu.com/explore/";
 
 /**
- * 通用解析的请求链接
- * 更新时间：2025-12-1
- * 支持平台：抖音、快手、巨量、新片场、tiktok、西瓜视频、今日头条、小红书、微视、
- * 火山小视频、陌陌视频、映客视频、小咖秀、开眼、全民小视频、全民K歌、最右、小影、微博、美拍、皮皮虾、巨量等
- * @type {string}
+ * 通用解析的请求链接1（主用）
+ * 更新时间：2025-12-15
+ * 支持平台：快手、西瓜视频、皮皮搞笑、QQ小世界、抖音动图、皮皮虾、即刻、贴吧等
+ * 返回格式：{ data: { url, imageUrl, title } }
+ * @type {object}
  */
 export const GENERAL_REQ_LINK = {
-    link: "https://proxy.layzz.cn/lyz/getAnalyse?token=uuic-qackd-fga-test&link={}",
+    link: "http://47.99.158.118/video-crack/v2/parse?content={}",
     sign: 1
 };
+
+/**
+ * 通用解析的请求链接2
+ * 返回格式：{ data: { url, images, title, author } }
+ * @type {object}
+ */
 export const GENERAL_REQ_LINK_2 = {
-    link: "https://acid.jiuzige.com.cn/web/index/analysis?url={}",
+    link: "https://api.jkyai.top/API/jhspjx.php?url={}",
     sign: 2
 };
 
+/**
+ * 通用解析的请求链接3
+ * 返回格式：{ data: { url, type } }
+ * @type {object}
+ */
 export const GENERAL_REQ_LINK_3 = {
-    link: "https://picseed.com/v1/parser?auth_key=1E9DC25C-E75F-11EE-A0DD-0A5A298C6C2D&content={}",
+    link: "https://api.yujn.cn/api/pipixia.php?url={}",
     sign: 3
 };
 
 /**
- * 皮皮虾解析API
- * @type {string}
+ * 通用解析的请求链接4（最慢，放最后）
+ * 返回格式：{ data: { url, imgurl } }
+ * @type {object}
  */
-export const PIPIXIA_API = {
+export const GENERAL_REQ_LINK_4 = {
     link: "https://api.bugpk.com/api/pipixia?url={}",
     sign: 4
 };
