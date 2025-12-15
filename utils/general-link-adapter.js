@@ -4,6 +4,7 @@ import {
     GENERAL_REQ_LINK_3,
     GENERAL_REQ_LINK_4
 } from "../constants/tools.js";
+import PipixiaScraper from "./pipixia-scraper.js";
 
 /**
  * 第三方接口适配器，用于大面积覆盖解析视频的内容
@@ -83,9 +84,8 @@ class GeneralLinkAdapter {
     }
 
     async pipixia(link) {
-        const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9_-]+/.exec(link)?.[0];
-        const reqLink = this.createReqLink(GENERAL_REQ_LINK_2, msg);
-        return { name: "皮皮虾", reqLink };
+        const msg = /https:\/\/h5\.pipix\.com\/(s|item|ppx\/item)\/[A-Za-z0-9_-]+/.exec(link)?.[0];
+        return { name: "皮皮虾", originalLink: msg, useNativeScraper: true };
     }
 
     async pipigx(link) {
@@ -235,19 +235,39 @@ class GeneralLinkAdapter {
             return null;
         }
 
-        // API轮换列表
-        const apiList = [
-            GENERAL_REQ_LINK,
-            GENERAL_REQ_LINK_2,
-            GENERAL_REQ_LINK_3,
-            GENERAL_REQ_LINK_4
-        ];
+        // 检查是否使用原生爬虫
+        if (adapterHandler.useNativeScraper && adapterHandler.name === "皮皮虾") {
+            logger.mark(`[R插件][通用解析] 平台: ${adapterHandler.name}, 使用原生爬虫`);
+            const scraper = new PipixiaScraper();
+            const scraperResult = await scraper.parse(adapterHandler.originalLink);
 
-        // 获取原始链接
-        const originalLink = adapterHandler.originalLink || adapterHandler.reqLink.link.split('content=')[1] || adapterHandler.reqLink.link.split('url=')[1];
+            if (scraperResult.success) {
+                // 原生爬虫成功，转换为统一格式
+                return {
+                    name: adapterHandler.name,
+                    success: true,
+                    video: scraperResult.video.url,
+                    desc: scraperResult.title,
+                    author: scraperResult.author.name,
+                    cover: scraperResult.video.cover,
+                    comments: scraperResult.comments || [],
+                    videoInfo: scraperResult
+                };
+            } else {
+                // 原生爬虫失败，降级到API
+                logger.mark(`[R插件][通用解析] 原生爬虫失败，降级到API: ${scraperResult.error}`);
+                // 创建API请求链接
+                const reqLink = adapter.createReqLink(GENERAL_REQ_LINK_2, adapterHandler.originalLink);
+                adapterHandler.reqLink = reqLink;
+                // 继续使用API逻辑
+            }
+        }
+
+        // API解析逻辑
+        const originalLink = adapterHandler.originalLink || adapterHandler.reqLink?.link.split('content=')[1] || adapterHandler.reqLink?.link.split('url=')[1];
 
         // 尝试当前API
-        let result = await adapter.resolve(adapterHandler, adapterHandler.reqLink.sign);
+        let result = await adapter.resolve(adapterHandler, adapterHandler.reqLink?.sign);
 
         // 如果成功或有视频/图片，直接返回
         if (result.success && (result.video || result.images)) {
@@ -255,6 +275,12 @@ class GeneralLinkAdapter {
         }
 
         // 失败则轮换尝试其他API
+        const apiList = [
+            GENERAL_REQ_LINK,
+            GENERAL_REQ_LINK_2,
+            GENERAL_REQ_LINK_3,
+            GENERAL_REQ_LINK_4
+        ];
 
         for (const api of apiList) {
             // 跳过已经尝试过的API
