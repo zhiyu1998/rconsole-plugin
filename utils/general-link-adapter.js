@@ -84,10 +84,7 @@ class GeneralLinkAdapter {
 
     async pipixia(link) {
         const msg = /https:\/\/h5\.pipix\.com\/(s|item)\/[A-Za-z0-9_-]+/.exec(link)?.[0];
-        // 皮皮虾使用通用解析API
         const reqLink = this.createReqLink(GENERAL_REQ_LINK_2, msg);
-        logger.mark('[R插件][皮皮虾解析] 提取的链接:', msg);
-        logger.mark('[R插件][皮皮虾解析] 使用API:', reqLink.link);
         return { name: "皮皮虾", reqLink };
     }
 
@@ -154,12 +151,8 @@ class GeneralLinkAdapter {
      * @returns {Promise<object>}
      */
     async resolve(adapter, sign) {
-        // 通用解析日志 - 显示平台、API和请求格式
-        logger.mark(`[R插件][通用解析] ========== 开始解析 ==========`);
-        logger.mark(`[R插件][通用解析] 平台名称: ${adapter.name}`);
-        logger.mark(`[R插件][通用解析] Sign标识: ${sign}`);
-        logger.mark(`[R插件][通用解析] 请求URL: ${adapter.reqLink.link}`);
-        logger.mark(`[R插件][通用解析] ================================`);
+        // 简洁日志
+        logger.mark(`[R插件][通用解析] 平台: ${adapter.name}, API: ${adapter.reqLink.link}`);
 
         // 发送GET请求
         const resp = await fetch(adapter.reqLink.link, {
@@ -180,14 +173,11 @@ class GeneralLinkAdapter {
         });
 
         const data = await resp.json();
-        logger.mark(`[R插件][通用解析] API响应状态: ${resp.status}`);
-        logger.mark(`[R插件][通用解析] 完整返回数据: ${JSON.stringify(data, null, 2)}`);
 
         // 检测API是否返回失败（code=-2/400/404 或 data为null）
         const isApiSuccess = this.isApiResponseSuccess(data);
 
         if (!isApiSuccess) {
-            logger.mark(`[R插件][通用解析] API返回失败或不支持，code=${data.code}, msg=${data.msg}`);
             return {
                 name: adapter.name,
                 success: false,
@@ -203,8 +193,6 @@ class GeneralLinkAdapter {
                 (data.data?.pics?.length > 0 ? data.data.pics :
                     (data.data?.imgurl?.length > 0 ? data.data.imgurl : undefined)));
         const desc = data.data?.title || data.data?.desc || '';
-
-        logger.mark(`[R插件][通用解析] Sign=${sign} 提取结果 - video: ${videoUrl}, images: ${images?.length || 0}, desc: ${desc}`);
 
         return {
             name: adapter.name,
@@ -267,7 +255,6 @@ class GeneralLinkAdapter {
         }
 
         // 失败则轮换尝试其他API
-        logger.mark(`[R插件][通用解析] 主API失败，开始轮换尝试其他API...`);
 
         for (const api of apiList) {
             // 跳过已经尝试过的API
@@ -275,7 +262,7 @@ class GeneralLinkAdapter {
                 continue;
             }
 
-            logger.mark(`[R插件][通用解析] 尝试备用API: ${api.link.split('?')[0]}... (sign=${api.sign})`);
+
 
             // 构造新的请求链接
             const backupReqLink = adapter.createReqLink(api, originalLink);
@@ -288,16 +275,15 @@ class GeneralLinkAdapter {
                 result = await adapter.resolve(backupAdapter, api.sign);
 
                 if (result.success && (result.video || result.images)) {
-                    logger.mark(`[R插件][通用解析] 备用API成功！sign=${api.sign}`);
                     return result;
                 }
             } catch (err) {
-                logger.mark(`[R插件][通用解析] 备用API失败: ${err.message}`);
+                // 备用API失败，继续尝试
             }
         }
 
         // 所有API都失败
-        logger.mark(`[R插件][通用解析] 所有API都无法解析此链接`);
+        logger.mark(`[R插件][通用解析] 所有API均无法解析: ${adapterHandler.name}`);
         return result;
     }
 }
