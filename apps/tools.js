@@ -347,6 +347,8 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
+        // 加载抖音图片分批阈值
+        this.douyinImageBatchThreshold = this.toolsConfig.douyinImageBatchThreshold || 50;
         // 加载小红书Cookie
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
@@ -678,13 +680,13 @@ export class tools extends plugin {
                 }));
 
                 let result;
-                if (imageUrls.length <= 50) {
-                    // ≤50张一次发送
+                if (imageUrls.length <= this.douyinImageBatchThreshold) {
+                    // 小于等于阈值一次发送
                     const forwardMsg = await Bot.makeForwardMsg(remoteImageList);
                     result = await e.reply(forwardMsg);
                 } else {
-                    // >50张分批发送
-                    const BATCH_SIZE = 50;
+                    // 超过阈值分批发送
+                    const BATCH_SIZE = this.douyinImageBatchThreshold;
                     let allSuccess = true;
 
                     for (let i = 0; i < imageUrls.length; i += BATCH_SIZE) {
@@ -766,12 +768,12 @@ export class tools extends plugin {
 
                     // 发送下载后的图片
                     if (messageSegments.length > 0) {
-                        if (messageSegments.length <= 50) {
+                        if (messageSegments.length <= this.douyinImageBatchThreshold) {
                             const forwardMsg = await Bot.makeForwardMsg(messageSegments);
                             await e.reply(forwardMsg);
                             logger.info(`[R插件][抖音图片] 发送${messageSegments.length}张图片（已添加随机字节）`);
                         } else {
-                            const BATCH_SIZE = 50;
+                            const BATCH_SIZE = this.douyinImageBatchThreshold;
                             const batches = [];
 
                             for (let i = 0; i < messageSegments.length; i += BATCH_SIZE) {
