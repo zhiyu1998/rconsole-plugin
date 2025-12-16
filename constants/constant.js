@@ -31,6 +31,7 @@ export const douyinTypeMap = {
     55: "video",
     58: "video",
     61: "video",
+    109: "video",
     150: "image",
 };
 
