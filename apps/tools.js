@@ -10,6 +10,7 @@ import path from "path";
 import qrcode from "qrcode";
 import querystring from "querystring";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
+import { replyWithRetry } from "../utils/retry.js";
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
@@ -1220,13 +1221,15 @@ export class tools extends plugin {
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
             };
-            await e.reply(Bot.makeForwardMsg(origin_image_urls.map(item => {
+            const imageMessages = origin_image_urls.map(item => {
                 return {
                     message: segment.image(item),
                     nickname: e.sender.card || e.user_id,
                     user_id: e.user_id,
                 };
-            }).concat(titleMsg)));
+            }).concat(titleMsg);
+
+            await replyWithRetry(e, Bot, Bot.makeForwardMsg(imageMessages));
         }
     }
 
@@ -1501,15 +1504,12 @@ export class tools extends plugin {
                 // 处理图片消息
                 if (resp.dynamicSrc.length > 0) {
                     if (resp.dynamicSrc.length > this.globalImageLimit) {
-                        let dynamicSrcMsg = [];
-                        resp.dynamicSrc.forEach(item => {
-                            dynamicSrcMsg.push({
-                                message: segment.image(item),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                            });
-                        });
-                        await e.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
+                        const dynamicSrcMsg = resp.dynamicSrc.map(item => ({
+                            message: segment.image(item),
+                            nickname: e.sender.card || e.user_id,
+                            user_id: e.user_id,
+                        }));
+                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(dynamicSrcMsg));
                     } else {
                         const images = resp.dynamicSrc.map(item => segment.image(item));
                         await e.reply(images);
@@ -1670,7 +1670,8 @@ export class tools extends plugin {
                     });
                 });
             });
-            await e.reply(await Bot.makeForwardMsg(images));
+            await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
+
             // 清理文件
             path.forEach(item => {
                 fs.unlinkSync(item);
@@ -1903,11 +1904,11 @@ export class tools extends plugin {
                 }));
 
                 // 回复带有转发消息的图片数据
-                e.reply(await Bot.makeForwardMsg(imagesData));
+                await replyWithRetry(e, Bot, await Bot.makeForwardMsg(imagesData));
             } else {
                 // 如果图片数量小于限制，直接发送图片
                 const images = await Promise.all(paths.map(async (item) => segment.image(await fs.promises.readFile(item))));
-                e.reply(images);
+                await e.reply(images);
             }
 
             // 批量删除下载的文件
@@ -1940,9 +1941,9 @@ export class tools extends plugin {
             await getBodianAudio(id, path, `${name}-${artist}`).then(sendPath => {
                 // 发送语音
                 e.reply(segment.record(sendPath));
-                // 上传群文件
+                // Upload group file
                 this.uploadGroupFile(e, sendPath);
-                // 删除文件
+                // Delete file
                 checkAndRemoveFile(sendPath);
             });
         } else if (e.msg.includes("mvId")) {
@@ -2486,7 +2487,7 @@ export class tools extends plugin {
         axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
                 "cookie": this.weiboCookie,
                 "Referer": `https://m.weibo.cn/detail/${id}`,
             }
@@ -2520,11 +2521,13 @@ export class tools extends plugin {
                     // 等待所有图片处理完
                     const images = await Promise.all(imagesPromise);
 
+
                     // 大于判定数量则回复合并的消息
-                    if (images.length > this.globalImageLimit)
-                        await e.reply(await Bot.makeForwardMsg(images));
-                    else
+                    if (images.length > this.globalImageLimit) {
+                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
+                    } else {
                         await e.reply(images.map(item => item.message));
+                    }
 
                     // 并行删除文件
                     await Promise.all(images.map(({ filePath }) => checkAndRemoveFile(filePath)));
@@ -2538,7 +2541,7 @@ export class tools extends plugin {
                         // wb 视频只能强制使用 1，由群友@非酋提出
                         this.downloadVideo(videoUrl, false, {
                             "User-Agent": COMMON_USER_AGENT,
-                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
                             "referer": "https://weibo.com/",
                         }, 1).then(path => {
                             this.sendVideoToUpload(e, `${path}/temp.mp4`);
@@ -2635,7 +2638,7 @@ export class tools extends plugin {
                     });
 
                     if (commentForwardMsgs.length > 0) {
-                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(commentForwardMsgs));
                     }
                 }
 
@@ -2709,7 +2712,7 @@ export class tools extends plugin {
                 // 发送合并转发
                 if (messageSegments.length > 0) {
                     const forwardMsg = await Bot.makeForwardMsg(messageSegments);
-                    await e.reply(forwardMsg);
+                    await replyWithRetry(e, Bot, forwardMsg);
 
                     // 删除临时文件（静默删除）
                     await Promise.all(downloadedFilePaths.map(fp => checkAndRemoveFile(fp)));
@@ -2876,7 +2879,7 @@ export class tools extends plugin {
                             user_id: this.e.user_id,
                         };
                     });
-                    e.reply(Bot.makeForwardMsg(replyImages));
+                    await replyWithRetry(e, Bot, Bot.makeForwardMsg(replyImages));
                 } else {
                     const imageSegments = images.map(item => segment.image(item));
                     e.reply(imageSegments);
@@ -2972,7 +2975,7 @@ export class tools extends plugin {
             const html = response.data;
 
             const videoUrlRegex = /fullscreen="false" src="(.*?)"/;
-            const videoTitleRegex = /:<\/span><h1>(.*?)<\/h1><\/div><div class=/;
+            const videoTitleRegex = /:<\/span><h1>(.*?)<\/h1><\/div><div=/;
             const videoCoverRegex = /poster="(.*?)"/;
             const videoAuthorRegex = /<span class="SharePostCard__name">(.*?)<\/span>/;
 
@@ -3009,7 +3012,7 @@ export class tools extends plugin {
                         user_id: this.e.user_id,
                     };
                 });
-                e.reply(Bot.makeForwardMsg(replyImages));
+                await replyWithRetry(e, Bot, Bot.makeForwardMsg(replyImages));
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
                 this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
@@ -3173,7 +3176,7 @@ export class tools extends plugin {
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
                 // 将总结内容格式化为合并转发消息
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
-                await e.reply(Msg);
+                await replyWithRetry(e, Bot, Msg);
             } catch (error) {
                 e.reply(`总结失败: ${error.message}`);
             }
@@ -3225,7 +3228,7 @@ export class tools extends plugin {
                 const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
-                await e.reply(Msg);
+                await replyWithRetry(e, Bot, Msg);
                 return false;
             }
         }
@@ -3246,7 +3249,7 @@ export class tools extends plugin {
         e.reply(`${this.identifyPrefix}识别：${name} - ${titleMatch}，正在为您总结，请稍等...`, true);
         const summary = await deepSeekChat(content, SUMMARY_PROMPT);
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x DeepSeek」联合为您总结内容：`, summary]));
-        await e.reply(Msg);
+        await replyWithRetry(e, Bot, Msg);
     }
 
     // q q m u s i c 解析
@@ -3380,7 +3383,7 @@ export class tools extends plugin {
                     user_id: e.user_id,
                 };
             });
-            e.reply(await Bot.makeForwardMsg(imagesData), true, { recallMsg: MESSAGE_RECALL_TIME });
+            await replyWithRetry(e, Bot, await Bot.makeForwardMsg(imagesData), true, { recallMsg: MESSAGE_RECALL_TIME });
         } else if (mediaFiles.videos.length > 0) {
             for (const item of mediaFiles.videos) {
                 await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
@@ -3437,11 +3440,31 @@ export class tools extends plugin {
             }
         }
         e.reply(sendContent, true);
-        extractImages && e.reply(Bot.makeForwardMsg(extractImages.map(item => ({
-            message: item,
-            nickname: e.sender.card || e.user_id,
-            user_id: e.user_id,
-        }))));
+        if (extractImages && extractImages.length > 0) {
+            const imageMessages = extractImages.map(item => ({
+                message: item,
+                nickname: e.sender.card || e.user_id,
+                user_id: e.user_id,
+            }));
+            const result = await e.reply(Bot.makeForwardMsg(imageMessages));
+
+            // 检测发送失败，尝试重试
+            if (!result || !result.message_id) {
+                // 提取远程URL
+                const imageUrls = extractImages.map(img => {
+                    // extractImages中每项是segment.image(cdn_src)的结果
+                    // segment.image返回的是{type: 'image', data: {file: url}}
+                    return img.data.file;
+                });
+                await retryImageSend(e, Bot, imageUrls, './data/rcmp4/', (paths) => {
+                    return paths.map(p => ({
+                        message: segment.image(p),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    }));
+                }, segment);
+            }
+        }
         // 切除楼主的消息
         const others = postList.slice(1);
         // 贴吧楼层的消息处理：如果响应中有其他帖子，代码创建一条转发消息，包含其他帖子的内容，并回复原始消息
@@ -3738,7 +3761,7 @@ export class tools extends plugin {
                                     nickname: this.e.sender.card || this.e.user_id,
                                     user_id: this.e.user_id,
                                 }];
-                                await e.reply(await Bot.makeForwardMsg(postContentForwardMsgs));
+                                await replyWithRetry(e, Bot, await Bot.makeForwardMsg(postContentForwardMsgs));
                             }
                         } else {
                             // 图文分离的情况
@@ -3762,7 +3785,7 @@ export class tools extends plugin {
                                         nickname: this.e.sender.card || this.e.user_id,
                                         user_id: this.e.user_id
                                     }];
-                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
                                 } else {
                                     imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
                                     await e.reply(messagesToSend.flat());
@@ -3771,7 +3794,7 @@ export class tools extends plugin {
                                         nickname: this.e.sender.card || this.e.user_id,
                                         user_id: this.e.user_id
                                     }];
-                                    await e.reply(await Bot.makeForwardMsg(textForwardMsg));
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(textForwardMsg));
                                 }
                             } else {
                                 // 无有效文本
@@ -3783,7 +3806,7 @@ export class tools extends plugin {
                                         nickname: this.e.sender.card || this.e.user_id,
                                         user_id: this.e.user_id
                                     }];
-                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
                                 } else {
                                     imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
                                     await e.reply(messagesToSend.flat());
@@ -3838,7 +3861,7 @@ export class tools extends plugin {
                         }
                     }
                     if (commentForwardMsgs.length > 0) {
-                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(commentForwardMsgs));
                     }
                 }
             } catch (error) {
@@ -4087,7 +4110,7 @@ export class tools extends plugin {
                     forwardMessages.push(combinedImageMessage);
                 }
                 // 发送合并后的转发消息
-                await e.reply(await Bot.makeForwardMsg(forwardMessages));
+                await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMessages));
 
                 // 发送游戏视频
                 const video = data.screenshots?.find(m => m.type === 'movie');

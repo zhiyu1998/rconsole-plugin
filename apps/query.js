@@ -2,6 +2,7 @@ import axios from "axios";
 import fetch from "node-fetch";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
+import { replyWithRetry } from "../utils/retry.js";
 
 export class query extends plugin {
 
@@ -42,7 +43,7 @@ export class query extends plugin {
 
     async doctor(e) {
         const keyword = e.msg.replace("#医药查询", "").trim();
-        const url = `https://server.dayi.org.cn/api/search2?keyword=${ keyword }&pageNo=1&pageSize=10`;
+        const url = `https://server.dayi.org.cn/api/search2?keyword=${keyword}&pageNo=1&pageSize=10`;
         try {
             const res = await fetch(url)
                 .then(resp => resp.json())
@@ -51,8 +52,8 @@ export class query extends plugin {
             for (let element of res) {
                 const title = this.removeTag(element.title);
                 const thumbnail = element?.thumbnail || element?.auditDoctor?.thumbnail;
-                const doctor = `\n\n👨‍⚕️ 医生信息：${ element?.auditDoctor?.name } - ${ element?.auditDoctor?.clinicProfessional } - ${ element?.auditDoctor?.eduProfessional } - ${ element?.auditDoctor?.institutionName } - ${ element?.auditDoctor?.institutionLevel } - ${ element?.auditDoctor?.departmentName }`
-                const template = `📌 ${ title } - ${ element.secondTitle }${ element?.auditDoctor ? doctor : '' }\n\n📝 简介：${ element.introduction }`;
+                const doctor = `\n\n👨‍⚕️ 医生信息：${element?.auditDoctor?.name} - ${element?.auditDoctor?.clinicProfessional} - ${element?.auditDoctor?.eduProfessional} - ${element?.auditDoctor?.institutionName} - ${element?.auditDoctor?.institutionLevel} - ${element?.auditDoctor?.departmentName}`
+                const template = `📌 ${title} - ${element.secondTitle}${element?.auditDoctor ? doctor : ''}\n\n📝 简介：${element.introduction}`;
                 if (thumbnail) {
                     msg.push({
                         message: [segment.image(thumbnail), { type: "text", text: template, }],
@@ -70,7 +71,7 @@ export class query extends plugin {
                     })
                 }
             }
-            e.reply(await Bot.makeForwardMsg(msg));
+            await replyWithRetry(e, Bot, await Bot.makeForwardMsg(msg));
         } catch (err) {
             logger.error(err);
         }
@@ -79,8 +80,8 @@ export class query extends plugin {
 
     async cat(e) {
         const [shibes, cats] = await Promise.allSettled([
-            fetch(`https://shibe.online/api/cats?count=${ CAT_LIMIT }`).then(data => data.json()),
-            fetch(`https://api.thecatapi.com/v1/images/search?limit=${ CAT_LIMIT }`).then(data =>
+            fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data => data.json()),
+            fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`).then(data =>
                 data.json(),
             ),
         ]);
@@ -96,7 +97,7 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        e.reply(await Bot.makeForwardMsg(images));
+        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
         return true;
     }
 
@@ -117,7 +118,7 @@ export class query extends plugin {
             .filter(result => result.status === "fulfilled") // 只保留已解决的 Promise
             .flatMap(result =>
                 result.value.data.list.map(element => {
-                    const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`;
+                    const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
                     return {
                         message: { type: "text", text: template },
                         nickname: e.sender.card || e.user_id,
@@ -166,7 +167,7 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        e.reply(await Bot.makeForwardMsg(images));
+        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
         return true;
     }
 
@@ -196,16 +197,16 @@ export class query extends plugin {
                     .sort((a, b) => b.luSort - a.luSort)
                     .map(item => {
                         const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
-                        const template = `标题：${ pn }\n${ pa }\n期刊：${ zn }\n发布日期距今：${ lu }\n链接1：${ pu }\n链接2：${ pq }\n\n 大致描述：${ hl
+                        const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl
                             .join("\n")
-                            .replace(/<\/?font[^>]*>/g, "") }`;
+                            .replace(/<\/?font[^>]*>/g, "")}`;
                         return {
                             message: [segment.image(aa), template],
                             nickname: this.e.sender.card || this.e.user_id,
                             user_id: this.e.user_id,
                         };
                     });
-                e.reply(await Bot.makeForwardMsg(content));
+                await replyWithRetry(e, Bot, await Bot.makeForwardMsg(content));
             });
         return true;
     }
