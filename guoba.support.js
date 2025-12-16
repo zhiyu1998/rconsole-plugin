@@ -355,6 +355,16 @@ export function supportGuoba() {
                     component: "Switch",
                     required: false,
                 },
+                {
+                    field: "tools.douyinImageBatchThreshold",
+                    label: "抖音图片分批阈值",
+                    bottomHelpMessage: "超过此数量的图片将分批发送（默认50张），设置为0表示不限制",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入图片分批阈值（默认50）",
+                    },
+                },
 
                 // ==================== 油管YouTube ====================
                 {
