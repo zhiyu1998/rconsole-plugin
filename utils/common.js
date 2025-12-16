@@ -42,7 +42,7 @@ export async function downloadAudio(mp3Url, filePath, title = "temp", redirect =
     await mkdirIfNotExists(filePath)
 
     // 补充保存文件名
-    filePath += `/${ title }.${ audioType }`;
+    filePath += `/${title}.${audioType}`;
     if (fs.existsSync(filePath)) {
         logger.info(`音频已存在`);
         fs.unlinkSync(filePath);
@@ -69,7 +69,7 @@ export async function downloadAudio(mp3Url, filePath, title = "temp", redirect =
         });
 
     } catch (error) {
-        logger.error(`下载音乐失败，错误信息为: ${ error.message }`);
+        logger.error(`下载音乐失败，错误信息为: ${error.message}`);
         throw error;
     }
 }
@@ -86,14 +86,14 @@ export async function downloadAudio(mp3Url, filePath, title = "temp", redirect =
  * @returns {Promise<string>}
  */
 export async function downloadImg({
-                                      img,
-                                      dir,
-                                      fileName = "",
-                                      isProxy = false,
-                                      headersExt = {},
-                                      proxyInfo = {},
-                                      downloadMethod = 0,
-                                  }) {
+    img,
+    dir,
+    fileName = "",
+    isProxy = false,
+    headersExt = {},
+    proxyInfo = {},
+    downloadMethod = 0,
+}) {
     const downloadImgParams = {
         img,
         dir,
@@ -102,7 +102,7 @@ export async function downloadImg({
         headersExt,
         proxyInfo,
     }
-    logger.info(logger.yellow(`[R插件][图片下载] 当前使用的方法：${ BILI_DOWNLOAD_METHOD[downloadMethod].label }`));
+    logger.info(logger.yellow(`[R插件][图片下载] 当前使用的方法：${BILI_DOWNLOAD_METHOD[downloadMethod].label}`));
     if (downloadMethod === 0) {
         return normalDownloadImg(downloadImgParams);
     } else if (downloadMethod >= 1) {
@@ -122,17 +122,17 @@ export async function downloadImg({
  * @returns {Promise<string>}
  */
 async function normalDownloadImg({
-                                     img,
-                                     dir,
-                                     fileName = "",
-                                     isProxy = false,
-                                     headersExt = {},
-                                     proxyInfo = {}
-                                 }) {
+    img,
+    dir,
+    fileName = "",
+    isProxy = false,
+    headersExt = {},
+    proxyInfo = {}
+}) {
     if (fileName === "") {
         fileName = img.split("/").pop();
     }
-    const filepath = `${ dir }/${ fileName }`;
+    const filepath = `${dir}/${fileName}`;
     await mkdirIfNotExists(dir)
     const writer = fs.createWriteStream(filepath);
     const axiosConfig = {
@@ -166,7 +166,7 @@ async function normalDownloadImg({
             });
         });
     } catch (err) {
-        logger.error(`图片下载失败, 原因：${ err }`);
+        logger.error(`图片下载失败, 原因：${err}`);
     }
 }
 
@@ -183,14 +183,14 @@ async function normalDownloadImg({
  * @returns {Promise<unknown>}
  */
 async function downloadImgWithAria2({
-                                        img,
-                                        dir,
-                                        fileName = "",
-                                        isProxy = false,
-                                        headersExt = {},
-                                        proxyInfo = {},
-                                        numThread = 1,
-                                    }) {
+    img,
+    dir,
+    fileName = "",
+    isProxy = false,
+    headersExt = {},
+    proxyInfo = {},
+    numThread = 1,
+}) {
     if (fileName === "") {
         fileName = img.split("/").pop();
     }
@@ -198,30 +198,57 @@ async function downloadImgWithAria2({
     await mkdirIfNotExists(dir);
 
     // 构建 aria2c 命令
-    let aria2cCmd = `aria2c "${ img }" --dir="${ dir }" --out="${ fileName }" --max-connection-per-server=${ numThread } --split=${ numThread } --min-split-size=1M --continue`;
+    let aria2cCmd = `aria2c "${img}" --dir="${dir}" --out="${fileName}" --max-connection-per-server=${numThread} --split=${numThread} --min-split-size=1M --continue`;
 
     // 如果需要代理
     if (isProxy) {
-        aria2cCmd += ` --all-proxy="http://${ proxyInfo.proxyAddr }:${ proxyInfo.proxyPort }"`;
+        aria2cCmd += ` --all-proxy="http://${proxyInfo.proxyAddr}:${proxyInfo.proxyPort}"`;
     }
 
     // 添加自定义headers
     if (headersExt && Object.keys(headersExt).length > 0) {
         for (const [headerName, headerValue] of Object.entries(headersExt)) {
-            aria2cCmd += ` --header="${ headerName }: ${ headerValue }"`;
+            aria2cCmd += ` --header="${headerName}: ${headerValue}"`;
         }
     }
 
     return new Promise((resolve, reject) => {
         exec(aria2cCmd, (error, stdout, stderr) => {
             if (error) {
-                logger.error(`图片下载失败, 原因：${ error.message }`);
+                logger.error(`图片下载失败, 原因：${error.message}`);
                 reject(error);
                 return;
             }
             resolve(filepath);
         });
     });
+}
+
+/**
+ * 批量下载图片到本地
+ * @param {Array<string>} imageUrls - 图片URL数组
+ * @param {string} dir - 保存目录
+ * @returns {Promise<Array<string>>} 返回下载后的本地路径数组
+ */
+export async function downloadImagesLocally(imageUrls, dir) {
+    await mkdirIfNotExists(dir);
+    const downloadPromises = imageUrls.map(async (url, index) => {
+        try {
+            const fileName = `temp_${index}_${Date.now()}.jpg`;
+            const filePath = await normalDownloadImg({
+                img: url,
+                dir: dir,
+                fileName: fileName
+            });
+            return filePath;
+        } catch (error) {
+            logger.error(`[R插件][批量图片下载] 下载失败: ${url}, 错误: ${error.message}`);
+            return null;
+        }
+    });
+
+    const results = await Promise.all(downloadPromises);
+    return results.filter(path => path !== null);
 }
 
 /**
@@ -239,7 +266,7 @@ const dataProcessing = data => {
  * @return {string}
  */
 export function formatBiliInfo(data) {
-    return Object.keys(data).map(key => `${ key }：${ dataProcessing(data[key]) }`).join(' | ');
+    return Object.keys(data).map(key => `${key}：${dataProcessing(data[key])}`).join(' | ');
 }
 
 /**
@@ -258,7 +285,7 @@ export function secondsToTime(seconds) {
     // return `${pad(minutes, 2)}:${pad(secs, 2)}`;
 
     // 完整的 HH:MM:SS 格式
-    return `${ pad(hours, 2) }:${ pad(minutes, 2) }:${ pad(secs, 2) }`;
+    return `${pad(hours, 2)}:${pad(minutes, 2)}:${pad(secs, 2)}`;
 }
 
 /**
@@ -306,7 +333,7 @@ export function truncateString(inputString, maxLength = 50) {
  */
 export async function testProxy(host = '127.0.0.1', port = 7890) {
     // 创建一个代理隧道
-    const httpsAgent = new HttpsProxyAgent(`http://${ host }:${ port }`);
+    const httpsAgent = new HttpsProxyAgent(`http://${host}:${port}`);
 
     try {
         // 通过代理服务器发起请求
@@ -322,7 +349,7 @@ export async function testProxy(host = '127.0.0.1', port = 7890) {
 export function formatSeconds(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${ minutes }分${ remainingSeconds }秒`;
+    return `${minutes}分${remainingSeconds}秒`;
 }
 
 /**
@@ -341,7 +368,7 @@ export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) 
         return response.data;
     } catch (error) {
         if (retries > 0) {
-            logger.mark(`[R插件][重试模块]重试中... (${ 3 - retries + 1 }/3) 次`);
+            logger.mark(`[R插件][重试模块]重试中... (${3 - retries + 1}/3) 次`);
             await new Promise(resolve => setTimeout(resolve, delay));
             return retryAxiosReq(requestFunction, retries - 1, delay);
         } else {
@@ -412,15 +439,15 @@ export function estimateReadingTime(text, wpm = 200) {
 export function checkToolInCurEnv(someCommand) {
     // 根据操作系统选择命令
     return new Promise((resolve, reject) => {
-        const command = os.platform() === 'win32' ? `where ${ someCommand }` : `which ${ someCommand }`;
+        const command = os.platform() === 'win32' ? `where ${someCommand}` : `which ${someCommand}`;
 
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                logger.error(`[R插件][命令环境检测]未找到${ someCommand }: ${ stderr || error.message }`);
+                logger.error(`[R插件][命令环境检测]未找到${someCommand}: ${stderr || error.message}`);
                 resolve(false);
                 return;
             }
-            logger.info(`[R插件][命令环境检测]找到${ someCommand }: ${ stdout.trim() }`);
+            logger.info(`[R插件][命令环境检测]找到${someCommand}: ${stdout.trim()}`);
             resolve(true);
         });
     });
@@ -469,7 +496,7 @@ export function cleanFilename(filename) {
  */
 export async function urlTransformShortLink(url) {
     const data = {
-        url: `${ encodeURI(url) }`
+        url: `${encodeURI(url)}`
     };
 
     const resp = await fetch(SHORT_LINKS, {

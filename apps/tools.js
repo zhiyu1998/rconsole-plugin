@@ -111,7 +111,7 @@ import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
-import { textArrayToMakeForward } from "../utils/yunzai-util.js";
+import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles } from "../utils/yunzai-util.js";
 import { getApiParams } from "../utils/xiaoheihe.js";
 
 /**
@@ -666,23 +666,139 @@ export class tools extends plugin {
             } else if (urlType === "image") {
                 // 发送描述
                 e.reply(`${this.identifyPrefix}识别：抖音, ${item.desc}`);
-                // 无水印图片列表
-                let no_watermark_image_list = [];
-                // 有水印图片列表
-                // let watermark_image_list = [];
-                for (let i of item.images) {
-                    // 无水印图片列表
-                    no_watermark_image_list.push({
-                        message: segment.image(i.url_list[0]),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    });
-                    // 有水印图片列表
-                    // watermark_image_list.push(i.download_url_list[0]);
-                    // e.reply(segment.image(i.url_list[0]));
+
+                // 提取无水印图片URL列表
+                const imageUrls = item.images.map(i => i.url_list[0]);
+
+                // 先尝试用远程URL直接发送
+                const remoteImageList = imageUrls.map(url => ({
+                    message: segment.image(url),
+                    nickname: this.e.sender.card || this.e.user_id,
+                    user_id: this.e.user_id,
+                }));
+
+                let result;
+                if (imageUrls.length <= 50) {
+                    // ≤50张一次发送
+                    const forwardMsg = await Bot.makeForwardMsg(remoteImageList);
+                    result = await e.reply(forwardMsg);
+                } else {
+                    // >50张分批发送
+                    const BATCH_SIZE = 50;
+                    let allSuccess = true;
+
+                    for (let i = 0; i < imageUrls.length; i += BATCH_SIZE) {
+                        const batch = remoteImageList.slice(i, i + BATCH_SIZE);
+                        const forwardMsg = await Bot.makeForwardMsg(batch);
+                        const batchResult = await e.reply(forwardMsg);
+
+                        if (!batchResult || !batchResult.message_id) {
+                            allSuccess = false;
+                            break;
+                        }
+                    }
+
+                    result = allSuccess ? { message_id: true } : null;
                 }
-                // console.log(no_watermark_image_list)
-                await e.reply(await Bot.makeForwardMsg(no_watermark_image_list));
+
+                // 检测发送结果，如果失败则下载到本地添加随机字节后重试
+                if (!result || !result.message_id) {
+                    logger.warn(`[R插件][抖音图片] 远程URL发送失败，下载到本地添加随机字节后重试`);
+
+                    const downloadPath = this.getCurDownloadPath(e);
+                    await mkdirIfNotExists(downloadPath);
+                    const messageSegments = [];
+                    const downloadedFilePaths = [];
+
+                    logger.info(`[R插件][抖音图片] 开始并发下载 ${imageUrls.length} 张图片...`);
+
+                    // 并发下载所有图片并添加随机字节
+                    const downloadPromises = imageUrls.map(async (imageUrl, index) => {
+                        try {
+                            const fileName = `douyin_img_${index}.jpg`;
+                            const filePath = `${downloadPath}/${fileName}`;
+
+                            // 使用 arraybuffer 下载以便添加随机字节
+                            const response = await axios({
+                                method: 'get',
+                                url: imageUrl,
+                                responseType: 'arraybuffer',
+                                timeout: 30000
+                            });
+
+                            // 添加随机字节到图片末尾，绕过QQ的图片hash检测（风控）
+                            const imageBuffer = Buffer.from(response.data);
+                            const randomBytes = Buffer.from([
+                                Math.floor(Math.random() * 256),
+                                Math.floor(Math.random() * 256),
+                                Math.floor(Math.random() * 256),
+                                index % 256,  // 使用index确保每张图片不同
+                                Date.now() % 256
+                            ]);
+                            const modifiedBuffer = Buffer.concat([imageBuffer, randomBytes]);
+
+                            // 写入文件
+                            await fs.promises.writeFile(filePath, modifiedBuffer);
+
+                            return {
+                                filePath,
+                                segment: {
+                                    message: segment.image(filePath),
+                                    nickname: this.e.sender.card || this.e.user_id,
+                                    user_id: this.e.user_id,
+                                }
+                            };
+                        } catch (error) {
+                            logger.error(`[R插件][抖音图片] 图片${index}下载失败: ${error.message}`);
+                            return null;
+                        }
+                    });
+
+                    const results = await Promise.all(downloadPromises);
+                    const successResults = results.filter(r => r !== null);
+
+                    successResults.forEach(r => {
+                        messageSegments.push(r.segment);
+                        downloadedFilePaths.push(r.filePath);
+                    });
+
+                    logger.info(`[R插件][抖音图片] 下载完成: ${downloadedFilePaths.length}/${imageUrls.length} 张`);
+
+                    // 发送下载后的图片
+                    if (messageSegments.length > 0) {
+                        if (messageSegments.length <= 50) {
+                            const forwardMsg = await Bot.makeForwardMsg(messageSegments);
+                            await e.reply(forwardMsg);
+                            logger.info(`[R插件][抖音图片] 发送${messageSegments.length}张图片（已添加随机字节）`);
+                        } else {
+                            const BATCH_SIZE = 50;
+                            const batches = [];
+
+                            for (let i = 0; i < messageSegments.length; i += BATCH_SIZE) {
+                                batches.push(messageSegments.slice(i, i + BATCH_SIZE));
+                            }
+
+                            for (let i = 0; i < batches.length; i++) {
+                                const batch = batches[i];
+                                const forwardMsg = await Bot.makeForwardMsg(batch);
+                                await e.reply(forwardMsg);
+                            }
+                            logger.info(`[R插件][抖音图片] 分${batches.length}批发送${messageSegments.length}张图片（已添加随机字节）`);
+                        }
+
+                        // 删除临时文件（静默删除）
+                        await Promise.all(downloadedFilePaths.map(async (fp) => {
+                            try {
+                                await fs.promises.unlink(fp);
+                            } catch (err) {
+                                // 忽略删除错误
+                            }
+                        }));
+                        logger.info(`[R插件][抖音图片] 已清理${downloadedFilePaths.length}张临时文件`);
+                    }
+                } else {
+                    logger.info(`[R插件][抖音图片] 成功发送${imageUrls.length}张图片（远程URL）`);
+                }
             }
             // 如果开启评论的就调用
             await this.douyinComment(e, douId, headers);
@@ -2539,14 +2655,64 @@ export class tools extends plugin {
                 });
             } else if (adapter.images && adapter.images.length > 0) {
                 logger.debug(`[R插件][General Adapter Debug] Entering image sending logic for ${adapter.name}`);
-                const images = adapter.images.map(item => {
-                    return {
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
+                logger.info(`[R插件][图片下载] 开始并发下载 ${adapter.images.length} 张图片...`);
+
+                const messageSegments = [];
+                const downloadedFilePaths = [];
+                const downloadPath = this.getCurDownloadPath(e);
+                await mkdirIfNotExists(downloadPath);
+
+                // 并发下载所有图片
+                const downloadPromises = adapter.images.map(async (imageUrl, index) => {
+                    try {
+                        const fileName = `temp_img_${index}.jpg`;
+                        const filePath = `${downloadPath}/${fileName}`;
+
+                        const response = await axios({
+                            method: 'get',
+                            url: imageUrl,
+                            responseType: 'stream'
+                        });
+                        const writer = fs.createWriteStream(filePath);
+                        response.data.pipe(writer);
+                        await new Promise((resolve, reject) => {
+                            writer.on('finish', resolve);
+                            writer.on('error', reject);
+                        });
+
+                        return {
+                            filePath,
+                            segment: {
+                                message: segment.image(filePath),
+                                nickname: this.e.sender.card || this.e.user_id,
+                                user_id: this.e.user_id,
+                            }
+                        };
+                    } catch (error) {
+                        logger.error(`[R插件][图片下载] 图片${index}下载失败: ${error.message}`);
+                        return null;
+                    }
                 });
-                e.reply(Bot.makeForwardMsg(images));
+
+                const results = await Promise.all(downloadPromises);
+                const successResults = results.filter(r => r !== null);
+
+                successResults.forEach(r => {
+                    messageSegments.push(r.segment);
+                    downloadedFilePaths.push(r.filePath);
+                });
+
+                logger.info(`[R插件][图片下载] 下载完成: ${downloadedFilePaths.length}/${adapter.images.length} 张`);
+
+                // 发送合并转发
+                if (messageSegments.length > 0) {
+                    const forwardMsg = await Bot.makeForwardMsg(messageSegments);
+                    await e.reply(forwardMsg);
+
+                    // 删除临时文件（静默删除）
+                    await Promise.all(downloadedFilePaths.map(fp => checkAndRemoveFile(fp)));
+                    logger.info(`[R插件][图片下载] 已清理临时文件`);
+                }
             } else {
                 logger.debug(`[R插件][General Adapter Debug] No images or video found for ${adapter.name}. Replying with failure message.`);
                 e.reply("解析失败：无法获取到资源");

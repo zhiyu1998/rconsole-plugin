@@ -148,8 +148,8 @@ export async function getReplyMsg(e) {
         "count": 1
     });
     let msgId = msgList.data.messages[0]?.message[0]?.data.id
-    let msg = await e.bot.sendApi("get_msg",{
-        "message_id" : msgId
+    let msg = await e.bot.sendApi("get_msg", {
+        "message_id": msgId
     })
     return msg.data
 }
@@ -192,4 +192,128 @@ export async function sendPrivateMsg(e, message) {
         user_id: e.user_id,
         message: message,
     })
+}
+
+/**
+ * 下载远程图片到本地并创建合并转发消息
+ * 解决远程URL图片过多时发送失败的问题，添加随机字节绕过QQ风控
+ * @param {object} e - 消息事件对象
+ * @param {string[]} imageUrls - 图片URL数组
+ * @param {string} downloadPath - 下载临时目录
+ * @param {object} options - 可选配置
+ * @param {string} options.nickname - 转发消息显示的昵称
+ * @param {number} options.userId - 转发消息显示的用户ID
+ * @returns {Promise<{forwardMsg: any, tempFiles: string[]}>} 返回合并消息和临时文件路径列表
+ */
+export async function downloadImagesAndMakeForward(e, imageUrls, downloadPath, options = {}) {
+    const { promises: fs } = await import("fs");
+    const path = await import("path");
+    const axios = (await import("axios")).default;
+
+    const nickname = options.nickname || e.sender?.card || e.user_id;
+    const userId = options.userId || e.user_id;
+    const tempFiles = [];
+    const forwardMsgList = [];
+
+    // 确保下载目录存在
+    try {
+        await fs.access(downloadPath);
+    } catch {
+        await fs.mkdir(downloadPath, { recursive: true });
+    }
+
+    // 并发下载所有图片
+    const downloadPromises = imageUrls.map(async (url, index) => {
+        try {
+            // 获取文件扩展名
+            let ext = '.jpg';
+            if (url.includes('.png')) ext = '.png';
+            else if (url.includes('.webp')) ext = '.webp';
+            else if (url.includes('.gif')) ext = '.gif';
+
+            const fileName = `forward_img_${index}${ext}`;
+            const filePath = path.default.join(downloadPath, fileName);
+
+            const response = await axios({
+                method: 'get',
+                url: url,
+                responseType: 'arraybuffer',
+                timeout: 30000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            });
+
+            // 添加随机字节到图片末尾，绕过QQ的图片hash检测（风控）
+            const imageBuffer = Buffer.from(response.data);
+            const randomBytes = Buffer.from([
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                Date.now() % 256
+            ]);
+            const modifiedBuffer = Buffer.concat([imageBuffer, randomBytes]);
+
+            await fs.writeFile(filePath, modifiedBuffer);
+            tempFiles.push(filePath);
+
+            return {
+                index,
+                filePath,
+                success: true
+            };
+        } catch (error) {
+            logger.error(`[R插件][图片下载] 下载失败: ${url}, 错误: ${error.message}`);
+            return {
+                index,
+                url,
+                success: false
+            };
+        }
+    });
+
+    const results = await Promise.all(downloadPromises);
+
+    // 按原始顺序构建消息列表
+    results.sort((a, b) => a.index - b.index);
+
+    for (const result of results) {
+        if (result.success) {
+            forwardMsgList.push({
+                message: segment.image(result.filePath),
+                nickname: nickname,
+                user_id: userId,
+            });
+        } else {
+            // 下载失败的仍使用远程URL
+            forwardMsgList.push({
+                message: segment.image(result.url),
+                nickname: nickname,
+                user_id: userId,
+            });
+        }
+    }
+
+    const forwardMsg = await Bot.makeForwardMsg(forwardMsgList);
+
+    return {
+        forwardMsg,
+        tempFiles
+    };
+}
+
+/**
+ * 清理临时文件列表
+ * @param {string[]} filePaths - 文件路径数组
+ */
+export async function cleanupTempFiles(filePaths) {
+    const { promises: fs } = await import("fs");
+    for (const filePath of filePaths) {
+        try {
+            await fs.unlink(filePath);
+        } catch (error) {
+            // 忽略删除失败的错误
+        }
+    }
 }
