@@ -39,37 +39,36 @@ export class query extends plugin {
 
     async doctor(e) {
         const keyword = e.msg.replace("#医药查询", "").trim();
-        const url = `https://server.dayi.org.cn/api/search2?keyword=${keyword}&pageNo=1&pageSize=10`;
+        const url = `https://server.dayi.org.cn/api/search?keyword=${encodeURIComponent(keyword)}&pageNo=1&pageSize=10`;
+        console.log(`[R插件][医药查询] 请求URL: ${url}`);
         try {
-            const res = await fetch(url)
-                .then(resp => resp.json())
-                .then(resp => resp.list);
-            let msg = [];
-            for (let element of res) {
-                const title = this.removeTag(element.title);
-                const thumbnail = element?.thumbnail || element?.auditDoctor?.thumbnail;
-                const doctor = `\n\n👨‍⚕️ 医生信息：${element?.auditDoctor?.name} - ${element?.auditDoctor?.clinicProfessional} - ${element?.auditDoctor?.eduProfessional} - ${element?.auditDoctor?.institutionName} - ${element?.auditDoctor?.institutionLevel} - ${element?.auditDoctor?.departmentName}`
-                const template = `📌 ${title} - ${element.secondTitle}${element?.auditDoctor ? doctor : ''}\n\n📝 简介：${element.introduction}`;
-                if (thumbnail) {
-                    msg.push({
-                        message: [segment.image(thumbnail), { type: "text", text: template, }],
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    });
-                } else {
-                    msg.push({
-                        message: {
-                            type: "text",
-                            text: template,
-                        },
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    })
-                }
+            // Node.js需要禁用SSL验证（该服务器证书有问题）
+            const { Agent } = await import('https');
+            const response = await axios.get(url, {
+                httpsAgent: new Agent({ rejectUnauthorized: false })
+            });
+            const res = response.data.list;
+
+            if (!res || res.length === 0) {
+                e.reply("未找到相关医药信息");
+                return true;
             }
+
+            let msg = res.map(element => {
+                const title = this.removeTag(element.title);
+                const intro = this.removeTag(element.introduction);
+                const template = `📌 ${title} - ${element.secondTitle}\n\n📝 简介：${intro}`;
+                return {
+                    message: { type: "text", text: template },
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            });
+
             await replyWithRetry(e, Bot, await Bot.makeForwardMsg(msg));
         } catch (err) {
-            logger.error(err);
+            console.error(`[R插件][医药查询] 请求失败:`, err.message);
+            e.reply("医药查询失败，请稍后重试");
         }
         return true;
     }
