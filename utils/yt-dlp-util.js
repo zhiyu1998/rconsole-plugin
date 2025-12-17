@@ -18,7 +18,7 @@ function constructProxyParam(isOversea, proxy) {
  * @returns {string}
  */
 function constructCookiePath(url, cookiePath) {
-    return (cookiePath !== "" && url.includes("youtu")) ? `--cookies ${ cookiePath }` : "";
+    return (cookiePath !== "" && url.includes("youtu")) ? `--cookies ${cookiePath}` : "";
 }
 
 /**
@@ -69,10 +69,33 @@ export function ytDlpGetTilt(url, isOversea, proxy, cookiePath = "") {
         const cookieParam = constructCookiePath(url, cookiePath);
         // 构造 编码 参数
         const encodingParam = constructEncodingParam(url);
-        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${ constructProxyParam(isOversea, proxy) } "${url}" ${encodingParam}`;
+        const command = `yt-dlp --get-title --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}" ${encodingParam}`;
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetTilt: ${error}. Stderr: ${stderr}`);
+                reject(error);
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+    });
+}
+
+/**
+ * 获取缩略图URL（不下载）
+ * @param url
+ * @param isOversea
+ * @param proxy
+ * @param cookiePath
+ * @returns string - 缩略图URL
+ */
+export function ytDlpGetThumbnailUrl(url, isOversea, proxy, cookiePath = "") {
+    return new Promise((resolve, reject) => {
+        const cookieParam = constructCookiePath(url, cookiePath);
+        const command = `yt-dlp --get-thumbnail --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}"`;
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetThumbnailUrl: ${error}. Stderr: ${stderr}`);
                 reject(error);
             } else {
                 resolve(stdout.trim());
@@ -147,10 +170,18 @@ export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outpu
             // e.g yt-dlp -x --audio-format mp3 https://youtu.be/5wEtefq9VzM -o test.mp3
             command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.flac" "${url}"`;
         } else {
-            // 正常情况下的处理逻辑
-            const fParam = url.includes("youtu") ? `--download-sections "*${timeRange}" -f "bv${graphics}[ext=mp4]+ba[ext=m4a]" ` : "";
+            // YouTube视频下载逻辑
+            // 使用 -S "codec" 按编码优先级排序：av01 > vp9.2 > vp9 > h265 > h264（官方默认）
+            // AV1编码文件更小且质量更好，yt-dlp会自动优先选择
+            // --merge-output-format mp4 确保最终输出为mp4格式
+            let formatSelector = "";
+            if (url.includes("youtu")) {
+                // graphics 包含画质限制如 [height<=720]
+                // -S "codec" 优先选择更好的编码（AV1 > VP9 > H.264）
+                formatSelector = `--download-sections "*${timeRange}" -f "bv*${graphics}+ba/b${graphics}" -S "codec" --merge-output-format mp4`;
+            }
 
-            command = `yt-dlp -N ${maxThreads} ${fParam} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" "${url}"`;
+            command = `yt-dlp -N ${maxThreads} ${formatSelector} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" "${url}"`;
         }
 
         logger.info(`[R插件][yt-dlp审计] ${command}`);

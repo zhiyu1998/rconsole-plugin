@@ -111,7 +111,7 @@ import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
-import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
+import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles } from "../utils/yunzai-util.js";
 import { getApiParams } from "../utils/xiaoheihe.js";
 
@@ -2757,63 +2757,58 @@ export class tools extends plugin {
 
             const path = this.getCurDownloadPath(e);
             const rawTitle = (await ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, '');
-            // 清理文件名并截断到10个字符
-            const safeTitlePrefix = cleanFilename(rawTitle).substring(0, 10);
 
-            // 使用安全标题作为文件名前缀
-            const videoFilename = `${safeTitlePrefix}.mp4`;
-            const audioFilename = `${safeTitlePrefix}.flac`;
-            const thumbnailFilenamePrefix = `${safeTitlePrefix}_thumbnail`;
+            // 使用固定文件名
+            const videoFilename = 'youtube.mp4';
+            const audioFilename = 'youtube.flac';
 
-            // 清理可能存在的旧文件或同名文件
+            // 获取缩略图URL（不下载到本地）
+            const thumbnailUrl = await ytDlpGetThumbnailUrl(url, isOversea, this.myProxy, this.youtubeCookiePath);
+
+            // 清理可能存在的旧文件
             await checkAndRemoveFile(`${path}/${videoFilename}`);
             await checkAndRemoveFile(`${path}/${audioFilename}`);
-            await checkAndRemoveFile(`${path}/${thumbnailFilenamePrefix}.png`);
-            // 下载缩略图并获取实际文件名
-            const actualThumbnailFilename = await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, thumbnailFilenamePrefix);
-            const fullThumbnailPath = `${path}/${actualThumbnailFilename}`;
-
 
             // 音频逻辑
             if (url.includes("music")) {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 const fullAudioPath = `${path}/${audioFilename}`;
                 if (this.isSendVocal) {
                     await e.reply(segment.record(fullAudioPath));
                 }
-                await this.uploadGroupFile(e, fullAudioPath); // uploadGroupFile 内部会删除 fullAudioPath
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
-                // 发送完就截断
+                await this.uploadGroupFile(e, fullAudioPath);
                 return;
             }
 
             // 下面为视频逻辑
             const Duration = convertToSeconds((await ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, ''));
-            // logger.info('时长------',Duration)
+
             if (Duration > this.youtubeDuration) {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                // 超时限制
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频时长超限 \n视频标题：${rawTitle}\n⌚${DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '')}⌚\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定解析时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
                 ]);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                // 截取模式
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${rawTitle}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`
                 ]);
-                // 注意：sendVideoToUpload 内部会删除视频文件，但不会删除缩略图
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else {
-                await replyWithRetry(e, Bot, [segment.image(fullThumbnailPath), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                // 正常下载
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
+                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
+                ]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             }
         } catch (error) {
             logger.error(error);
@@ -2892,7 +2887,7 @@ export class tools extends plugin {
                     if (resolutions) {
                         // 暂时选取分辨率较低的video进行解析
                         const videoUrl = resolutions[i].url;
-                        this.downloadVideo(videoUrl, false, null, this.videoDownloadConcurrency, 'youtube.mp4').then(videoPath => {
+                        this.downloadVideo(videoUrl, false, null, this.videoDownloadConcurrency, 'miyoushe.mp4').then(videoPath => {
                             this.sendVideoToUpload(e, videoPath);
                         });
                         break;

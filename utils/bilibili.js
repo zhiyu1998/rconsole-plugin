@@ -591,7 +591,8 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
                         if (priorityA !== priorityB) {
                             return priorityA - priorityB;
                         }
-                        return a.bandwidth - b.bandwidth;
+                        // 智能分辨率：同一编码下优先选择高码率（画质更好）
+                        return b.bandwidth - a.bandwidth;
                     });
 
                     // 尝试找到符合大小的流（优先AV1）
