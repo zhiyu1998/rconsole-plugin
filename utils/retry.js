@@ -2,6 +2,9 @@ import fs from 'fs/promises';
 import axios from 'axios';
 import path from 'path';
 
+// 媒体处理计数器（图片+视频）
+let processedMediaCount = 0;
+
 /**
  * 通用的reply包装函数，自动retry失败的图片发送
  * 
@@ -20,20 +23,27 @@ export async function replyWithRetry(e, Bot, message, ...args) {
         return result;
     }
 
-    console.warn('[R插件][Retry] 消息发送失败，尝试处理图片后重试');
+    console.warn('[R插件][Retry] 消息发送失败，尝试处理媒体后重试');
+
+    // 重置计数器
+    processedMediaCount = 0;
 
     try {
-        // 发送失败，检测并处理图片
-        const modifiedMessage = await processImages(message, Bot);
+        // 发送失败，检测并处理媒体
+        const modifiedMessage = await processMedia(message, Bot);
 
-        // 如果没有处理任何图片，直接返回失败
+        // 如果没有处理任何媒体，直接返回失败
         if (!modifiedMessage) {
-            console.error('[R插件][Retry] 未检测到可处理的图片');
+            console.error('[R插件][Retry] 未检测到可处理的媒体');
             return result;
         }
 
+        // 输出汇总日志
+        if (processedMediaCount > 0) {
+            console.log(`[R插件][Retry] 重发处理了 ${processedMediaCount} 个媒体文件`);
+        }
+
         // 用修改后的消息重新发送
-        console.log('[R插件][Retry] 正在用修改后的图片重新发送...');
         return await e.reply(modifiedMessage, ...args);
     } catch (error) {
         console.error('[R插件][Retry] 重试过程出错:', error.message);
@@ -42,9 +52,9 @@ export async function replyWithRetry(e, Bot, message, ...args) {
 }
 
 /**
- * 处理消息中的图片（下载远程URL或修改本地文件）
+ * 处理消息中的媒体（下载远程URL或修改本地文件）
  */
-async function processImages(message, Bot) {
+async function processMedia(message, Bot) {
     // 如果是makeForwardMsg的结果 (type: 'node')
     if (message?.type === 'node') {
         const modifiedData = await Promise.all(message.data.map(async (item) => {
@@ -74,31 +84,46 @@ async function processImages(message, Bot) {
         return await processMessageArray(message);
     }
 
-    // 单个segment
+    // 单个segment - 图片
     if (message?.type === 'image') {
         return await processSingleImage(message);
+    }
+
+    // 单个segment - 视频
+    if (message?.type === 'video') {
+        return await processSingleVideo(message);
     }
 
     return null;
 }
 
 /**
- * 处理单个segment（可能是图片或其他类型）
+ * 处理单个segment（可能是图片、视频、数组或其他类型）
  */
 async function processSingleSegment(segment) {
+    // 处理消息数组格式（如 [segment.image(url), "文本"]）
+    if (Array.isArray(segment)) {
+        return await processMessageArray(segment);
+    }
     if (segment?.type === 'image') {
         return await processSingleImage(segment);
+    }
+    if (segment?.type === 'video') {
+        return await processSingleVideo(segment);
     }
     return segment;
 }
 
 /**
- * 处理消息数组中的图片
+ * 处理消息数组中的媒体
  */
 async function processMessageArray(messages) {
     return await Promise.all(messages.map(async (msg) => {
         if (msg?.type === 'image') {
             return await processSingleImage(msg);
+        }
+        if (msg?.type === 'video') {
+            return await processSingleVideo(msg);
         }
         return msg;
     }));
@@ -153,7 +178,7 @@ async function downloadAndModify(url, originalSegment) {
     // 保存文件
     await fs.writeFile(filePath, modifiedBuffer);
 
-    console.log(`[R插件][Retry] 已下载并修改远程图片: ${filePath}`);
+    processedMediaCount++;
 
     // 返回修改后的segment
     return {
@@ -182,11 +207,64 @@ async function modifyLocalFile(localPath, originalSegment) {
     // 保存新文件
     await fs.writeFile(newFilePath, modifiedBuffer);
 
-    console.log(`[R插件][Retry] 已修改本地图片: ${newFilePath}`);
+    processedMediaCount++;
 
     // 返回修改后的segment
     return {
         ...originalSegment,
+        data: { ...originalSegment.data, file: newFilePath },
+        file: newFilePath
+    };
+}
+
+/**
+ * 处理单个视频segment
+ */
+async function processSingleVideo(videoSegment) {
+    const file = videoSegment.data?.file || videoSegment.file;
+
+    if (!file) return videoSegment;
+
+    try {
+        // 视频只处理本地文件（因为视频都是先下载到本地的）
+        // 移除 file:// 前缀
+        let localPath = file;
+        if (localPath.startsWith('file://')) {
+            localPath = localPath.replace('file://', '');
+        }
+
+        return await modifyLocalVideo(localPath, videoSegment);
+    } catch (error) {
+        console.error(`[R插件][Retry] 处理视频失败: ${error.message}`);
+        return videoSegment;
+    }
+}
+
+/**
+ * 修改本地视频文件并添加随机字节
+ */
+async function modifyLocalVideo(localPath, originalSegment) {
+    // 读取视频文件
+    const videoBuffer = await fs.readFile(localPath);
+
+    // 添加随机字节
+    const modifiedBuffer = addRandomBytes(videoBuffer);
+
+    // 生成新文件名
+    const ext = path.extname(localPath);
+    const basename = path.basename(localPath, ext);
+    const dirname = path.dirname(localPath);
+    const newFilePath = path.resolve(dirname, `${basename}_retry${ext}`);
+
+    // 保存新文件
+    await fs.writeFile(newFilePath, modifiedBuffer);
+
+    processedMediaCount++;
+
+    // 返回修改后的segment，使用新文件路径
+    return {
+        ...originalSegment,
+        type: 'video',
         data: { ...originalSegment.data, file: newFilePath },
         file: newFilePath
     };

@@ -468,7 +468,7 @@ export class tools extends plugin {
 
                     try {
                         if (downloadUrl.includes(".mp4") || downloadUrl.includes("video_id")) {
-                            fileName = `temp${index > 0 ? index : ''}.mp4`;
+                            fileName = `douyin_gif${index > 0 ? index : ''}.mp4`;
                             filePath = `${downloadPath}/${fileName}`;
                             logger.info(`[R插件][抖音动图] 下载视频: ${downloadUrl}`);
                             const response = await axios({
@@ -491,7 +491,7 @@ export class tools extends plugin {
                             downloadedFilePaths.push(filePath);
 
                         } else {
-                            fileName = `temp${index > 0 ? index : ''}.png`;
+                            fileName = `douyin_gif${index > 0 ? index : ''}.png`;
                             filePath = `${downloadPath}/${fileName}`;
                             logger.info(`[R插件][抖音动图] 下载图片: ${downloadUrl}`);
                             const response = await axios({
@@ -577,7 +577,7 @@ export class tools extends plugin {
             const item = webcastData.data.room;
             const { title, cover, user_count, stream_url } = item;
             const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-            e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
             // 下载10s的直播流
             await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
             return;
@@ -606,7 +606,7 @@ export class tools extends plugin {
                 const item = await data.data.data?.[0];
                 const { title, cover, user_count_str, stream_url } = item;
                 const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-                e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
                 // 下载10s的直播流
                 await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
                 return;
@@ -637,7 +637,7 @@ export class tools extends plugin {
                     // logger.info(cover.url_list);
                     dySendContent += `\n
                     ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
-                    e.reply([segment.image(dyCover), dySendContent]);
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
                     await this.douyinComment(e, douId, headers);
                     return;
@@ -661,10 +661,9 @@ export class tools extends plugin {
                 }*/
 
                 // logger.info(resUrl);
-                const path = `${this.getCurDownloadPath(e)}/temp.mp4`;
                 // 加入队列
-                await this.downloadVideo(resUrl).then(() => {
-                    this.sendVideoToUpload(e, path);
+                await this.downloadVideo(resUrl, false, null, this.videoDownloadConcurrency, 'douyin.mp4').then((videoPath) => {
+                    this.sendVideoToUpload(e, videoPath);
                 });
             } else if (urlType === "image") {
                 // 发送描述
@@ -1074,7 +1073,7 @@ export class tools extends plugin {
                 parent_area_name,
                 area_name
             } = liveData.data.data;
-            e.reply([
+            await replyWithRetry(e, Bot, [
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${this.identifyPrefix}识别：哔哩哔哩直播，${title}`,
@@ -1186,17 +1185,17 @@ export class tools extends plugin {
         if (isLimitDuration) {
             const durationInMinutes = (durationForCheck / 60).toFixed(0); // 使用 durationForCheck
             biliInfo.push(`${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${durationInMinutes}分钟，\n大于管理员设置的最大时长 ${(this.biliDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`);
-            e.reply(biliInfo);
+            await replyWithRetry(e, Bot, biliInfo);
             return true;
         } else {
-            e.reply(biliInfo);
+            await replyWithRetry(e, Bot, biliInfo);
         }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.startsWith("音乐")) {
             return await this.biliMusic(e, url);
         }
         // 下载文件
-        await this.biliDownloadStrategy(e, url, path, null, durationForCheck);
+        await this.biliDownloadStrategy(e, url, path, null, durationForCheck, bvid);
         return true;
     }
 
@@ -1374,7 +1373,7 @@ export class tools extends plugin {
             replyContent.push(`${DIVIDING_LINE.replace('{}', '限制说明')}\n当前${typeName}时长约：${durationMinutes}分钟，\n大于管理员设置的最大时长 ${limitMinutes} 分钟！`);
         }
 
-        e.reply(replyContent, true);
+        await replyWithRetry(e, Bot, replyContent);
 
         // 返回ep和番剧信息，用于文件命名，以及是否超限
         return {
@@ -1644,9 +1643,9 @@ export class tools extends plugin {
                     task.push(downloadImg(item.url, downloadPath, "", true));
                 } else if (item.type === "video") {
                     // 视频
-                    await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
-                        _ => {
-                            e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                    await this.downloadVideo(resp.includes.media[0].variants[0].url, true, null, this.videoDownloadConcurrency, 'twitter.mp4').then(
+                        videoPath => {
+                            e.reply(segment.video(videoPath));
                         },
                     );
                 }
@@ -1743,8 +1742,8 @@ export class tools extends plugin {
                 e.reply(segment.image(xImgPath));
             }
         } else {
-            this.downloadVideo(url, !isOversea).then(path => {
-                e.reply(segment.video(path + "/temp.mp4"));
+            this.downloadVideo(url, !isOversea, null, this.videoDownloadConcurrency, 'twitter.mp4').then(videoPath => {
+                e.reply(segment.video(videoPath));
             });
         }
         return true;
@@ -1862,19 +1861,18 @@ export class tools extends plugin {
         if (type === "video") {
             // 封面
             const cover = noteData.imageList?.[0].urlDefault;
-            e.reply([segment.image(cover), `${this.identifyPrefix}识别：小红书, ${title}\n${desc}`]);
+            await replyWithRetry(e, Bot, [segment.image(cover), `${this.identifyPrefix}识别：小红书, ${title}\n${desc}`]);
             // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
             const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
 
             // 构造无水印
             // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
             // 下载视频
-            this.downloadVideo(xhsVideoUrl).then(path => {
-                if (path === undefined) {
-                    // 创建文件，如果不存在
-                    path = `${this.getCurDownloadPath(e)}/`;
+            this.downloadVideo(xhsVideoUrl, false, null, this.videoDownloadConcurrency, 'xiaohongshu.mp4').then(videoPath => {
+                if (videoPath === undefined) {
+                    return;
                 }
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.sendVideoToUpload(e, videoPath);
             });
             return true;
         } else if (type === "normal") {
@@ -1950,8 +1948,8 @@ export class tools extends plugin {
             await getBodianMv(id).then(res => {
                 // 下载 && 发送
                 const { coverUrl, highUrl, lowUrl, shortLowUrl } = res;
-                this.downloadVideo(lowUrl).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
+                this.downloadVideo(lowUrl, false, null, this.videoDownloadConcurrency, 'bodian.mp4').then(videoPath => {
+                    e.reply(segment.video(videoPath));
                 });
             });
         }
@@ -2217,8 +2215,8 @@ export class tools extends plugin {
             e.reply([segment.image(mvCover), `${this.identifyPrefix}识别：网易云MV，${mvName} - ${mvArtist}`]);
             // logger.info(mvUrlData.data)
             const { url: mvUrl } = mvUrlData.data?.data;
-            this.downloadVideo(mvUrl).then(path => {
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+            this.downloadVideo(mvUrl, false, null, this.videoDownloadConcurrency, 'netease_mv.mp4').then(videoPath => {
+                this.sendVideoToUpload(e, videoPath);
             });
             return;
         }
@@ -2543,8 +2541,8 @@ export class tools extends plugin {
                             "User-Agent": COMMON_USER_AGENT,
                             "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
                             "referer": "https://weibo.com/",
-                        }, 1).then(path => {
-                            this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                        }, 1, 'weibo.mp4').then(path => {
+                            this.sendVideoToUpload(e, path);
                         });
                     } catch (err) {
                         e.reply("视频资源获取失败");
@@ -2598,9 +2596,9 @@ export class tools extends plugin {
                 // 3. 发送视频
                 if (adapter.video && adapter.video !== '') {
                     const url = adapter.video;
-                    this.downloadVideo(url).then(path => {
-                        logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
-                        this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                    this.downloadVideo(url, false, null, this.videoDownloadConcurrency, 'pipixia.mp4').then(videoPath => {
+                        logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${videoPath}`);
+                        this.sendVideoToUpload(e, videoPath);
                     });
                 }
 
@@ -2654,9 +2652,9 @@ export class tools extends plugin {
                 logger.debug(`[R插件][General Adapter Debug] Entering video sending logic for ${adapter.name}. Video URL: ${adapter.video}`);
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
                 const url = adapter.video;
-                this.downloadVideo(url).then(path => {
-                    logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
-                    this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.downloadVideo(url, false, null, this.videoDownloadConcurrency, 'kuaishou.mp4').then(videoPath => {
+                    logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${videoPath}`);
+                    this.sendVideoToUpload(e, videoPath);
                 });
             } else if (adapter.images && adapter.images.length > 0) {
                 logger.debug(`[R插件][General Adapter Debug] Entering image sending logic for ${adapter.name}`);
@@ -2670,7 +2668,7 @@ export class tools extends plugin {
                 // 并发下载所有图片
                 const downloadPromises = adapter.images.map(async (imageUrl, index) => {
                     try {
-                        const fileName = `temp_img_${index}.jpg`;
+                        const fileName = `kuaishou_img_${index}.jpg`;
                         const filePath = `${downloadPath}/${fileName}`;
 
                         const response = await axios({
@@ -2812,7 +2810,7 @@ export class tools extends plugin {
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
                 await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else {
-                e.reply([segment.image(fullThumbnailPath), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
+                await replyWithRetry(e, Bot, [segment.image(fullThumbnailPath), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
                 await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
                 await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
@@ -2894,8 +2892,8 @@ export class tools extends plugin {
                     if (resolutions) {
                         // 暂时选取分辨率较低的video进行解析
                         const videoUrl = resolutions[i].url;
-                        this.downloadVideo(videoUrl).then(path => {
-                            this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                        this.downloadVideo(videoUrl, false, null, this.videoDownloadConcurrency, 'youtube.mp4').then(videoPath => {
+                            this.sendVideoToUpload(e, videoPath);
                         });
                         break;
                     }
@@ -2945,10 +2943,10 @@ export class tools extends plugin {
             const cover = firstFeed.images[0].url;
             const noWatermarkDownloadUrl = firstFeed.video_url;
 
-            e.reply([segment.image(cover), `${this.identifyPrefix}识别：微视，${title}`]);
+            await replyWithRetry(e, Bot, [segment.image(cover), `${this.identifyPrefix}识别：微视，${title}`]);
 
-            this.downloadVideo(noWatermarkDownloadUrl).then(path => {
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+            this.downloadVideo(noWatermarkDownloadUrl, false, null, this.videoDownloadConcurrency, 'weishi.mp4').then(videoPath => {
+                this.sendVideoToUpload(e, videoPath);
             });
         } catch (err) {
             logger.error(err);
@@ -3015,8 +3013,8 @@ export class tools extends plugin {
                 await replyWithRetry(e, Bot, Bot.makeForwardMsg(replyImages));
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
-                this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
-                    this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl, false, null, this.videoDownloadConcurrency, 'zuiyou.mp4').then(videoPath => {
+                    this.sendVideoToUpload(e, videoPath);
                 });
             }
         } catch (error) {
@@ -3434,8 +3432,8 @@ export class tools extends plugin {
 
                 // 处理视频
                 if (link) {
-                    const filePath = await this.downloadVideo(link);
-                    this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
+                    const filePath = await this.downloadVideo(link, false, null, this.videoDownloadConcurrency, 'bili_dynamic.mp4');
+                    this.sendVideoToUpload(e, filePath);
                 }
             }
         }
@@ -3822,8 +3820,8 @@ export class tools extends plugin {
 
                 // 处理并发送视频
                 if (link.has_video === 1 && link.video_url) {
-                    const videoPath = await this.downloadVideo(link.video_url);
-                    await this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
+                    const videoPath = await this.downloadVideo(link.video_url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
+                    await this.sendVideoToUpload(e, videoPath);
                 }
 
                 // 处理并发送评论
@@ -4115,8 +4113,8 @@ export class tools extends plugin {
                 // 发送游戏视频
                 const video = data.screenshots?.find(m => m.type === 'movie');
                 if (video) {
-                    const videoPath = await this.downloadVideo(video.url);
-                    this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
+                    const videoPath = await this.downloadVideo(video.url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
+                    this.sendVideoToUpload(e, videoPath);
                 }
             } catch (error) {
                 logger.error(`[R插件][小黑盒游戏] 解析失败: ${error.message}`);
@@ -4285,7 +4283,8 @@ export class tools extends plugin {
      */
     getGroupPathAndTarget() {
         const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
-        const target = `${groupPath}/temp.mp4`;
+        // 使用时间戳生成唯一文件名，避免多平台并发时冲突
+        const target = `${groupPath}/video_${Date.now()}.mp4`;
         return { groupPath, target };
     }
 
@@ -4295,11 +4294,15 @@ export class tools extends plugin {
      * @param isProxy
      * @param headers
      * @param numThreads
-     * @returns {Promise<string>}
+     * @param fileName 可选，指定下载后的文件名（如 'weibo.mp4', 'BV123.mp4'）
+     * @returns {Promise<string>} 返回下载文件的完整路径
      */
-    async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency) {
+    async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency, fileName = null) {
         // 构造群信息参数
-        const { groupPath, target } = this.getGroupPathAndTarget.call(this);
+        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        // 如果传入 fileName 则使用，否则使用时间戳
+        const actualFileName = fileName || `video_${Date.now()}.mp4`;
+        const target = `${groupPath}/${actualFileName}`;
         await mkdirIfNotExists(groupPath);
         // 构造header部分内容
         const userAgent = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
@@ -4415,7 +4418,7 @@ export class tools extends plugin {
 
             writer.close();
 
-            return groupPath;
+            return target;
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${err}`);
         }
@@ -4430,10 +4433,13 @@ export class tools extends plugin {
     async downloadVideoWithAria2(downloadVideoParams, numThreads) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
 
+        // 从 target 中提取文件名
+        const fileName = target.split('/').pop() || target.split('\\').pop() || 'video.mp4';
+
         // 构造aria2c命令参数
         const aria2cArgs = [
             `"${url}"`,
-            `--out="temp.mp4"`,
+            `--out="${fileName}"`,
             `--dir="${groupPath}"`,
             `--user-agent="${userAgent}"`,
             `--max-connection-per-server=${numThreads}`, // 每个服务器的最大连接数
@@ -4471,7 +4477,7 @@ export class tools extends plugin {
                     logger.mark(`下载完成: ${url}`);
                     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
                         logger.info(`[R插件][Aria2] 文件校验成功: ${target}`);
-                        resolve(groupPath);
+                        resolve(target);
                     } else {
                         logger.error(`[R插件][Aria2] 下载完成但文件无效 (不存在或为空): ${target}`);
                         reject(new Error("Aria2 下载的文件无效。"));
@@ -4533,7 +4539,7 @@ export class tools extends plugin {
                     logger.mark(`下载完成: ${url}`);
                     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
                         logger.info(`[R插件][Axel] 文件校验成功: ${target}`);
-                        resolve(groupPath);
+                        resolve(target);
                     } else {
                         logger.error(`[R插件][Axel] 下载完成但文件无效 (不存在或为空): ${target}`);
                         reject(new Error("Axel 下载的文件无效。"));
@@ -4569,7 +4575,7 @@ export class tools extends plugin {
             res.data.pipe(writer);
 
             return new Promise((resolve, reject) => {
-                writer.on("finish", () => resolve(groupPath));
+                writer.on("finish", () => resolve(target));
                 writer.on("error", reject);
             });
         } catch (err) {
@@ -4651,13 +4657,27 @@ export class tools extends plugin {
                 e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制：${videoSizeLimit}MB，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path); // uploadGroupFile 内部会处理删除
             } else {
-                await e.reply(segment.video(path));
-                await checkAndRemoveFile(path); // 发送成功后删除
+                // 使用 replyWithRetry 包装视频发送，自动处理重发
+                const result = await replyWithRetry(e, Bot, segment.video(path));
+                // 发送成功后删除原文件
+                if (result && result.message_id) {
+                    await checkAndRemoveFile(path);
+                    // 同时清理可能生成的 retry 文件
+                    const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+                    await checkAndRemoveFile(retryPath);
+                } else {
+                    // 重发也失败了，清理文件
+                    await checkAndRemoveFile(path);
+                    const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+                    await checkAndRemoveFile(retryPath);
+                }
             }
         } catch (err) {
             logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${err}`);
             // 如果发送失败，也尝试删除，避免残留
             await checkAndRemoveFile(path);
+            const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+            await checkAndRemoveFile(retryPath);
         }
     }
 
