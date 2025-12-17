@@ -32,10 +32,6 @@ export class query extends plugin {
                 {
                     reg: "^#累了$",
                     fnc: "cospro",
-                },
-                {
-                    reg: "^#竹白(.*)",
-                    fnc: "zhubaiSearch",
                 }
             ],
         });
@@ -134,24 +130,25 @@ export class query extends plugin {
     }
 
     async buyerShow(e) {
-        const p1 = fetch("https://api.vvhan.com/api/tao").then(resp => resp.url);
-        const p2 = fetch("https://api.uomg.com/api/rand.img3?format=json")
-            .then(resp => resp.json())
-            .then(resp => resp.imgurl);
+        try {
+            // 使用素言网API获取买家秀
+            const resp = await fetch("https://api.suyanw.cn/api/tbmjx.php?return=json");
+            const data = await resp.json();
 
-        const results = await Promise.allSettled([p1, p2]);
-        const images = results
-            .filter(result => result.status === "fulfilled")
-            .map(result => result.value);
-
-        for (const img of images) {
-            e.reply(segment.image(img));
+            if (data.imgurl) {
+                e.reply(segment.image(data.imgurl));
+            } else {
+                e.reply("获取买家秀失败");
+            }
+        } catch (error) {
+            console.error(`[R插件][买家秀] API失败: ${error.message}`);
+            e.reply("获取买家秀失败，请稍后重试");
         }
-
         return true;
     }
 
     async cospro(e) {
+        // 恢复原来的cos图API
         let [res1, res2] = (
             await Promise.allSettled([
                 fetch("https://imgapi.cn/cos2.php?return=jsonpro").then(resp => resp.json()),
@@ -171,45 +168,6 @@ export class query extends plugin {
         return true;
     }
 
-    // 竹白百科
-    async zhubaiSearch(e) {
-        const keyword = e.msg.replace("#竹白", "").trim();
-        if (keyword === "") {
-            e.reply("请输入想了解的内容，例如：#竹白 javascript");
-            return true;
-        }
-        await axios
-            .post(
-                "https://open.zhubai.wiki/a/zb/s/ep/",
-                {
-                    content: 1,
-                    keyword: keyword,
-                },
-                {
-                    headers: {
-                        "User-Agent": COMMON_USER_AGENT,
-                    },
-                },
-            )
-            .then(async resp => {
-                const res = resp.data.data;
-                const content = res
-                    .sort((a, b) => b.luSort - a.luSort)
-                    .map(item => {
-                        const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
-                        const template = `标题：${pn}\n${pa}\n期刊：${zn}\n发布日期距今：${lu}\n链接1：${pu}\n链接2：${pq}\n\n 大致描述：${hl
-                            .join("\n")
-                            .replace(/<\/?font[^>]*>/g, "")}`;
-                        return {
-                            message: [segment.image(aa), template],
-                            nickname: this.e.sender.card || this.e.user_id,
-                            user_id: this.e.user_id,
-                        };
-                    });
-                await replyWithRetry(e, Bot, await Bot.makeForwardMsg(content));
-            });
-        return true;
-    }
 
     // 删除标签
     removeTag(title) {
