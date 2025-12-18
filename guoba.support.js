@@ -69,6 +69,16 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.imageBatchThreshold",
+                    label: "全局图片分批阈值",
+                    bottomHelpMessage: "超过此数量的图片将分批发送（默认50张），设置为0表示不限制。适用于抖音、哔哩哔哩动态、小红书、微博、米游社等所有图片解析",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入图片分批阈值（默认50）",
+                    },
+                },
+                {
                     field: "tools.identifyPrefix",
                     label: "识别前缀",
                     bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
@@ -355,16 +365,7 @@ export function supportGuoba() {
                     component: "Switch",
                     required: false,
                 },
-                {
-                    field: "tools.douyinImageBatchThreshold",
-                    label: "抖音图片分批阈值",
-                    bottomHelpMessage: "超过此数量的图片将分批发送（默认50张），设置为0表示不限制",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入图片分批阈值（默认50）",
-                    },
-                },
+
 
                 // ==================== 油管YouTube ====================
                 {

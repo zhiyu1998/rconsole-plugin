@@ -2,7 +2,8 @@ import axios from "axios";
 import fetch from "node-fetch";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
-import { replyWithRetry } from "../utils/retry.js";
+import config from "../model/config.js";
+import { sendImagesInBatches } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
 
@@ -35,6 +36,9 @@ export class query extends plugin {
                 }
             ],
         });
+        // 加载配置
+        this.toolsConfig = config.getConfig("tools");
+        this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
     }
 
     async doctor(e) {
@@ -92,7 +96,7 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
+        await sendImagesInBatches(e, images, this.imageBatchThreshold);
         return true;
     }
 
@@ -163,7 +167,7 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(images));
+        await sendImagesInBatches(e, images, this.imageBatchThreshold);
         return true;
     }
 
