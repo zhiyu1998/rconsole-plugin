@@ -54,6 +54,9 @@ class GeneralLinkAdapter {
         let video_id;
         if (msg.includes('/fw/photo/')) {
             video_id = msg.match(/\/fw\/photo\/([^/?]+)/)[1];
+        } else if (msg.includes('/fw/long-video/')) {
+            // QQ分享卡片中的长视频格式
+            video_id = msg.match(/\/fw\/long-video\/([^/?]+)/)[1];
         } else if (msg.includes("short-video")) {
             video_id = msg.match(/short-video\/([^/?]+)/)[1];
         } else {
