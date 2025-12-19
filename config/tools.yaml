@@ -58,6 +58,7 @@ xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 weiboCookie: '' # 微博Cookie，格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xxx; XSRF-TOKEN=xxx; M_WEIBOCN_PARAMS=xxx
 
 xiaoheiheCookie: '' # 小黑盒Cookie，格式：x_xhh_tokenid=xxx
+xhhMsgElementLimit: 50 # 小黑盒单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）
 
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
 

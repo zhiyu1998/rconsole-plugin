@@ -314,13 +314,37 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             throw new Error(`无法识别的URL格式: ${url}`);
         }
         videoId = videoMatch[0].split("/")[1];
+
+        // 提取URL中的p参数（分P号）
+        let pParam = null;
+        try {
+            const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+            const pValue = urlObj.searchParams.get('p');
+            if (pValue) {
+                pParam = parseInt(pValue, 10);
+                logger.info(`[R插件][BILI下载] 检测到分P参数: P${pParam}`);
+            }
+        } catch (e) {
+            logger.debug(`[R插件][BILI下载] URL解析P参数失败: ${e.message}`);
+        }
+
         // AV号特殊处理
         if (videoId.toLowerCase().startsWith('av')) {
             // 将 AV 转换为 BV
-            const { bvid, cid: newCid } = await getVideoInfo(url);
+            const { bvid, cid: newCid, pages } = await getVideoInfo(url);
             videoId = bvid;
-            cid = newCid;
+            // 如果有P参数且页数足够，获取对应分P的CID
+            if (pParam && pages && pages.length >= pParam && pParam > 0) {
+                cid = pages[pParam - 1].cid;
+                logger.info(`[R插件][BILI下载] AV号分P ${pParam}，使用CID: ${cid}`);
+            } else {
+                cid = newCid;
+            }
+        } else if (pParam && pParam > 0) {
+            // BV号且有分P参数，获取对应分P的CID
+            cid = await getPageCid(videoId, pParam);
         }
+        // 如果cid仍为空，getBiliVideoWithSession会通过fetchCID获取P1的CID
     }
 
     // 转换画质数字为分辨率
@@ -1014,6 +1038,30 @@ export const fetchCID = async (bvid) => {
     const json = await res.json();
     const cid = json.data[0].cid;
     return cid;
+}
+
+/**
+ * 获取指定分P的CID
+ * @param bvid BVID
+ * @param pNumber 分P号（1-indexed）
+ * @returns {Promise<string|null>} CID或null
+ */
+export async function getPageCid(bvid, pNumber) {
+    try {
+        const resp = await fetch(`${BILI_VIDEO_INFO}?bvid=${bvid}`);
+        const json = await resp.json();
+        const pages = json.data?.pages;
+        if (pages && pages.length >= pNumber && pNumber > 0) {
+            const targetPage = pages[pNumber - 1];
+            logger.info(`[R插件][BILI下载] 获取分P CID: P${pNumber} (${targetPage.part}), CID: ${targetPage.cid}`);
+            return targetPage.cid;
+        }
+        logger.warn(`[R插件][BILI下载] 找不到P${pNumber}，使用P1`);
+        return pages?.[0]?.cid || null;
+    } catch (err) {
+        logger.error(`[R插件][BILI下载] 获取分P CID失败: ${err.message}`);
+        return null;
+    }
 }
 
 /**

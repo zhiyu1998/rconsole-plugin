@@ -213,7 +213,7 @@ export function supportGuoba() {
                     field: "tools.biliFileSizeLimit",
                     label: "文件大小限制",
                     bottomHelpMessage:
-                        "视频大小限制（单位MB），超过大小则转换成群文件上传，配合智能分辨率使用",
+                        "智能分辨率视频大小限制（单位MB），超过大小则降低画质，配合智能分辨率使用",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
@@ -424,30 +424,6 @@ export function supportGuoba() {
                     },
                 },
 
-                // ==================== 小红书 ====================
-                {
-                    label: '小红书',
-                    component: 'SOFT_GROUP_BEGIN'
-                },
-                {
-                    component: "Divider",
-                    label: "小红书配置",
-                    componentProps: {
-                        orientation: "left",
-                        plain: true,
-                    },
-                },
-                {
-                    field: "tools.xiaohongshuCookie",
-                    label: "小红书的Cookie",
-                    bottomHelpMessage:
-                        "2024-8-2后反馈必须使用ck，不然无法解析",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入小红书的Cookie",
-                    },
-                },
 
                 // ==================== 网易云音乐 ====================
                 {
@@ -566,6 +542,31 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.xiaohongshuCookie",
+                    label: "小红书的Cookie",
+                    bottomHelpMessage:
+                        "2024-8-2后反馈必须使用ck，不然无法解析",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入小红书的Cookie",
+                    },
+                },
+
+                // ==================== 小黑盒 ====================
+                {
+                    label: '小黑盒',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "小黑盒配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
                     field: "tools.xiaoheiheCookie",
                     label: "小黑盒的Cookie",
                     bottomHelpMessage:
@@ -574,6 +575,17 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入小黑盒的Cookie",
+                    },
+                },
+                {
+                    field: "tools.xhhMsgElementLimit",
+                    label: "小黑盒单条消息元素限制",
+                    bottomHelpMessage:
+                        "小黑盒帖子单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）。如果发送失败可尝试降低此值",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入单条消息最大元素数（默认50）",
                     },
                 },
 
