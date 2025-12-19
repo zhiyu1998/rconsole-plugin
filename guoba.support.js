@@ -61,11 +61,21 @@ export function supportGuoba() {
                     field: "tools.globalImageLimit",
                     label: "解析图片是否合并转发",
                     bottomHelpMessage:
-                        "超过配置的数字就会折叠。目前实现了此能的主要有米游社、b站动态专栏、微博、小红书",
+                        "超过此数量的图片将使用转发消息发送，小于等于此数量则直接发送图片。设置为0表示始终使用转发消息。支持平台：抖音、B站动态专栏、小红书、微博、米游社、小黑盒、最右、贴吧、小飞机TG、通用解析(皮皮虾等)",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入合并转发最大阈值",
+                        placeholder: "请输入合并转发阈值（默认0=始终转发）",
+                    },
+                },
+                {
+                    field: "tools.imageBatchThreshold",
+                    label: "全局图片分批阈值",
+                    bottomHelpMessage: "超过此数量的图片将分批发送（默认50张），设置为0表示不限制。适用于抖音、哔哩哔哩动态、小红书、微博、米游社等所有图片解析",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入图片分批阈值（默认50）",
                     },
                 },
                 {
@@ -203,7 +213,7 @@ export function supportGuoba() {
                     field: "tools.biliFileSizeLimit",
                     label: "文件大小限制",
                     bottomHelpMessage:
-                        "视频大小限制（单位MB），超过大小则转换成群文件上传，配合智能分辨率使用",
+                        "智能分辨率视频大小限制（单位MB），超过大小则降低画质，配合智能分辨率使用",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
@@ -355,16 +365,7 @@ export function supportGuoba() {
                     component: "Switch",
                     required: false,
                 },
-                {
-                    field: "tools.douyinImageBatchThreshold",
-                    label: "抖音图片分批阈值",
-                    bottomHelpMessage: "超过此数量的图片将分批发送（默认50张），设置为0表示不限制",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入图片分批阈值（默认50）",
-                    },
-                },
+
 
                 // ==================== 油管YouTube ====================
                 {
@@ -423,30 +424,6 @@ export function supportGuoba() {
                     },
                 },
 
-                // ==================== 小红书 ====================
-                {
-                    label: '小红书',
-                    component: 'SOFT_GROUP_BEGIN'
-                },
-                {
-                    component: "Divider",
-                    label: "小红书配置",
-                    componentProps: {
-                        orientation: "left",
-                        plain: true,
-                    },
-                },
-                {
-                    field: "tools.xiaohongshuCookie",
-                    label: "小红书的Cookie",
-                    bottomHelpMessage:
-                        "2024-8-2后反馈必须使用ck，不然无法解析",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入小红书的Cookie",
-                    },
-                },
 
                 // ==================== 网易云音乐 ====================
                 {
@@ -565,6 +542,31 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.xiaohongshuCookie",
+                    label: "小红书的Cookie",
+                    bottomHelpMessage:
+                        "2024-8-2后反馈必须使用ck，不然无法解析",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入小红书的Cookie",
+                    },
+                },
+
+                // ==================== 小黑盒 ====================
+                {
+                    label: '小黑盒',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "小黑盒配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
                     field: "tools.xiaoheiheCookie",
                     label: "小黑盒的Cookie",
                     bottomHelpMessage:
@@ -573,6 +575,17 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入小黑盒的Cookie",
+                    },
+                },
+                {
+                    field: "tools.xhhMsgElementLimit",
+                    label: "小黑盒单条消息元素限制",
+                    bottomHelpMessage:
+                        "小黑盒帖子单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）。如果发送失败可尝试降低此值",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入单条消息最大元素数（默认50）",
                     },
                 },
 

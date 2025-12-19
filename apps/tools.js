@@ -10,6 +10,7 @@ import path from "path";
 import qrcode from "qrcode";
 import querystring from "querystring";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
+import { replyWithRetry } from "../utils/retry.js";
 import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
@@ -110,8 +111,8 @@ import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
-import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
-import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles } from "../utils/yunzai-util.js";
+import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
+import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches } from "../utils/yunzai-util.js";
 import { getApiParams } from "../utils/xiaoheihe.js";
 
 /**
@@ -347,8 +348,10 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
-        // 加载抖音图片分批阈值
-        this.douyinImageBatchThreshold = this.toolsConfig.douyinImageBatchThreshold || 50;
+        // 加载全局图片分批阈值（向后兼容旧配置名）
+        this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
+        // 加载小黑盒单条消息元素限制
+        this.xhhMsgElementLimit = this.toolsConfig.xhhMsgElementLimit || 50;
         // 加载小红书Cookie
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
@@ -467,7 +470,7 @@ export class tools extends plugin {
 
                     try {
                         if (downloadUrl.includes(".mp4") || downloadUrl.includes("video_id")) {
-                            fileName = `temp${index > 0 ? index : ''}.mp4`;
+                            fileName = `douyin_gif${index > 0 ? index : ''}.mp4`;
                             filePath = `${downloadPath}/${fileName}`;
                             logger.info(`[R插件][抖音动图] 下载视频: ${downloadUrl}`);
                             const response = await axios({
@@ -490,7 +493,7 @@ export class tools extends plugin {
                             downloadedFilePaths.push(filePath);
 
                         } else {
-                            fileName = `temp${index > 0 ? index : ''}.png`;
+                            fileName = `douyin_gif${index > 0 ? index : ''}.png`;
                             filePath = `${downloadPath}/${fileName}`;
                             logger.info(`[R插件][抖音动图] 下载图片: ${downloadUrl}`);
                             const response = await axios({
@@ -522,8 +525,13 @@ export class tools extends plugin {
                     }
                 }
                 if (messageSegments.length > 0) {
-                    const forwardMsg = await Bot.makeForwardMsg(messageSegments);
-                    await e.reply(forwardMsg);
+                    if (messageSegments.length > this.globalImageLimit) {
+                        // 超过限制，使用转发消息
+                        await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    } else {
+                        // 在限制内，直接发送图片
+                        await e.reply(messageSegments.map(item => item.message));
+                    }
 
                     // 删除文件
                     for (const filePath of downloadedFilePaths) {
@@ -576,7 +584,7 @@ export class tools extends plugin {
             const item = webcastData.data.room;
             const { title, cover, user_count, stream_url } = item;
             const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-            e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
             // 下载10s的直播流
             await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
             return;
@@ -605,7 +613,7 @@ export class tools extends plugin {
                 const item = await data.data.data?.[0];
                 const { title, cover, user_count_str, stream_url } = item;
                 const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-                e.reply([segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
                 // 下载10s的直播流
                 await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
                 return;
@@ -636,7 +644,7 @@ export class tools extends plugin {
                     // logger.info(cover.url_list);
                     dySendContent += `\n
                     ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
-                    e.reply([segment.image(dyCover), dySendContent]);
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
                     await this.douyinComment(e, douId, headers);
                     return;
@@ -660,10 +668,9 @@ export class tools extends plugin {
                 }*/
 
                 // logger.info(resUrl);
-                const path = `${this.getCurDownloadPath(e)}/temp.mp4`;
                 // 加入队列
-                await this.downloadVideo(resUrl).then(() => {
-                    this.sendVideoToUpload(e, path);
+                await this.downloadVideo(resUrl, false, null, this.videoDownloadConcurrency, 'douyin.mp4').then((videoPath) => {
+                    this.sendVideoToUpload(e, videoPath);
                 });
             } else if (urlType === "image") {
                 // 发送描述
@@ -672,134 +679,19 @@ export class tools extends plugin {
                 // 提取无水印图片URL列表
                 const imageUrls = item.images.map(i => i.url_list[0]);
 
-                // 先尝试用远程URL直接发送
-                const remoteImageList = imageUrls.map(url => ({
-                    message: segment.image(url),
-                    nickname: this.e.sender.card || this.e.user_id,
-                    user_id: this.e.user_id,
-                }));
-
-                let result;
-                if (imageUrls.length <= this.douyinImageBatchThreshold) {
-                    // 小于等于阈值一次发送
-                    const forwardMsg = await Bot.makeForwardMsg(remoteImageList);
-                    result = await e.reply(forwardMsg);
+                // 根据 globalImageLimit 决定发送方式
+                if (imageUrls.length > this.globalImageLimit) {
+                    // 超过限制，使用转发消息
+                    const remoteImageList = imageUrls.map(url => ({
+                        message: segment.image(url),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }));
+                    await sendImagesInBatches(e, remoteImageList, this.imageBatchThreshold);
                 } else {
-                    // 超过阈值分批发送
-                    const BATCH_SIZE = this.douyinImageBatchThreshold;
-                    let allSuccess = true;
-
-                    for (let i = 0; i < imageUrls.length; i += BATCH_SIZE) {
-                        const batch = remoteImageList.slice(i, i + BATCH_SIZE);
-                        const forwardMsg = await Bot.makeForwardMsg(batch);
-                        const batchResult = await e.reply(forwardMsg);
-
-                        if (!batchResult || !batchResult.message_id) {
-                            allSuccess = false;
-                            break;
-                        }
-                    }
-
-                    result = allSuccess ? { message_id: true } : null;
-                }
-
-                // 检测发送结果，如果失败则下载到本地添加随机字节后重试
-                if (!result || !result.message_id) {
-                    logger.warn(`[R插件][抖音图片] 远程URL发送失败，下载到本地添加随机字节后重试`);
-
-                    const downloadPath = this.getCurDownloadPath(e);
-                    await mkdirIfNotExists(downloadPath);
-                    const messageSegments = [];
-                    const downloadedFilePaths = [];
-
-                    logger.info(`[R插件][抖音图片] 开始并发下载 ${imageUrls.length} 张图片...`);
-
-                    // 并发下载所有图片并添加随机字节
-                    const downloadPromises = imageUrls.map(async (imageUrl, index) => {
-                        try {
-                            const fileName = `douyin_img_${index}.jpg`;
-                            const filePath = `${downloadPath}/${fileName}`;
-
-                            // 使用 arraybuffer 下载以便添加随机字节
-                            const response = await axios({
-                                method: 'get',
-                                url: imageUrl,
-                                responseType: 'arraybuffer',
-                                timeout: 30000
-                            });
-
-                            // 添加随机字节到图片末尾，绕过QQ的图片hash检测（风控）
-                            const imageBuffer = Buffer.from(response.data);
-                            const randomBytes = Buffer.from([
-                                Math.floor(Math.random() * 256),
-                                Math.floor(Math.random() * 256),
-                                Math.floor(Math.random() * 256),
-                                index % 256,  // 使用index确保每张图片不同
-                                Date.now() % 256
-                            ]);
-                            const modifiedBuffer = Buffer.concat([imageBuffer, randomBytes]);
-
-                            // 写入文件
-                            await fs.promises.writeFile(filePath, modifiedBuffer);
-
-                            return {
-                                filePath,
-                                segment: {
-                                    message: segment.image(filePath),
-                                    nickname: this.e.sender.card || this.e.user_id,
-                                    user_id: this.e.user_id,
-                                }
-                            };
-                        } catch (error) {
-                            logger.error(`[R插件][抖音图片] 图片${index}下载失败: ${error.message}`);
-                            return null;
-                        }
-                    });
-
-                    const results = await Promise.all(downloadPromises);
-                    const successResults = results.filter(r => r !== null);
-
-                    successResults.forEach(r => {
-                        messageSegments.push(r.segment);
-                        downloadedFilePaths.push(r.filePath);
-                    });
-
-                    logger.info(`[R插件][抖音图片] 下载完成: ${downloadedFilePaths.length}/${imageUrls.length} 张`);
-
-                    // 发送下载后的图片
-                    if (messageSegments.length > 0) {
-                        if (messageSegments.length <= this.douyinImageBatchThreshold) {
-                            const forwardMsg = await Bot.makeForwardMsg(messageSegments);
-                            await e.reply(forwardMsg);
-                            logger.info(`[R插件][抖音图片] 发送${messageSegments.length}张图片（已添加随机字节）`);
-                        } else {
-                            const BATCH_SIZE = this.douyinImageBatchThreshold;
-                            const batches = [];
-
-                            for (let i = 0; i < messageSegments.length; i += BATCH_SIZE) {
-                                batches.push(messageSegments.slice(i, i + BATCH_SIZE));
-                            }
-
-                            for (let i = 0; i < batches.length; i++) {
-                                const batch = batches[i];
-                                const forwardMsg = await Bot.makeForwardMsg(batch);
-                                await e.reply(forwardMsg);
-                            }
-                            logger.info(`[R插件][抖音图片] 分${batches.length}批发送${messageSegments.length}张图片（已添加随机字节）`);
-                        }
-
-                        // 删除临时文件（静默删除）
-                        await Promise.all(downloadedFilePaths.map(async (fp) => {
-                            try {
-                                await fs.promises.unlink(fp);
-                            } catch (err) {
-                                // 忽略删除错误
-                            }
-                        }));
-                        logger.info(`[R插件][抖音图片] 已清理${downloadedFilePaths.length}张临时文件`);
-                    }
-                } else {
-                    logger.info(`[R插件][抖音图片] 成功发送${imageUrls.length}张图片（远程URL）`);
+                    // 在限制内，直接发送图片
+                    const images = imageUrls.map(url => segment.image(url));
+                    await e.reply(images);
                 }
             }
             // 如果开启评论的就调用
@@ -1073,7 +965,7 @@ export class tools extends plugin {
                 parent_area_name,
                 area_name
             } = liveData.data.data;
-            e.reply([
+            await replyWithRetry(e, Bot, [
                 segment.image(user_cover),
                 segment.image(keyframe),
                 [`${this.identifyPrefix}识别：哔哩哔哩直播，${title}`,
@@ -1172,7 +1064,8 @@ export class tools extends plugin {
             logger.info(`[R插件][Bili Duration] Using total duration (Title: ${displayTitle}): ${durationForCheck}s`);
         }
 
-        const isLimitDuration = durationForCheck > this.biliDuration;
+        // 时长限制检查：启用智能分辨率时跳过（智能分辨率会根据文件大小自动选择画质）
+        const isLimitDuration = !this.biliSmartResolution && durationForCheck > this.biliDuration;
         // 动态构造哔哩哔哩信息
         let biliInfo = await this.constructBiliInfo(videoInfo, displayTitle, partTitle, pParam || (pages && pages.length > 1 ? 1 : null));
         // 总结
@@ -1181,21 +1074,21 @@ export class tools extends plugin {
             // 封装总结
             summary && e.reply(await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x bilibili」联合为您总结内容：`, summary])));
         }
-        // 限制视频解析
+        // 限制视频解析（仅在未启用智能分辨率时生效）
         if (isLimitDuration) {
             const durationInMinutes = (durationForCheck / 60).toFixed(0); // 使用 durationForCheck
             biliInfo.push(`${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${durationInMinutes}分钟，\n大于管理员设置的最大时长 ${(this.biliDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`);
-            e.reply(biliInfo);
+            await replyWithRetry(e, Bot, biliInfo);
             return true;
         } else {
-            e.reply(biliInfo);
+            await replyWithRetry(e, Bot, biliInfo);
         }
         // 只提取音乐处理
         if (e.msg !== undefined && e.msg.startsWith("音乐")) {
             return await this.biliMusic(e, url);
         }
         // 下载文件
-        await this.biliDownloadStrategy(e, url, path, null, durationForCheck);
+        await this.biliDownloadStrategy(e, url, path, null, durationForCheck, bvid);
         return true;
     }
 
@@ -1220,13 +1113,15 @@ export class tools extends plugin {
                 nickname: e.sender.card || e.user_id,
                 user_id: e.user_id,
             };
-            await e.reply(Bot.makeForwardMsg(origin_image_urls.map(item => {
+            const imageMessages = origin_image_urls.map(item => {
                 return {
                     message: segment.image(item),
                     nickname: e.sender.card || e.user_id,
                     user_id: e.user_id,
                 };
-            }).concat(titleMsg)));
+            }).concat(titleMsg);
+
+            await sendImagesInBatches(e, imageMessages, this.imageBatchThreshold);
         }
     }
 
@@ -1371,7 +1266,7 @@ export class tools extends plugin {
             replyContent.push(`${DIVIDING_LINE.replace('{}', '限制说明')}\n当前${typeName}时长约：${durationMinutes}分钟，\n大于管理员设置的最大时长 ${limitMinutes} 分钟！`);
         }
 
-        e.reply(replyContent, true);
+        await replyWithRetry(e, Bot, replyContent);
 
         // 返回ep和番剧信息，用于文件命名，以及是否超限
         return {
@@ -1501,15 +1396,12 @@ export class tools extends plugin {
                 // 处理图片消息
                 if (resp.dynamicSrc.length > 0) {
                     if (resp.dynamicSrc.length > this.globalImageLimit) {
-                        let dynamicSrcMsg = [];
-                        resp.dynamicSrc.forEach(item => {
-                            dynamicSrcMsg.push({
-                                message: segment.image(item),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                            });
-                        });
-                        await e.reply(await Bot.makeForwardMsg(dynamicSrcMsg));
+                        const dynamicSrcMsg = resp.dynamicSrc.map(item => ({
+                            message: segment.image(item),
+                            nickname: e.sender.card || e.user_id,
+                            user_id: e.user_id,
+                        }));
+                        await sendImagesInBatches(e, dynamicSrcMsg, this.imageBatchThreshold);
                     } else {
                         const images = resp.dynamicSrc.map(item => segment.image(item));
                         await e.reply(images);
@@ -1644,9 +1536,9 @@ export class tools extends plugin {
                     task.push(downloadImg(item.url, downloadPath, "", true));
                 } else if (item.type === "video") {
                     // 视频
-                    await this.downloadVideo(resp.includes.media[0].variants[0].url, true).then(
-                        _ => {
-                            e.reply(segment.video(`${downloadPath}/temp.mp4`));
+                    await this.downloadVideo(resp.includes.media[0].variants[0].url, true, null, this.videoDownloadConcurrency, 'twitter.mp4').then(
+                        videoPath => {
+                            e.reply(segment.video(videoPath));
                         },
                     );
                 }
@@ -1670,7 +1562,8 @@ export class tools extends plugin {
                     });
                 });
             });
-            await e.reply(await Bot.makeForwardMsg(images));
+            await sendImagesInBatches(e, images, this.imageBatchThreshold);
+
             // 清理文件
             path.forEach(item => {
                 fs.unlinkSync(item);
@@ -1742,8 +1635,8 @@ export class tools extends plugin {
                 e.reply(segment.image(xImgPath));
             }
         } else {
-            this.downloadVideo(url, !isOversea).then(path => {
-                e.reply(segment.video(path + "/temp.mp4"));
+            this.downloadVideo(url, !isOversea, null, this.videoDownloadConcurrency, 'twitter.mp4').then(videoPath => {
+                e.reply(segment.video(videoPath));
             });
         }
         return true;
@@ -1861,19 +1754,18 @@ export class tools extends plugin {
         if (type === "video") {
             // 封面
             const cover = noteData.imageList?.[0].urlDefault;
-            e.reply([segment.image(cover), `${this.identifyPrefix}识别：小红书, ${title}\n${desc}`]);
+            await replyWithRetry(e, Bot, [segment.image(cover), `${this.identifyPrefix}识别：小红书, ${title}\n${desc}`]);
             // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
             const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
 
             // 构造无水印
             // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
             // 下载视频
-            this.downloadVideo(xhsVideoUrl).then(path => {
-                if (path === undefined) {
-                    // 创建文件，如果不存在
-                    path = `${this.getCurDownloadPath(e)}/`;
+            this.downloadVideo(xhsVideoUrl, false, null, this.videoDownloadConcurrency, 'xiaohongshu.mp4').then(videoPath => {
+                if (videoPath === undefined) {
+                    return;
                 }
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.sendVideoToUpload(e, videoPath);
             });
             return true;
         } else if (type === "normal") {
@@ -1902,12 +1794,12 @@ export class tools extends plugin {
                     };
                 }));
 
-                // 回复带有转发消息的图片数据
-                e.reply(await Bot.makeForwardMsg(imagesData));
+                // 使用分批发送
+                await sendImagesInBatches(e, imagesData, this.imageBatchThreshold);
             } else {
                 // 如果图片数量小于限制，直接发送图片
                 const images = await Promise.all(paths.map(async (item) => segment.image(await fs.promises.readFile(item))));
-                e.reply(images);
+                await e.reply(images);
             }
 
             // 批量删除下载的文件
@@ -1940,17 +1832,17 @@ export class tools extends plugin {
             await getBodianAudio(id, path, `${name}-${artist}`).then(sendPath => {
                 // 发送语音
                 e.reply(segment.record(sendPath));
-                // 上传群文件
+                // Upload group file
                 this.uploadGroupFile(e, sendPath);
-                // 删除文件
+                // Delete file
                 checkAndRemoveFile(sendPath);
             });
         } else if (e.msg.includes("mvId")) {
             await getBodianMv(id).then(res => {
                 // 下载 && 发送
                 const { coverUrl, highUrl, lowUrl, shortLowUrl } = res;
-                this.downloadVideo(lowUrl).then(path => {
-                    e.reply(segment.video(path + "/temp.mp4"));
+                this.downloadVideo(lowUrl, false, null, this.videoDownloadConcurrency, 'bodian.mp4').then(videoPath => {
+                    e.reply(segment.video(videoPath));
                 });
             });
         }
@@ -2216,8 +2108,8 @@ export class tools extends plugin {
             e.reply([segment.image(mvCover), `${this.identifyPrefix}识别：网易云MV，${mvName} - ${mvArtist}`]);
             // logger.info(mvUrlData.data)
             const { url: mvUrl } = mvUrlData.data?.data;
-            this.downloadVideo(mvUrl).then(path => {
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+            this.downloadVideo(mvUrl, false, null, this.videoDownloadConcurrency, 'netease_mv.mp4').then(videoPath => {
+                this.sendVideoToUpload(e, videoPath);
             });
             return;
         }
@@ -2486,7 +2378,7 @@ export class tools extends plugin {
         axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
             headers: {
                 "User-Agent": COMMON_USER_AGENT,
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
                 "cookie": this.weiboCookie,
                 "Referer": `https://m.weibo.cn/detail/${id}`,
             }
@@ -2520,11 +2412,13 @@ export class tools extends plugin {
                     // 等待所有图片处理完
                     const images = await Promise.all(imagesPromise);
 
+
                     // 大于判定数量则回复合并的消息
-                    if (images.length > this.globalImageLimit)
-                        await e.reply(await Bot.makeForwardMsg(images));
-                    else
+                    if (images.length > this.globalImageLimit) {
+                        await sendImagesInBatches(e, images, this.imageBatchThreshold);
+                    } else {
                         await e.reply(images.map(item => item.message));
+                    }
 
                     // 并行删除文件
                     await Promise.all(images.map(({ filePath }) => checkAndRemoveFile(filePath)));
@@ -2538,10 +2432,10 @@ export class tools extends plugin {
                         // wb 视频只能强制使用 1，由群友@非酋提出
                         this.downloadVideo(videoUrl, false, {
                             "User-Agent": COMMON_USER_AGENT,
-                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
                             "referer": "https://weibo.com/",
-                        }, 1).then(path => {
-                            this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                        }, 1, 'weibo.mp4').then(path => {
+                            this.sendVideoToUpload(e, path);
                         });
                     } catch (err) {
                         e.reply("视频资源获取失败");
@@ -2595,9 +2489,9 @@ export class tools extends plugin {
                 // 3. 发送视频
                 if (adapter.video && adapter.video !== '') {
                     const url = adapter.video;
-                    this.downloadVideo(url).then(path => {
-                        logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
-                        this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                    this.downloadVideo(url, false, null, this.videoDownloadConcurrency, 'pipixia.mp4').then(videoPath => {
+                        logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${videoPath}`);
+                        this.sendVideoToUpload(e, videoPath);
                     });
                 }
 
@@ -2635,7 +2529,7 @@ export class tools extends plugin {
                     });
 
                     if (commentForwardMsgs.length > 0) {
-                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(commentForwardMsgs));
                     }
                 }
 
@@ -2651,9 +2545,9 @@ export class tools extends plugin {
                 logger.debug(`[R插件][General Adapter Debug] Entering video sending logic for ${adapter.name}. Video URL: ${adapter.video}`);
                 // 视频：https://www.kuaishou.com/short-video/3xhjgcmir24m4nm
                 const url = adapter.video;
-                this.downloadVideo(url).then(path => {
-                    logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${path}`);
-                    this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.downloadVideo(url, false, null, this.videoDownloadConcurrency, 'kuaishou.mp4').then(videoPath => {
+                    logger.debug(`[R插件][General Adapter Debug] Video downloaded to path: ${videoPath}`);
+                    this.sendVideoToUpload(e, videoPath);
                 });
             } else if (adapter.images && adapter.images.length > 0) {
                 logger.debug(`[R插件][General Adapter Debug] Entering image sending logic for ${adapter.name}`);
@@ -2667,7 +2561,7 @@ export class tools extends plugin {
                 // 并发下载所有图片
                 const downloadPromises = adapter.images.map(async (imageUrl, index) => {
                     try {
-                        const fileName = `temp_img_${index}.jpg`;
+                        const fileName = `kuaishou_img_${index}.jpg`;
                         const filePath = `${downloadPath}/${fileName}`;
 
                         const response = await axios({
@@ -2706,10 +2600,15 @@ export class tools extends plugin {
 
                 logger.info(`[R插件][图片下载] 下载完成: ${downloadedFilePaths.length}/${adapter.images.length} 张`);
 
-                // 发送合并转发
+                // 发送图片
                 if (messageSegments.length > 0) {
-                    const forwardMsg = await Bot.makeForwardMsg(messageSegments);
-                    await e.reply(forwardMsg);
+                    if (messageSegments.length > this.globalImageLimit) {
+                        // 超过限制，使用转发消息
+                        await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    } else {
+                        // 在限制内，直接发送图片
+                        await e.reply(messageSegments.map(item => item.message));
+                    }
 
                     // 删除临时文件（静默删除）
                     await Promise.all(downloadedFilePaths.map(fp => checkAndRemoveFile(fp)));
@@ -2756,63 +2655,58 @@ export class tools extends plugin {
 
             const path = this.getCurDownloadPath(e);
             const rawTitle = (await ytDlpGetTilt(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, '');
-            // 清理文件名并截断到10个字符
-            const safeTitlePrefix = cleanFilename(rawTitle).substring(0, 10);
 
-            // 使用安全标题作为文件名前缀
-            const videoFilename = `${safeTitlePrefix}.mp4`;
-            const audioFilename = `${safeTitlePrefix}.flac`;
-            const thumbnailFilenamePrefix = `${safeTitlePrefix}_thumbnail`;
+            // 使用固定文件名
+            const videoFilename = 'youtube.mp4';
+            const audioFilename = 'youtube.flac';
 
-            // 清理可能存在的旧文件或同名文件
+            // 获取缩略图URL（不下载到本地）
+            const thumbnailUrl = await ytDlpGetThumbnailUrl(url, isOversea, this.myProxy, this.youtubeCookiePath);
+
+            // 清理可能存在的旧文件
             await checkAndRemoveFile(`${path}/${videoFilename}`);
             await checkAndRemoveFile(`${path}/${audioFilename}`);
-            await checkAndRemoveFile(`${path}/${thumbnailFilenamePrefix}.png`);
-            // 下载缩略图并获取实际文件名
-            const actualThumbnailFilename = await ytDlpGetThumbnail(path, url, isOversea, this.myProxy, this.youtubeCookiePath, thumbnailFilenamePrefix);
-            const fullThumbnailPath = `${path}/${actualThumbnailFilename}`;
-
 
             // 音频逻辑
             if (url.includes("music")) {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 const fullAudioPath = `${path}/${audioFilename}`;
                 if (this.isSendVocal) {
                     await e.reply(segment.record(fullAudioPath));
                 }
-                await this.uploadGroupFile(e, fullAudioPath); // uploadGroupFile 内部会删除 fullAudioPath
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
-                // 发送完就截断
+                await this.uploadGroupFile(e, fullAudioPath);
                 return;
             }
 
             // 下面为视频逻辑
             const Duration = convertToSeconds((await ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, ''));
-            // logger.info('时长------',Duration)
+
             if (Duration > this.youtubeDuration) {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                // 超时限制
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频时长超限 \n视频标题：${rawTitle}\n⌚${DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '')}⌚\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定解析时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
                 ]);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
-                e.reply([
-                    segment.image(fullThumbnailPath),
+                // 截取模式
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${rawTitle}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`
                 ]);
-                // 注意：sendVideoToUpload 内部会删除视频文件，但不会删除缩略图
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             } else {
-                e.reply([segment.image(fullThumbnailPath), `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix, true, graphics, timeRange, this.youtubeCookiePath);
+                // 正常下载
+                await replyWithRetry(e, Bot, [
+                    segment.image(thumbnailUrl),
+                    `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
+                ]);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-                await checkAndRemoveFile(fullThumbnailPath); // 删除缩略图
             }
         } catch (error) {
             logger.error(error);
@@ -2876,7 +2770,7 @@ export class tools extends plugin {
                             user_id: this.e.user_id,
                         };
                     });
-                    e.reply(Bot.makeForwardMsg(replyImages));
+                    await sendImagesInBatches(e, replyImages, this.imageBatchThreshold);
                 } else {
                     const imageSegments = images.map(item => segment.image(item));
                     e.reply(imageSegments);
@@ -2891,8 +2785,8 @@ export class tools extends plugin {
                     if (resolutions) {
                         // 暂时选取分辨率较低的video进行解析
                         const videoUrl = resolutions[i].url;
-                        this.downloadVideo(videoUrl).then(path => {
-                            this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                        this.downloadVideo(videoUrl, false, null, this.videoDownloadConcurrency, 'miyoushe.mp4').then(videoPath => {
+                            this.sendVideoToUpload(e, videoPath);
                         });
                         break;
                     }
@@ -2942,10 +2836,10 @@ export class tools extends plugin {
             const cover = firstFeed.images[0].url;
             const noWatermarkDownloadUrl = firstFeed.video_url;
 
-            e.reply([segment.image(cover), `${this.identifyPrefix}识别：微视，${title}`]);
+            await replyWithRetry(e, Bot, [segment.image(cover), `${this.identifyPrefix}识别：微视，${title}`]);
 
-            this.downloadVideo(noWatermarkDownloadUrl).then(path => {
-                this.sendVideoToUpload(e, `${path}/temp.mp4`);
+            this.downloadVideo(noWatermarkDownloadUrl, false, null, this.videoDownloadConcurrency, 'weishi.mp4').then(videoPath => {
+                this.sendVideoToUpload(e, videoPath);
             });
         } catch (err) {
             logger.error(err);
@@ -2972,7 +2866,7 @@ export class tools extends plugin {
             const html = response.data;
 
             const videoUrlRegex = /fullscreen="false" src="(.*?)"/;
-            const videoTitleRegex = /:<\/span><h1>(.*?)<\/h1><\/div><div class=/;
+            const videoTitleRegex = /:<\/span><h1>(.*?)<\/h1><\/div><div=/;
             const videoCoverRegex = /poster="(.*?)"/;
             const videoAuthorRegex = /<span class="SharePostCard__name">(.*?)<\/span>/;
 
@@ -3002,18 +2896,25 @@ export class tools extends plugin {
             e.reply(`${this.identifyPrefix}识别：最右，${shortVideoInfo.authorName}\n${shortVideoInfo.title}`);
 
             if (shortVideoInfo.images.length > 0) {
-                const replyImages = shortVideoInfo.images.map(item => {
-                    return {
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
-                });
-                e.reply(Bot.makeForwardMsg(replyImages));
+                if (shortVideoInfo.images.length > this.globalImageLimit) {
+                    // 超过限制，使用转发消息
+                    const replyImages = shortVideoInfo.images.map(item => {
+                        return {
+                            message: segment.image(item),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        };
+                    });
+                    await sendImagesInBatches(e, replyImages, this.imageBatchThreshold);
+                } else {
+                    // 在限制内，直接发送图片
+                    const images = shortVideoInfo.images.map(url => segment.image(url));
+                    await e.reply(images);
+                }
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
-                this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl).then(path => {
-                    this.sendVideoToUpload(e, `${path}/temp.mp4`);
+                this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl, false, null, this.videoDownloadConcurrency, 'zuiyou.mp4').then(videoPath => {
+                    this.sendVideoToUpload(e, videoPath);
                 });
             }
         } catch (error) {
@@ -3173,7 +3074,7 @@ export class tools extends plugin {
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
                 // 将总结内容格式化为合并转发消息
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
-                await e.reply(Msg);
+                await replyWithRetry(e, Bot, Msg);
             } catch (error) {
                 e.reply(`总结失败: ${error.message}`);
             }
@@ -3225,7 +3126,7 @@ export class tools extends plugin {
                 const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
                 const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」联合为您总结内容：`, kimiAns]));
-                await e.reply(Msg);
+                await replyWithRetry(e, Bot, Msg);
                 return false;
             }
         }
@@ -3246,7 +3147,7 @@ export class tools extends plugin {
         e.reply(`${this.identifyPrefix}识别：${name} - ${titleMatch}，正在为您总结，请稍等...`, true);
         const summary = await deepSeekChat(content, SUMMARY_PROMPT);
         const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x DeepSeek」联合为您总结内容：`, summary]));
-        await e.reply(Msg);
+        await replyWithRetry(e, Bot, Msg);
     }
 
     // q q m u s i c 解析
@@ -3372,15 +3273,25 @@ export class tools extends plugin {
         // 过滤当前文件
         const mediaFiles = await getMediaFilesAndOthers(tgSavePath);
         if (mediaFiles.images.length > 0) {
-            const imagesData = mediaFiles.images.map(item => {
-                const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
-                return {
-                    message: segment.image(fileContent),
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                };
-            });
-            e.reply(await Bot.makeForwardMsg(imagesData), true, { recallMsg: MESSAGE_RECALL_TIME });
+            if (mediaFiles.images.length > this.globalImageLimit) {
+                // 超过限制，使用转发消息
+                const imagesData = mediaFiles.images.map(item => {
+                    const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                    return {
+                        message: segment.image(fileContent),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                });
+                await sendImagesInBatches(e, imagesData, this.imageBatchThreshold);
+            } else {
+                // 在限制内，直接发送图片
+                const images = mediaFiles.images.map(item => {
+                    const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                    return segment.image(fileContent);
+                });
+                await e.reply(images);
+            }
         } else if (mediaFiles.videos.length > 0) {
             for (const item of mediaFiles.videos) {
                 await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
@@ -3431,17 +3342,26 @@ export class tools extends plugin {
 
                 // 处理视频
                 if (link) {
-                    const filePath = await this.downloadVideo(link);
-                    this.sendVideoToUpload(e, `${filePath}/temp.mp4`);
+                    const filePath = await this.downloadVideo(link, false, null, this.videoDownloadConcurrency, 'bili_dynamic.mp4');
+                    this.sendVideoToUpload(e, filePath);
                 }
             }
         }
         e.reply(sendContent, true);
-        extractImages && e.reply(Bot.makeForwardMsg(extractImages.map(item => ({
-            message: item,
-            nickname: e.sender.card || e.user_id,
-            user_id: e.user_id,
-        }))));
+        if (extractImages && extractImages.length > 0) {
+            if (extractImages.length > this.globalImageLimit) {
+                // 超过限制，使用转发消息
+                const imageMessages = extractImages.map(item => ({
+                    message: item,
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }));
+                await sendImagesInBatches(e, imageMessages, this.imageBatchThreshold);
+            } else {
+                // 在限制内，直接发送图片
+                await e.reply(extractImages);
+            }
+        }
         // 切除楼主的消息
         const others = postList.slice(1);
         // 贴吧楼层的消息处理：如果响应中有其他帖子，代码创建一条转发消息，包含其他帖子的内容，并回复原始消息
@@ -3470,7 +3390,7 @@ export class tools extends plugin {
             }).filter(Boolean); // 过滤掉 null 的值
         });
 
-        e.reply(await Bot.makeForwardMsg(reply));
+        await sendImagesInBatches(e, reply, this.imageBatchThreshold);
         return true;
     }
 
@@ -3733,12 +3653,31 @@ export class tools extends plugin {
                             }
 
                             if (combinedMessage.length > 0) {
-                                const postContentForwardMsgs = [{
-                                    message: combinedMessage,
-                                    nickname: this.e.sender.card || this.e.user_id,
-                                    user_id: this.e.user_id,
-                                }];
-                                await e.reply(await Bot.makeForwardMsg(postContentForwardMsgs));
+                                // 小黑盒单条转发消息元素数量限制（图+文混合）
+                                const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+
+                                // 将元素按限制分割成多组
+                                const splitGroups = [];
+                                for (let i = 0; i < combinedMessage.length; i += XHH_MSG_ELEMENT_LIMIT) {
+                                    splitGroups.push(combinedMessage.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
+                                }
+
+                                // 每组作为一个独立的转发消息发送
+                                for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
+                                    const group = splitGroups[groupIndex];
+                                    const forwardMsg = [{
+                                        message: group,
+                                        nickname: this.e.sender.card || this.e.user_id,
+                                        user_id: this.e.user_id,
+                                    }];
+
+                                    // 如果有多组，添加序号提示
+                                    if (splitGroups.length > 1) {
+                                        logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                    }
+
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                }
                             }
                         } else {
                             // 图文分离的情况
@@ -3750,20 +3689,35 @@ export class tools extends plugin {
                                 .map(t => t.text)
                                 .join('\n');
                             const hasValidText = textContent && textContent !== link.description;
+
                             if (hasValidText) {
                                 // 有有效文本
                                 if (imageUrls.length > this.globalImageLimit) {
+                                    // 图片数量超过限制，用转发消息发送
                                     await e.reply(messagesToSend.flat());
-                                    const combinedMessage = [];
-                                    imageUrls.forEach(url => combinedMessage.push(segment.image(url)));
-                                    combinedMessage.push(textContent);
-                                    const forwardMsg = [{
-                                        message: combinedMessage,
-                                        nickname: this.e.sender.card || this.e.user_id,
-                                        user_id: this.e.user_id
-                                    }];
-                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+
+                                    // 按 xhhMsgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    const allElements = [...imageUrls.map(url => segment.image(url)), textContent];
+                                    const splitGroups = [];
+                                    for (let i = 0; i < allElements.length; i += XHH_MSG_ELEMENT_LIMIT) {
+                                        splitGroups.push(allElements.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
+                                    }
+
+                                    for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
+                                        const group = splitGroups[groupIndex];
+                                        const forwardMsg = [{
+                                            message: group,
+                                            nickname: this.e.sender.card || this.e.user_id,
+                                            user_id: this.e.user_id
+                                        }];
+                                        if (splitGroups.length > 1) {
+                                            logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                        }
+                                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                    }
                                 } else {
+                                    // 图片数量在限制内，直接发送图片，文字用转发消息
                                     imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
                                     await e.reply(messagesToSend.flat());
                                     const textForwardMsg = [{
@@ -3771,20 +3725,36 @@ export class tools extends plugin {
                                         nickname: this.e.sender.card || this.e.user_id,
                                         user_id: this.e.user_id
                                     }];
-                                    await e.reply(await Bot.makeForwardMsg(textForwardMsg));
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(textForwardMsg));
                                 }
                             } else {
                                 // 无有效文本
                                 if (imageUrls.length > this.globalImageLimit) {
+                                    // 图片数量超过限制，用转发消息发送
                                     await e.reply(messagesToSend.flat());
-                                    const imageMessage = imageUrls.map(url => segment.image(url));
-                                    const forwardMsg = [{
-                                        message: imageMessage,
-                                        nickname: this.e.sender.card || this.e.user_id,
-                                        user_id: this.e.user_id
-                                    }];
-                                    await e.reply(await Bot.makeForwardMsg(forwardMsg));
+
+                                    // 按 xhhMsgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    const splitGroups = [];
+                                    for (let i = 0; i < imageUrls.length; i += XHH_MSG_ELEMENT_LIMIT) {
+                                        splitGroups.push(imageUrls.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
+                                    }
+
+                                    for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
+                                        const group = splitGroups[groupIndex];
+                                        const imageMessage = group.map(url => segment.image(url));
+                                        const forwardMsg = [{
+                                            message: imageMessage,
+                                            nickname: this.e.sender.card || this.e.user_id,
+                                            user_id: this.e.user_id
+                                        }];
+                                        if (splitGroups.length > 1) {
+                                            logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                        }
+                                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                    }
                                 } else {
+                                    // 图片数量在限制内，直接发送
                                     imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
                                     await e.reply(messagesToSend.flat());
                                 }
@@ -3799,8 +3769,8 @@ export class tools extends plugin {
 
                 // 处理并发送视频
                 if (link.has_video === 1 && link.video_url) {
-                    const videoPath = await this.downloadVideo(link.video_url);
-                    await this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
+                    const videoPath = await this.downloadVideo(link.video_url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
+                    await this.sendVideoToUpload(e, videoPath);
                 }
 
                 // 处理并发送评论
@@ -3838,7 +3808,7 @@ export class tools extends plugin {
                         }
                     }
                     if (commentForwardMsgs.length > 0) {
-                        await e.reply(await Bot.makeForwardMsg(commentForwardMsgs));
+                        await sendImagesInBatches(e, commentForwardMsgs, this.imageBatchThreshold);
                     }
                 }
             } catch (error) {
@@ -4086,14 +4056,14 @@ export class tools extends plugin {
                     };
                     forwardMessages.push(combinedImageMessage);
                 }
-                // 发送合并后的转发消息
-                await e.reply(await Bot.makeForwardMsg(forwardMessages));
+                // 发送合并后的转发消息（使用分批发送）
+                await sendImagesInBatches(e, forwardMessages, this.imageBatchThreshold);
 
                 // 发送游戏视频
                 const video = data.screenshots?.find(m => m.type === 'movie');
                 if (video) {
-                    const videoPath = await this.downloadVideo(video.url);
-                    this.sendVideoToUpload(e, `${videoPath}/temp.mp4`);
+                    const videoPath = await this.downloadVideo(video.url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
+                    this.sendVideoToUpload(e, videoPath);
                 }
             } catch (error) {
                 logger.error(`[R插件][小黑盒游戏] 解析失败: ${error.message}`);
@@ -4262,7 +4232,8 @@ export class tools extends plugin {
      */
     getGroupPathAndTarget() {
         const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
-        const target = `${groupPath}/temp.mp4`;
+        // 使用时间戳生成唯一文件名，避免多平台并发时冲突
+        const target = `${groupPath}/video_${Date.now()}.mp4`;
         return { groupPath, target };
     }
 
@@ -4272,11 +4243,15 @@ export class tools extends plugin {
      * @param isProxy
      * @param headers
      * @param numThreads
-     * @returns {Promise<string>}
+     * @param fileName 可选，指定下载后的文件名（如 'weibo.mp4', 'BV123.mp4'）
+     * @returns {Promise<string>} 返回下载文件的完整路径
      */
-    async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency) {
+    async downloadVideo(url, isProxy = false, headers = null, numThreads = this.videoDownloadConcurrency, fileName = null) {
         // 构造群信息参数
-        const { groupPath, target } = this.getGroupPathAndTarget.call(this);
+        const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
+        // 如果传入 fileName 则使用，否则使用时间戳
+        const actualFileName = fileName || `video_${Date.now()}.mp4`;
+        const target = `${groupPath}/${actualFileName}`;
         await mkdirIfNotExists(groupPath);
         // 构造header部分内容
         const userAgent = "Mozilla/5.0 (Linux; Android 5.0; SM-G900P Build/LRX21T) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Mobile Safari/537.36";
@@ -4392,7 +4367,7 @@ export class tools extends plugin {
 
             writer.close();
 
-            return groupPath;
+            return target;
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${err}`);
         }
@@ -4407,10 +4382,13 @@ export class tools extends plugin {
     async downloadVideoWithAria2(downloadVideoParams, numThreads) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
 
+        // 从 target 中提取文件名
+        const fileName = target.split('/').pop() || target.split('\\').pop() || 'video.mp4';
+
         // 构造aria2c命令参数
         const aria2cArgs = [
             `"${url}"`,
-            `--out="temp.mp4"`,
+            `--out="${fileName}"`,
             `--dir="${groupPath}"`,
             `--user-agent="${userAgent}"`,
             `--max-connection-per-server=${numThreads}`, // 每个服务器的最大连接数
@@ -4448,7 +4426,7 @@ export class tools extends plugin {
                     logger.mark(`下载完成: ${url}`);
                     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
                         logger.info(`[R插件][Aria2] 文件校验成功: ${target}`);
-                        resolve(groupPath);
+                        resolve(target);
                     } else {
                         logger.error(`[R插件][Aria2] 下载完成但文件无效 (不存在或为空): ${target}`);
                         reject(new Error("Aria2 下载的文件无效。"));
@@ -4510,7 +4488,7 @@ export class tools extends plugin {
                     logger.mark(`下载完成: ${url}`);
                     if (fs.existsSync(target) && fs.statSync(target).size > 0) {
                         logger.info(`[R插件][Axel] 文件校验成功: ${target}`);
-                        resolve(groupPath);
+                        resolve(target);
                     } else {
                         logger.error(`[R插件][Axel] 下载完成但文件无效 (不存在或为空): ${target}`);
                         reject(new Error("Axel 下载的文件无效。"));
@@ -4546,7 +4524,7 @@ export class tools extends plugin {
             res.data.pipe(writer);
 
             return new Promise((resolve, reject) => {
-                writer.on("finish", () => resolve(groupPath));
+                writer.on("finish", () => resolve(target));
                 writer.on("error", reject);
             });
         } catch (err) {
@@ -4628,13 +4606,27 @@ export class tools extends plugin {
                 e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制：${videoSizeLimit}MB，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path); // uploadGroupFile 内部会处理删除
             } else {
-                await e.reply(segment.video(path));
-                await checkAndRemoveFile(path); // 发送成功后删除
+                // 使用 replyWithRetry 包装视频发送，自动处理重发
+                const result = await replyWithRetry(e, Bot, segment.video(path));
+                // 发送成功后删除原文件
+                if (result && result.message_id) {
+                    await checkAndRemoveFile(path);
+                    // 同时清理可能生成的 retry 文件
+                    const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+                    await checkAndRemoveFile(retryPath);
+                } else {
+                    // 重发也失败了，清理文件
+                    await checkAndRemoveFile(path);
+                    const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+                    await checkAndRemoveFile(retryPath);
+                }
             }
         } catch (err) {
             logger.error(`[R插件][发送视频判断是否需要上传] 发生错误:\n ${err}`);
             // 如果发送失败，也尝试删除，避免残留
             await checkAndRemoveFile(path);
+            const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
+            await checkAndRemoveFile(retryPath);
         }
     }
 

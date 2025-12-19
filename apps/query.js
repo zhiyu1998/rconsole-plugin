@@ -2,6 +2,8 @@ import axios from "axios";
 import fetch from "node-fetch";
 // 常量
 import { CAT_LIMIT, COMMON_USER_AGENT } from "../constants/constant.js";
+import config from "../model/config.js";
+import { sendImagesInBatches } from "../utils/yunzai-util.js";
 
 export class query extends plugin {
 
@@ -31,56 +33,54 @@ export class query extends plugin {
                 {
                     reg: "^#累了$",
                     fnc: "cospro",
-                },
-                {
-                    reg: "^#竹白(.*)",
-                    fnc: "zhubaiSearch",
                 }
             ],
         });
+        // 加载配置
+        this.toolsConfig = config.getConfig("tools");
+        this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
     }
 
     async doctor(e) {
         const keyword = e.msg.replace("#医药查询", "").trim();
-        const url = `https://server.dayi.org.cn/api/search2?keyword=${ keyword }&pageNo=1&pageSize=10`;
+        const url = `https://server.dayi.org.cn/api/search?keyword=${encodeURIComponent(keyword)}&pageNo=1&pageSize=10`;
+        console.log(`[R插件][医药查询] 请求URL: ${url}`);
         try {
-            const res = await fetch(url)
-                .then(resp => resp.json())
-                .then(resp => resp.list);
-            let msg = [];
-            for (let element of res) {
-                const title = this.removeTag(element.title);
-                const thumbnail = element?.thumbnail || element?.auditDoctor?.thumbnail;
-                const doctor = `\n\n👨‍⚕️ 医生信息：${ element?.auditDoctor?.name } - ${ element?.auditDoctor?.clinicProfessional } - ${ element?.auditDoctor?.eduProfessional } - ${ element?.auditDoctor?.institutionName } - ${ element?.auditDoctor?.institutionLevel } - ${ element?.auditDoctor?.departmentName }`
-                const template = `📌 ${ title } - ${ element.secondTitle }${ element?.auditDoctor ? doctor : '' }\n\n📝 简介：${ element.introduction }`;
-                if (thumbnail) {
-                    msg.push({
-                        message: [segment.image(thumbnail), { type: "text", text: template, }],
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    });
-                } else {
-                    msg.push({
-                        message: {
-                            type: "text",
-                            text: template,
-                        },
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id,
-                    })
-                }
+            // Node.js需要禁用SSL验证（该服务器证书有问题）
+            const { Agent } = await import('https');
+            const response = await axios.get(url, {
+                httpsAgent: new Agent({ rejectUnauthorized: false })
+            });
+            const res = response.data.list;
+
+            if (!res || res.length === 0) {
+                e.reply("未找到相关医药信息");
+                return true;
             }
-            e.reply(await Bot.makeForwardMsg(msg));
+
+            let msg = res.map(element => {
+                const title = this.removeTag(element.title);
+                const intro = this.removeTag(element.introduction);
+                const template = `📌 ${title} - ${element.secondTitle}\n\n📝 简介：${intro}`;
+                return {
+                    message: { type: "text", text: template },
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            });
+
+            await replyWithRetry(e, Bot, await Bot.makeForwardMsg(msg));
         } catch (err) {
-            logger.error(err);
+            console.error(`[R插件][医药查询] 请求失败:`, err.message);
+            e.reply("医药查询失败，请稍后重试");
         }
         return true;
     }
 
     async cat(e) {
         const [shibes, cats] = await Promise.allSettled([
-            fetch(`https://shibe.online/api/cats?count=${ CAT_LIMIT }`).then(data => data.json()),
-            fetch(`https://api.thecatapi.com/v1/images/search?limit=${ CAT_LIMIT }`).then(data =>
+            fetch(`https://shibe.online/api/cats?count=${CAT_LIMIT}`).then(data => data.json()),
+            fetch(`https://api.thecatapi.com/v1/images/search?limit=${CAT_LIMIT}`).then(data =>
                 data.json(),
             ),
         ]);
@@ -96,7 +96,7 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        e.reply(await Bot.makeForwardMsg(images));
+        await sendImagesInBatches(e, images, this.imageBatchThreshold);
         return true;
     }
 
@@ -117,7 +117,7 @@ export class query extends plugin {
             .filter(result => result.status === "fulfilled") // 只保留已解决的 Promise
             .flatMap(result =>
                 result.value.data.list.map(element => {
-                    const template = `推荐软件：${ element.title }\n地址：${ element.url }\n`;
+                    const template = `推荐软件：${element.title}\n地址：${element.url}\n`;
                     return {
                         message: { type: "text", text: template },
                         nickname: e.sender.card || e.user_id,
@@ -133,24 +133,25 @@ export class query extends plugin {
     }
 
     async buyerShow(e) {
-        const p1 = fetch("https://api.vvhan.com/api/tao").then(resp => resp.url);
-        const p2 = fetch("https://api.uomg.com/api/rand.img3?format=json")
-            .then(resp => resp.json())
-            .then(resp => resp.imgurl);
+        try {
+            // 使用素言网API获取买家秀
+            const resp = await fetch("https://api.suyanw.cn/api/tbmjx.php?return=json");
+            const data = await resp.json();
 
-        const results = await Promise.allSettled([p1, p2]);
-        const images = results
-            .filter(result => result.status === "fulfilled")
-            .map(result => result.value);
-
-        for (const img of images) {
-            e.reply(segment.image(img));
+            if (data.imgurl) {
+                e.reply(segment.image(data.imgurl));
+            } else {
+                e.reply("获取买家秀失败");
+            }
+        } catch (error) {
+            console.error(`[R插件][买家秀] API失败: ${error.message}`);
+            e.reply("获取买家秀失败，请稍后重试");
         }
-
         return true;
     }
 
     async cospro(e) {
+        // 恢复原来的cos图API
         let [res1, res2] = (
             await Promise.allSettled([
                 fetch("https://imgapi.cn/cos2.php?return=jsonpro").then(resp => resp.json()),
@@ -166,49 +167,10 @@ export class query extends plugin {
             nickname: this.e.sender.card || this.e.user_id,
             user_id: this.e.user_id,
         }));
-        e.reply(await Bot.makeForwardMsg(images));
+        await sendImagesInBatches(e, images, this.imageBatchThreshold);
         return true;
     }
 
-    // 竹白百科
-    async zhubaiSearch(e) {
-        const keyword = e.msg.replace("#竹白", "").trim();
-        if (keyword === "") {
-            e.reply("请输入想了解的内容，例如：#竹白 javascript");
-            return true;
-        }
-        await axios
-            .post(
-                "https://open.zhubai.wiki/a/zb/s/ep/",
-                {
-                    content: 1,
-                    keyword: keyword,
-                },
-                {
-                    headers: {
-                        "User-Agent": COMMON_USER_AGENT,
-                    },
-                },
-            )
-            .then(async resp => {
-                const res = resp.data.data;
-                const content = res
-                    .sort((a, b) => b.luSort - a.luSort)
-                    .map(item => {
-                        const { pn, pa, zn, lu, pu, pq, aa, hl } = item;
-                        const template = `标题：${ pn }\n${ pa }\n期刊：${ zn }\n发布日期距今：${ lu }\n链接1：${ pu }\n链接2：${ pq }\n\n 大致描述：${ hl
-                            .join("\n")
-                            .replace(/<\/?font[^>]*>/g, "") }`;
-                        return {
-                            message: [segment.image(aa), template],
-                            nickname: this.e.sender.card || this.e.user_id,
-                            user_id: this.e.user_id,
-                        };
-                    });
-                e.reply(await Bot.makeForwardMsg(content));
-            });
-        return true;
-    }
 
     // 删除标签
     removeTag(title) {

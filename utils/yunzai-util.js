@@ -317,3 +317,81 @@ export async function cleanupTempFiles(filePaths) {
         }
     }
 }
+
+/**
+ * 分批发送图片合并转发消息
+ * 当图片数量超过阈值时自动分批发送，避免一次性发送过多图片导致失败
+ * 
+ * @param {object} e - 消息事件对象
+ * @param {Array} forwardMsgList - 需要发送的消息列表 (格式: [{message, nickname, user_id}, ...])
+ * @param {number} batchThreshold - 分批阈值，0表示不限制，默认50
+ * @param {object} options - 可选配置
+ * @param {boolean} options.useRetry - 是否使用replyWithRetry进行重试，默认true
+ * @returns {Promise<{success: boolean, results: Array}>} 发送结果
+ */
+export async function sendImagesInBatches(e, forwardMsgList, batchThreshold = 50, options = {}) {
+    const { replyWithRetry } = await import("./retry.js");
+    const { useRetry = true } = options;
+
+    if (!forwardMsgList || forwardMsgList.length === 0) {
+        return { success: false, results: [] };
+    }
+
+    const results = [];
+
+    // 如果阈值为0或图片数量小于等于阈值，一次性发送
+    if (batchThreshold <= 0 || forwardMsgList.length <= batchThreshold) {
+        try {
+            const forwardMsg = await Bot.makeForwardMsg(forwardMsgList);
+            let result;
+            if (useRetry) {
+                result = await replyWithRetry(e, Bot, forwardMsg);
+            } else {
+                result = await e.reply(forwardMsg);
+            }
+            results.push(result);
+            return {
+                success: result && result.message_id,
+                results
+            };
+        } catch (error) {
+            logger.error(`[R插件][分批发送] 发送失败: ${error.message}`);
+            return { success: false, results };
+        }
+    }
+
+    // 超过阈值，分批发送
+    let allSuccess = true;
+    const totalBatches = Math.ceil(forwardMsgList.length / batchThreshold);
+
+    logger.info(`[R插件][分批发送] 图片数量${forwardMsgList.length}张，分${totalBatches}批发送，每批最多${batchThreshold}张`);
+
+    for (let i = 0; i < forwardMsgList.length; i += batchThreshold) {
+        const batch = forwardMsgList.slice(i, i + batchThreshold);
+        const batchNum = Math.floor(i / batchThreshold) + 1;
+
+        try {
+            const forwardMsg = await Bot.makeForwardMsg(batch);
+            let result;
+            if (useRetry) {
+                result = await replyWithRetry(e, Bot, forwardMsg);
+            } else {
+                result = await e.reply(forwardMsg);
+            }
+            results.push(result);
+
+            if (!result || !result.message_id) {
+                allSuccess = false;
+                logger.warn(`[R插件][分批发送] 第${batchNum}/${totalBatches}批发送失败`);
+            }
+        } catch (error) {
+            allSuccess = false;
+            logger.error(`[R插件][分批发送] 第${batchNum}/${totalBatches}批发送出错: ${error.message}`);
+            results.push(null);
+        }
+    }
+
+    logger.info(`[R插件][分批发送] 完成，成功${results.filter(r => r && r.message_id).length}/${totalBatches}批`);
+
+    return { success: allSuccess, results };
+}
