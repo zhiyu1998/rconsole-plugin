@@ -61,11 +61,11 @@ export function supportGuoba() {
                     field: "tools.globalImageLimit",
                     label: "解析图片是否合并转发",
                     bottomHelpMessage:
-                        "超过配置的数字就会折叠。目前实现了此能的主要有米游社、b站动态专栏、微博、小红书",
+                        "超过此数量的图片将使用转发消息发送，小于等于此数量则直接发送图片。设置为0表示始终使用转发消息。支持平台：抖音、B站动态专栏、小红书、微博、米游社、小黑盒、最右、贴吧、小飞机TG、通用解析(皮皮虾等)",
                     component: "InputNumber",
                     required: false,
                     componentProps: {
-                        placeholder: "请输入合并转发最大阈值",
+                        placeholder: "请输入合并转发阈值（默认0=始终转发）",
                     },
                 },
                 {

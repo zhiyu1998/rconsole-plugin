@@ -525,7 +525,13 @@ export class tools extends plugin {
                     }
                 }
                 if (messageSegments.length > 0) {
-                    await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    if (messageSegments.length > this.globalImageLimit) {
+                        // 超过限制，使用转发消息
+                        await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    } else {
+                        // 在限制内，直接发送图片
+                        await e.reply(messageSegments.map(item => item.message));
+                    }
 
                     // 删除文件
                     for (const filePath of downloadedFilePaths) {
@@ -673,15 +679,20 @@ export class tools extends plugin {
                 // 提取无水印图片URL列表
                 const imageUrls = item.images.map(i => i.url_list[0]);
 
-                // 构建转发消息列表
-                const remoteImageList = imageUrls.map(url => ({
-                    message: segment.image(url),
-                    nickname: this.e.sender.card || this.e.user_id,
-                    user_id: this.e.user_id,
-                }));
-
-                // 使用全局分批发送工具发送图片
-                await sendImagesInBatches(e, remoteImageList, this.imageBatchThreshold);
+                // 根据 globalImageLimit 决定发送方式
+                if (imageUrls.length > this.globalImageLimit) {
+                    // 超过限制，使用转发消息
+                    const remoteImageList = imageUrls.map(url => ({
+                        message: segment.image(url),
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }));
+                    await sendImagesInBatches(e, remoteImageList, this.imageBatchThreshold);
+                } else {
+                    // 在限制内，直接发送图片
+                    const images = imageUrls.map(url => segment.image(url));
+                    await e.reply(images);
+                }
             }
             // 如果开启评论的就调用
             await this.douyinComment(e, douId, headers);
@@ -2589,9 +2600,15 @@ export class tools extends plugin {
 
                 logger.info(`[R插件][图片下载] 下载完成: ${downloadedFilePaths.length}/${adapter.images.length} 张`);
 
-                // 发送合并转发（使用分批发送）
+                // 发送图片
                 if (messageSegments.length > 0) {
-                    await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    if (messageSegments.length > this.globalImageLimit) {
+                        // 超过限制，使用转发消息
+                        await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
+                    } else {
+                        // 在限制内，直接发送图片
+                        await e.reply(messageSegments.map(item => item.message));
+                    }
 
                     // 删除临时文件（静默删除）
                     await Promise.all(downloadedFilePaths.map(fp => checkAndRemoveFile(fp)));
@@ -2879,14 +2896,21 @@ export class tools extends plugin {
             e.reply(`${this.identifyPrefix}识别：最右，${shortVideoInfo.authorName}\n${shortVideoInfo.title}`);
 
             if (shortVideoInfo.images.length > 0) {
-                const replyImages = shortVideoInfo.images.map(item => {
-                    return {
-                        message: segment.image(item),
-                        nickname: this.e.sender.card || this.e.user_id,
-                        user_id: this.e.user_id,
-                    };
-                });
-                await sendImagesInBatches(e, replyImages, this.imageBatchThreshold);
+                if (shortVideoInfo.images.length > this.globalImageLimit) {
+                    // 超过限制，使用转发消息
+                    const replyImages = shortVideoInfo.images.map(item => {
+                        return {
+                            message: segment.image(item),
+                            nickname: this.e.sender.card || this.e.user_id,
+                            user_id: this.e.user_id,
+                        };
+                    });
+                    await sendImagesInBatches(e, replyImages, this.imageBatchThreshold);
+                } else {
+                    // 在限制内，直接发送图片
+                    const images = shortVideoInfo.images.map(url => segment.image(url));
+                    await e.reply(images);
+                }
             }
             if (shortVideoInfo.noWatermarkDownloadUrl) {
                 this.downloadVideo(shortVideoInfo.noWatermarkDownloadUrl, false, null, this.videoDownloadConcurrency, 'zuiyou.mp4').then(videoPath => {
@@ -3249,15 +3273,25 @@ export class tools extends plugin {
         // 过滤当前文件
         const mediaFiles = await getMediaFilesAndOthers(tgSavePath);
         if (mediaFiles.images.length > 0) {
-            const imagesData = mediaFiles.images.map(item => {
-                const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
-                return {
-                    message: segment.image(fileContent),
-                    nickname: e.sender.card || e.user_id,
-                    user_id: e.user_id,
-                };
-            });
-            await sendImagesInBatches(e, imagesData, this.imageBatchThreshold);
+            if (mediaFiles.images.length > this.globalImageLimit) {
+                // 超过限制，使用转发消息
+                const imagesData = mediaFiles.images.map(item => {
+                    const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                    return {
+                        message: segment.image(fileContent),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    };
+                });
+                await sendImagesInBatches(e, imagesData, this.imageBatchThreshold);
+            } else {
+                // 在限制内，直接发送图片
+                const images = mediaFiles.images.map(item => {
+                    const fileContent = fs.readFileSync(`${tgSavePath}/${item}`);
+                    return segment.image(fileContent);
+                });
+                await e.reply(images);
+            }
         } else if (mediaFiles.videos.length > 0) {
             for (const item of mediaFiles.videos) {
                 await this.sendVideoToUpload(e, `${tgSavePath}/${item}`);
@@ -3315,13 +3349,18 @@ export class tools extends plugin {
         }
         e.reply(sendContent, true);
         if (extractImages && extractImages.length > 0) {
-            const imageMessages = extractImages.map(item => ({
-                message: item,
-                nickname: e.sender.card || e.user_id,
-                user_id: e.user_id,
-            }));
-            // 使用分批发送工具
-            await sendImagesInBatches(e, imageMessages, this.imageBatchThreshold);
+            if (extractImages.length > this.globalImageLimit) {
+                // 超过限制，使用转发消息
+                const imageMessages = extractImages.map(item => ({
+                    message: item,
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                }));
+                await sendImagesInBatches(e, imageMessages, this.imageBatchThreshold);
+            } else {
+                // 在限制内，直接发送图片
+                await e.reply(extractImages);
+            }
         }
         // 切除楼主的消息
         const others = postList.slice(1);
@@ -3641,44 +3680,83 @@ export class tools extends plugin {
                                 }
                             }
                         } else {
-                            // 图文分离的情况 - 分组发送
-                            // 先发送基础消息
-                            await e.reply(messagesToSend.flat());
+                            // 图文分离的情况
+                            const imageUrls = textEntities
+                                .filter(item => item.type === 'img' && item.url)
+                                .map(img => img.url);
+                            const textContent = textEntities
+                                .filter(item => item.type === 'text' && item.text)
+                                .map(t => t.text)
+                                .join('\n');
+                            const hasValidText = textContent && textContent !== link.description;
 
-                            // 按原始顺序收集所有元素
-                            const allElements = [];
-                            for (const item of textEntities) {
-                                if (item.type === 'img' && item.url) {
-                                    allElements.push(segment.image(item.url));
-                                } else if (item.type === 'text' && item.text && item.text !== link.description) {
-                                    allElements.push(item.text);
-                                }
-                            }
+                            if (hasValidText) {
+                                // 有有效文本
+                                if (imageUrls.length > this.globalImageLimit) {
+                                    // 图片数量超过限制，用转发消息发送
+                                    await e.reply(messagesToSend.flat());
 
-                            if (allElements.length > 0) {
-                                // 小黑盒单条转发消息元素数量限制
-                                const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
-
-                                // 将元素按限制分割成多组
-                                const splitGroups = [];
-                                for (let i = 0; i < allElements.length; i += XHH_MSG_ELEMENT_LIMIT) {
-                                    splitGroups.push(allElements.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
-                                }
-
-                                // 每组作为一个独立的转发消息发送
-                                for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
-                                    const group = splitGroups[groupIndex];
-                                    const forwardMsg = [{
-                                        message: group,
-                                        nickname: this.e.sender.card || this.e.user_id,
-                                        user_id: this.e.user_id,
-                                    }];
-
-                                    if (splitGroups.length > 1) {
-                                        logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                    // 按 xhhMsgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    const allElements = [...imageUrls.map(url => segment.image(url)), textContent];
+                                    const splitGroups = [];
+                                    for (let i = 0; i < allElements.length; i += XHH_MSG_ELEMENT_LIMIT) {
+                                        splitGroups.push(allElements.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
                                     }
 
-                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                    for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
+                                        const group = splitGroups[groupIndex];
+                                        const forwardMsg = [{
+                                            message: group,
+                                            nickname: this.e.sender.card || this.e.user_id,
+                                            user_id: this.e.user_id
+                                        }];
+                                        if (splitGroups.length > 1) {
+                                            logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                        }
+                                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                    }
+                                } else {
+                                    // 图片数量在限制内，直接发送图片，文字用转发消息
+                                    imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
+                                    await e.reply(messagesToSend.flat());
+                                    const textForwardMsg = [{
+                                        message: textContent,
+                                        nickname: this.e.sender.card || this.e.user_id,
+                                        user_id: this.e.user_id
+                                    }];
+                                    await replyWithRetry(e, Bot, await Bot.makeForwardMsg(textForwardMsg));
+                                }
+                            } else {
+                                // 无有效文本
+                                if (imageUrls.length > this.globalImageLimit) {
+                                    // 图片数量超过限制，用转发消息发送
+                                    await e.reply(messagesToSend.flat());
+
+                                    // 按 xhhMsgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    const splitGroups = [];
+                                    for (let i = 0; i < imageUrls.length; i += XHH_MSG_ELEMENT_LIMIT) {
+                                        splitGroups.push(imageUrls.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
+                                    }
+
+                                    for (let groupIndex = 0; groupIndex < splitGroups.length; groupIndex++) {
+                                        const group = splitGroups[groupIndex];
+                                        const imageMessage = group.map(url => segment.image(url));
+                                        const forwardMsg = [{
+                                            message: imageMessage,
+                                            nickname: this.e.sender.card || this.e.user_id,
+                                            user_id: this.e.user_id
+                                        }];
+                                        if (splitGroups.length > 1) {
+                                            logger.info(`[R插件][小黑盒帖子] 发送第 ${groupIndex + 1}/${splitGroups.length} 部分`);
+                                        }
+                                        await replyWithRetry(e, Bot, await Bot.makeForwardMsg(forwardMsg));
+                                    }
+                                } else {
+                                    // 图片数量在限制内，直接发送
+                                    imageUrls.forEach(url => messagesToSend.push(segment.image(url)));
+                                    await e.reply(messagesToSend.flat());
                                 }
                             }
                         }
