@@ -1256,10 +1256,14 @@ export class tools extends plugin {
         let replyContent = [
             segment.image(resp.result.cover),
             `${this.identifyPrefix}识别：${displayType}，${title}\n🎯 评分: ${result?.rating?.score ?? '-'} / ${result?.rating?.count ?? '-'}\n📺 ${result?.new_ep?.desc ?? '更新中'}, ${result?.seasons?.[0]?.new_ep?.index_show ?? '第1集'}\n`,
-            `${formatBiliInfo(dataProcessMap)}`,
-            `\n\n🪶 在线观看： ${await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + title)}`,
-            `\n🌸 在线观看： ${await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title)}`
+            `${formatBiliInfo(dataProcessMap)}`
         ];
+
+        // 未开启番剧直接解析时，显示在线观看链接
+        if (!this.biliBangumiDirect) {
+            replyContent.push(`\n\n🪶 在线观看： ${await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK + title)}`);
+            replyContent.push(`\n🌸 在线观看： ${await urlTransformShortLink(ANIME_SERIES_SEARCH_LINK2 + title)}`);
+        }
 
         // 如果超时，添加限制说明
         if (isOverLimit) {
