@@ -364,7 +364,7 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
         case 16: qualityText = "360P流畅"; break;
         default: qualityText = `未知画质(QN:${qn})`; break;
     }
-    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}, QN: ${qn}`);
+    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}, QN: ${qn}, 编码选择: ${preferredCodec}`);
 
     let streamData;
     let streamType = 'dash'; // 默认为dash格式

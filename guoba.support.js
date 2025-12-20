@@ -219,7 +219,7 @@ export function supportGuoba() {
                     field: "tools.biliSmartResolution",
                     label: "智能分辨率",
                     bottomHelpMessage:
-                        "从API最高画质开始，自动选择不超过文件大小限制的最佳画质（优先AV1编码）",
+                        "从API最高画质开始，自动选择不超过文件大小限制的最佳画质。编码选择受「全局配置-视频编码选择」影响",
                     component: "Switch",
                     required: false,
                 },
