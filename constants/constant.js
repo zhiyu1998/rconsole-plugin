@@ -179,6 +179,25 @@ export const BILI_DOWNLOAD_METHOD = Object.freeze([
     { label: '轻量（axel/wget）', value: 2 }
 ]);
 
+export const VIDEO_CODEC_LIST = Object.freeze([
+    {
+        label: '自动（推荐）',
+        value: 'auto',
+    },
+    {
+        label: 'AV1（最小体积）',
+        value: 'av1',
+    },
+    {
+        label: 'HEVC/H.265（推荐）',
+        value: 'hevc',
+    },
+    {
+        label: 'AVC/H.264（最佳兼容）',
+        value: 'avc',
+    },
+]);
+
 export const BILI_RESOLUTION_LIST = Object.freeze([
     { label: '8K 超高清', value: 0, qn: 127 },
     { label: '杜比视界', value: 1, qn: 126 },

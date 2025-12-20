@@ -287,9 +287,10 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @param duration 视频时长（秒），如果提供则用于文件大小估算
  * @param smartResolution 是否启用智能分辨率
  * @param fileSizeLimit 文件大小限制（MB）
+ * @param preferredCodec 用户选择的编码：auto, av1, hevc, avc
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100) {
+export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto') {
     let videoId = "";
     let cid = "";
     let isBangumi = false;
@@ -496,7 +497,26 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             return 'unknown';
         };
 
-        const codecPriority = { av1: 1, hevc: 2, avc: 3, unknown: 999 };
+        // 根据用户选择的编码设置优先级
+        let codecPriority;
+        switch (preferredCodec) {
+            case 'av1':
+                codecPriority = { av1: 1, hevc: 2, avc: 3, unknown: 999 };
+                logger.info(`[R插件][BILI下载] 用户指定编码: AV1（若不可用则降级）`);
+                break;
+            case 'hevc':
+                codecPriority = { av1: 2, hevc: 1, avc: 3, unknown: 999 };
+                logger.info(`[R插件][BILI下载] 用户指定编码: HEVC（若不可用则降级）`);
+                break;
+            case 'avc':
+                codecPriority = { av1: 2, hevc: 3, avc: 1, unknown: 999 };
+                logger.info(`[R插件][BILI下载] 用户指定编码: AVC（若不可用则降级）`);
+                break;
+            default:
+                // auto: 默认优先级 av1 > hevc > avc
+                codecPriority = { av1: 1, hevc: 2, avc: 3, unknown: 999 };
+                break;
+        }
         const sortedVideos = matchingVideos.sort((a, b) => {
             const codecTypeA = getCodecType(a.codecs);
             const codecTypeB = getCodecType(b.codecs);

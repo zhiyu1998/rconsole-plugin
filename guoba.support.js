@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -114,6 +114,20 @@ export function supportGuoba() {
                     bottomHelpMessage: "设置为开启时，Twitter、TikTok等平台将强制不使用代理",
                     component: "Switch",
                     required: false,
+                },
+                {
+                    field: "tools.videoCodec",
+                    label: "视频编码选择",
+                    bottomHelpMessage:
+                        "影响B站和YouTube的视频编码选择：\n" +
+                        "• 自动：智能选择最佳编码（AV1>HEVC>AVC），推荐大多数用户使用\n" +
+                        "• AV1：压缩效率最高，文件最小，但PC QQ内置播放器可能无法正常播放\n" +
+                        "• HEVC(H.265)：高效编码，文件较小，现代设备广泛支持\n" +
+                        "• AVC(H.264)：兼容性最佳，所有设备都能播放，但文件较大",
+                    component: "Select",
+                    componentProps: {
+                        options: VIDEO_CODEC_LIST,
+                    }
                 },
                 {
                     field: "tools.defaultPath",
