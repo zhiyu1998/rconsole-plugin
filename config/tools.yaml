@@ -8,6 +8,7 @@ proxyAddr: '127.0.0.1' # 魔法地址
 proxyPort: '7890' # 魔法端口
 identifyPrefix: '' # 识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩
 forceOverseasServer: false # 是否强制使用海外服务器，设置为true时，Twitter、TikTok等平台将强制使用代理
+videoCodec: auto # 视频编码选择（影响B站和YouTube）：auto=自动选择最佳编码, av1=AV1编码(最小体积,PC QQ可能无法播放), hevc=HEVC/H.265编码, avc=AVC/H.264编码(最佳兼容)
 
 deeplApiUrls: 'http://www.gptspt.cn/translate,http://gptspt.top/translate,http://8.134.135.4:1188/translate,http://120.76.141.173:1188/translate,http://bit.x7ys.com:1188/translate,http://deeplxapi.x7ys.com:1188/translate'
 

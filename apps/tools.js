@@ -334,6 +334,8 @@ export class tools extends plugin {
         this.biliSmartResolution = this.toolsConfig.biliSmartResolution;
         // 加载文件大小限制
         this.biliFileSizeLimit = this.toolsConfig.biliFileSizeLimit || 100;
+        // 加载全局视频编码选择（影响B站和YouTube）
+        this.videoCodec = this.toolsConfig.videoCodec || 'auto';
         // 加载youtube的截取时长
         this.youtubeClipTime = this.toolsConfig.youtubeClipTime;
         // 加载youtube的解析时长
@@ -1323,7 +1325,7 @@ export class tools extends plugin {
                 const qn = resolutionItem?.qn || 32;
                 logger.info(`[R插件][BILI下载] 使用分辨率: ${resolutionItem?.label || '默认480P'}, QN: ${qn}, useResolution值: ${useResolution}`);
                 // 获取下载链接，传入duration用于文件大小估算，传入智能分辨率配置
-                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit);
+                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec);
 
                 if (data.audioUrl != null) {
                     await this.downBili(tempPath, data.videoUrl, data.audioUrl);
@@ -2673,7 +2675,7 @@ export class tools extends plugin {
                     segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
                 const fullAudioPath = `${path}/${audioFilename}`;
                 if (this.isSendVocal) {
                     await e.reply(segment.record(fullAudioPath));
@@ -2697,7 +2699,7 @@ export class tools extends plugin {
                     segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${rawTitle}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
             } else {
                 // 正常下载
@@ -2705,7 +2707,7 @@ export class tools extends plugin {
                     segment.image(thumbnailUrl),
                     `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`
                 ]);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath);
+                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
                 await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
             }
         } catch (error) {

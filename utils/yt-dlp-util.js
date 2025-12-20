@@ -156,8 +156,9 @@ export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "", 
  * @param maxThreads 最大并发
  * @param outputFilename 输出文件名 (不含扩展名)
  * @param cookiePath Cookie所在位置
+ * @param preferredCodec 用户选择的编码：auto, av1, hevc, avc
  */
-export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outputFilename, merge = false, graphics, timeRange, cookiePath = "") {
+export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outputFilename, merge = false, graphics, timeRange, cookiePath = "", preferredCodec = "auto") {
     return new Promise((resolve, reject) => {
         let command = "";
         // 构造 cookie 参数
@@ -171,14 +172,31 @@ export async function ytDlpHelper(path, url, isOversea, proxy, maxThreads, outpu
             command = `yt-dlp -x --audio-format flac -f ba ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.flac" "${url}"`;
         } else {
             // YouTube视频下载逻辑
-            // 使用 -S "codec" 按编码优先级排序：av01 > vp9.2 > vp9 > h265 > h264（官方默认）
-            // AV1编码文件更小且质量更好，yt-dlp会自动优先选择
-            // --merge-output-format mp4 确保最终输出为mp4格式
+            // 根据用户选择的编码设置 -S 参数
+            let codecSort;
+            switch (preferredCodec) {
+                case 'av1':
+                    codecSort = '-S "+codec:av01"';
+                    logger.info(`[R插件][yt-dlp] 用户指定编码: AV1`);
+                    break;
+                case 'hevc':
+                    codecSort = '-S "+codec:hev1"';
+                    logger.info(`[R插件][yt-dlp] 用户指定编码: HEVC`);
+                    break;
+                case 'avc':
+                    codecSort = '-S "+codec:avc1"';
+                    logger.info(`[R插件][yt-dlp] 用户指定编码: AVC`);
+                    break;
+                default:
+                    // auto: 使用 yt-dlp 默认的编码优先级（AV1 > VP9 > H.264）
+                    codecSort = '-S "codec"';
+                    break;
+            }
+
             let formatSelector = "";
             if (url.includes("youtu")) {
                 // graphics 包含画质限制如 [height<=720]
-                // -S "codec" 优先选择更好的编码（AV1 > VP9 > H.264）
-                formatSelector = `--download-sections "*${timeRange}" -f "bv*${graphics}+ba/b${graphics}" -S "codec" --merge-output-format mp4`;
+                formatSelector = `--download-sections "*${timeRange}" -f "bv*${graphics}+ba/b${graphics}" ${codecSort} --merge-output-format mp4`;
             }
 
             command = `yt-dlp -N ${maxThreads} ${formatSelector} --concurrent-fragments ${maxThreads} ${cookieParam} ${constructProxyParam(isOversea, proxy)} -P "${path}" -o "${finalOutputFilename}.%(ext)s" "${url}"`;
