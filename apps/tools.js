@@ -1302,13 +1302,13 @@ export class tools extends plugin {
             // =================以下是调用BBDown的逻辑=====================
             // 下载视频和音频
             const tempPath = `${path}${tempFilename}`;
-            // 检测是否开启BBDown
-            if (this.biliUseBBDown) {
+            // 检测是否开启BBDown（智能分辨率开启时跳过BBDown，因为BBDown不支持文件大小限制）
+            if (this.biliUseBBDown && !this.biliSmartResolution) {
                 // 检测环境的 BBDown
                 const isExistBBDown = await checkToolInCurEnv("BBDown");
                 // 存在 BBDown
                 if (isExistBBDown) {
-                    // 删除之前的文件
+                    // 删除之前的文件（使用bvid命名）
                     await checkAndRemoveFile(`${tempPath}.mp4`);
                     // 下载视频
                     await startBBDown(url, path, {
@@ -1316,11 +1316,15 @@ export class tools extends plugin {
                         biliUseAria2: this.biliDownloadMethod === 1,
                         biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
                         biliResolution: useResolution,
+                        videoCodec: this.videoCodec,
                     });
-                    // 发送视频
+                    // 发送视频（BBDown使用<bvid>命名，所以文件名就是tempFilename）
                     return this.sendVideoToUpload(e, `${tempPath}.mp4`);
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
+            } else if (this.biliUseBBDown && this.biliSmartResolution) {
+                // BBDown开启但智能分辨率也开启，提示并使用默认下载
+                logger.info("[R插件][BBDown] 智能分辨率已启用，跳过BBDown使用默认下载方式");
             }
             // =================默认下载方式=====================
             try {
