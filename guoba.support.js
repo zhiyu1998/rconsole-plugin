@@ -219,7 +219,7 @@ export function supportGuoba() {
                     field: "tools.biliSmartResolution",
                     label: "智能分辨率",
                     bottomHelpMessage:
-                        "从API最高画质开始，自动选择不超过文件大小限制的最佳画质。编码选择受「全局配置-视频编码选择」影响",
+                        "从API最高画质开始，自动选择不超过文件大小限制的最佳画质。编码选择受「全局配置-视频编码选择」影响。⚠️ 注意：智能分辨率开启时会自动禁用BBDown（因为BBDown不支持文件大小限制功能）",
                     component: "Switch",
                     required: false,
                 },
@@ -238,7 +238,7 @@ export function supportGuoba() {
                     field: "tools.biliUseBBDown",
                     label: "BBDown接管下载",
                     bottomHelpMessage:
-                        "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式，如果喜欢折腾就开启，开启后下载更强劲，并且一劳永逸！",
+                        "【默认不开启，涉及范围只有哔哩哔哩，开启后默认最高画质发送】如果不爱折腾就使用默认下载方式。⚠️ 注意：开启智能分辨率时，BBDown会自动禁用（因为BBDown不支持文件大小限制功能）",
                     component: "Switch",
                     required: false,
                 },
