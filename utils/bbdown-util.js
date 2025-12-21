@@ -24,10 +24,10 @@ function getEncodingPriority(videoCodec) {
  * 使用BBDown下载
  * @param videoUrl      视频链接
  * @param downloadDir   下载目录
- * @param BBDownOptions  BBDown选项（目前仅支持session登录、使用Aria2下载、CDN、编码选择）
+ * @param BBDownOptions  BBDown选项（目前仅支持session登录、使用Aria2下载、CDN、编码选择、自定义文件名）
  */
 export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
-    const { biliSessData, biliUseAria2, biliCDN, biliResolution, videoCodec } = BBDownOptions;
+    const { biliSessData, biliUseAria2, biliCDN, biliResolution, videoCodec, customFilename } = BBDownOptions;
 
     return new Promise((resolve, reject) => {
         // logger.info(videoUrl);
@@ -48,21 +48,21 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
         let pParam;
         // 如果不是番剧就常规逻辑
         if (!(videoUrl.includes("play\/ep") || videoUrl.includes("play\/ss"))) {
-            // 普通视频：使用 <bvid> 作为文件名
-            pParam = pageParam ? `-p ${pageParam} -M "<bvid>"` : `-p 1 -M "<bvid>"`;
+            // 普通视频：带分P参数
+            pParam = pageParam ? `-p ${pageParam}` : `-p 1`;
         } else {
-            // 番剧：使用 <videoTitle> 作为文件名
-            pParam = `-M "<videoTitle>"`;
+            // 番剧：不需要分P参数
+            pParam = '';
         }
 
         // 构造 -q 参数 （画质优先级,用逗号分隔 例: "8K 超高清, 1080P 高码率, HDR 真彩, 杜比视界"）
         const qParam = `-q "${getResolutionLabels(biliResolution)}"`;
         // 构造 -e 参数（编码优先级）
         const eParam = `-e "${getEncodingPriority(videoCodec)}"`;
-        // 构造 -F 参数（单P文件名，使用 <bvid>）
-        const fParam = `-F "<bvid>"`;
+        // 构造 -F 参数（使用传入的自定义文件名，确保我们知道输出文件的名称）
+        const fParam = customFilename ? `-F "${customFilename}"` : `-F "<bvid>"`;
 
-        // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录，-M 多p下载的时候命名
+        // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录
         const command = `BBDown ${videoUrl} ${eParam} ${qParam} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pParam} ${fParam} --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
         logger.info(command);
         // logger.info(command);
@@ -81,3 +81,4 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
         });
     });
 }
+

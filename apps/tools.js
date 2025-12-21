@@ -1014,17 +1014,13 @@ export class tools extends plugin {
             const bangumiFilename = `${bangumiInfo.title}${bangumiInfo.episodeNumber}话`;
             logger.info(`[R插件][番剧下载] 文件名: ${bangumiFilename}`);
 
-            // 判断是否开启番剧直接解析
+            // 判断是否开启番剧直接解析（关闭时只显示信息不下载）
             if (this.biliBangumiDirect) {
                 // 开启番剧直接解析，使用正常视频解析流程，复用画质设置（使用番剧独立画质）
-                logger.info(`[R插件][番剧直接解析] 开启番剧直接解析，使用独立画质设置: ${this.biliBangumiResolution}`);
-                // 传递番剧时长限制参数
+                logger.info(`[R插件][番剧直接解析] 使用独立画质: ${this.biliBangumiResolution}`);
                 await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${bangumiInfo.ep}`, path, this.biliBangumiResolution, 0, bangumiFilename, true);
-            } else if (this.biliUseBBDown) {
-                // 关闭番剧直接解析但开启了BBDown，使用BBDown下载
-                await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${bangumiInfo.ep}`, path, null, 0, bangumiFilename, true);
             }
-            // 如果都没开启，仅显示信息不下载（保持现有逻辑）
+            // 番剧直接解析关闭时，仅显示信息不下载
             return true;
         }
         // 视频信息获取例子：http://api.bilibili.com/x/web-interface/view?bvid=BV1hY411m7cB
@@ -1208,22 +1204,11 @@ export class tools extends plugin {
         })).json();
         const result = resp.result;
 
-        // 调试：输出番剧信息结构，用于确认集数信息
-        logger.info(`[R插件][番剧信息调试] 番剧标题: ${result.title}`);
-        logger.info(`[R插件][番剧信息调试] 番剧类型: ${result.type_name || '未知'}`);
-        logger.info(`[R插件][番剧信息调试] 集数描述: ${result.new_ep?.desc || '无'}`);
-        logger.info(`[R插件][番剧信息调试] index_show: ${result.seasons?.[0]?.new_ep?.index_show || '无'}`);
-        logger.info(`[R插件][番剧信息调试] episodes是否存在: ${result.episodes ? '是' : '否'}`);
-
         // 尝试从episodes中查找当前ep的信息
         const currentEpisode = result.episodes?.find(item => item.ep_id == ep);
-        if (currentEpisode) {
-            logger.info(`[R插件][番剧信息调试] 当前集标题: ${currentEpisode.title || '无'}`);
-            logger.info(`[R插件][番剧信息调试] 当前集长标题: ${currentEpisode.long_title || '无'}`);
-            logger.info(`[R插件][番剧信息调试] 当前集标题显示: ${currentEpisode.title_display || '无'}`);
-        } else {
-            logger.warn(`[R插件][番剧信息调试] 未找到当前集信息，ep=${ep}`);
-        }
+
+        // 简化日志：番剧基本信息
+        logger.info(`[R插件][番剧] ${result.title} | 类型:${result.type_name || '番剧'} | EP:${ep} | 集:${currentEpisode?.title || '?'}-${currentEpisode?.long_title || '无标题'}`);
 
         const { views, danmakus, likes, coins, favorites, favorite } = result.stat;
         // 封装成可以format的数据
@@ -1248,7 +1233,6 @@ export class tools extends plugin {
         if (currentEpisode?.duration) {
             durationSeconds = currentEpisode.duration / 1000; // 毫秒转秒
         }
-        logger.info(`[R插件][番剧时长] 当前集时长: ${durationSeconds}秒`);
 
         const isOverLimit = durationSeconds > 0 && durationSeconds > this.biliBangumiDuration;
 
@@ -1317,8 +1301,9 @@ export class tools extends plugin {
                         biliCDN: BILI_CDN_SELECT_LIST.find(item => item.value === this.biliCDN)?.sign,
                         biliResolution: useResolution,
                         videoCodec: this.videoCodec,
+                        customFilename: tempFilename,  // 使用传入的文件名（bvid或番剧名称+集数）
                     });
-                    // 发送视频（BBDown使用<bvid>命名，所以文件名就是tempFilename）
+                    // 发送视频（使用传入的文件名）
                     return this.sendVideoToUpload(e, `${tempPath}.mp4`);
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
