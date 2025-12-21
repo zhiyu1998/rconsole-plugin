@@ -24,13 +24,12 @@ function getEncodingPriority(videoCodec) {
  * 使用BBDown下载
  * @param videoUrl      视频链接
  * @param downloadDir   下载目录
- * @param BBDownOptions  BBDown选项（目前仅支持session登录、使用Aria2下载、CDN、编码选择、自定义文件名）
+ * @param BBDownOptions  BBDown选项
  */
 export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
     const { biliSessData, biliUseAria2, biliCDN, biliResolution, videoCodec, customFilename } = BBDownOptions;
 
     return new Promise((resolve, reject) => {
-        // logger.info(videoUrl);
         // 解析URL并提取参数p（页数）
         const urlObj = new URL(videoUrl);
         const params = urlObj.searchParams;
@@ -40,33 +39,37 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
         if (params.has('p')) {
             newParams.set('p', pageParam);
         }
-        // 这里如果有p参数就放置到url上，没有就相当于作了一次去跟踪参数的清除，也方便BBDown下载
+        // 这里如果有p参数就放置到url上，没有就相当于作了一次去跟踪参数的清除
         urlObj.search = newParams.toString();
         videoUrl = urlObj.toString();
 
-        // 构造 -p 和 -M 参数
-        let pParam;
-        // 如果不是番剧就常规逻辑
-        if (!(videoUrl.includes("play\/ep") || videoUrl.includes("play\/ss"))) {
-            // 普通视频：带分P参数
-            pParam = pageParam ? `-p ${pageParam}` : `-p 1`;
+        // 判断是否是番剧
+        const isBangumi = videoUrl.includes("play/ep") || videoUrl.includes("play/ss");
+
+        // 构造参数
+        let filePatternParam;
+        let pParam = '';
+
+        if (isBangumi) {
+            // 番剧：使用 -M 设置多P模式的文件名（番剧被视为多P）
+            // 使用自定义文件名，不创建子文件夹
+            filePatternParam = customFilename ? `-M "${customFilename}"` : `-M "<videoTitle><pageNumber>话"`;
         } else {
-            // 番剧：不需要分P参数
-            pParam = '';
+            // 普通视频：使用 -F 设置单P文件名，-p 设置分P
+            filePatternParam = customFilename ? `-F "${customFilename}"` : `-F "<bvid>"`;
+            pParam = pageParam ? `-p ${pageParam}` : `-p 1`;
         }
 
-        // 构造 -q 参数 （画质优先级,用逗号分隔 例: "8K 超高清, 1080P 高码率, HDR 真彩, 杜比视界"）
+        // 构造 -q 参数 （画质优先级）
         const qParam = `-q "${getResolutionLabels(biliResolution)}"`;
         // 构造 -e 参数（编码优先级）
         const eParam = `-e "${getEncodingPriority(videoCodec)}"`;
-        // 构造 -F 参数（使用传入的自定义文件名，确保我们知道输出文件的名称）
-        const fParam = customFilename ? `-F "${customFilename}"` : `-F "<bvid>"`;
 
-        // 说明：-F 自定义名称，-c 自定义Cookie， --work-dir 设置下载目录
-        const command = `BBDown ${videoUrl} ${eParam} ${qParam} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pParam} ${fParam} --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
-        logger.info(command);
-        // logger.info(command);
-        // 直接调用BBDown，因为它已经在系统路径中
+        // 构建命令
+        const command = `BBDown ${videoUrl} ${eParam} ${qParam} --work-dir ${downloadDir} ${biliSessData ? '-c SESSDATA=' + biliSessData : ''} ${pParam} ${filePatternParam} --skip-subtitle --skip-cover ${biliUseAria2 ? '--use-aria2c' : ''} ${biliCDN ? '--upos-host ' + biliCDN : ''}`;
+        logger.info(`[R插件][BBDown] ${command}`);
+
+        // 直接调用BBDown
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 reject(`[R插件][BBDown]执行出错: ${error.message}`);
@@ -76,9 +79,9 @@ export function startBBDown(videoUrl, downloadDir, BBDownOptions) {
                 reject(`[R插件][BBDown]错误信息: ${stderr}`);
                 return;
             }
-            // logger.mark(`[R插件][BBDown]输出结果: ${stdout}`);
             resolve(stdout);
         });
     });
 }
+
 

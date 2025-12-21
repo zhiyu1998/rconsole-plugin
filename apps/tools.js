@@ -1006,18 +1006,15 @@ export class tools extends plugin {
 
             // 如果超过时长限制，直接返回，不下载
             if (bangumiInfo.isOverLimit) {
-                logger.warn(`[R插件][番剧下载] 番剧时长超限，跳过下载`);
+                logger.warn(`[R插件][番剧] 时长超限，跳过下载`);
                 return true;
             }
 
-            // 生成番剧文件名：标题+集数+话（如：凡人修仙传173话）
-            const bangumiFilename = `${bangumiInfo.title}${bangumiInfo.episodeNumber}话`;
-            logger.info(`[R插件][番剧下载] 文件名: ${bangumiFilename}`);
-
             // 判断是否开启番剧直接解析（关闭时只显示信息不下载）
             if (this.biliBangumiDirect) {
-                // 开启番剧直接解析，使用正常视频解析流程，复用画质设置（使用番剧独立画质）
-                logger.info(`[R插件][番剧直接解析] 使用独立画质: ${this.biliBangumiResolution}`);
+                // 生成番剧文件名：标题+集数+话（如：凡人修仙传173话）
+                const bangumiFilename = `${bangumiInfo.title}${bangumiInfo.episodeNumber}话`;
+                logger.info(`[R插件][番剧下载] ${bangumiFilename} | 画质:${this.biliBangumiResolution}`);
                 await this.biliDownloadStrategy(e, `https://www.bilibili.com/bangumi/play/ep${bangumiInfo.ep}`, path, this.biliBangumiResolution, 0, bangumiFilename, true);
             }
             // 番剧直接解析关闭时，仅显示信息不下载
