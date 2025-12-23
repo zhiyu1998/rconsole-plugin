@@ -98,7 +98,7 @@ import {
     truncateString,
     urlTransformShortLink
 } from "../utils/common.js";
-import { convertFlvToMp4 } from "../utils/ffmpeg-util.js";
+import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
@@ -430,128 +430,181 @@ export class tools extends plugin {
             ttwid = ttwidValue;
             douUrl = location;
         }
-        // TODO 如果有新的好解决方案可以删除，如果遇到https://www.iesdouyin.com/share/slides，这类动图暂时交付给其他API解析，感谢群u:"Error: Cannot find id"提供的服务器
+        // 抖音动图处理支持BGM和有声动图
         if (douUrl.includes("share/slides")) {
             const detailIdMatch = douUrl.match(/\/slides\/(\d+)/);
             const detailId = detailIdMatch[1];
-            const apiUrl = 'http://tk.xigua.wiki:5555/douyin/detail';
-            const postData = {
-                cookie: "",
-                proxy: "",
-                source: false,
-                detail_id: detailId
+
+            // 构建请求头
+            const headers = {
+                "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+                "User-Agent": COMMON_USER_AGENT,
+                Referer: "https://www.douyin.com/",
+                cookie: this.douyinCookie,
             };
-            // 用于存储下载的文件路径
-            const downloadedFilePaths = [];
+
+
+            const dyApi = DY_INFO.replace("{}", detailId);
+            const abParam = aBogus.generate_a_bogus(
+                new URLSearchParams(new URL(dyApi).search).toString(),
+                headers["User-Agent"],
+            );
+            const resDyApi = `${dyApi}&a_bogus=${abParam}`;
+
             try {
-                const apiResponse = await axios.post(apiUrl, postData, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'accept': 'application/json'
-                    },
-                    timeout: 15000
-                });
-                if (apiResponse.status !== 200 || !apiResponse.data || !apiResponse.data.data) {
-                    logger.error(`[R插件][抖音解析] API返回异常状态码或数据结构错误: ${apiResponse.status}, ${JSON.stringify(apiResponse.data)}`);
+                const dyResponse = () => axios.get(resDyApi, { headers });
+                const data = await retryAxiosReq(dyResponse);
+                const item = data.aweme_detail;
+
+                if (!item) {
                     e.reply("解析抖音动图失败，请稍后再试！");
                     return true;
                 }
-                const apiData = apiResponse.data.data;
-                const downloads = apiData.downloads;
-                const desc = apiData.desc || "无简介";
-                const authorNickname = apiData.nickname || "未知作者";
 
-                const replyMessages = [];
-                replyMessages.push(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+                const desc = item.desc || "无简介";
+                const authorNickname = item.author?.nickname || "未知作者";
 
-                const messageSegments = [];
+                e.reply(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+
                 const downloadPath = this.getCurDownloadPath(e);
                 await mkdirIfNotExists(downloadPath);
-                await e.reply(replyMessages.join('\n'));
-                for (const [index, downloadUrl] of downloads.entries()) {
-                    let filePath;
-                    let fileName;
+                const downloadedFilePaths = [];
+                const messageSegments = [];
 
+                // 下载BGM（如果有）
+                let bgmPath = null;
+                if (item.music?.play_url?.uri) {
                     try {
-                        if (downloadUrl.includes(".mp4") || downloadUrl.includes("video_id")) {
-                            fileName = `douyin_gif${index > 0 ? index : ''}.mp4`;
-                            filePath = `${downloadPath}/${fileName}`;
-                            logger.info(`[R插件][抖音动图] 下载视频: ${downloadUrl}`);
-                            const response = await axios({
-                                method: 'get',
-                                url: downloadUrl,
-                                responseType: 'stream'
-                            });
-                            const writer = fs.createWriteStream(filePath);
-                            response.data.pipe(writer);
-                            await new Promise((resolve, reject) => {
-                                writer.on('finish', resolve);
-                                writer.on('error', reject);
-                            });
-                            logger.info(`[R插件][抖音动图] 视频下载完成: ${filePath}`);
-                            messageSegments.push({
-                                message: segment.video(filePath),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                            });
-                            downloadedFilePaths.push(filePath);
-
-                        } else {
-                            fileName = `douyin_gif${index > 0 ? index : ''}.png`;
-                            filePath = `${downloadPath}/${fileName}`;
-                            logger.info(`[R插件][抖音动图] 下载图片: ${downloadUrl}`);
-                            const response = await axios({
-                                method: 'get',
-                                url: downloadUrl,
-                                responseType: 'stream'
-                            });
-                            const writer = fs.createWriteStream(filePath);
-                            response.data.pipe(writer);
-                            await new Promise((resolve, reject) => {
-                                writer.on('finish', resolve);
-                                writer.on('error', reject);
-                            });
-                            logger.info(`[R插件][抖音动图] 图片下载完成: ${filePath}`);
-                            messageSegments.push({
-                                message: segment.image(filePath),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                            });
-                            downloadedFilePaths.push(filePath);
-                        }
-                    } catch (downloadError) {
-                        logger.error(`[R插件][抖音动图] 下载文件失败: ${downloadUrl}, 错误: ${downloadError.message}`);
-                        messageSegments.push({
-                            message: { type: "text", text: `下载文件失败: ${downloadUrl}` },
-                            nickname: e.sender.card || e.user_id,
-                            user_id: e.user_id,
+                        bgmPath = `${downloadPath}/douyin_bgm_${Date.now()}.mp3`;
+                        const bgmResponse = await axios({
+                            method: 'get',
+                            url: item.music.play_url.uri,
+                            responseType: 'stream',
+                            headers: {
+                                'User-Agent': COMMON_USER_AGENT,
+                                'Referer': 'https://www.douyin.com/'
+                            }
                         });
+                        const bgmWriter = fs.createWriteStream(bgmPath);
+                        bgmResponse.data.pipe(bgmWriter);
+                        await new Promise((resolve, reject) => {
+                            bgmWriter.on('finish', resolve);
+                            bgmWriter.on('error', reject);
+                        });
+                        logger.info(`[R插件][抖音动图] BGM下载完成: ${bgmPath}`);
+                        downloadedFilePaths.push(bgmPath);
+                    } catch (bgmErr) {
+                        logger.error(`[R插件][抖音动图] BGM下载失败: ${bgmErr.message}`);
+                        bgmPath = null;
                     }
                 }
+
+                const images = item.images || [];
+                for (const [index, imageItem] of images.entries()) {
+                    try {
+                        // 判断是静态图还是动图
+                        // clip_type === 2 为静态图
+                        if (imageItem.clip_type === 2) {
+                            // 静态图：直接使用URL
+                            const imageUrl = imageItem.url_list?.[0];
+                            if (imageUrl) {
+                                messageSegments.push({
+                                    message: segment.image(imageUrl),
+                                    nickname: e.sender.card || e.user_id,
+                                    user_id: e.user_id,
+                                });
+                            }
+                        } else if (imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri) {
+                            // 动图：下载视频并与BGM合并
+                            const videoUri = imageItem.video.play_addr_h264?.uri || imageItem.video.play_addr?.uri;
+                            const videoUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videoUri}&ratio=1080p&line=0`;
+
+                            const videoPath = `${downloadPath}/douyin_gif_${index}_${Date.now()}.mp4`;
+                            logger.info(`[R插件][抖音动图] 下载动图视频: ${videoUrl}`);
+
+                            // 下载视频
+                            const videoResponse = await axios({
+                                method: 'get',
+                                url: videoUrl,
+                                responseType: 'stream',
+                                headers: {
+                                    'User-Agent': COMMON_USER_AGENT,
+                                    'Referer': 'https://www.douyin.com/'
+                                }
+                            });
+                            const videoWriter = fs.createWriteStream(videoPath);
+                            videoResponse.data.pipe(videoWriter);
+                            await new Promise((resolve, reject) => {
+                                videoWriter.on('finish', resolve);
+                                videoWriter.on('error', reject);
+                            });
+                            logger.info(`[R插件][抖音动图] 视频下载完成: ${videoPath}`);
+                            downloadedFilePaths.push(videoPath);
+
+                            // 如果有BGM，合并视频和音频
+                            let finalVideoPath = videoPath;
+                            if (bgmPath) {
+                                try {
+                                    const mergedPath = `${downloadPath}/douyin_merged_${index}_${Date.now()}.mp4`;
+                                    await mergeVideoWithAudio(videoPath, bgmPath, mergedPath);
+                                    finalVideoPath = mergedPath;
+                                    downloadedFilePaths.push(mergedPath);
+                                    logger.info(`[R插件][抖音动图] 视频音频合并完成: ${mergedPath}`);
+                                } catch (mergeErr) {
+                                    logger.error(`[R插件][抖音动图] 视频音频合并失败，使用原视频: ${mergeErr}`);
+                                }
+                            }
+
+                            messageSegments.push({
+                                message: segment.video(finalVideoPath),
+                                nickname: e.sender.card || e.user_id,
+                                user_id: e.user_id,
+                            });
+                        } else {
+                            // 普通图片
+                            const imageUrl = imageItem.url_list?.[0];
+                            if (imageUrl) {
+                                messageSegments.push({
+                                    message: segment.image(imageUrl),
+                                    nickname: e.sender.card || e.user_id,
+                                    user_id: e.user_id,
+                                });
+                            }
+                        }
+                    } catch (itemErr) {
+                        logger.error(`[R插件][抖音动图] 处理第${index}项失败: ${itemErr.message}`);
+                    }
+                }
+
+                // 发送消息
                 if (messageSegments.length > 0) {
                     if (messageSegments.length > this.globalImageLimit) {
-                        // 超过限制，使用转发消息
                         await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
                     } else {
-                        // 在限制内，直接发送图片
                         await e.reply(messageSegments.map(item => item.message));
                     }
+                }
 
-                    // 删除文件
-                    for (const filePath of downloadedFilePaths) {
-                        await checkAndRemoveFile(filePath);
+                // 发送背景音乐
+                if (this.douyinMusic && bgmPath) {
+                    try {
+                        await e.reply(segment.record(bgmPath));
+                    } catch (recordErr) {
+                        logger.error(`[R插件][抖音动图] 发送BGM语音失败: ${recordErr.message}`);
                     }
                 }
-                const headers = {
-                    "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-                    "User-Agent": COMMON_USER_AGENT,
-                    Referer: "https://www.douyin.com/",
-                    cookie: this.douyinCookie,
-                };
+
+                // 清理临时文件
+                for (const filePath of downloadedFilePaths) {
+                    await checkAndRemoveFile(filePath);
+                }
+
+                // 发送评论
                 await this.douyinComment(e, detailId, headers);
 
             } catch (error) {
-                logger.error(`[R插件][抖音动图] 调用API或处理下载时发生错误: ${error.message}`);
+                logger.error(`[R插件][抖音动图] 解析失败: ${error.message}`);
+                e.reply("解析抖音动图失败，请稍后再试！");
             }
             return true;
         }
