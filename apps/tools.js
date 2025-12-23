@@ -500,7 +500,9 @@ export class tools extends plugin {
                 }
 
                 const images = item.images || [];
-                for (const [index, imageItem] of images.entries()) {
+
+                // 给我上并发啊啊啊啊
+                const processImage = async (imageItem, index) => {
                     try {
                         // 判断是静态图还是动图
                         // clip_type === 2 为静态图
@@ -508,11 +510,15 @@ export class tools extends plugin {
                             // 静态图：直接使用URL
                             const imageUrl = imageItem.url_list?.[0];
                             if (imageUrl) {
-                                messageSegments.push({
-                                    message: segment.image(imageUrl),
-                                    nickname: e.sender.card || e.user_id,
-                                    user_id: e.user_id,
-                                });
+                                return {
+                                    index,
+                                    segment: {
+                                        message: segment.image(imageUrl),
+                                        nickname: e.sender.card || e.user_id,
+                                        user_id: e.user_id,
+                                    },
+                                    files: []
+                                };
                             }
                         } else if (imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri) {
                             // 动图：下载视频并与BGM合并
@@ -539,7 +545,8 @@ export class tools extends plugin {
                                 videoWriter.on('error', reject);
                             });
                             logger.info(`[R插件][抖音动图] 视频下载完成: ${videoPath}`);
-                            downloadedFilePaths.push(videoPath);
+
+                            const files = [videoPath];
 
                             // 如果有BGM，合并视频和音频
                             let finalVideoPath = videoPath;
@@ -548,31 +555,55 @@ export class tools extends plugin {
                                     const mergedPath = `${downloadPath}/douyin_merged_${index}_${Date.now()}.mp4`;
                                     await mergeVideoWithAudio(videoPath, bgmPath, mergedPath);
                                     finalVideoPath = mergedPath;
-                                    downloadedFilePaths.push(mergedPath);
+                                    files.push(mergedPath);
                                     logger.info(`[R插件][抖音动图] 视频音频合并完成: ${mergedPath}`);
                                 } catch (mergeErr) {
                                     logger.error(`[R插件][抖音动图] 视频音频合并失败，使用原视频: ${mergeErr}`);
                                 }
                             }
 
-                            messageSegments.push({
-                                message: segment.video(finalVideoPath),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                            });
+                            return {
+                                index,
+                                segment: {
+                                    message: segment.video(finalVideoPath),
+                                    nickname: e.sender.card || e.user_id,
+                                    user_id: e.user_id,
+                                },
+                                files
+                            };
                         } else {
                             // 普通图片
                             const imageUrl = imageItem.url_list?.[0];
                             if (imageUrl) {
-                                messageSegments.push({
-                                    message: segment.image(imageUrl),
-                                    nickname: e.sender.card || e.user_id,
-                                    user_id: e.user_id,
-                                });
+                                return {
+                                    index,
+                                    segment: {
+                                        message: segment.image(imageUrl),
+                                        nickname: e.sender.card || e.user_id,
+                                        user_id: e.user_id,
+                                    },
+                                    files: []
+                                };
                             }
                         }
                     } catch (itemErr) {
                         logger.error(`[R插件][抖音动图] 处理第${index}项失败: ${itemErr.message}`);
+                    }
+                    return null;
+                };
+
+                // 并行执行所有图片处理
+                const results = await Promise.all(
+                    images.map((imageItem, index) => processImage(imageItem, index))
+                );
+
+                // 按原顺序整理结果
+                for (const result of results) {
+                    if (result) {
+                        if (result.segment) {
+                            messageSegments.push(result.segment);
+                        }
+                        downloadedFilePaths.push(...result.files);
                     }
                 }
 
