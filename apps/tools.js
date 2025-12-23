@@ -525,25 +525,32 @@ export class tools extends plugin {
                             const videoUri = imageItem.video.play_addr_h264?.uri || imageItem.video.play_addr?.uri;
                             const videoUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videoUri}&ratio=1080p&line=0`;
 
-                            const videoPath = `${downloadPath}/douyin_gif_${index}_${Date.now()}.mp4`;
                             logger.info(`[R插件][抖音动图] 下载动图视频: ${videoUrl}`);
 
-                            // 下载视频
-                            const videoResponse = await axios({
-                                method: 'get',
-                                url: videoUrl,
-                                responseType: 'stream',
-                                headers: {
-                                    'User-Agent': COMMON_USER_AGENT,
-                                    'Referer': 'https://www.douyin.com/'
+                            // 使用内置下载方法，带重试逻辑
+                            let videoPath = null;
+                            const maxRetries = 3;
+                            for (let retry = 0; retry < maxRetries; retry++) {
+                                try {
+                                    videoPath = await this.downloadVideo(videoUrl, false, {
+                                        'User-Agent': COMMON_USER_AGENT,
+                                        'Referer': 'https://www.douyin.com/'
+                                    }, this.videoDownloadConcurrency, `douyin_gif_${index}_${Date.now()}.mp4`);
+                                    if (videoPath) break;
+                                } catch (downloadErr) {
+                                    logger.warn(`[R插件][抖音动图] 第${index}个视频下载失败，重试 ${retry + 1}/${maxRetries}`);
                                 }
-                            });
-                            const videoWriter = fs.createWriteStream(videoPath);
-                            videoResponse.data.pipe(videoWriter);
-                            await new Promise((resolve, reject) => {
-                                videoWriter.on('finish', resolve);
-                                videoWriter.on('error', reject);
-                            });
+                                if (retry < maxRetries - 1) {
+                                    await new Promise(r => setTimeout(r, 500)); // 等待500ms后重试
+                                }
+                            }
+
+                            // 检查下载是否成功
+                            if (!videoPath) {
+                                logger.error(`[R插件][抖音动图] 第${index}个视频下载失败（已重试${maxRetries}次），跳过`);
+                                return null;
+                            }
+
                             logger.info(`[R插件][抖音动图] 视频下载完成: ${videoPath}`);
 
                             const files = [videoPath];
@@ -625,8 +632,8 @@ export class tools extends plugin {
                     }
                 }
 
-                // 清理临时文件
-                for (const filePath of downloadedFilePaths) {
+                // 清理临时文件（过滤掉undefined）
+                for (const filePath of downloadedFilePaths.filter(p => p)) {
                     await checkAndRemoveFile(filePath);
                 }
 
