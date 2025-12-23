@@ -379,6 +379,13 @@ export function supportGuoba() {
                     component: "Switch",
                     required: false,
                 },
+                {
+                    field: "tools.douyinMusic",
+                    label: "抖音是否开启背景音乐",
+                    bottomHelpMessage: "开启后解析抖音视频/图集时会同时发送背景音乐",
+                    component: "Switch",
+                    required: false,
+                },
 
 
                 // ==================== 油管YouTube ====================

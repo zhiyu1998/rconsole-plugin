@@ -170,7 +170,8 @@ export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '百度CDN', value: 2, sign: BILI_CDN_TEMPLATE.replace('{}', 'bd') },
     { label: '华为CDN', value: 3, sign: BILI_CDN_TEMPLATE.replace('{}', 'hw') },
     { label: '阿卡迈（海外）', value: 4, sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai') },
-    { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') }
+    { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') },
+    { label: '08ccdn', value: 6, sign: BILI_CDN_TEMPLATE.replace('{}', 'o8c') }
 ]);
 
 export const BILI_DOWNLOAD_METHOD = Object.freeze([

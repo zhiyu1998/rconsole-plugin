@@ -350,6 +350,8 @@ export class tools extends plugin {
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
+        // 加载抖音是否开启背景音乐
+        this.douyinMusic = this.toolsConfig.douyinMusic ?? true;
         // 加载全局图片分批阈值（向后兼容旧配置名）
         this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
         // 加载小黑盒单条消息元素限制
@@ -694,6 +696,45 @@ export class tools extends plugin {
                     // 在限制内，直接发送图片
                     const images = imageUrls.map(url => segment.image(url));
                     await e.reply(images);
+                }
+            }
+            // 发送背景音乐
+            if (this.douyinMusic && item.music?.play_url?.uri) {
+                try {
+                    const musicUrl = item.music.play_url.uri;
+                    const musicTitle = item.music.title || '抖音BGM';
+                    logger.info(`[R插件][抖音] 开始下载背景音乐: ${musicTitle}`);
+
+                    const downloadPath = this.getCurDownloadPath(e);
+                    await mkdirIfNotExists(downloadPath);
+                    const musicPath = `${downloadPath}/douyin_bgm_${Date.now()}.mp3`;
+
+                    // 下载音乐文件
+                    const response = await axios({
+                        method: 'get',
+                        url: musicUrl,
+                        responseType: 'stream',
+                        headers: {
+                            'User-Agent': COMMON_USER_AGENT,
+                            'Referer': 'https://www.douyin.com/'
+                        }
+                    });
+                    const writer = fs.createWriteStream(musicPath);
+                    response.data.pipe(writer);
+                    await new Promise((resolve, reject) => {
+                        writer.on('finish', resolve);
+                        writer.on('error', reject);
+                    });
+
+                    logger.info(`[R插件][抖音] 背景音乐下载完成: ${musicPath}`);
+
+                    // 发送语音
+                    await e.reply(segment.record(musicPath));
+
+                    // 清理文件
+                    await checkAndRemoveFile(musicPath);
+                } catch (err) {
+                    logger.error(`[R插件][抖音] 背景音乐下载失败: ${err.message}`);
                 }
             }
             // 如果开启评论的就调用
