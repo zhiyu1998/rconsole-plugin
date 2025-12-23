@@ -100,14 +100,18 @@ export async function getGroupFileUrl(e, count = 10) {
     let originalFileName = "";  // 保存原始消息中的文件名
     for (let i = messages.length - 1; i >= 0; i--) {
         const message = messages?.[i]?.message;
+        // 调试日志：打印每条消息的类型
+        logger.debug(`[R插件][群文件检测] 消息${i} 类型: ${message?.[0]?.type}, 完整数据: ${JSON.stringify(message?.[0])}`);
         if (message?.[0]?.type === "file") {
             file_id = message?.[0].data?.file_id;
             originalFileName = message?.[0].data?.file || "";  // 获取原始文件名
+            logger.info(`[R插件][群文件检测] 找到文件: file_id=${file_id}, fileName=${originalFileName}`);
             break;
         }
     }
     if (file_id === "") {
-        logger.info('未找到群文件')
+        logger.info('[R插件][群文件检测] 未找到群文件，已检查的消息类型: ' +
+            messages.map((m, i) => `${i}:${m?.message?.[0]?.type}`).join(', '));
         return "";
     }
     // 获取文件信息

@@ -336,18 +336,24 @@ export class songRequest extends plugin {
     // 上传音频文件
     async upLoad(e) {
         let msg = await getReplyMsg(e);
+        // 检查消息数据有效性
+        const msgData = msg?.message?.[0]?.data?.data;
+        if (!msgData) {
+            e.reply('请回复一条网易云音乐卡片消息再使用此命令');
+            return;
+        }
         const autoSelectNeteaseApi = await this.pickApi()
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
         let id =
-            musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
-            musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
-            musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)?.[1] || "";
-        let title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
-        let desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
-        const jumpUrl = msg.message[0].data.data.match(/"jumpUrl":"([^"]+)"/)[1];
+            musicUrlReg2.exec(msgData)?.[3] ||
+            musicUrlReg.exec(msgData)?.[2] ||
+            musicUrlReg3.exec(msgData)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msgData)?.[1] || "";
+        let title = msgData.match(/"title":"([^"]+)"/)?.[1]
+        let desc = msgData.match(/"desc":"([^"]+)"/)?.[1]
+        const jumpUrl = msgData.match(/"jumpUrl":"([^"]+)"/)?.[1];
         const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
         if (isPodcast) {
@@ -382,18 +388,24 @@ export class songRequest extends plugin {
     // 上传云盘
     async uploadCloud(e) {
         let msg = await getReplyMsg(e)
+        // 检查消息数据有效性
+        const msgData = msg?.message?.[0]?.data?.data;
+        if (!msgData) {
+            e.reply('请回复一条网易云音乐卡片消息再使用此命令');
+            return;
+        }
         const autoSelectNeteaseApi = await this.pickApi()
         const musicUrlReg = /(http:|https:)\/\/music.163.com\/song\/media\/outer\/url\?id=(\d+)/;
         const musicUrlReg2 = /(http:|https:)\/\/y.music.163.com\/m\/song\?(.*)&id=(\d+)/;
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
         let id =
-            musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
-            musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
-            musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)?.[1] || "";
-        let title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
-        let desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
-        const jumpUrl = msg.message[0].data.data.match(/"jumpUrl":"([^"]+)"/)[1];
+            musicUrlReg2.exec(msgData)?.[3] ||
+            musicUrlReg.exec(msgData)?.[2] ||
+            musicUrlReg3.exec(msgData)?.[2] ||
+            /(?<!user)id=(\d+)/.exec(msgData)?.[1] || "";
+        let title = msgData.match(/"title":"([^"]+)"/)?.[1]
+        let desc = msgData.match(/"desc":"([^"]+)"/)?.[1]
+        const jumpUrl = msgData.match(/"jumpUrl":"([^"]+)"/)?.[1];
         const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
         if (isPodcast) {
@@ -500,7 +512,13 @@ export class songRequest extends plugin {
     // 群文件上传云盘
     async getLatestDocument(e) {
         const autoSelectNeteaseApi = await this.pickApi();
-        let { cleanPath, file_id, fileName: extractedFileName, fileFormat: extractedFormat } = await getGroupFileUrl(e);
+        const result = await getGroupFileUrl(e);
+        // 检查返回值有效性
+        if (!result || !result.cleanPath) {
+            e.reply('未找到群文件，请先在群内发送音频文件再使用此命令');
+            return;
+        }
+        let { cleanPath, file_id, fileName: extractedFileName, fileFormat: extractedFormat } = result;
         // NapCat 和 LLBot 解决方案
         if (cleanPath.startsWith("https")) {
             const songName = extractedFileName || file_id.match(/\.(.*?)\.(\w+)$/)?.[1];
