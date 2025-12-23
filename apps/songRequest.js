@@ -500,21 +500,20 @@ export class songRequest extends plugin {
     // 群文件上传云盘
     async getLatestDocument(e) {
         const autoSelectNeteaseApi = await this.pickApi();
-        let { cleanPath, file_id } = await getGroupFileUrl(e);
-        // Napcat 解决方案
+        let { cleanPath, file_id, fileName: extractedFileName, fileFormat: extractedFormat } = await getGroupFileUrl(e);
+        // NapCat 和 LLBot 解决方案
         if (cleanPath.startsWith("https")) {
-            const fileIdMatch = file_id.match(/\.(.*?)\.(\w+)$/);
-            const songName = fileIdMatch[1];  // 提取的歌曲名称
-            const fileFormat = fileIdMatch[2];  // 提取的文件格式
+            const songName = extractedFileName || file_id.match(/\.(.*?)\.(\w+)$/)?.[1];
+            const format = extractedFormat || file_id.match(/\.(.*?)\.(\w+)$/)?.[2];
             // 检测文件是否存在 已提升性能
             if (await checkFileExists(cleanPath)) {
                 // 如果文件已存在
                 logger.mark(`[R插件][云盘] 上传路径审计：已存在下载文件`);
-                cleanPath = `${this.getCurDownloadPath(e)}/${songName}.${fileFormat}`;
+                cleanPath = `${this.getCurDownloadPath(e)}/${songName}.${format}`;
             } else {
                 // 如果文件不存在
                 logger.mark(`[R插件][云盘] 上传路径审计：不存在下载文件，将进行下载...`);
-                cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", fileFormat);
+                cleanPath = await downloadAudio(cleanPath, this.getCurDownloadPath(e), songName, "manual", format);
             }
         }
         logger.info(`[R插件][云盘] 上传路径审计： ${cleanPath}`);

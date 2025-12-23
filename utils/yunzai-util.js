@@ -97,10 +97,12 @@ export async function getGroupFileUrl(e, count = 10) {
     });
     const messages = latestChat.data.messages;
     let file_id = "";
+    let originalFileName = "";  // 保存原始消息中的文件名
     for (let i = messages.length - 1; i >= 0; i--) {
         const message = messages?.[i]?.message;
         if (message?.[0]?.type === "file") {
             file_id = message?.[0].data?.file_id;
+            originalFileName = message?.[0].data?.file || "";  // 获取原始文件名
             break;
         }
     }
@@ -114,23 +116,61 @@ export async function getGroupFileUrl(e, count = 10) {
         "file_id": file_id
     });
     let cleanPath = decodeURIComponent(latestFileUrl.data.url)
-    // 适配 低版本 Napcat 例如：3.6.4
+    // 适配 NapCat 和 LLBot
     if (cleanPath.startsWith("https")) {
         // https://njc-download.ftn.qq.com/....
         const urlObj = new URL(cleanPath);
         // 检查URL中是否包含 fname 参数
         if (urlObj.searchParams.has('fname')) {
-            // 获取 fname 参数的值
-            const originalFname = urlObj.searchParams.get('fname');
+            const fname = decodeURIComponent(urlObj.searchParams.get('fname'));
+            // 尝试从 file_id 提取文件名 (旧版 NapCat 格式: /xxx.歌手-歌名.扩展名)
+            const fileIdMatch = file_id.match(/\.(.+)\.(\w+)$/);
 
-            // 提取 file_id（第一个"."后面的内容）
-            const fileId = file_id.split('.').slice(1).join('.'); // 分割并去掉第一个部分
-            urlObj.searchParams.set('fname', `${originalFname}${fileId}`);
-            return {
-                cleanPath: urlObj.toString(),
-                file_id
-            };
+            // 情况1: 旧版 NapCat(例如3.6.4) - file_id 包含文件名
+            if (fileIdMatch && fileIdMatch[1] && fileIdMatch[2]) {
+                const fileNameFromId = fileIdMatch[1];
+                const fileFormatFromId = fileIdMatch[2];
+                // 拼接 file_id 到 fname 参数
+                const fileId = file_id.split('.').slice(1).join('.');
+                urlObj.searchParams.set('fname', `${urlObj.searchParams.get('fname')}${fileId}`);
+                return {
+                    cleanPath: urlObj.toString(),
+                    file_id: `.${fileNameFromId}.${fileFormatFromId}`,
+                    fileName: fileNameFromId,
+                    fileFormat: fileFormatFromId
+                };
+            }
+            // 情况2: LLBot(7.2.0) - fname 已包含完整文件名
+            else if (fname && fname.match(/^(.+)\.(\w+)$/)) {
+                const fnameMatch = fname.match(/^(.+)\.(\w+)$/);
+                const fileName = fnameMatch[1];
+                const fileFormat = fnameMatch[2];
+                return {
+                    cleanPath: urlObj.toString(),
+                    file_id: `.${fileName}.${fileFormat}`,
+                    fileName: fileName,
+                    fileFormat: fileFormat
+                };
+            }
+            // 情况3: 新版 NapCat(4.8.124) - UUID file_id,fname 为空,从原始消息提取
+            else if (originalFileName && originalFileName.match(/^(.+)\.(\w+)$/)) {
+                const fileMatch = originalFileName.match(/^(.+)\.(\w+)$/);
+                const fileName = fileMatch[1];
+                const fileFormat = fileMatch[2];
+                // 设置 fname 参数为文件名
+                urlObj.searchParams.set('fname', originalFileName);
+                return {
+                    cleanPath: urlObj.toString(),
+                    file_id: `.${fileName}.${fileFormat}`,
+                    fileName: fileName,
+                    fileFormat: fileFormat
+                };
+            }
         }
+        return {
+            cleanPath: urlObj.toString(),
+            file_id
+        };
     } else if (cleanPath.startsWith('file:///')) {
         cleanPath = cleanPath.replace('file:///', '')
     }
