@@ -390,7 +390,7 @@ export class songRequest extends plugin {
             musicUrlReg2.exec(msg.message[0].data.data)?.[3] ||
             musicUrlReg.exec(msg.message[0].data.data)?.[2] ||
             musicUrlReg3.exec(msg.message[0].data.data)?.[2] ||
-            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)[1] || "";
+            /(?<!user)id=(\d+)/.exec(msg.message[0].data.data)?.[1] || "";
         let title = msg.message[0].data.data.match(/"title":"([^"]+)"/)[1]
         let desc = msg.message[0].data.data.match(/"desc":"([^"]+)"/)[1]
         const jumpUrl = msg.message[0].data.data.match(/"jumpUrl":"([^"]+)"/)[1];
