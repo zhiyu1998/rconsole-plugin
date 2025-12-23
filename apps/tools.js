@@ -504,23 +504,8 @@ export class tools extends plugin {
                 // 给我上并发啊啊啊啊
                 const processImage = async (imageItem, index) => {
                     try {
-                        // 判断是静态图还是动图
-                        // clip_type === 2 为静态图
-                        if (imageItem.clip_type === 2) {
-                            // 静态图：直接使用URL
-                            const imageUrl = imageItem.url_list?.[0];
-                            if (imageUrl) {
-                                return {
-                                    index,
-                                    segment: {
-                                        message: segment.image(imageUrl),
-                                        nickname: e.sender.card || e.user_id,
-                                        user_id: e.user_id,
-                                    },
-                                    files: []
-                                };
-                            }
-                        } else if (imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri) {
+                        // 先判断是否有视频（动图），如果有video属性就是动图
+                        if (imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri) {
                             // 动图：下载视频并与BGM合并
                             const videoUri = imageItem.video.play_addr_h264?.uri || imageItem.video.play_addr?.uri;
                             const videoUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videoUri}&ratio=1080p&line=0`;
@@ -579,9 +564,10 @@ export class tools extends plugin {
                                 files
                             };
                         } else {
-                            // 普通图片
+                            // 静态图片：从url_list获取图片URL
                             const imageUrl = imageItem.url_list?.[0];
                             if (imageUrl) {
+                                logger.info(`[R插件][抖音动图] 处理静态图片: ${imageUrl.substring(0, 50)}...`);
                                 return {
                                     index,
                                     segment: {
@@ -591,6 +577,8 @@ export class tools extends plugin {
                                     },
                                     files: []
                                 };
+                            } else {
+                                logger.warn(`[R插件][抖音动图] 第${index}项无法获取图片URL，跳过`);
                             }
                         }
                     } catch (itemErr) {
