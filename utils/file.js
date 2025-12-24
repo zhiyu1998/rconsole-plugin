@@ -101,11 +101,18 @@ export async function deleteFolderRecursive(folderPath, depth = 0) {
 
                 if (depth >= 1 && !isTgFolder) {
                     await fs.rmdir(curPath);
+                    logger.info(`[R插件][清理垃圾] 删除文件夹: ${curPath}`);
                     return { files: subResult.files, folders: subResult.folders + 1 };
+                }
+
+                // 保留的文件夹，但清理了内容
+                if (subResult.files > 0 || subResult.folders > 0) {
+                    logger.info(`[R插件][清理垃圾] 清理文件夹内容: ${curPath} (保留文件夹)`);
                 }
                 return subResult;
             } else {
                 await fs.unlink(curPath);
+                logger.info(`[R插件][清理垃圾] 删除文件: ${curPath}`);
                 return { files: 1, folders: 0 };
             }
         });
@@ -118,7 +125,11 @@ export async function deleteFolderRecursive(folderPath, depth = 0) {
             }
         });
 
-        logger.info(`文件夹 ${folderPath} 中的所有文件和子文件夹删除成功。`);
+        // 只在根目录调用时输出汇总日志
+        if (depth === 0) {
+            logger.info(`[R插件][清理垃圾] 汇总：删除了 ${deletedFiles} 个文件，${deletedFolders} 个文件夹`);
+        }
+
         return { files: deletedFiles, folders: deletedFolders };
     } catch (error) {
         handleError(error);
