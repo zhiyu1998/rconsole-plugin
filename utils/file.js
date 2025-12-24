@@ -73,6 +73,7 @@ export async function mkdirIfNotExists(dir) {
 /**
  * 删除文件夹下所有文件和子文件夹
  * 保留根目录和群号文件夹，删除群号文件夹内的所有内容（包括子文件夹）
+ * 特殊处理：群号文件夹下的 "tg" 文件夹会被保留，但会清理里面的文件
  * @param {string} folderPath - 文件夹路径
  * @param {number} depth - 当前深度。0=根目录(如data/rcmp4)，1=群号文件夹(需保留)，>=2=需要删除的子文件夹
  * @returns {Promise<{files: number, folders: number}>} 返回删除的文件数和文件夹数
@@ -89,11 +90,16 @@ export async function deleteFolderRecursive(folderPath, depth = 0) {
             if (stat.isDirectory()) {
                 // 递归删除子文件夹内容
                 const subResult = await deleteFolderRecursive(curPath, depth + 1);
-                // 只有 depth >= 1 时才删除子文件夹（即群号文件夹内的子文件夹）
+
+                // 判断是否需要删除当前文件夹
                 // depth 0 = 根目录 (data/rcmp4)，保留
-                // depth 1 = 群号文件夹 (575663150)，保留
+                // depth 1 = 群号文件夹 (575663150)，保留，但其子文件夹需要判断
                 // depth >= 2 = 视频标题文件夹等，删除
-                if (depth >= 1) {
+
+                // 特殊处理：群号文件夹（depth=1）下的 "tg" 文件夹保留
+                const isTgFolder = depth === 1 && file === 'tg';
+
+                if (depth >= 1 && !isTgFolder) {
                     await fs.rmdir(curPath);
                     return { files: subResult.files, folders: subResult.folders + 1 };
                 }
