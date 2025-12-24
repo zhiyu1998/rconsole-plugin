@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -382,8 +382,21 @@ export function supportGuoba() {
                 {
                     field: "tools.douyinMusic",
                     label: "抖音是否开启背景音乐",
-                    bottomHelpMessage: "开启后解析抖音视频/图集时会同时发送背景音乐",
+                    bottomHelpMessage: "开启后解析抖音动图/图集时会同时发送背景音乐",
                     component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.douyinBGMSendType",
+                    label: "抖音背景音乐发送方式",
+                    bottomHelpMessage:
+                        "选择发送抖音背景音乐的方式：\n" +
+                        "语音(默认)：手机和pc都可见，需要下载上传，\n" +
+                        "自定义音乐卡片：pc无法点击播放，无需下载上传，卡片样式协议端决定\n",
+                    component: "Select",
+                    componentProps: {
+                        options: DOUYIN_BGM_SEND_TYPE,
+                    },
                     required: false,
                 },
 

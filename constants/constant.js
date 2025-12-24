@@ -213,6 +213,11 @@ export const BILI_RESOLUTION_LIST = Object.freeze([
     { label: '360P 流畅', value: 10, qn: 16 },
 ]);
 
+export const DOUYIN_BGM_SEND_TYPE = Object.freeze([
+    { label: '语音', value: 'voice' },
+    { label: '自定义音乐卡片', value: 'card' }
+]);
+
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
     { label: 'Best', value: 0 },
     { label: '1080P 高清', value: 1080 },

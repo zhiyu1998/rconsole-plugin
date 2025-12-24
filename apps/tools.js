@@ -112,7 +112,7 @@ import Translate from "../utils/trans-strategy.js";
 import { mid2id } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
-import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches } from "../utils/yunzai-util.js";
+import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
 import { getApiParams } from "../utils/xiaoheihe.js";
 
 /**
@@ -352,6 +352,8 @@ export class tools extends plugin {
         this.douyinComments = this.toolsConfig.douyinComments;
         // 加载抖音是否开启背景音乐
         this.douyinMusic = this.toolsConfig.douyinMusic ?? true;
+        // 加载抖音背景音乐发送方式
+        this.douyinBGMSendType = this.toolsConfig.douyinBGMSendType ?? 'voice';
         // 加载全局图片分批阈值（向后兼容旧配置名）
         this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
         // 加载小黑盒单条消息元素限制
@@ -471,26 +473,15 @@ export class tools extends plugin {
                 const downloadedFilePaths = [];
                 const messageSegments = [];
 
-                // 下载BGM（如果有）
+                // 判断是否有原声
+                const isOriginalSound = item.is_use_music === false || item.image_album_music_info?.volume === 0;
+                // 下载BGM
                 let bgmPath = null;
                 if (item.music?.play_url?.uri) {
                     try {
-                        bgmPath = `${downloadPath}/douyin_bgm_${Date.now()}.mp3`;
-                        const bgmResponse = await axios({
-                            method: 'get',
-                            url: item.music.play_url.uri,
-                            responseType: 'stream',
-                            headers: {
-                                'User-Agent': COMMON_USER_AGENT,
-                                'Referer': 'https://www.douyin.com/'
-                            }
-                        });
-                        const bgmWriter = fs.createWriteStream(bgmPath);
-                        bgmResponse.data.pipe(bgmWriter);
-                        await new Promise((resolve, reject) => {
-                            bgmWriter.on('finish', resolve);
-                            bgmWriter.on('error', reject);
-                        });
+                        const fileName = `douyin_bgm_${Date.now()}`;
+                        const bgmUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
+                        bgmPath = await downloadAudio(bgmUrl, downloadPath, fileName);
                         logger.info(`[R插件][抖音动图] BGM下载完成: ${bgmPath}`);
                         downloadedFilePaths.push(bgmPath);
                     } catch (bgmErr) {
@@ -540,9 +531,10 @@ export class tools extends plugin {
 
                             const files = [videoPath];
 
-                            // 如果有BGM，合并视频和音频
+                            // 如果有BGM 合并视频和音频
                             let finalVideoPath = videoPath;
-                            if (bgmPath) {
+                            // 如果有原声 不合并视频
+                            if (bgmPath && !isOriginalSound) {
                                 try {
                                     const mergedPath = `${downloadPath}/douyin_merged_${index}_${Date.now()}.mp4`;
                                     await mergeVideoWithAudio(videoPath, bgmPath, mergedPath);
@@ -604,7 +596,7 @@ export class tools extends plugin {
 
                 // 发送消息
                 if (messageSegments.length > 0) {
-                    if (messageSegments.length > this.globalImageLimit) {
+                    if (messageSegments.length > 1) {
                         await sendImagesInBatches(e, messageSegments, this.imageBatchThreshold);
                     } else {
                         await e.reply(messageSegments.map(item => item.message));
@@ -612,11 +604,21 @@ export class tools extends plugin {
                 }
 
                 // 发送背景音乐
-                if (this.douyinMusic && bgmPath) {
+                if (this.douyinMusic && item.music?.play_url?.uri) {
                     try {
-                        await e.reply(segment.record(bgmPath));
+                        if (this.douyinBGMSendType === 'card') {
+                            const musicUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
+                            const musicTitle = item.music.title || '抖音BGM';
+                            // 优先使用音乐封面 其次使用视频封面
+                            const musicImage = item.music.cover_hd?.url_list?.[0] || item.video?.cover?.url_list?.[0] || '';
+                            // 发送自定义音乐卡片
+                            await sendCustomMusicCard(e, douUrl, musicUrl, musicTitle, musicImage);
+                        } else if (bgmPath) {
+                            // 发送语音
+                            await e.reply(segment.record(bgmPath));
+                        }
                     } catch (recordErr) {
-                        logger.error(`[R插件][抖音动图] 发送BGM语音失败: ${recordErr.message}`);
+                        logger.error(`[R插件][抖音动图] 发送BGM失败: ${recordErr.message}`);
                     }
                 }
 
@@ -626,7 +628,11 @@ export class tools extends plugin {
                 }
 
                 // 发送评论
-                await this.douyinComment(e, detailId, headers);
+                try {
+                    await this.douyinComment(e, detailId, headers);
+                } catch (commentErr) {
+                    logger.error(`[R插件][抖音动图] 发送评论失败: ${commentErr.message}可能是没有评论`);
+                }
 
             } catch (error) {
                 logger.error(`[R插件][抖音动图] 解析失败: ${error.message}`);
@@ -780,44 +786,37 @@ export class tools extends plugin {
             // 发送背景音乐（只在图片图集时发送，视频不需要）
             if (urlType === "image" && this.douyinMusic && item.music?.play_url?.uri) {
                 try {
-                    const musicUrl = item.music.play_url.uri;
+                    const musicUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
                     const musicTitle = item.music.title || '抖音BGM';
-                    logger.info(`[R插件][抖音] 开始下载背景音乐: ${musicTitle}`);
+                    if (this.douyinBGMSendType === 'card') {
+                        // 优先使用音乐封面 其次使用视频封面
+                        const musicImage = item.music.cover_hd?.url_list?.[0] || item.video?.cover?.url_list?.[0] || '';
+                        // 发送自定义音乐卡片
+                        await sendCustomMusicCard(e, douUrl, musicUrl, musicTitle, musicImage);
+                    } else {
+                        logger.info(`[R插件][抖音] 开始下载背景音乐: ${musicTitle}`);
+                        const downloadPath = this.getCurDownloadPath(e);
+                        await mkdirIfNotExists(downloadPath);
+                        const fileName = `douyin_bgm_${Date.now()}`;
+                        const musicPath = await downloadAudio(musicUrl, downloadPath, fileName);
+                        logger.info(`[R插件][抖音] 背景音乐下载完成: ${musicPath}`);
 
-                    const downloadPath = this.getCurDownloadPath(e);
-                    await mkdirIfNotExists(downloadPath);
-                    const musicPath = `${downloadPath}/douyin_bgm_${Date.now()}.mp3`;
+                        // 发送语音
+                        await e.reply(segment.record(musicPath));
 
-                    // 下载音乐文件
-                    const response = await axios({
-                        method: 'get',
-                        url: musicUrl,
-                        responseType: 'stream',
-                        headers: {
-                            'User-Agent': COMMON_USER_AGENT,
-                            'Referer': 'https://www.douyin.com/'
-                        }
-                    });
-                    const writer = fs.createWriteStream(musicPath);
-                    response.data.pipe(writer);
-                    await new Promise((resolve, reject) => {
-                        writer.on('finish', resolve);
-                        writer.on('error', reject);
-                    });
-
-                    logger.info(`[R插件][抖音] 背景音乐下载完成: ${musicPath}`);
-
-                    // 发送语音
-                    await e.reply(segment.record(musicPath));
-
-                    // 清理文件
-                    await checkAndRemoveFile(musicPath);
+                        // 清理文件
+                        await checkAndRemoveFile(musicPath);
+                    }
                 } catch (err) {
-                    logger.error(`[R插件][抖音] 背景音乐下载失败: ${err.message}`);
+                    logger.error(`[R插件][抖音] 背景音乐发送失败: ${err.message}`);
                 }
             }
             // 如果开启评论的就调用
-            await this.douyinComment(e, douId, headers);
+            try {
+                await this.douyinComment(e, douId, headers);
+            } catch (commentErr) {
+                logger.error(`[R插件][抖音] 发送评论失败: ${commentErr.message}可能是没有评论`);
+            }
         } catch (err) {
             logger.error(err);
             logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`);

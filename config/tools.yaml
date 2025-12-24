@@ -53,6 +53,7 @@ douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_sta
 douyinCompression: true # true-压缩，false-不压缩；是否使用压缩视频格式的抖音（默认使用），使用后加速视频发送
 douyinComments: false # true-开启评论，false-关闭评论
 douyinMusic: true # true-开启背景音乐，false-关闭背景音乐
+douyinBGMSendType: voice # 发送抖音背景音乐的方式：voice-语音，card-音乐卡片
 imageBatchThreshold: 50 # 全局图片分批阈值，超过此数量的图片将分批发送（默认50张），设置为0表示不限制
 
 xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
