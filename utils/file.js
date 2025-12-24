@@ -71,29 +71,69 @@ export async function mkdirIfNotExists(dir) {
 }
 
 /**
- * 删除文件夹下所有文件
+ * 删除文件夹下所有文件和子文件夹
+ * 保留根目录和群号文件夹，删除群号文件夹内的所有内容（包括子文件夹）
+ * 特殊处理：群号文件夹下的 "tg" 文件夹会被保留，但会清理里面的文件
  * @param {string} folderPath - 文件夹路径
- * @returns {Promise<number>}
+ * @param {number} depth - 当前深度。0=根目录(如data/rcmp4)，1=群号文件夹(需保留)，>=2=需要删除的子文件夹
+ * @returns {Promise<{files: number, folders: number}>} 返回删除的文件数和文件夹数
  */
-export async function deleteFolderRecursive(folderPath) {
+export async function deleteFolderRecursive(folderPath, depth = 0) {
     try {
         const files = await readCurrentDir(folderPath);
+        let deletedFiles = 0;
+        let deletedFolders = 0;
+
         const actions = files.map(async (file) => {
             const curPath = path.join(folderPath, file);
             const stat = await fs.lstat(curPath);
             if (stat.isDirectory()) {
-                return deleteFolderRecursive(curPath);
+                // 递归删除子文件夹内容
+                const subResult = await deleteFolderRecursive(curPath, depth + 1);
+
+                // 判断是否需要删除当前文件夹
+                // depth 0 = 根目录 (data/rcmp4)，保留
+                // depth 1 = 群号文件夹 (575663150)，保留，但其子文件夹需要判断
+                // depth >= 2 = 视频标题文件夹等，删除
+
+                // 特殊处理：群号文件夹（depth=1）下的 "tg" 文件夹保留
+                const isTgFolder = depth === 1 && file === 'tg';
+
+                if (depth >= 1 && !isTgFolder) {
+                    await fs.rmdir(curPath);
+                    logger.info(`[R插件][清理垃圾] 删除文件夹: ${curPath}`);
+                    return { files: subResult.files, folders: subResult.folders + 1 };
+                }
+
+                // 保留的文件夹，但清理了内容
+                if (subResult.files > 0 || subResult.folders > 0) {
+                    logger.info(`[R插件][清理垃圾] 清理文件夹内容: ${curPath} (保留文件夹)`);
+                }
+                return subResult;
             } else {
-                return fs.unlink(curPath);
+                await fs.unlink(curPath);
+                logger.info(`[R插件][清理垃圾] 删除文件: ${curPath}`);
+                return { files: 1, folders: 0 };
             }
         });
 
-        await Promise.allSettled(actions);
-        logger.info(`文件夹 ${folderPath} 中的所有文件删除成功。`);
-        return files.length;
+        const results = await Promise.allSettled(actions);
+        results.forEach(result => {
+            if (result.status === 'fulfilled' && result.value) {
+                deletedFiles += result.value.files || 0;
+                deletedFolders += result.value.folders || 0;
+            }
+        });
+
+        // 只在根目录调用时输出汇总日志
+        if (depth === 0) {
+            logger.info(`[R插件][清理垃圾] 汇总：删除了 ${deletedFiles} 个文件，${deletedFolders} 个文件夹`);
+        }
+
+        return { files: deletedFiles, folders: deletedFolders };
     } catch (error) {
         handleError(error);
-        return 0;
+        return { files: 0, folders: 0 };
     }
 }
 
