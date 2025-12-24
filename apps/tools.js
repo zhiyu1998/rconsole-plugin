@@ -777,8 +777,8 @@ export class tools extends plugin {
                     await e.reply(images);
                 }
             }
-            // 发送背景音乐
-            if (this.douyinMusic && item.music?.play_url?.uri) {
+            // 发送背景音乐（只在图片图集时发送，视频不需要）
+            if (urlType === "image" && this.douyinMusic && item.music?.play_url?.uri) {
                 try {
                     const musicUrl = item.music.play_url.uri;
                     const musicTitle = item.music.title || '抖音BGM';
