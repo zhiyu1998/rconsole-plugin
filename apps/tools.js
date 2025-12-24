@@ -99,7 +99,7 @@ import {
     urlTransformShortLink
 } from "../utils/common.js";
 import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
-import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { deepSeekChat, llmRead } from "../utils/llm-util.js";
@@ -777,8 +777,8 @@ export class tools extends plugin {
                     await e.reply(images);
                 }
             }
-            // 发送背景音乐
-            if (this.douyinMusic && item.music?.play_url?.uri) {
+            // 发送背景音乐（只在图片图集时发送，视频不需要）
+            if (urlType === "image" && this.douyinMusic && item.music?.play_url?.uri) {
                 try {
                     const musicUrl = item.music.play_url.uri;
                     const musicTitle = item.music.title || '抖音BGM';
@@ -1420,8 +1420,46 @@ export class tools extends plugin {
                         videoCodec: this.videoCodec,
                         customFilename: tempFilename,  // 使用传入的文件名（bvid或番剧名称+集数）
                     });
-                    // 发送视频（使用传入的文件名）
-                    return this.sendVideoToUpload(e, `${tempPath}.mp4`);
+                    // 发送视频
+                    // 先检查预期路径，如果不存在则递归查找（处理BBDown合集视频创建子文件夹的情况）
+                    let videoPath = `${tempPath}.mp4`;
+                    let subFolderToDelete = null;  // 记录需要删除的子文件夹
+                    const expectedExists = await checkFileExists(videoPath);
+                    if (!expectedExists) {
+                        logger.info(`[R插件][BBDown] 预期路径不存在，递归查找mp4文件...`);
+                        const foundPath = await findFirstMp4File(path);
+                        if (foundPath) {
+                            videoPath = foundPath;
+                            logger.info(`[R插件][BBDown] 找到视频文件: ${videoPath}`);
+                            // 记录视频所在的子文件夹路径（如果存在）
+                            // 使用path模块获取目录，避免路径分隔符问题
+                            const nodePath = await import('path');
+                            const videoDir = nodePath.default.dirname(foundPath);
+                            const normalizedPath = nodePath.default.normalize(path);
+                            const normalizedVideoDir = nodePath.default.normalize(videoDir);
+                            logger.info(`[R插件][BBDown] 视频目录: ${normalizedVideoDir}, 下载目录: ${normalizedPath}`);
+                            if (normalizedVideoDir !== normalizedPath && normalizedVideoDir.startsWith(normalizedPath)) {
+                                subFolderToDelete = normalizedVideoDir;
+                                logger.info(`[R插件][BBDown] 待删除子文件夹: ${subFolderToDelete}`);
+                            }
+                        } else {
+                            logger.error(`[R插件][BBDown] 未找到下载的视频文件`);
+                            e.reply("BBDown下载完成但未找到视频文件，请重试");
+                            return;
+                        }
+                    }
+                    await this.sendVideoToUpload(e, videoPath);
+                    // 删除BBDown创建的子文件夹（如果有）
+                    if (subFolderToDelete) {
+                        try {
+                            await fs.promises.rmdir(subFolderToDelete);
+                            logger.info(`[R插件][BBDown] 删除空文件夹成功: ${subFolderToDelete}`);
+                        } catch (rmErr) {
+                            // 文件夹可能不为空或已被删除，忽略错误
+                            logger.warn(`[R插件][BBDown] 删除文件夹失败: ${rmErr.message}`);
+                        }
+                    }
+                    return;
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
             } else if (this.biliUseBBDown && this.biliSmartResolution) {

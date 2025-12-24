@@ -17,7 +17,7 @@ const mimeTypes = {
  * @param err
  */
 function handleError(err) {
-    logger.error(`错误: ${ err.message }\n堆栈: ${ err.stack }`);
+    logger.error(`错误: ${err.message}\n堆栈: ${err.stack}`);
     throw err;
 }
 
@@ -44,7 +44,7 @@ export async function checkAndRemoveFile(file) {
     try {
         await fs.access(file);
         await fs.unlink(file);
-        logger.info(`文件 ${ file } 删除成功。`);
+        logger.info(`文件 ${file} 删除成功。`);
     } catch (err) {
         if (err.code !== 'ENOENT') {
             handleError(err);
@@ -63,7 +63,7 @@ export async function mkdirIfNotExists(dir) {
     } catch (err) {
         if (err.code === 'ENOENT') {
             await fs.mkdir(dir, { recursive: true });
-            logger.info(`目录 ${ dir } 创建成功。`);
+            logger.info(`目录 ${dir} 创建成功。`);
         } else {
             handleError(err);
         }
@@ -89,7 +89,7 @@ export async function deleteFolderRecursive(folderPath) {
         });
 
         await Promise.allSettled(actions);
-        logger.info(`文件夹 ${ folderPath } 中的所有文件删除成功。`);
+        logger.info(`文件夹 ${folderPath} 中的所有文件删除成功。`);
         return files.length;
     } catch (error) {
         handleError(error);
@@ -126,7 +126,7 @@ export async function copyFiles(srcDir, destDir, specificFiles = []) {
             ? files.filter(file => specificFiles.includes(file))
             : files;
 
-        logger.info(`[R插件][拷贝文件] 正在将 ${ srcDir } 的文件拷贝到 ${ destDir } 中`);
+        logger.info(`[R插件][拷贝文件] 正在将 ${srcDir} 的文件拷贝到 ${destDir} 中`);
 
         const copiedFiles = [];
 
@@ -155,7 +155,7 @@ export async function toBase64(filePath) {
     try {
         const fileData = await fs.readFile(filePath);
         const base64Data = fileData.toString('base64');
-        return `data:${ getMimeType(filePath) };base64,${ base64Data }`;
+        return `data:${getMimeType(filePath)};base64,${base64Data}`;
     } catch (error) {
         handleError(error);
     }
@@ -236,4 +236,39 @@ export function splitPaths(input) {
         const baseFileName = path.basename(fileName, extension); // 去除扩展名的文件名
         return { dir, fileName, extension, baseFileName };
     });
+}
+
+/**
+ * 递归查找目录中的第一个mp4文件
+ * 用于处理BBDown下载合集视频时创建子文件夹的情况
+ * @param {string} dirPath - 要搜索的目录路径
+ * @returns {Promise<string|null>} 找到的mp4文件完整路径，未找到返回null
+ */
+export async function findFirstMp4File(dirPath) {
+    try {
+        const entries = await fs.readdir(dirPath, { withFileTypes: true });
+
+        // 先检查当前目录的mp4文件
+        for (const entry of entries) {
+            if (entry.isFile() && entry.name.toLowerCase().endsWith('.mp4')) {
+                return path.join(dirPath, entry.name);
+            }
+        }
+
+        // 如果当前目录没有mp4，递归搜索子目录
+        for (const entry of entries) {
+            if (entry.isDirectory()) {
+                const subDirPath = path.join(dirPath, entry.name);
+                const found = await findFirstMp4File(subDirPath);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    } catch (err) {
+        logger.error(`[R插件][文件工具] 查找mp4文件失败: ${err.message}`);
+        return null;
+    }
 }
