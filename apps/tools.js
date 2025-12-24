@@ -99,7 +99,7 @@ import {
     urlTransformShortLink
 } from "../utils/common.js";
 import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
-import { checkAndRemoveFile, deleteFolderRecursive, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
+import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { deepSeekChat, llmRead } from "../utils/llm-util.js";
@@ -1420,8 +1420,23 @@ export class tools extends plugin {
                         videoCodec: this.videoCodec,
                         customFilename: tempFilename,  // 使用传入的文件名（bvid或番剧名称+集数）
                     });
-                    // 发送视频（使用传入的文件名）
-                    return this.sendVideoToUpload(e, `${tempPath}.mp4`);
+                    // 发送视频
+                    // 先检查预期路径，如果不存在则递归查找（处理BBDown合集视频创建子文件夹的情况）
+                    let videoPath = `${tempPath}.mp4`;
+                    const expectedExists = await checkFileExists(videoPath);
+                    if (!expectedExists) {
+                        logger.info(`[R插件][BBDown] 预期路径不存在，递归查找mp4文件...`);
+                        const foundPath = await findFirstMp4File(path);
+                        if (foundPath) {
+                            videoPath = foundPath;
+                            logger.info(`[R插件][BBDown] 找到视频文件: ${videoPath}`);
+                        } else {
+                            logger.error(`[R插件][BBDown] 未找到下载的视频文件`);
+                            e.reply("BBDown下载完成但未找到视频文件，请重试");
+                            return;
+                        }
+                    }
+                    return this.sendVideoToUpload(e, videoPath);
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
             } else if (this.biliUseBBDown && this.biliSmartResolution) {
