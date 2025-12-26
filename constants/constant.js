@@ -171,7 +171,7 @@ export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '华为CDN', value: 3, sign: BILI_CDN_TEMPLATE.replace('{}', 'hw') },
     { label: '阿卡迈（海外）', value: 4, sign: BILI_CDN_TEMPLATE.replace('{}', 'akamai') },
     { label: 'HK-CDN', value: 5, sign: BILI_CDN_TEMPLATE.replace('{}', 'aliov') },
-    { label: '08ccdn', value: 6, sign: BILI_CDN_TEMPLATE.replace('{}', 'o8c') }
+    { label: '08ccdn', value: 6, sign: BILI_CDN_TEMPLATE.replace('{}', '08c') }
 ]);
 
 export const BILI_DOWNLOAD_METHOD = Object.freeze([
@@ -211,6 +211,11 @@ export const BILI_RESOLUTION_LIST = Object.freeze([
     { label: '720P 高清', value: 8, qn: 64 },
     { label: '480P 清晰', value: 9, qn: 32 },
     { label: '360P 流畅', value: 10, qn: 16 },
+]);
+
+export const DOUYIN_BGM_SEND_TYPE = Object.freeze([
+    { label: '语音', value: 'voice' },
+    { label: '自定义音乐卡片', value: 'card' }
 ]);
 
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([

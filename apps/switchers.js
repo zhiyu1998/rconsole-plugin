@@ -67,10 +67,10 @@ export class switchers extends plugin {
             // 设置
             os = ~os;
             await redisSetKey(REDIS_YUNZAI_ISOVERSEA, { os });
-            e.reply(`当前服务器：${ os ? '海外服务器' : '国内服务器' }`);
+            e.reply(`当前服务器：${os ? '海外服务器' : '国内服务器'}`);
             return true;
         } catch (err) {
-            e.reply(`设置海外模式时发生错误: ${ err.message }`);
+            e.reply(`设置海外模式时发生错误: ${err.message}`);
             return false;
         }
     }
@@ -82,12 +82,13 @@ export class switchers extends plugin {
      */
     async clearTrash(e) {
         try {
-            const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
+            const { dataClearFileLen, rTempFileLen, rTempFolderLen } = await autoclearTrash();
             e.reply(`手动清理垃圾完成:\n` +
-                `- 清理了${ dataClearFileLen }个垃圾文件\n` +
-                `- 清理了${ rTempFileLen }个群临时文件`);
+                `- 清理了${dataClearFileLen}个垃圾文件\n` +
+                `- 清理了${rTempFolderLen}个空文件夹\n` +
+                `- 清理了${rTempFileLen}个群临时文件`);
         } catch (err) {
-            e.reply(`手动清理垃圾时发生错误: ${ err.message }`);
+            e.reply(`手动清理垃圾时发生错误: ${err.message}`);
         }
     }
 
@@ -114,9 +115,9 @@ export class switchers extends plugin {
             whiteList.push(trustUserId);
             // 放置到Redis里
             await redisSetKey(REDIS_YUNZAI_WHITELIST, whiteList);
-            e.reply(`成功添加R信任用户：${ trustUserId }`);
+            e.reply(`成功添加R信任用户：${trustUserId}`);
         } catch (err) {
-            e.reply(`设置R信任用户时发生错误: ${ err.message }`);
+            e.reply(`设置R信任用户时发生错误: ${err.message}`);
         }
     }
 
@@ -128,7 +129,7 @@ export class switchers extends plugin {
     async getWhiteList(e) {
         try {
             let whiteList = await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST) || [];
-            const message = `R信任用户列表：\n${ whiteList.join(",\n") }`;
+            const message = `R信任用户列表：\n${whiteList.join(",\n")}`;
             if (this.e.isGroup) {
                 await Bot.pickUser(this.e.user_id).sendMsg(await this.e.runtime.common.makeForwardMsg(this.e, message));
                 await this.reply('R插件的信任用户名单已发送至您的私信了~');
@@ -136,7 +137,7 @@ export class switchers extends plugin {
                 await e.reply(await makeForwardMsg(this.e, message));
             }
         } catch (err) {
-            e.reply(`获取R信任用户时发生错误: ${ err.message }`);
+            e.reply(`获取R信任用户时发生错误: ${err.message}`);
         }
     }
 
@@ -150,9 +151,9 @@ export class switchers extends plugin {
             let trustUserId = e?.reply_id !== undefined ? (await e.getReply()).user_id : e.msg.replace("#查询R信任用户", "").trim();
             let whiteList = await redisExistAndGetKey(REDIS_YUNZAI_WHITELIST) || [];
             const isInWhiteList = whiteList.includes(trustUserId);
-            e.reply(isInWhiteList ? `✅ ${ trustUserId }已经是R插件的信任用户哦~` : `⚠️ ${ trustUserId }不是R插件的信任用户哦~`);
+            e.reply(isInWhiteList ? `✅ ${trustUserId}已经是R插件的信任用户哦~` : `⚠️ ${trustUserId}不是R插件的信任用户哦~`);
         } catch (err) {
-            e.reply(`查询R信任用户时发生错误: ${ err.message }`);
+            e.reply(`查询R信任用户时发生错误: ${err.message}`);
         }
     }
 
@@ -174,9 +175,9 @@ export class switchers extends plugin {
             whiteList = whiteList.filter(item => item !== trustUserId);
             // 放置到Redis里
             await redisSetKey(REDIS_YUNZAI_WHITELIST, whiteList);
-            e.reply(`成功删除R信任用户：${ trustUserId }`);
+            e.reply(`成功删除R信任用户：${trustUserId}`);
         } catch (err) {
-            e.reply(`删除R信任用户时发生错误: ${ err.message }`);
+            e.reply(`删除R信任用户时发生错误: ${err.message}`);
         }
     }
 }
@@ -196,8 +197,8 @@ async function autoclearTrash() {
                 dataClearFileLen++;
             }
         }
-        const rTempFileLen = await deleteFolderRecursive(defaultPath);
-        return { dataClearFileLen, rTempFileLen };
+        const { files: rTempFileLen, folders: rTempFolderLen } = await deleteFolderRecursive(defaultPath);
+        return { dataClearFileLen, rTempFileLen, rTempFolderLen };
     } catch (err) {
         logger.error(err);
         throw err;
@@ -207,12 +208,13 @@ async function autoclearTrash() {
 function autoclear(time) {
     schedule.scheduleJob(time, async function () {
         try {
-            const { dataClearFileLen, rTempFileLen } = await autoclearTrash();
+            const { dataClearFileLen, rTempFileLen, rTempFolderLen } = await autoclearTrash();
             logger.info(`自动清理垃圾完成:\n` +
-                `- 清理了${ dataClearFileLen }个垃圾文件\n` +
-                `- 清理了${ rTempFileLen }个群临时文件`);
+                `- 清理了${dataClearFileLen}个垃圾文件\n` +
+                `- 清理了${rTempFolderLen}个空文件夹\n` +
+                `- 清理了${rTempFileLen}个群临时文件`);
         } catch (err) {
-            logger.error(`自动清理垃圾时发生错误: ${ err.message }`);
+            logger.error(`自动清理垃圾时发生错误: ${err.message}`);
         }
     });
 }
