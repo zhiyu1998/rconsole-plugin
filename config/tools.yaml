@@ -59,6 +59,7 @@ imageBatchThreshold: 50 # 全局图片分批阈值，超过此数量的图片将
 xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 
 weiboCookie: '' # 微博Cookie，格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xxx; XSRF-TOKEN=xxx; M_WEIBOCN_PARAMS=xxx
+weiboComments: true # 是否显示微博评论，默认开启
 
 xiaoheiheCookie: '' # 小黑盒Cookie，格式：x_xhh_tokenid=xxx
 xhhMsgElementLimit: 50 # 小黑盒单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）
