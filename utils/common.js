@@ -509,3 +509,54 @@ export async function urlTransformShortLink(url) {
     }).then(response => response.json());
     return await resp.data.short_url;
 }
+
+
+/**
+ * 下载 m3u8 视频并转换为 mp4 (依赖 ffmpeg)
+ * 支持多线程下载分片
+ * @param {string} m3u8Url - m3u8 地址
+ * @param {string} outputDir - 输出目录
+ * @param {string} fileName - 输出文件名 (包含后缀 .mp4)
+ * @param {number} numThreads - 并发线程数
+ * @returns {Promise<string>} - 返回最终文件完整路径
+ */
+export async function downloadM3u8Video(m3u8Url, outputDir, fileName = "video.mp4", numThreads = 5) {
+    await mkdirIfNotExists(outputDir);
+    const outputPath = path.resolve(outputDir, fileName);
+
+    // 检查 ffmpeg
+    if (!(await checkToolInCurEnv('ffmpeg'))) {
+        throw new Error("未找到 ffmpeg，无法处理 m3u8 视频，请先安装 ffmpeg。");
+    }
+
+    // 清理旧文件
+    if (fs.existsSync(outputPath)) {
+        try {
+            fs.unlinkSync(outputPath);
+        } catch (err) {
+            logger.warn(`[R插件][m3u8下载] 删除已存在文件失败: ${err.message}`);
+        }
+    }
+
+    // 使用 FFmpeg 直接下载 M3U8（FFmpeg 原生支持多线程分片下载）
+    return new Promise((resolve, reject) => {
+        // -threads 0: 自动使用最优线程数
+        // -protocol_whitelist: 允许的协议
+        // -allowed_extensions ALL: 允许所有扩展名
+        // -c copy: 直接复制不转码，速度最快
+        const cmd = `ffmpeg -y -threads ${numThreads} -protocol_whitelist "file,http,https,tcp,tls,crypto" -allowed_extensions ALL -i "${m3u8Url}" -c copy -bsf:a aac_adtstoasc "${outputPath}"`;
+        exec(cmd, { timeout: 600000 }, (error) => {
+            if (error) {
+                logger.error(`[R插件][m3u8下载] 失败: ${error.message}`);
+                reject(error);
+            } else {
+                if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+                    logger.mark(`[R插件][m3u8下载] 完成`);
+                    resolve(outputPath);
+                } else {
+                    reject(new Error("下载完成但文件无效"));
+                }
+            }
+        });
+    });
+}

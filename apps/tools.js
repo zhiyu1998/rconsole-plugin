@@ -90,6 +90,7 @@ import {
     cleanFilename,
     downloadAudio,
     downloadImg,
+    downloadM3u8Video,
     estimateReadingTime,
     formatBiliInfo,
     retryAxiosReq,
@@ -4229,8 +4230,10 @@ export class tools extends plugin {
                 // 发送游戏视频
                 const video = data.screenshots?.find(m => m.type === 'movie');
                 if (video) {
-                    const videoPath = await this.downloadVideo(video.url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
-                    this.sendVideoToUpload(e, videoPath);
+                    if (video.url) {
+                        const videoPath = await this.downloadVideo(video.url, false, null, this.videoDownloadConcurrency, 'xiaoheihe.mp4');
+                        this.sendVideoToUpload(e, videoPath);
+                    }
                 }
             } catch (error) {
                 logger.error(`[R插件][小黑盒游戏] 解析失败: ${error.message}`);
@@ -4418,6 +4421,15 @@ export class tools extends plugin {
         const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
         // 如果传入 fileName 则使用，否则使用时间戳
         const actualFileName = fileName || `video_${Date.now()}.mp4`;
+
+        // 1. 通用 m3u8 检测与处理
+        if (url.includes('.m3u8') || url.includes('.M3U8')) {
+            logger.info(`[R插件][视频下载] 检测到 M3U8 链接，切换至 M3U8 下载模式`);
+            return await this.queue.add(async () => {
+                return downloadM3u8Video(url, groupPath, actualFileName, numThreads);
+            });
+        }
+
         const target = `${groupPath}/${actualFileName}`;
         await mkdirIfNotExists(groupPath);
         // 构造header部分内容
