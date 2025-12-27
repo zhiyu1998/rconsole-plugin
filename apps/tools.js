@@ -109,7 +109,7 @@ import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "..
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
-import { mid2id } from "../utils/weibo.js";
+import { mid2id, getWeiboData, getWeiboComments, getWeiboVoteImages } from "../utils/weibo.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
@@ -381,6 +381,8 @@ export class tools extends plugin {
         this.globalImageLimit = this.toolsConfig.globalImageLimit;
         // 加载微博Cookie
         this.weiboCookie = this.toolsConfig.weiboCookie;
+        // 是否开启微博评论
+        this.weiboComments = this.toolsConfig.weiboComments ?? true;
         // 加载小黑盒Cookie
         this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
     }
@@ -2492,106 +2494,122 @@ export class tools extends plugin {
 
     // 微博解析
     async weibo(e) {
-        // 切面判断是否需要解析
         if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.weibo))) {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.weibo} 已拦截`);
             return false;
         }
-        let weiboId;
+
         const weiboUrl = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
-        // 对已知情况进行判断
+
+        let weiboId;
         if (weiboUrl.includes("m.weibo.cn")) {
-            // https://m.weibo.cn/detail/4976424138313924
-            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(weiboUrl)?.[0] || /(?<=m.weibo.cn\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(weiboUrl)?.[0];
+            weiboId = /(?<=detail\/)[A-Za-z\d]+/.exec(weiboUrl)?.[0]
+                || /(?<=status\/)[A-Za-z\d]+/.exec(weiboUrl)?.[0]
+                || /(?<=m.weibo.cn\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(weiboUrl)?.[0];
         } else if (weiboUrl.includes("weibo.com\/tv\/show") && weiboUrl.includes("mid=")) {
-            // https://weibo.com/tv/show/1034:5007449447661594?mid=5007452630158934
             weiboId = /(?<=mid=)[A-Za-z\d]+/.exec(weiboUrl)?.[0];
             weiboId = mid2id(weiboId);
         } else if (weiboUrl.includes("weibo.com")) {
-            // https://weibo.com/1707895270/5006106478773472
             weiboId = /(?<=weibo.com\/)[A-Za-z\d]+\/[A-Za-z\d]+/.exec(weiboUrl)?.[0];
         }
-        // 无法获取id就结束
+
         if (!weiboId) {
-            e.reply("解析失败：无法获取到wb的id");
+            e.reply("解析失败：无法获取到微博ID");
             return;
         }
         const id = weiboId.split("/")[1] || weiboId;
+        const useCookie = !_.isEmpty(this.weiboCookie);
+        logger.info(`[R插件][微博] ID: ${id}, 使用Cookie: ${useCookie ? '是' : '否'}`);
 
-        // 检测是否填写微博Cookie
-        if (_.isEmpty(this.weiboCookie)) {
-            e.reply(`检测到没有填写微博Cookie，无法解析微博${HELP_DOC}`);
-            return;
-        }
-
-        axios.get(WEIBO_SINGLE_INFO.replace("{}", id), {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-                "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
-                "cookie": this.weiboCookie,
-                "Referer": `https://m.weibo.cn/detail/${id}`,
+        try {
+            const wbData = await getWeiboData(id, this.weiboCookie);
+            if (!wbData) {
+                e.reply(useCookie ? "微博解析失败：无法获取数据" : "微博解析失败：无法获取数据，可尝试设置Cookie");
+                return true;
             }
-        })
-            .then(async resp => {
-                const wbData = resp.data.data;
-                const { text, status_title, source, region_name, pics, page_info } = wbData;
-                e.reply(`${this.identifyPrefix}识别：微博，${text.replace(/<[^>]+>/g, '')}\n${status_title}\n${source}\t${region_name ?? ''}`);
-                if (pics) {
-                    // 下载图片并格式化消息
-                    const imagesPromise = pics.map(item => {
-                        return downloadImg({
-                            img: item?.large.url || item.url,
-                            dir: this.getCurDownloadPath(e),
-                            headersExt: {
-                                "Referer": "http://blog.sina.com.cn/",
-                            },
-                            downloadMethod: this.biliDownloadMethod,
-                        }).then(async (filePath) => {
-                            // 格式化为消息对象
-                            return {
-                                message: segment.image(await fs.promises.readFile(filePath)),
-                                nickname: e.sender.card || e.user_id,
-                                user_id: e.user_id,
-                                // 返回路径以便后续删除
-                                filePath
-                            };
-                        });
-                    });
 
-                    // 等待所有图片处理完
-                    const images = await Promise.all(imagesPromise);
+            const text = (wbData.text || "").replace(/<[^>]+>/g, '').trim();
+            const statusTitle = wbData.status_title || "";
+            const source = wbData.source || "";
+            const regionName = wbData.region_name || "";
+            const pics = wbData.pics || [];
+            const pageInfo = wbData.page_info;
 
+            let replyText = `${this.identifyPrefix}识别：微博`;
+            if (text) replyText += `\n${text}`;
+            if (statusTitle) replyText += `\n${statusTitle}`;
+            if (source || regionName) replyText += `\n${source}${regionName ? '\t' + regionName : ''}`;
+            e.reply(replyText);
 
-                    // 大于判定数量则回复合并的消息
+            if (pics.length > 0) {
+                const imagesPromise = pics.map(item => {
+                    const imgUrl = item?.large?.url || item?.url;
+                    if (!imgUrl) return null;
+                    return downloadImg({
+                        img: imgUrl,
+                        dir: this.getCurDownloadPath(e),
+                        headersExt: { "Referer": "https://weibo.com/" },
+                        downloadMethod: this.biliDownloadMethod,
+                    }).then(async (filePath) => ({
+                        message: segment.image(await fs.promises.readFile(filePath)),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                        filePath
+                    })).catch(() => null);
+                });
+
+                const images = (await Promise.all(imagesPromise)).filter(img => img !== null);
+                if (images.length > 0) {
                     if (images.length > this.globalImageLimit) {
                         await sendImagesInBatches(e, images, this.imageBatchThreshold);
                     } else {
                         await e.reply(images.map(item => item.message));
                     }
-
-                    // 并行删除文件
                     await Promise.all(images.map(({ filePath }) => checkAndRemoveFile(filePath)));
                 }
-                if (page_info) {
-                    // 视频
-                    const videoUrl = page_info.urls?.mp4_720p_mp4 || page_info.urls?.mp4_hd_mp4;
-                    // 文章
-                    if (!videoUrl) return true;
-                    try {
-                        // wb 视频只能强制使用 1，由群友@非酋提出
-                        this.downloadVideo(videoUrl, false, {
-                            "User-Agent": COMMON_USER_AGENT,
-                            "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.9",
-                            "referer": "https://weibo.com/",
-                        }, 1, 'weibo.mp4').then(path => {
-                            this.sendVideoToUpload(e, path);
-                        });
-                    } catch (err) {
-                        e.reply("视频资源获取失败");
-                        logger.error("403错误：", err);
-                    }
+            }
+
+            if (pageInfo?.urls) {
+                const videoUrl = pageInfo.urls.mp4_720p_mp4 || pageInfo.urls.mp4_hd_mp4 || pageInfo.urls.mp4_ld_mp4;
+                if (videoUrl) {
+                    const path = await this.downloadVideo(videoUrl, false, {
+                        "User-Agent": COMMON_USER_AGENT,
+                        "Referer": "https://weibo.com/",
+                    }, 1, 'weibo.mp4');
+                    await this.sendVideoToUpload(e, path);
                 }
-            });
+            }
+
+            // 获取评论
+            if (this.weiboComments) {
+                const comments = await getWeiboComments(id, this.weiboCookie);
+                if (comments.length > 0) {
+                    const commentMsgs = comments.map(c => ({
+                        message: `${c.text}\n${c.like}👍 · ${c.time}${c.source ? ' ' + c.source : ''}`,
+                        nickname: c.user,
+                        user_id: c.uid || e.user_id
+                    }));
+                    await e.reply(await Bot.makeForwardMsg(commentMsgs));
+                }
+            }
+
+            // 投票帖图片（只有没有图片且没有视频时才尝试获取）
+            if (pics.length === 0 && !pageInfo?.urls) {
+                const uid = wbData.user?.id || wbData.user?.idstr;
+                const voteImages = await getWeiboVoteImages(uid, id, this.weiboCookie);
+                if (voteImages.length > 0) {
+                    const voteImgMsgs = voteImages.slice(0, 10).map(url => ({
+                        message: segment.image(url),
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id
+                    }));
+                    await e.reply(await Bot.makeForwardMsg(voteImgMsgs));
+                }
+            }
+        } catch (err) {
+            logger.error("[R插件][微博] 错误:", err);
+            e.reply("微博解析失败");
+        }
         return true;
     }
 

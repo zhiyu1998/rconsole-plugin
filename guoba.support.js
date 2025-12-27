@@ -576,6 +576,13 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.weiboComments",
+                    label: "微博是否开启评论",
+                    bottomHelpMessage: "开启后解析微博时会显示热门评论",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.xiaohongshuCookie",
                     label: "小红书的Cookie",
                     bottomHelpMessage:
