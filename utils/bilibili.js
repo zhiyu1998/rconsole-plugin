@@ -135,6 +135,9 @@ export async function downloadBFile(url, fullFileName, progressCallback, biliDow
  * @returns {Promise<{fullFileName: string, totalLen: number}>}
  */
 async function normalDownloadBFile(url, fullFileName, progressCallback) {
+    const startTime = Date.now();
+    const cdnHost = new URL(url).hostname;
+
     return axios
         .get(url, {
             responseType: 'stream',
@@ -154,6 +157,10 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
 
                 data.pipe(
                     fs.createWriteStream(fullFileName).on('finish', () => {
+                        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                        const sizeMB = (totalLen / 1024 / 1024).toFixed(2);
+                        const speed = (sizeMB / duration).toFixed(2);
+                        logger.info(`[R插件][下载完成] CDN: ${cdnHost}, 大小: ${sizeMB}MB, 用时: ${duration}s, 速度: ${speed}MB/s`);
                         resolve({
                             fullFileName,
                             totalLen,
@@ -173,8 +180,11 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
  * @returns {Promise<{fullFileName: string, totalLen: number}>}
  */
 async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
+    const startTime = Date.now();
+    const cdnHost = new URL(url).hostname;
+
     return new Promise((resolve, reject) => {
-        logger.info(`[R插件][Aria2下载] 正在使用Aria2进行下载!`);
+        logger.info(`[R插件][Aria2下载] CDN: ${cdnHost}, 正在使用Aria2进行下载!`);
         // 构建aria2c命令
         const aria2cArgs = [
             '--file-allocation=none',  // 避免预分配文件空间
@@ -213,7 +223,12 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
         // 处理进程退出
         aria2c.on('close', (code) => {
             if (code === 0) {
-                resolve({ fullFileName, totalLen });
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                const actualSize = fs.existsSync(fullFileName) ? fs.statSync(fullFileName).size : totalLen;
+                const sizeMB = (actualSize / 1024 / 1024).toFixed(2);
+                const speed = (sizeMB / duration).toFixed(2);
+                logger.info(`[R插件][Aria2下载完成] CDN: ${cdnHost}, 大小: ${sizeMB}MB, 用时: ${duration}s, 速度: ${speed}MB/s`);
+                resolve({ fullFileName, totalLen: actualSize });
             } else {
                 reject(new Error(`aria2c exited with code ${code}`));
             }
@@ -230,6 +245,9 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
  * @returns {Promise<{fullFileName: string, totalLen: number}>}
  */
 async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
+    const startTime = Date.now();
+    const cdnHost = new URL(url).hostname;
+
     return new Promise((resolve, reject) => {
         // 构建路径
         fullFileName = path.resolve(fullFileName);
@@ -252,7 +270,7 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
 
         // 执行命令
         const axel = exec(command);
-        logger.info(`[R插件][axel/wget] 执行命令：${downloadTool} 下载方式为：${downloadTool === 'wget' ? '单线程' : '多线程'}`);
+        logger.info(`[R插件][${downloadTool}] CDN: ${cdnHost}, 下载方式: ${downloadTool === 'wget' ? '单线程' : '多线程'}`);
 
         axel.stdout.on('data', (data) => {
             const match = data.match(/(\d+)%/);
@@ -268,9 +286,14 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
 
         axel.on('close', (code) => {
             if (code === 0) {
+                const totalLen = fs.statSync(fullFileName).size;
+                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                const sizeMB = (totalLen / 1024 / 1024).toFixed(2);
+                const speed = (sizeMB / duration).toFixed(2);
+                logger.info(`[R插件][${downloadTool}下载完成] CDN: ${cdnHost}, 大小: ${sizeMB}MB, 用时: ${duration}s, 速度: ${speed}MB/s`);
                 resolve({
                     fullFileName,
-                    totalLen: fs.statSync(fullFileName).size,
+                    totalLen,
                 });
             } else {
                 reject(new Error(`[R插件][${downloadTool}] 错误：${code}`));
@@ -288,9 +311,10 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @param smartResolution 是否启用智能分辨率
  * @param fileSizeLimit 文件大小限制（MB）
  * @param preferredCodec 用户选择的编码：auto, av1, hevc, avc
+ * @param cdnMode CDN模式：0=自动选择, 1=使用原始CDN, 2=强制镜像站
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto') {
+export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto', cdnMode = 0) {
     let videoId = "";
     let cid = "";
     let isBangumi = false;
@@ -732,14 +756,14 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
 
     // 提取信息
     const { backupUrl: videoBackupUrl, baseUrl: videoBaseUrl } = videoData;
-    const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl);
+    const videoUrl = selectAndAvoidMCdnUrl(videoBaseUrl, videoBackupUrl, cdnMode);
 
     // 音频处理 - 选择对应画质的音频流
     const audioData = audio?.[0];
     let audioUrl = null;
     if (audioData != null && audioData !== undefined) {
         const { backupUrl: audioBackupUrl, baseUrl: audioBaseUrl } = audioData;
-        audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl);
+        audioUrl = selectAndAvoidMCdnUrl(audioBaseUrl, audioBackupUrl, cdnMode);
         logger.debug(`[R插件][BILI下载] 音频码率: ${Math.round(audioData.bandwidth / 1024)}kbps`);
     }
 
@@ -1291,9 +1315,38 @@ export async function filterBiliDescLink(link) {
  * 动态规避哔哩哔哩cdn中的mcdn
  * @param baseUrl
  * @param backupUrls
+ * @param cdnMode CDN模式：0=自动选择, 1=使用原始CDN（不切换）, 2=强制镜像站
  * @returns {string}
  */
-function selectAndAvoidMCdnUrl(baseUrl, backupUrls) {
+function selectAndAvoidMCdnUrl(baseUrl, backupUrls, cdnMode = 0) {
+    // 模式1：直接使用API返回的原始CDN，不做任何切换
+    if (cdnMode === 1) {
+        logger.info(`[R插件][CDN选择] 模式1: 使用原始CDN: ${new URL(baseUrl).hostname}`);
+        return baseUrl;
+    }
+
+    // 模式2：强制切换到镜像站
+    if (cdnMode === 2) {
+        const mirrorUrl = replaceP2PUrl(baseUrl);
+        if (mirrorUrl !== baseUrl) {
+            logger.info(`[R插件][CDN选择] 模式2: 强制切换到镜像站`);
+            return mirrorUrl;
+        }
+        // 如果无法替换，从备用URL中找镜像站
+        if (backupUrls && backupUrls.length > 0) {
+            for (const url of backupUrls) {
+                const mirrorBackup = replaceP2PUrl(url);
+                if (mirrorBackup !== url) {
+                    logger.info(`[R插件][CDN选择] 模式2: 使用备用镜像站`);
+                    return mirrorBackup;
+                }
+            }
+        }
+        logger.info(`[R插件][CDN选择] 模式2: 无法找到镜像站，使用原始CDN: ${new URL(baseUrl).hostname}`);
+        return baseUrl;
+    }
+
+    // 模式0（默认）：自动选择，智能避开慢速CDN
     // mcdn 慢速节点的特征（需要避免）
     const slowCdnPatterns = [
         '.mcdn.bilivideo.cn',

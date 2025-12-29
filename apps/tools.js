@@ -337,6 +337,8 @@ export class tools extends plugin {
         this.biliFileSizeLimit = this.toolsConfig.biliFileSizeLimit || 100;
         // 加载全局视频编码选择（影响B站和YouTube）
         this.videoCodec = this.toolsConfig.videoCodec || 'auto';
+        // 加载默认下载CDN策略：0=自动选择, 1=使用原始CDN, 2=强制镜像站
+        this.biliDefaultCDN = this.toolsConfig.biliDefaultCDN || 0;
         // 加载youtube的截取时长
         this.youtubeClipTime = this.toolsConfig.youtubeClipTime;
         // 加载youtube的解析时长
@@ -1502,7 +1504,7 @@ export class tools extends plugin {
                 const qn = resolutionItem?.qn || 32;
                 logger.info(`[R插件][BILI下载] 使用分辨率: ${resolutionItem?.label || '默认480P'}, QN: ${qn}, useResolution值: ${useResolution}`);
                 // 获取下载链接，传入duration用于文件大小估算，传入智能分辨率配置
-                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec);
+                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec, this.biliDefaultCDN);
 
                 if (data.audioUrl != null) {
                     await this.downBili(tempPath, data.videoUrl, data.audioUrl);
@@ -4278,6 +4280,11 @@ export class tools extends plugin {
      * @returns {Promise<unknown>}
      */
     async downBili(title, videoUrl, audioUrl) {
+        const startTime = Date.now();
+        const videoCdn = new URL(videoUrl).hostname;
+        const audioCdn = new URL(audioUrl).hostname;
+        logger.info(`[R插件][BILI下载] 开始下载 | 视频CDN: ${videoCdn} | 音频CDN: ${audioCdn}`);
+
         return Promise.all([
             downloadBFile(
                 videoUrl,
@@ -4306,6 +4313,8 @@ export class tools extends plugin {
                 this.videoDownloadConcurrency
             ),
         ]).then(data => {
+            const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+            logger.info(`[R插件][BILI下载] 音视频下载完成，总用时: ${duration}s，开始合并...`);
             return mergeFileToMp4(data[0].fullFileName, data[1].fullFileName, `${title}.mp4`);
         });
     }

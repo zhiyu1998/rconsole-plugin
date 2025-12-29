@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -244,11 +244,24 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.biliCDN",
-                    label: "强制使用CDN",
-                    bottomHelpMessage: "BBDown强制使用CDN：【只影响开启后的BBDown，一定程度可以影响BBDown速度】哔哩哔哩的CDN地址更换，如果不需要默认不使用，如果选择了其他的CDN将会使用",
+                    label: "BBDown强制CDN",
+                    bottomHelpMessage: "【仅BBDown生效】哔哩哔哩的CDN地址更换，如果不需要默认不使用",
                     component: "Select",
                     componentProps: {
                         options: BILI_CDN_SELECT_LIST,
+                    }
+                },
+                {
+                    field: "tools.biliDefaultCDN",
+                    label: "默认下载CDN策略",
+                    bottomHelpMessage:
+                        "【原生/Aria2/Axel下载方式生效】CDN选择策略：\\n" +
+                        "• 自动选择：智能避开慢速CDN，优先选择快速CDN（推荐）\\n" +
+                        "• 使用API原始CDN：不做任何切换，直接使用B站API返回的CDN\\n" +
+                        "• 强制切换到镜像站：强制将所有CDN替换为B站镜像站",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_DEFAULT_CDN_LIST,
                     }
                 },
                 {

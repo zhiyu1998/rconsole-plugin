@@ -174,6 +174,13 @@ export const BILI_CDN_SELECT_LIST = Object.freeze([
     { label: '08ccdn', value: 6, sign: BILI_CDN_TEMPLATE.replace('{}', '08c') }
 ]);
 
+// 默认下载方式的CDN选择
+export const BILI_DEFAULT_CDN_LIST = Object.freeze([
+    { label: '自动选择（推荐）', value: 0 },
+    { label: '使用API原始CDN（不切换）', value: 1 },
+    { label: '强制切换到镜像站', value: 2 },
+]);
+
 export const BILI_DOWNLOAD_METHOD = Object.freeze([
     { label: '稳定（原生）', value: 0 },
     { label: '性能（Aria2）', value: 1 },
