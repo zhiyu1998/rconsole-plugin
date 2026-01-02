@@ -2181,6 +2181,11 @@ export class tools extends plugin {
         }
         let message =
             e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim();
+        // 过滤 y.music.163.com 的非 /m/ 链接
+        if (message.includes("y.music.163.com") && !message.includes("/m/")) {
+            logger.info("[R插件][网易云解析] 非音乐链接已跳过");
+            return true;
+        }
         // 处理短号，此时会变成y.music.163.com
         if (message.includes("163cn.tv")) {
             message = /(http:|https:)\/\/163cn\.tv\/([a-zA-Z0-9]+)/.exec(message)?.[0];
