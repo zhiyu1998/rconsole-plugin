@@ -114,7 +114,7 @@ import { mid2id, getWeiboData, getWeiboComments, getWeiboVoteImages } from "../u
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
-import { getApiParams } from "../utils/xiaoheihe.js";
+import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 
 /**
  * fetch重试函数
@@ -3625,10 +3625,10 @@ export class tools extends plugin {
                 const messagesToSend = [];
                 // 封面
                 if (link.thumb) {
-                    messagesToSend.push(segment.image(link.thumb));
+                    messagesToSend.push(segment.image(optimizeImageUrl(link.thumb)));
                 }
                 else if (link.video_thumb) {
-                    messagesToSend.push(segment.image(link.video_thumb));
+                    messagesToSend.push(segment.image(optimizeImageUrl(link.video_thumb)));
                 }
                 // 文字信息
                 const textMessages = [];
@@ -3747,7 +3747,7 @@ export class tools extends plugin {
                                             const gameData = validResult.result;
                                             // 封面
                                             if (gameData.image) {
-                                                combinedMessage.push(segment.image(gameData.image));
+                                                combinedMessage.push(segment.image(optimizeImageUrl(gameData.image)));
                                             }
 
                                             // 评分
@@ -3790,7 +3790,7 @@ export class tools extends plugin {
                                         }
                                     } else if (imgMatch && imgMatch[1]) {
                                         // 普通图片
-                                        combinedMessage.push(segment.image(imgMatch[1]));
+                                        combinedMessage.push(segment.image(optimizeImageUrl(imgMatch[1])));
                                     } else {
                                         // 无法识别 当作文本
                                         textBuffer += part;
@@ -3851,7 +3851,7 @@ export class tools extends plugin {
                             // 图文分离的情况
                             const imageUrls = textEntities
                                 .filter(item => item.type === 'img' && item.url)
-                                .map(img => img.url);
+                                .map(img => optimizeImageUrl(img.url));
                             const textContent = textEntities
                                 .filter(item => item.type === 'text' && item.text)
                                 .map(t => t.text)
@@ -3964,7 +3964,7 @@ export class tools extends plugin {
                             commentContent.push({ type: 'text', text: msgText });
                             if (comment.imgs && comment.imgs.length > 0) {
                                 for (const img of comment.imgs) {
-                                    commentContent.push(segment.image(img.url));
+                                    commentContent.push(segment.image(optimizeImageUrl(img.url)));
                                 }
                             }
                             commentForwardMsgs.push({
@@ -4014,7 +4014,7 @@ export class tools extends plugin {
                 messageToSend.push(`${this.identifyPrefix}识别：小黑盒游戏`);
                 // 游戏主封面图
                 if (data.image) {
-                    messageToSend.push(segment.image(data.image));
+                    messageToSend.push(segment.image(optimizeImageUrl(data.image)));
                 }
                 const otherTextLines = [];
                 // 游戏名 (中文名和英文名)
@@ -4210,7 +4210,7 @@ export class tools extends plugin {
                 // 添加游戏截图
                 const imageUrls = data.screenshots
                     ?.filter(m => m.type === 'image')
-                    .map(m => m.url || m.thumbnail)
+                    .map(m => optimizeImageUrl(m.url || m.thumbnail))
                     .filter(Boolean)
                     || [];
                 if (imageUrls.length > 0) {

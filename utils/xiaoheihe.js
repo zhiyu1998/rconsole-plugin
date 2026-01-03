@@ -107,3 +107,15 @@ export function getApiParams(type, id) {
             return baseParams;
     }
 }
+
+/**
+ * 利用小黑盒CDN特性获得原图
+ * @param {string} url - 原始URL
+ * @returns {string} 末尾添加反斜杠后的URL
+ */
+export function optimizeImageUrl(url) {
+    if (!url) return url;
+    // 只对包含查询参数(?)的URL添加反斜杠
+    // 不带查询参数的URL直接返回 避免路径错误
+    return url.includes('?') ? url + '\\' : url;
+}
