@@ -2191,6 +2191,15 @@ export class tools extends plugin {
         const musicUrlReg3 = /(http:|https:)\/\/music.163.com\/m\/song\/(\d+)/;
         const programUrlReg = /program\?id=(\d+)/;
         const djUrlReg = /dj\?id=(\d+)/;
+
+        // 判断 y.music.163.com 域名是否为包含 /m/ 路径的音乐链接
+        const yNonMusicReg = /https?:\/\/y\.music\.163\.com\/(?!m\/)[^\s]+/;
+
+        if (yNonMusicReg.test(message)) {
+            logger.info("[R插件][网易云解析] 非音乐链接已忽略~");
+            return;
+        }
+
         const id = programUrlReg.exec(message)?.[1] ||
             djUrlReg.exec(message)?.[1] ||
             musicUrlReg2.exec(message)?.[3] ||
