@@ -631,11 +631,7 @@ export class tools extends plugin {
                 }
 
                 // 发送评论
-                try {
-                    await this.douyinComment(e, detailId, headers);
-                } catch (commentErr) {
-                    logger.error(`[R插件][抖音动图] 发送评论失败: ${commentErr.message}可能是没有评论`);
-                }
+                await this.douyinComment(e, detailId, headers);
 
             } catch (error) {
                 logger.error(`[R插件][抖音动图] 解析失败: ${error.message}`);
@@ -815,11 +811,7 @@ export class tools extends plugin {
                 }
             }
             // 如果开启评论的就调用
-            try {
-                await this.douyinComment(e, douId, headers);
-            } catch (commentErr) {
-                logger.error(`[R插件][抖音] 发送评论失败: ${commentErr.message}可能是没有评论`);
-            }
+            await this.douyinComment(e, douId, headers);
         } catch (err) {
             logger.error(err);
             logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`);
@@ -913,6 +905,10 @@ export class tools extends plugin {
         // logger.info(headers)
         // saveJsonToFile(commentsResp.data, "data.json", _);
         const comments = commentsResp.data.comments;
+        if (!comments || comments.length === 0) {
+            e.reply("该视频暂无评论~");
+            return;
+        }
         const replyComments = comments.map(item => {
             return {
                 message: item.text,
