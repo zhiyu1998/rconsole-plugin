@@ -607,23 +607,7 @@ export class tools extends plugin {
                 }
 
                 // 发送背景音乐
-                if (this.douyinMusic && item.music?.play_url?.uri) {
-                    try {
-                        if (this.douyinBGMSendType === 'card') {
-                            const musicUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
-                            const musicTitle = item.music.title || '抖音BGM';
-                            // 优先使用音乐封面 其次使用视频封面
-                            const musicImage = item.music.cover_hd?.url_list?.[0] || item.video?.cover?.url_list?.[0] || '';
-                            // 发送自定义音乐卡片
-                            await sendCustomMusicCard(e, douUrl, musicUrl, musicTitle, musicImage);
-                        } else if (bgmPath) {
-                            // 发送语音
-                            await e.reply(segment.record(bgmPath));
-                        }
-                    } catch (recordErr) {
-                        logger.error(`[R插件][抖音动图] 发送BGM失败: ${recordErr.message}`);
-                    }
-                }
+                await this.resolveDouyinMusic(e, item, douUrl, bgmPath);
 
                 // 清理临时文件（过滤掉undefined）
                 for (const filePath of downloadedFilePaths.filter(p => p)) {
@@ -783,32 +767,8 @@ export class tools extends plugin {
                 }
             }
             // 发送背景音乐（只在图片图集时发送，视频不需要）
-            if (urlType === "image" && this.douyinMusic && item.music?.play_url?.uri) {
-                try {
-                    const musicUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
-                    const musicTitle = item.music.title || '抖音BGM';
-                    if (this.douyinBGMSendType === 'card') {
-                        // 优先使用音乐封面 其次使用视频封面
-                        const musicImage = item.music.cover_hd?.url_list?.[0] || item.video?.cover?.url_list?.[0] || '';
-                        // 发送自定义音乐卡片
-                        await sendCustomMusicCard(e, douUrl, musicUrl, musicTitle, musicImage);
-                    } else {
-                        logger.info(`[R插件][抖音] 开始下载背景音乐: ${musicTitle}`);
-                        const downloadPath = this.getCurDownloadPath(e);
-                        await mkdirIfNotExists(downloadPath);
-                        const fileName = `douyin_bgm_${Date.now()}`;
-                        const musicPath = await downloadAudio(musicUrl, downloadPath, fileName);
-                        logger.info(`[R插件][抖音] 背景音乐下载完成: ${musicPath}`);
-
-                        // 发送语音
-                        await e.reply(segment.record(musicPath));
-
-                        // 清理文件
-                        await checkAndRemoveFile(musicPath);
-                    }
-                } catch (err) {
-                    logger.error(`[R插件][抖音] 背景音乐发送失败: ${err.message}`);
-                }
+            if (urlType === "image") {
+                await this.resolveDouyinMusic(e, item, douUrl);
             }
             // 如果开启评论的就调用
             await this.douyinComment(e, douId, headers);
@@ -881,6 +841,77 @@ export class tools extends plugin {
                 logger.error(`下载失败: ${error.message}`);
             }
             await fs.promises.unlink(outputFilePath); // 下载失败时删除文件
+        }
+    }
+
+    /**
+     * 发送抖音背景音乐
+     * @param {Object} e 消息对象
+     * @param {Object} item 节点数据 (aweme_detail)
+     * @param {string} douUrl 原始分享链接
+     * @param {string|null} bgmPath 下载的音频路径 (动图逻辑使用)
+     */
+    async resolveDouyinMusic(e, item, douUrl, bgmPath = null) {
+        // 如果未开启音乐解析或数据不存在 直接返回
+        if (!this.douyinMusic || !item.music?.play_url?.uri) {
+            return;
+        }
+
+        try {
+            // --- 1. 获取音乐基本信息 ---
+            const musicUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
+            // 标题优先级：版权音乐标题 > 原声音乐标题 > 抖音BGM
+            const musicTitle = item.music.matched_pgc_sound?.title || item.music.title || '抖音BGM';
+            // 歌手优先级：版权音乐作者 > 原声音乐作者
+            const musicAuthor = item.music.matched_pgc_sound?.author || item.music.author || '';
+            // 完整标题格式：歌曲名 - 歌手
+            const fullTitle = musicAuthor ? `${musicTitle} - ${musicAuthor}` : musicTitle;
+
+            // --- 2. 根据配置类型发送消息 ---
+            if (this.douyinBGMSendType === 'card') {
+                // --- 音乐卡片 ---
+
+                // 封面优先级：版权封面 > 原声封面 > 创作者头像 > 视频帧截图
+                let musicImage =
+                    item.music.matched_pgc_sound?.cover_medium?.url_list?.[0] ||
+                    item.music.cover_hd?.url_list?.[0] ||
+                    item.music.avatar_large?.url_list?.[0] ||
+                    item.video?.cover?.url_list?.[0] ||
+                    '';
+
+                if (musicImage) {
+                    // 正则替换尺寸参数 获得更高品质的封面图
+                    musicImage = musicImage.replace(/\/\d+x\d+\//, '/1080x1080/');
+                }
+
+                // 发送自定义音乐卡片
+                await sendCustomMusicCard(e, douUrl, musicUrl, fullTitle, musicImage);
+            } else {
+                // --- 语音消息 ---
+
+                let musicPath = bgmPath;
+                let needsCleanup = false;
+
+                // 如果没有传入的路径（普通图集逻辑），则需要下载
+                if (!musicPath) {
+                    logger.info(`[R插件][抖音背景音乐] 开始下载: ${fullTitle}`);
+                    const downloadPath = this.getCurDownloadPath(e);
+                    await mkdirIfNotExists(downloadPath);
+                    const fileName = `douyin_bgm_${Date.now()}`;
+                    musicPath = await downloadAudio(musicUrl, downloadPath, fileName);
+                    needsCleanup = true; // 标记需要清理
+                }
+
+                // 发送语音
+                await e.reply(segment.record(musicPath));
+
+                // 如果是语音消息 发送后需要清理临时文件
+                if (needsCleanup) {
+                    await checkAndRemoveFile(musicPath);
+                }
+            }
+        } catch (err) {
+            logger.error(`[R插件][抖音背景音乐] 发送失败: ${err.message}`);
         }
     }
 
