@@ -4524,12 +4524,29 @@ export class tools extends plugin {
      */
     async downloadVideoWithMultiThread(downloadVideoParams, numThreads) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        const maxRetries = 3;
+        const retryDelay = 1000;
+
         try {
-            // Step 1: 请求视频资源获取 Content-Length
-            const headRes = await axios.head(url, {
-                headers: headers || { "User-Agent": userAgent },
-                ...proxyOption
-            });
+            // Step 1: 请求视频资源获取 Content-Length（带重试）
+            let headRes;
+            for (let retry = 0; retry <= maxRetries; retry++) {
+                try {
+                    headRes = await axios.head(url, {
+                        headers: headers || { "User-Agent": userAgent },
+                        ...proxyOption
+                    });
+                    break;
+                } catch (err) {
+                    if (retry < maxRetries) {
+                        logger.warn(`[R插件][视频下载] HEAD请求失败，重试中... (${retry + 1}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+
             const contentLength = headRes.headers['content-length'];
             if (!contentLength) {
                 throw new Error("无法获取视频大小");
@@ -4539,50 +4556,63 @@ export class tools extends plugin {
             const partSize = Math.ceil(contentLength / numThreads);
             let promises = [];
 
+            // 带重试的分片下载函数
+            const downloadPartWithRetry = async (partIndex, start, end) => {
+                for (let retry = 0; retry <= maxRetries; retry++) {
+                    try {
+                        const partAxiosConfig = {
+                            headers: {
+                                "User-Agent": userAgent,
+                                "Range": `bytes=${start}-${end}`
+                            },
+                            responseType: "stream",
+                            ...proxyOption
+                        };
+
+                        const res = await axios.get(url, partAxiosConfig);
+                        return new Promise((resolve, reject) => {
+                            const partPath = `${target}.part${partIndex}`;
+                            logger.mark(`[R插件][视频下载引擎] 正在下载 part${partIndex}`);
+                            const writer = fs.createWriteStream(partPath);
+                            res.data.pipe(writer);
+                            writer.on("finish", () => {
+                                logger.mark(`[R插件][视频下载引擎] part${partIndex} 下载完成`);
+                                resolve(partPath);
+                            });
+                            writer.on("error", reject);
+                        });
+                    } catch (err) {
+                        if (retry < maxRetries) {
+                            logger.warn(`[R插件][视频下载] part${partIndex} 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        } else {
+                            throw new Error(`part${partIndex} 下载失败: ${err.message}`);
+                        }
+                    }
+                }
+            };
+
             for (let i = 0; i < numThreads; i++) {
                 const start = i * partSize;
                 let end = start + partSize - 1;
                 if (i === numThreads - 1) {
-                    end = contentLength - 1; // 确保最后一部分可以下载完整
+                    end = contentLength - 1;
                 }
-
-                // Step 3: 并发下载文件的不同部分
-                const partAxiosConfig = {
-                    headers: {
-                        "User-Agent": userAgent,
-                        "Range": `bytes=${start}-${end}`
-                    },
-                    responseType: "stream",
-                    ...proxyOption
-                };
-
-                promises.push(axios.get(url, partAxiosConfig).then(res => {
-                    return new Promise((resolve, reject) => {
-                        const partPath = `${target}.part${i}`;
-                        logger.mark(`[R插件][视频下载引擎] 正在下载 part${i}`);
-                        const writer = fs.createWriteStream(partPath);
-                        res.data.pipe(writer);
-                        writer.on("finish", () => {
-                            logger.mark(`[R插件][视频下载引擎] part${i + 1} 下载完成`); // 记录线程下载完成
-                            resolve(partPath);
-                        });
-                        writer.on("error", reject);
-                    });
-                }));
+                promises.push(downloadPartWithRetry(i, start, end));
             }
 
             // 等待所有部分都下载完毕
             const parts = await Promise.all(promises);
 
             // Step 4: 合并下载的文件部分
-            await checkAndRemoveFile(target); // 确保目标文件不存在
+            await checkAndRemoveFile(target);
             const writer = fs.createWriteStream(target, { flags: 'a' });
             for (const partPath of parts) {
                 await new Promise((resolve, reject) => {
                     const reader = fs.createReadStream(partPath);
                     reader.pipe(writer, { end: false });
                     reader.on('end', () => {
-                        fs.unlinkSync(partPath); // 删除部分文件
+                        fs.unlinkSync(partPath);
                         resolve();
                     });
                     reader.on('error', reject);
@@ -4594,6 +4624,7 @@ export class tools extends plugin {
             return target;
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${err}`);
+            throw err;
         }
     }
 
@@ -4733,26 +4764,36 @@ export class tools extends plugin {
      */
     async downloadVideoWithSingleThread(downloadVideoParams) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        const maxRetries = 3;
+        const retryDelay = 1000;
         const axiosConfig = {
             headers: headers || { "User-Agent": userAgent },
             responseType: "stream",
             ...proxyOption
         };
 
-        try {
-            await checkAndRemoveFile(target);
+        for (let retry = 0; retry <= maxRetries; retry++) {
+            try {
+                await checkAndRemoveFile(target);
 
-            const res = await axios.get(url, axiosConfig);
-            logger.mark(`开始下载: ${url}`);
-            const writer = fs.createWriteStream(target);
-            res.data.pipe(writer);
+                const res = await axios.get(url, axiosConfig);
+                logger.mark(`开始下载: ${url}`);
+                const writer = fs.createWriteStream(target);
+                res.data.pipe(writer);
 
-            return new Promise((resolve, reject) => {
-                writer.on("finish", () => resolve(target));
-                writer.on("error", reject);
-            });
-        } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${err}`);
+                return await new Promise((resolve, reject) => {
+                    writer.on("finish", () => resolve(target));
+                    writer.on("error", reject);
+                });
+            } catch (err) {
+                if (retry < maxRetries) {
+                    logger.warn(`[R插件][视频下载] 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                } else {
+                    logger.error(`下载视频发生错误！\ninfo:${err}`);
+                    throw err;
+                }
+            }
         }
     }
 

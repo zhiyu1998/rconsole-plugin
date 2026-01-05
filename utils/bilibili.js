@@ -137,38 +137,54 @@ export async function downloadBFile(url, fullFileName, progressCallback, biliDow
 async function normalDownloadBFile(url, fullFileName, progressCallback) {
     const startTime = Date.now();
     const cdnHost = new URL(url).hostname;
+    const maxRetries = 3;
+    const retryDelay = 1000;
 
-    return axios
-        .get(url, {
-            responseType: 'stream',
-            headers: {
-                ...BILI_HEADER
-            },
-        })
-        .then(({ data, headers }) => {
-            let currentLen = 0;
-            const totalLen = headers['content-length'];
+    for (let retry = 0; retry <= maxRetries; retry++) {
+        try {
+            return await axios
+                .get(url, {
+                    responseType: 'stream',
+                    headers: {
+                        ...BILI_HEADER
+                    },
+                })
+                .then(({ data, headers }) => {
+                    let currentLen = 0;
+                    const totalLen = headers['content-length'];
 
-            return new Promise((resolve, reject) => {
-                data.on('data', ({ length }) => {
-                    currentLen += length;
-                    progressCallback?.(currentLen / totalLen);
-                });
-
-                data.pipe(
-                    fs.createWriteStream(fullFileName).on('finish', () => {
-                        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-                        const sizeMB = (totalLen / 1024 / 1024).toFixed(2);
-                        const speed = (sizeMB / duration).toFixed(2);
-                        logger.info(`[R插件][下载完成] CDN: ${cdnHost}, 大小: ${sizeMB}MB, 用时: ${duration}s, 速度: ${speed}MB/s`);
-                        resolve({
-                            fullFileName,
-                            totalLen,
+                    return new Promise((resolve, reject) => {
+                        data.on('data', ({ length }) => {
+                            currentLen += length;
+                            progressCallback?.(currentLen / totalLen);
                         });
-                    }),
-                );
-            });
-        });
+
+                        data.on('error', reject);
+
+                        data.pipe(
+                            fs.createWriteStream(fullFileName).on('finish', () => {
+                                const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+                                const sizeMB = (totalLen / 1024 / 1024).toFixed(2);
+                                const speed = (sizeMB / duration).toFixed(2);
+                                logger.info(`[R插件][下载完成] CDN: ${cdnHost}, 大小: ${sizeMB}MB, 用时: ${duration}s, 速度: ${speed}MB/s`);
+                                resolve({
+                                    fullFileName,
+                                    totalLen,
+                                });
+                            }).on('error', reject),
+                        );
+                    });
+                });
+        } catch (err) {
+            if (retry < maxRetries) {
+                logger.warn(`[R插件][BILI下载] 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            } else {
+                logger.error(`[R插件][BILI下载] 下载最终失败: ${err.message}`);
+                throw err;
+            }
+        }
+    }
 }
 
 /**
