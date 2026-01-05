@@ -2197,7 +2197,7 @@ export class tools extends plugin {
 
         if (yNonMusicReg.test(message)) {
             logger.info("[R插件][网易云解析] 非音乐链接已忽略~");
-            return;
+            return false;
         }
 
         const id = programUrlReg.exec(message)?.[1] ||
