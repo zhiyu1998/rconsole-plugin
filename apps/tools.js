@@ -929,29 +929,30 @@ export class tools extends plugin {
         if (!this.douyinComments) {
             return;
         }
-        const dyCommentUrl = DY_COMMENT.replace("{}", douId);
-        const abParam = aBogus.generate_a_bogus(
-            new URLSearchParams(new URL(dyCommentUrl).search).toString(),
-            headers["User-Agent"],
-        );
-        const commentsResp = await axios.get(`${dyCommentUrl}&a_bogus=${abParam}`, {
-            headers
-        });
-        // logger.info(headers)
-        // saveJsonToFile(commentsResp.data, "data.json", _);
-        const comments = commentsResp.data.comments;
-        if (!comments || comments.length === 0) {
-            e.reply("该视频暂无评论~");
-            return;
+        try {
+            const dyCommentUrl = DY_COMMENT.replace("{}", douId);
+            const abParam = aBogus.generate_a_bogus(
+                new URLSearchParams(new URL(dyCommentUrl).search).toString(),
+                headers["User-Agent"],
+            );
+            const commentsResp = await axios.get(`${dyCommentUrl}&a_bogus=${abParam}`, {
+                headers
+            });
+            const comments = commentsResp.data.comments;
+            if (!comments || comments.length === 0) {
+                return;
+            }
+            const replyComments = comments.map(item => {
+                return {
+                    message: item.text,
+                    nickname: this.e.sender.card || this.e.user_id,
+                    user_id: this.e.user_id,
+                };
+            });
+            e.reply(await Bot.makeForwardMsg(replyComments));
+        } catch (err) {
+            logger.warn(`[R插件][抖音评论] 获取失败，跳过: ${err.message}`);
         }
-        const replyComments = comments.map(item => {
-            return {
-                message: item.text,
-                nickname: this.e.sender.card || this.e.user_id,
-                user_id: this.e.user_id,
-            };
-        });
-        e.reply(await Bot.makeForwardMsg(replyComments));
     }
 
     // tiktok解析
@@ -1309,9 +1310,11 @@ export class tools extends plugin {
         }
         // 是否显示在线人数
         if (this.biliDisplayOnline) {
-            // 拼接在线人数
+            // 拼接在线人数（失败返回null则跳过显示）
             const onlineTotal = await this.biliOnlineTotal(bvid, cid);
-            combineContent += `\n🏄‍♂️️ 当前视频有 ${onlineTotal.total} 人在观看，其中 ${onlineTotal.count} 人在网页端观看`;
+            if (onlineTotal) {
+                combineContent += `\n🏄‍♂️️ 当前视频有 ${onlineTotal.total} 人在观看，其中 ${onlineTotal.count} 人在网页端观看`;
+            }
         }
 
         let finalTitle = `${this.identifyPrefix}识别：哔哩哔哩，${displayTitle}`;
@@ -1542,15 +1545,16 @@ export class tools extends plugin {
      * 获取在线人数
      * @param bvid
      * @param cid
-     * @returns {Promise<{total: *, count: *}>}
+     * @returns {Promise<{total: *, count: *}|null>} 失败返回null
      */
     async biliOnlineTotal(bvid, cid) {
-        const onlineResp = await axios.get(BILI_ONLINE.replace("{0}", bvid).replace("{1}", cid));
-        const online = onlineResp.data.data;
-        return {
-            total: online.total,
-            count: online.count
-        };
+        try {
+            const data = await retryAxiosReq(() => axios.get(BILI_ONLINE.replace("{0}", bvid).replace("{1}", cid)));
+            return { total: data.data.total, count: data.data.count };
+        } catch (err) {
+            logger.warn(`[R插件][BILI在线人数] 获取失败，跳过显示: ${err.message}`);
+            return null;
+        }
     }
 
     // 下载哔哩哔哩音乐
@@ -1614,48 +1618,49 @@ export class tools extends plugin {
      * @return {Promise<string>}
      */
     async getBiliSummary(bvid, cid, up_mid) {
-        // 这个有点用，但不多
-        let wbi = "wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634";
-        if (!_.isEmpty(this.biliSessData)) {
-            wbi = await getWbi({ bvid, cid, up_mid }, this.biliSessData);
-        }
-        // 构造API
-        const summaryUrl = `${BILI_SUMMARY}?${wbi}`;
-        logger.info(summaryUrl);
-        // 构造结果：https://api.bilibili.com/x/web-interface/view/conclusion/get?bvid=BV1L94y1H7CV&cid=1335073288&up_mid=297242063&wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634
-        return axios.get(summaryUrl, {
-            headers: {
-                Cookie: `SESSDATA=${this.biliSessData}`
+        try {
+            // 这个有点用，但不多
+            let wbi = "wts=1701546363&w_rid=1073871926b3ccd99bd790f0162af634";
+            if (!_.isEmpty(this.biliSessData)) {
+                wbi = await getWbi({ bvid, cid, up_mid }, this.biliSessData);
             }
-        })
-            .then(resp => {
-                logger.debug(resp)
-                const data = resp.data.data?.model_result;
-                logger.debug(data)
-                const summary = data?.summary;
-                const outline = data?.outline;
-                let resReply = "";
-                // 总体总结
-                if (summary) {
-                    resReply = `\n摘要：${summary}\n`;
+            // 构造API
+            const summaryUrl = `${BILI_SUMMARY}?${wbi}`;
+            logger.info(summaryUrl);
+            // 使用重试请求
+            const respData = await retryAxiosReq(() => axios.get(summaryUrl, {
+                headers: {
+                    Cookie: `SESSDATA=${this.biliSessData}`
                 }
-                // 分段总结
-                if (outline) {
-                    const specificTimeSummary = outline.map(item => {
-                        const smallTitle = item.title;
-                        const keyPoint = item?.part_outline;
-                        // 时间点的总结
-                        const specificContent = keyPoint.map(point => {
-                            const { timestamp, content } = point;
-                            const specificTime = secondsToTime(timestamp);
-                            return `${specificTime}  ${content}\n`;
-                        }).join("");
-                        return `- ${smallTitle}\n${specificContent}\n`;
-                    });
-                    resReply += specificTimeSummary.join("");
-                }
-                return resReply;
-            });
+            }));
+            const data = respData?.model_result;
+            const summary = data?.summary;
+            const outline = data?.outline;
+            let resReply = "";
+            // 总体总结
+            if (summary) {
+                resReply = `\n摘要：${summary}\n`;
+            }
+            // 分段总结
+            if (outline) {
+                const specificTimeSummary = outline.map(item => {
+                    const smallTitle = item.title;
+                    const keyPoint = item?.part_outline;
+                    // 时间点的总结
+                    const specificContent = keyPoint.map(point => {
+                        const { timestamp, content } = point;
+                        const specificTime = secondsToTime(timestamp);
+                        return `${specificTime}  ${content}\n`;
+                    }).join("");
+                    return `- ${smallTitle}\n${specificContent}\n`;
+                });
+                resReply += specificTimeSummary.join("");
+            }
+            return resReply;
+        } catch (err) {
+            logger.warn(`[R插件][BILI总结] 获取失败，跳过显示: ${err.message}`);
+            return "";
+        }
     }
 
     /**
@@ -2619,30 +2624,38 @@ export class tools extends plugin {
                 }
             }
 
-            // 获取评论
+            // 获取评论（失败不影响主流程）
             if (this.weiboComments) {
-                const comments = await getWeiboComments(id, this.weiboCookie);
-                if (comments.length > 0) {
-                    const commentMsgs = comments.map(c => ({
-                        message: `${c.text}\n${c.like}👍 · ${c.time}${c.source ? ' ' + c.source : ''}`,
-                        nickname: c.user,
-                        user_id: c.uid || e.user_id
-                    }));
-                    await e.reply(await Bot.makeForwardMsg(commentMsgs));
+                try {
+                    const comments = await getWeiboComments(id, this.weiboCookie);
+                    if (comments.length > 0) {
+                        const commentMsgs = comments.map(c => ({
+                            message: `${c.text}\n${c.like}👍 · ${c.time}${c.source ? ' ' + c.source : ''}`,
+                            nickname: c.user,
+                            user_id: c.uid || e.user_id
+                        }));
+                        await e.reply(await Bot.makeForwardMsg(commentMsgs));
+                    }
+                } catch (err) {
+                    logger.warn(`[R插件][微博评论] 获取失败，跳过: ${err.message}`);
                 }
             }
 
             // 投票帖图片（只有没有图片且没有视频时才尝试获取）
             if (pics.length === 0 && !pageInfo?.urls) {
-                const uid = wbData.user?.id || wbData.user?.idstr;
-                const voteImages = await getWeiboVoteImages(uid, id, this.weiboCookie);
-                if (voteImages.length > 0) {
-                    const voteImgMsgs = voteImages.slice(0, 10).map(url => ({
-                        message: segment.image(url),
-                        nickname: e.sender.card || e.user_id,
-                        user_id: e.user_id
-                    }));
-                    await e.reply(await Bot.makeForwardMsg(voteImgMsgs));
+                try {
+                    const uid = wbData.user?.id || wbData.user?.idstr;
+                    const voteImages = await getWeiboVoteImages(uid, id, this.weiboCookie);
+                    if (voteImages.length > 0) {
+                        const voteImgMsgs = voteImages.slice(0, 10).map(url => ({
+                            message: segment.image(url),
+                            nickname: e.sender.card || e.user_id,
+                            user_id: e.user_id
+                        }));
+                        await e.reply(await Bot.makeForwardMsg(voteImgMsgs));
+                    }
+                } catch (err) {
+                    logger.warn(`[R插件][微博投票图片] 获取失败，跳过: ${err.message}`);
                 }
             }
         } catch (err) {
@@ -4524,12 +4537,29 @@ export class tools extends plugin {
      */
     async downloadVideoWithMultiThread(downloadVideoParams, numThreads) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        const maxRetries = 3;
+        const retryDelay = 1000;
+
         try {
-            // Step 1: 请求视频资源获取 Content-Length
-            const headRes = await axios.head(url, {
-                headers: headers || { "User-Agent": userAgent },
-                ...proxyOption
-            });
+            // Step 1: 请求视频资源获取 Content-Length（带重试）
+            let headRes;
+            for (let retry = 0; retry <= maxRetries; retry++) {
+                try {
+                    headRes = await axios.head(url, {
+                        headers: headers || { "User-Agent": userAgent },
+                        ...proxyOption
+                    });
+                    break;
+                } catch (err) {
+                    if (retry < maxRetries) {
+                        logger.warn(`[R插件][视频下载] HEAD请求失败，重试中... (${retry + 1}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    } else {
+                        throw err;
+                    }
+                }
+            }
+
             const contentLength = headRes.headers['content-length'];
             if (!contentLength) {
                 throw new Error("无法获取视频大小");
@@ -4539,50 +4569,63 @@ export class tools extends plugin {
             const partSize = Math.ceil(contentLength / numThreads);
             let promises = [];
 
+            // 带重试的分片下载函数
+            const downloadPartWithRetry = async (partIndex, start, end) => {
+                for (let retry = 0; retry <= maxRetries; retry++) {
+                    try {
+                        const partAxiosConfig = {
+                            headers: {
+                                "User-Agent": userAgent,
+                                "Range": `bytes=${start}-${end}`
+                            },
+                            responseType: "stream",
+                            ...proxyOption
+                        };
+
+                        const res = await axios.get(url, partAxiosConfig);
+                        return new Promise((resolve, reject) => {
+                            const partPath = `${target}.part${partIndex}`;
+                            logger.mark(`[R插件][视频下载引擎] 正在下载 part${partIndex}`);
+                            const writer = fs.createWriteStream(partPath);
+                            res.data.pipe(writer);
+                            writer.on("finish", () => {
+                                logger.mark(`[R插件][视频下载引擎] part${partIndex} 下载完成`);
+                                resolve(partPath);
+                            });
+                            writer.on("error", reject);
+                        });
+                    } catch (err) {
+                        if (retry < maxRetries) {
+                            logger.warn(`[R插件][视频下载] part${partIndex} 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
+                            await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        } else {
+                            throw new Error(`part${partIndex} 下载失败: ${err.message}`);
+                        }
+                    }
+                }
+            };
+
             for (let i = 0; i < numThreads; i++) {
                 const start = i * partSize;
                 let end = start + partSize - 1;
                 if (i === numThreads - 1) {
-                    end = contentLength - 1; // 确保最后一部分可以下载完整
+                    end = contentLength - 1;
                 }
-
-                // Step 3: 并发下载文件的不同部分
-                const partAxiosConfig = {
-                    headers: {
-                        "User-Agent": userAgent,
-                        "Range": `bytes=${start}-${end}`
-                    },
-                    responseType: "stream",
-                    ...proxyOption
-                };
-
-                promises.push(axios.get(url, partAxiosConfig).then(res => {
-                    return new Promise((resolve, reject) => {
-                        const partPath = `${target}.part${i}`;
-                        logger.mark(`[R插件][视频下载引擎] 正在下载 part${i}`);
-                        const writer = fs.createWriteStream(partPath);
-                        res.data.pipe(writer);
-                        writer.on("finish", () => {
-                            logger.mark(`[R插件][视频下载引擎] part${i + 1} 下载完成`); // 记录线程下载完成
-                            resolve(partPath);
-                        });
-                        writer.on("error", reject);
-                    });
-                }));
+                promises.push(downloadPartWithRetry(i, start, end));
             }
 
             // 等待所有部分都下载完毕
             const parts = await Promise.all(promises);
 
             // Step 4: 合并下载的文件部分
-            await checkAndRemoveFile(target); // 确保目标文件不存在
+            await checkAndRemoveFile(target);
             const writer = fs.createWriteStream(target, { flags: 'a' });
             for (const partPath of parts) {
                 await new Promise((resolve, reject) => {
                     const reader = fs.createReadStream(partPath);
                     reader.pipe(writer, { end: false });
                     reader.on('end', () => {
-                        fs.unlinkSync(partPath); // 删除部分文件
+                        fs.unlinkSync(partPath);
                         resolve();
                     });
                     reader.on('error', reject);
@@ -4594,6 +4637,7 @@ export class tools extends plugin {
             return target;
         } catch (err) {
             logger.error(`下载视频发生错误！\ninfo:${err}`);
+            throw err;
         }
     }
 
@@ -4733,26 +4777,36 @@ export class tools extends plugin {
      */
     async downloadVideoWithSingleThread(downloadVideoParams) {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
+        const maxRetries = 3;
+        const retryDelay = 1000;
         const axiosConfig = {
             headers: headers || { "User-Agent": userAgent },
             responseType: "stream",
             ...proxyOption
         };
 
-        try {
-            await checkAndRemoveFile(target);
+        for (let retry = 0; retry <= maxRetries; retry++) {
+            try {
+                await checkAndRemoveFile(target);
 
-            const res = await axios.get(url, axiosConfig);
-            logger.mark(`开始下载: ${url}`);
-            const writer = fs.createWriteStream(target);
-            res.data.pipe(writer);
+                const res = await axios.get(url, axiosConfig);
+                logger.mark(`开始下载: ${url}`);
+                const writer = fs.createWriteStream(target);
+                res.data.pipe(writer);
 
-            return new Promise((resolve, reject) => {
-                writer.on("finish", () => resolve(target));
-                writer.on("error", reject);
-            });
-        } catch (err) {
-            logger.error(`下载视频发生错误！\ninfo:${err}`);
+                return await new Promise((resolve, reject) => {
+                    writer.on("finish", () => resolve(target));
+                    writer.on("error", reject);
+                });
+            } catch (err) {
+                if (retry < maxRetries) {
+                    logger.warn(`[R插件][视频下载] 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                } else {
+                    logger.error(`下载视频发生错误！\ninfo:${err}`);
+                    throw err;
+                }
+            }
         }
     }
 
