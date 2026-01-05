@@ -235,6 +235,16 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.biliMinResolution",
+                    label: "智能分辨率最低画质",
+                    bottomHelpMessage:
+                        "智能分辨率降画质的底线，不会降到比这个更低的画质。如果最低画质仍然超出文件大小限制，则放弃解析并提示用户",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_RESOLUTION_LIST,
+                    }
+                },
+                {
                     field: "tools.biliUseBBDown",
                     label: "BBDown接管下载",
                     bottomHelpMessage:

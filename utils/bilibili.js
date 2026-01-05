@@ -312,9 +312,10 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
  * @param fileSizeLimit 文件大小限制（MB）
  * @param preferredCodec 用户选择的编码：auto, av1, hevc, avc
  * @param cdnMode CDN模式：0=自动选择, 1=使用原始CDN, 2=强制镜像站
+ * @param minResolution 最低分辨率value值，默认360P(10)，参考BILI_RESOLUTION_LIST
  * @returns {Promise<any>}
  */
-export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto', cdnMode = 0) {
+export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto', cdnMode = 0, minResolution = 10) {
     let videoId = "";
     let cid = "";
     let isBangumi = false;
@@ -677,13 +678,26 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
                     if (videoData) break;
                 }
 
-                // 如果所有画质都超过限制，选择最低分辨率的最低码率
+                // 如果所有画质都超过限制，检查最低画质是否也超限
                 if (!videoData) {
                     const lowestHeight = availableHeights[availableHeights.length - 1];
                     const lowestVideos = video.filter(v => v.height === lowestHeight);
-                    videoData = lowestVideos.sort((a, b) => a.bandwidth - b.bandwidth)[0];
-                    const estimatedSizeMB = estimateSize(videoData, audioData, timelength);
-                    const codecType = getCodecType(videoData.codecs);
+                    const lowestVideo = lowestVideos.sort((a, b) => a.bandwidth - b.bandwidth)[0];
+                    const estimatedSizeMB = estimateSize(lowestVideo, audioData, timelength);
+                    const codecType = getCodecType(lowestVideo.codecs);
+
+                    // 检查最低画质是否超过文件大小限制
+                    if (estimatedSizeMB > sizeLimit) {
+                        logger.warn(`[R插件][BILI下载] 最低画质${lowestVideo.height}p预估大小${Math.round(estimatedSizeMB)}MB仍超过限制${sizeLimit}MB，放弃解析`);
+                        return {
+                            videoUrl: null,
+                            audioUrl: null,
+                            skipReason: `视频最低画质(${lowestVideo.height}p)预估${Math.round(estimatedSizeMB)}MB超过限制${sizeLimit}MB，已跳过`
+                        };
+                    }
+
+                    // 最低画质未超限，使用它
+                    videoData = lowestVideo;
                     logger.warn(`[R插件][BILI下载] 所有画质都超过${sizeLimit}MB，选择最低: ${videoData.height}p, 编码: ${codecType.toUpperCase()}, 预估大小: ${Math.round(estimatedSizeMB)}MB`);
                 }
             } else {

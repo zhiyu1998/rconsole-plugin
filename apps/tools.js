@@ -335,6 +335,8 @@ export class tools extends plugin {
         this.biliSmartResolution = this.toolsConfig.biliSmartResolution;
         // 加载文件大小限制
         this.biliFileSizeLimit = this.toolsConfig.biliFileSizeLimit || 100;
+        // 加载智能分辨率最低画质：默认360P (value=10)
+        this.biliMinResolution = this.toolsConfig.biliMinResolution ?? 10;
         // 加载全局视频编码选择（影响B站和YouTube）
         this.videoCodec = this.toolsConfig.videoCodec || 'auto';
         // 加载默认下载CDN策略：0=自动选择, 1=使用原始CDN, 2=强制镜像站
@@ -1504,7 +1506,14 @@ export class tools extends plugin {
                 const qn = resolutionItem?.qn || 32;
                 logger.info(`[R插件][BILI下载] 使用分辨率: ${resolutionItem?.label || '默认480P'}, QN: ${qn}, useResolution值: ${useResolution}`);
                 // 获取下载链接，传入duration用于文件大小估算，传入智能分辨率配置
-                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec, this.biliDefaultCDN);
+                const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec, this.biliDefaultCDN, this.biliMinResolution);
+
+                // 处理智能分辨率超限跳过的情况
+                if (data.skipReason) {
+                    logger.warn(`[R插件][BILI下载] ${data.skipReason}`);
+                    e.reply(`⚠️ ${data.skipReason}`);
+                    return;
+                }
 
                 if (data.audioUrl != null) {
                     await this.downBili(tempPath, data.videoUrl, data.audioUrl);

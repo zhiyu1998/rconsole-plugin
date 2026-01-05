@@ -33,6 +33,7 @@ biliBangumiResolution: 5 # 番剧独立画质设置，默认480p，参考 {BILI_
 biliBangumiDuration: 1800 # 番剧限制的最大时长（默认30分钟），单位：秒，超过将不解析
 biliSmartResolution: false # 智能分辨率：在尽可能清晰的情况下，不超过限制大小不上传群文件
 biliFileSizeLimit: 100 # 文件大小限制（MB），配合智能分辨率使用，默认100MB
+biliMinResolution: 10 # 智能分辨率最低画质，默认360P（value=10），降到此画质还超限则不解析
 
 useLocalNeteaseAPI: false # 是否使用网易云解析自建API
 useNeteaseSongRequest: false # 是否开启网易云点歌功能
