@@ -49,11 +49,14 @@ export function extractSessData(cookieOrSessData) {
 }
 
 /**
- * 根据请求的画质(qn)计算对应的fnval值
- * fnval是二进制标志位组合：16(DASH) | 特定功能 | 2048(AV1)
- * @param {number} qn 画质代码
- * @param {boolean} smartResolution 是否启用智能分辨率
- * @returns {{fnval: number, fourk: number}} fnval和fourk参数
+ * Compute the fnval bitmask and fourk indicator for a given Bilibili quality code.
+ *
+ * fnval is a bitmask used by Bilibili's playback API to request DASH, AV1 and optional features
+ * (8K, 4K, HDR, Dolby). fourk is 1 when a 4K-or-higher feature is requested, otherwise 0.
+ *
+ * @param {number} qn - Bilibili quality code (e.g., 16=360p, 32=480p, 64=720p, 80/112/116=1080p variants, 120=4K, 125=HDR, 126=Dolby, 127=8K).
+ * @param {boolean} [smartResolution=false] - If true, request all extended features (8K, 4K, HDR, Dolby, AV1).
+ * @returns {{fnval: number, fourk: number}} An object where `fnval` is the computed bitmask for the requested features and `fourk` is 1 if 4K-or-higher content was requested, otherwise 0.
  */
 export function calculateFnval(qn, smartResolution = false) {
     const baseDash = 16;    // DASH格式
@@ -127,11 +130,13 @@ export async function downloadBFile(url, fullFileName, progressCallback, biliDow
 }
 
 /**
- * 正常下载
- * @param url
- * @param fullFileName
- * @param progressCallback
- * @returns {Promise<{fullFileName: string, totalLen: number}>}
+ * Download a file via HTTP stream to disk, reporting progress and retrying on transient failures.
+ *
+ * @param {string} url - The remote file URL to download.
+ * @param {string} fullFileName - The destination file path where the download will be saved.
+ * @param {(fraction: number) => void} [progressCallback] - Optional callback invoked with a value between 0 and 1 indicating download progress.
+ * @returns {Promise<{fullFileName: string, totalLen: number}>} An object containing the saved file path and the total byte length reported by the server.
+ * @throws Will throw the final error if the download fails after the configured retry attempts.
  */
 async function normalDownloadBFile(url, fullFileName, progressCallback) {
     const startTime = Date.now();
@@ -187,12 +192,14 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
 }
 
 /**
- * 使用Aria2下载
- * @param url
- * @param fullFileName
- * @param progressCallback
- * @param videoDownloadConcurrency
- * @returns {Promise<{fullFileName: string, totalLen: number}>}
+ * Download a file using aria2c and report progress.
+ *
+ * Spawns an aria2c process to download the given URL to the specified file and invokes the optional progress callback with a fraction between 0 and 1 as data is received.
+ * @param {string} url - The download URL.
+ * @param {string} fullFileName - The destination file path for the downloaded content.
+ * @param {(progress: number) => void} [progressCallback] - Optional callback invoked with download progress as a fraction (0 to 1).
+ * @param {number} videoDownloadConcurrency - Number of connections/splits to use for the download.
+ * @returns {Promise<{fullFileName: string, totalLen: number}>} Resolves with the destination path and the downloaded file size in bytes.
  */
 async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     const startTime = Date.now();
@@ -252,12 +259,13 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
 }
 
 /**
- * 使用 C 语言写的轻量级下载工具 Axel 进行下载
- * @param url
- * @param fullFileName
- * @param progressCallback
- * @param videoDownloadConcurrency
- * @returns {Promise<{fullFileName: string, totalLen: number}>}
+ * Download a file using axel (or wget when single-threaded) and report progress.
+ *
+ * @param {string} url - The download URL.
+ * @param {string} fullFileName - Destination file path; will be resolved to an absolute path.
+ * @param {(progress: number) => void} [progressCallback] - Optional callback invoked with progress in range 0–1.
+ * @param {number} videoDownloadConcurrency - Number of connections to use; if 1, wget is used (single-threaded), otherwise axel is used.
+ * @returns {{fullFileName: string, totalLen: number}} An object containing the absolute path to the downloaded file and its size in bytes.
  */
 async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     const startTime = Date.now();
@@ -318,17 +326,27 @@ async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownl
 }
 
 /**
- * 获取下载链接
- * @param url
- * @param SESSDATA
- * @param qn 画质参数
- * @param duration 视频时长（秒），如果提供则用于文件大小估算
- * @param smartResolution 是否启用智能分辨率
- * @param fileSizeLimit 文件大小限制（MB）
- * @param preferredCodec 用户选择的编码：auto, av1, hevc, avc
- * @param cdnMode CDN模式：0=自动选择, 1=使用原始CDN, 2=强制镜像站
- * @param minResolution 最低分辨率value值，默认360P(10)，参考BILI_RESOLUTION_LIST
- * @returns {Promise<any>}
+ * Selects and returns the best video and (if available) audio download URLs for a Bilibili video or Bangumi entry.
+ *
+ * Determines the appropriate stream(s) based on requested quality (qn), smart resolution, file size limits,
+ * preferred codec and CDN selection mode, and returns CDN-selected URLs and related metadata for downloading.
+ *
+ * @param {string} url - Video or Bangumi playback URL (or path containing the video identifier).
+ * @param {string} SESSDATA - Session token or full cookie string to be sent to Bilibili APIs.
+ * @param {number|string} qn - Desired quality code (QN) used by Bilibili APIs.
+ * @param {number} [duration=0] - Video duration in seconds; when provided, used for more accurate file size estimation.
+ * @param {boolean} [smartResolution=false] - When true, allow selecting a different resolution automatically to meet size/codec preferences.
+ * @param {number} [fileSizeLimit=100] - Maximum acceptable file size in MB used when selecting streams.
+ * @param {string} [preferredCodec='auto'] - Preferred codec priority: 'auto', 'av1', 'hevc', or 'avc'.
+ * @param {number} [cdnMode=0] - CDN selection mode: 0 = auto, 1 = use original CDN, 2 = force mirror sites.
+ * @param {number} [minResolution=10] - Minimum allowed resolution value (reference: BILI_RESOLUTION_LIST); used as a floor when selecting streams.
+ * @returns {Promise<Object>} An object containing chosen URLs and optional metadata:
+ *   - {string|null} videoUrl - Selected video file URL (after CDN selection), or null if no suitable video found.
+ *   - {string|null} audioUrl - Selected audio file URL (after CDN selection) or null if not applicable.
+ *   - {boolean} [isPreview] - Present for DURL/preview responses when the item is a preview.
+ *   - {number} [previewDuration] - Preview duration in seconds for DURL/preview items.
+ *   - {string} [qualityDesc] - Human-readable quality description for selected DURL/preview items.
+ *   - {string} [skipReason] - When selection was abandoned due to constraints (e.g., size limits), a short explanation.
  */
 export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResolution = false, fileSizeLimit = 100, preferredCodec = 'auto', cdnMode = 0, minResolution = 10) {
     let videoId = "";
@@ -933,6 +951,25 @@ export async function getBiliAudio(bvid, cid) {
     }))
 }
 
+/**
+ * Retrieve playback stream information for a Bilibili video using optional session credentials.
+ *
+ * @param {string} bvid - Bilibili video identifier (BV/AID normalized as BV).
+ * @param {string} [cid] - Content ID (CID). If omitted, CID will be resolved automatically.
+ * @param {string} SESSDATA - Either a raw `SESSDATA` value or a full cookie string containing `SESSDATA=`; the function will extract or use it as provided.
+ * @param {number} qn - Requested quality numeric code (e.g., 16/32/...).
+ * @param {boolean} [smartResolution=false] - When true, request extended/resolution-specific flags (4K/8K/HDR/AV1) for the stream.
+ * @returns {object} If available, returns DASH stream data object (contains `video`, `audio`, etc.); if the video is a preview/durl, returns an object of shape:
+ *                   {
+ *                     _type: 'durl',
+ *                     _isPreview: boolean,
+ *                     durl: Array,                // array of segment objects
+ *                     quality: number,
+ *                     supportFormats: Array,
+ *                     acceptQuality: Array,
+ *                     timelength: number
+ *                   }.
+ */
 export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn, smartResolution = false) {
     if (!cid) {
         cid = await fetchCID(bvid).catch((err) => logger.error(err))
@@ -1002,12 +1039,21 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn, smartReso
 }
 
 /**
- * 获取番剧视频流（使用PGC专用API）
- * @param epId    EP ID
- * @param cid     CID
- * @param SESSDATA 登录凭证
- * @param qn      画质参数
- * @returns {Promise<{type: 'dash'|'durl', data: any}>} 返回格式类型和数据
+ * Fetches playback data for a Bangumi episode from the PGC API.
+ *
+ * @param {string|number} epId - Bangumi episode identifier (ep_id).
+ * @param {string|number} cid - Content identifier (CID) for the episode.
+ * @param {string} SESSDATA - Login credential; either a full Cookie string or a raw `SESSDATA` value.
+ * @param {number} qn - Requested quality number (QN) sent to the API.
+ * @param {boolean} [smartResolution=false] - When true, request extended resolution/codec flags (smart resolution).
+ * @returns {{type: 'dash'|'durl', data: any, result?: any}} An object describing the returned format:
+ *   - If `type` is `'dash'`, `data` is the DASH payload (`video`/`audio` arrays) and `result` contains the full API result (includes timelength, format, etc.).
+ *   - If `type` is `'durl'`, `data` is an object with:
+ *       - `durl`: selected durl entry or array of durl entries,
+ *       - `quality`: actual quality QN chosen,
+ *       - `supportFormats`: supported formats array (if provided by API),
+ *       - `isPreview`: `true` when the API indicates a preview clip,
+ *       - `errorCode`: API error code when present.
  */
 export async function getBangumiBiliVideoWithSession(epId, cid, SESSDATA, qn, smartResolution = false) {
     // 计算对应的fnval和fourk参数
@@ -1161,10 +1207,13 @@ export const fetchCID = async (bvid) => {
 }
 
 /**
- * 获取指定分P的CID
- * @param bvid BVID
- * @param pNumber 分P号（1-indexed）
- * @returns {Promise<string|null>} CID或null
+ * Retrieve the CID for a specific page (part) of a Bilibili video.
+ *
+ * If the requested page exists, returns its CID; if the requested page is missing,
+ * falls back to the first page's CID when available. Returns `null` on error or if no CID can be obtained.
+ * @param {string} bvid - The video's BVID.
+ * @param {number} pNumber - The 1-indexed page number to retrieve.
+ * @returns {Promise<string|null>} The CID of the requested page, or `null` if not available or on error.
  */
 export async function getPageCid(bvid, pNumber) {
     try {
@@ -1388,11 +1437,17 @@ export async function filterBiliDescLink(link) {
 }
 
 /**
- * 动态规避哔哩哔哩cdn中的mcdn
- * @param baseUrl
- * @param backupUrls
- * @param cdnMode CDN模式：0=自动选择, 1=使用原始CDN（不切换）, 2=强制镜像站
- * @returns {string}
+ * Selects a CDN URL while avoiding known slow mcdn hosts and optionally forcing mirror or original CDN.
+ *
+ * Chooses between the provided baseUrl, any backupUrls, or a mirrored replacement to prefer fast CDNs
+ * and avoid slow mcdn-like hosts. Behavior is controlled by cdnMode.
+ *
+ * @param {string} baseUrl - The primary CDN URL returned by the API.
+ * @param {string[]} [backupUrls] - Alternative CDN URLs to consider if the base URL is undesirable.
+ * @param {number} [cdnMode=0] - CDN selection mode: 0 = auto-select (avoid slow mcdn, prefer fast CDNs),
+ *                               1 = use original baseUrl (no switching),
+ *                               2 = force mirror replacement (use mirrored host if available, falling back to backups or baseUrl).
+ * @returns {string} The chosen URL to use for downloading (may be the original baseUrl, a backupUrl, or a mirrored replacement).
  */
 function selectAndAvoidMCdnUrl(baseUrl, backupUrls, cdnMode = 0) {
     // 模式1：直接使用API返回的原始CDN，不做任何切换

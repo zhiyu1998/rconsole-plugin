@@ -353,11 +353,13 @@ export function formatSeconds(seconds) {
 }
 
 /**
- * 重试 axios 请求
- * @param requestFunction 返回 axios promise 的函数
- * @param retries 重试次数
- * @param delay 重试延迟（毫秒）
- * @returns {*}
+ * Retry an Axios-based request until it returns non-empty `response.data` or the retry limit is reached.
+ *
+ * @param {Function} requestFunction - A function that performs the Axios request and returns the Axios promise.
+ * @param {number} [retries=3] - Number of retry attempts remaining.
+ * @param {number} [delay=1000] - Delay between retries in milliseconds.
+ * @returns {*} The `data` property from the Axios response.
+ * @throws {Error} The last encountered error if all retries fail or if an empty response is received after final attempt.
  */
 export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) {
     try {

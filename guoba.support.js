@@ -7,6 +7,16 @@ import model from "./model/config.js";
 const pluginName = `rconsole-plugin`;
 
 const _path = process.cwd() + `/plugins/${pluginName}`;
+/**
+ * Provide the plugin metadata and configuration schema for the R插件 (rconsole-plugin).
+ *
+ * The returned object contains two top-level properties:
+ * - `pluginInfo`: metadata used by the host (name, title, author, links, icon, UI flags, and paths).
+ * - `configInfo`: configuration UI schema for the plugin (grouped fields, selection options, help text),
+ *   plus `getConfigData` and `setConfigData` handlers to read and persist the `tools` configuration.
+ *
+ * @returns {object} An object with `pluginInfo` (plugin metadata) and `configInfo` (configuration schemas and persistence handlers).
+ */
 export function supportGuoba() {
     let globalWhitelist = Object.values(RESOLVE_CONTROLLER_NAME_ENUM).map(value => ({ value }));
     const globalWhitelistComponent = globalWhitelist.length === 0 ? 'GTags' : 'Select'
