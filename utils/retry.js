@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import axios from 'axios'
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // 媒体处理计数器（图片+视频）
 let processedMediaCount = 0;
@@ -296,9 +297,14 @@ async function downloadAndModify(url, originalSegment, groupId) {
  * 修改本地文件并添加随机字节
  */
 async function modifyLocalFile(localPath, originalSegment, groupId) {
-    // 移除可能的 file:// 前缀
-    if (localPath.startsWith('file://')) {
-        localPath = localPath.replace('file://', '');
+    // 正确处理 file:// URL（包含特殊字符如 #）
+    if (localPath.startsWith('file://') || localPath.startsWith('file:///')) {
+        try {
+            localPath = fileURLToPath(localPath);
+        } catch {
+            // 如果解析失败，尝试简单移除前缀
+            localPath = localPath.replace(/^file:\/\/\/?/, '');
+        }
     }
 
     // 读取文件
@@ -351,10 +357,15 @@ async function processSingleVideo(videoSegment, groupId) {
             // Buffer类型视频：直接保存并添加随机字节
             return await processBufferVideo(file, videoSegment, groupId);
         } else if (typeof file === 'string') {
-            // 移除 file:// 前缀
+            // 正确处理 file:// URL（包含特殊字符如 #）
             let localPath = file;
-            if (localPath.startsWith('file://')) {
-                localPath = localPath.replace('file://', '');
+            if (localPath.startsWith('file://') || localPath.startsWith('file:///')) {
+                try {
+                    localPath = fileURLToPath(file);
+                } catch {
+                    // 如果解析失败，尝试简单移除前缀
+                    localPath = file.replace(/^file:\/\/\/?/, '');
+                }
             }
             return await modifyLocalVideo(localPath, videoSegment, groupId);
         } else {

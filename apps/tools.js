@@ -981,19 +981,15 @@ export class tools extends plugin {
         // 下载逻辑
         const path = this.getCurDownloadPath(e);
         const rawTitle = (await ytDlpGetTilt(url, isOversea, this.myProxy)).toString().replace(/\n/g, '');
-        // 清理文件名并截断到10个字符
-        const safeTitlePrefix = cleanFilename(rawTitle).substring(0, 10);
-        const videoFilename = `${safeTitlePrefix}.mp4`;
+        // 使用通用文件名，避免特殊字符问题
+        const videoFilename = `tiktok.mp4`;
 
-        // 清理可能存在的旧文件或同名文件
+        // 清理可能存在的旧文件
         await checkAndRemoveFile(`${path}/${videoFilename}`);
-        // 清理旧的 temp 文件
-        await checkAndRemoveFile(`${path}/temp.mp4`);
-
 
         e.reply(`${this.identifyPrefix}识别：TikTok，视频下载中请耐心等待 \n${rawTitle}`);
-        // 注意：ytDlpHelper 的 outputFilename 参数位置在 maxThreads 之后
-        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency, safeTitlePrefix);
+        // 使用通用文件名下载
+        await ytDlpHelper(path, cleanedTiktokUrl, isOversea, this.myProxy, this.videoDownloadConcurrency, 'tiktok');
         await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
         return true;
     }
