@@ -168,7 +168,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "(v.douyin.com|live.douyin.com)",
+                    reg: "(v.douyin.com|live.douyin.com|www.douyin.com/video)",
                     fnc: "douyin",
                 },
                 {
@@ -425,7 +425,7 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.douyin} 已拦截`);
             return false;
         }
-        const urlRex = /(http:\/\/|https:\/\/)(v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/;
+        const urlRex = /(http:\/\/|https:\/\/)((v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*|www.douyin.com\/video\/[0-9]+)/;
         // 检测无效链接，例如：v.douyin.com
         if (!urlRex.test(e.msg)) {
             e.reply(`检测到这是一个无效链接，无法解析抖音${HELP_DOC}`);
