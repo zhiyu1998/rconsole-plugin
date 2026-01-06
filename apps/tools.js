@@ -1518,6 +1518,12 @@ export class tools extends plugin {
                     return;
                 }
 
+                // 处理试看视频的情况
+                if (data.isPreview) {
+                    const qualityInfo = data.qualityDesc ? `, ${data.qualityDesc}` : '';
+                    e.reply(`⚠️ 该视频为试看视频，仅能解析预览片段 (${data.previewDuration}秒${qualityInfo})`);
+                }
+
                 if (data.audioUrl != null) {
                     await this.downBili(tempPath, data.videoUrl, data.audioUrl);
                 } else {
