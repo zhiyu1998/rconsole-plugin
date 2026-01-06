@@ -66,7 +66,6 @@ export function calculateFnval(qn, smartResolution = false) {
     if (smartResolution) {
         fnval = baseDash | av1Codec | 1024 | 128 | 64 | 512; // DASH + AV1 + 8K + 4K + HDR + 杜比
         fourk = 1;
-        logger.info(`[R插件][fnval计算] 智能分辨率模式：请求所有画质 (fnval=${fnval}, fourk=${fourk})`);
         return { fnval, fourk };
     }
 
@@ -364,7 +363,6 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             const pValue = urlObj.searchParams.get('p');
             if (pValue) {
                 pParam = parseInt(pValue, 10);
-                logger.info(`[R插件][BILI下载] 检测到分P参数: P${pParam}`);
             }
         } catch (e) {
             logger.debug(`[R插件][BILI下载] URL解析P参数失败: ${e.message}`);
@@ -378,7 +376,7 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             // 如果有P参数且页数足够，获取对应分P的CID
             if (pParam && pages && pages.length >= pParam && pParam > 0) {
                 cid = pages[pParam - 1].cid;
-                logger.info(`[R插件][BILI下载] AV号分P ${pParam}，使用CID: ${cid}`);
+                logger.debug(`[R插件][BILI下载] AV号分P${pParam}, CID: ${cid}`);
             } else {
                 cid = newCid;
             }
@@ -405,7 +403,7 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
         case 16: qualityText = "360P流畅"; break;
         default: qualityText = `未知画质(QN:${qn})`; break;
     }
-    logger.info(`[R插件][BILI下载] 开始获取视频下载链接，视频ID: ${videoId}, 请求画质: ${qualityText}, QN: ${qn}, 编码选择: ${preferredCodec}`);
+    logger.debug(`[R插件][BILI下载] 视频ID: ${videoId}, 画质: ${qualityText}`);
 
     let streamData;
     let streamType = 'dash'; // 默认为dash格式
@@ -425,11 +423,8 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
                 return { videoUrl: null, audioUrl: null };
             }
             const firstDurl = durlData[0];
-            // 选择URL，优先使用backup_url来避免mcdn
-            logger.info(`[R插件][BILI下载] 可用URL数量: 1个主URL + ${(firstDurl.backup_url || []).length}个备用URL`);
             const videoUrl = selectAndAvoidMCdnUrl(firstDurl.url, firstDurl.backup_url || []);
-            logger.info(`[R插件][BILI下载] 番剧DURL格式，视频大小: ${Math.round(firstDurl.size / 1024 / 1024)}MB, 时长: ${Math.round(firstDurl.length / 1000)}秒`);
-            logger.info(`[R插件][BILI下载] 选中的下载URL: ${new URL(videoUrl).hostname}`);
+            logger.info(`[R插件][BILI下载] 番剧DURL格式，大小: ${Math.round(firstDurl.size / 1024 / 1024)}MB, 时长: ${Math.round(firstDurl.length / 1000)}秒`);
             return { videoUrl, audioUrl: null };
         }
     } else {
@@ -486,8 +481,7 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             const durationSec = Math.round((currentDurl.length || 0) / 1000);
             const qualityDesc = supportFormats.find(f => f.quality === currentQuality)?.new_description || `QN${currentQuality}`;
 
-            logger.warn(`[R插件][BILI下载] ${isPreview ? '⚠️试看视频' : 'DURL格式视频'}，清晰度: ${qualityDesc}，预览时长: ${durationSec}秒`);
-            logger.info(`[R插件][BILI下载] 选中的下载URL: ${new URL(videoUrl).hostname}`);
+            logger.info(`[R插件][BILI下载] ${isPreview ? '❗试看视频' : 'DURL视频'}: ${qualityDesc}, ${durationSec}秒`);
             return { videoUrl, audioUrl: null, isPreview, previewDuration: durationSec, qualityDesc };
         }
     }
@@ -1033,7 +1027,7 @@ export async function getBangumiBiliVideoWithSession(epId, cid, SESSDATA, qn, sm
     const hasValidSessData = sessDataValue && sessDataValue.length > 10;
     logger.info(`[R插件][番剧请求审计] 请求URL: ${apiUrl}`);
     logger.info(`[R插件][番剧请求审计] SESSDATA状态: ${hasValidSessData ? '已配置(' + sessDataValue.substring(0, 8) + '...)' : '未配置或无效'}`);
-    logger.info(`[R插件][番剧请求审计] 请求画质QN: ${qn}, 计算的fnval: ${fnval}, fourk: ${fourk}`);
+    logger.debug(`[R插件][番剧] 请求画质QN: ${qn}`);
 
     // 确定发送哪种Cookie格式
     // 如果传入的是完整cookie字符串（包含其他字段），就发送完整cookie
@@ -1179,7 +1173,7 @@ export async function getPageCid(bvid, pNumber) {
         const pages = json.data?.pages;
         if (pages && pages.length >= pNumber && pNumber > 0) {
             const targetPage = pages[pNumber - 1];
-            logger.info(`[R插件][BILI下载] 获取分P CID: P${pNumber} (${targetPage.part}), CID: ${targetPage.cid}`);
+            logger.debug(`[R插件][BILI] 分P${pNumber} CID: ${targetPage.cid}`);
             return targetPage.cid;
         }
         logger.warn(`[R插件][BILI下载] 找不到P${pNumber}，使用P1`);

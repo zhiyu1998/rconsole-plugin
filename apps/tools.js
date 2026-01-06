@@ -1499,15 +1499,13 @@ export class tools extends plugin {
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
             } else if (this.biliUseBBDown && this.biliSmartResolution) {
-                // BBDown开启但智能分辨率也开启，提示并使用默认下载
-                logger.info("[R插件][BBDown] 智能分辨率已启用，跳过BBDown使用默认下载方式");
+                // BBDown开启但智能分辨率也开启，使用默认下载
             }
             // =================默认下载方式=====================
             try {
                 // 获取分辨率参数 QN，如果没有默认使用 480p --> 32
                 const resolutionItem = BILI_RESOLUTION_LIST.find(item => item.value === useResolution);
                 const qn = resolutionItem?.qn || 32;
-                logger.info(`[R插件][BILI下载] 使用分辨率: ${resolutionItem?.label || '默认480P'}, QN: ${qn}, useResolution值: ${useResolution}`);
                 // 获取下载链接，传入duration用于文件大小估算，传入智能分辨率配置
                 const data = await getDownloadUrl(url, this.biliSessData, qn, duration, this.biliSmartResolution, this.biliFileSizeLimit, this.videoCodec, this.biliDefaultCDN, this.biliMinResolution);
 
