@@ -135,9 +135,15 @@ export async function downloadBFile(url, fullFileName, progressCallback, biliDow
  */
 async function normalDownloadBFile(url, fullFileName, progressCallback) {
     const startTime = Date.now();
-    const cdnHost = new URL(url).hostname;
+    // 防御性URL解析
+    let cdnHost = 'unknown';
+    try {
+        cdnHost = new URL(url).hostname;
+    } catch (e) {
+        logger.warn(`[R插件][BILI下载] 无法解析CDN主机名: ${e.message}`);
+    }
     const maxRetries = 3;
-    const retryDelay = 1000;
+    const baseRetryDelay = 1000; // 指数退避基础延迟
 
     for (let retry = 0; retry <= maxRetries; retry++) {
         try {
@@ -176,8 +182,10 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
                 });
         } catch (err) {
             if (retry < maxRetries) {
-                logger.warn(`[R插件][BILI下载] 下载失败，重试中... (${retry + 1}/${maxRetries}): ${err.message}`);
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
+                // 指数退避: 1s, 2s, 4s
+                const delay = baseRetryDelay * Math.pow(2, retry);
+                logger.warn(`[R插件][BILI下载] 下载失败，${delay / 1000}秒后重试 (${retry + 1}/${maxRetries}): ${err.message}`);
+                await new Promise(resolve => setTimeout(resolve, delay));
             } else {
                 logger.error(`[R插件][BILI下载] 下载最终失败: ${err.message}`);
                 throw err;
@@ -196,7 +204,13 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
  */
 async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     const startTime = Date.now();
-    const cdnHost = new URL(url).hostname;
+    // 防御性URL解析
+    let cdnHost = 'unknown';
+    try {
+        cdnHost = new URL(url).hostname;
+    } catch (e) {
+        logger.warn(`[R插件][Aria2] 无法解析CDN主机名: ${e.message}`);
+    }
 
     return new Promise((resolve, reject) => {
         logger.info(`[R插件][Aria2下载] CDN: ${cdnHost}, 正在使用Aria2进行下载!`);
@@ -261,7 +275,13 @@ async function aria2DownloadBFile(url, fullFileName, progressCallback, videoDown
  */
 async function axelDownloadBFile(url, fullFileName, progressCallback, videoDownloadConcurrency) {
     const startTime = Date.now();
-    const cdnHost = new URL(url).hostname;
+    // 防御性URL解析
+    let cdnHost = 'unknown';
+    try {
+        cdnHost = new URL(url).hostname;
+    } catch (e) {
+        logger.warn(`[R插件][Axel] 无法解析CDN主机名: ${e.message}`);
+    }
 
     return new Promise((resolve, reject) => {
         // 构建路径
@@ -688,12 +708,30 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             // 有时长信息，使用精确的文件大小估算
             // 智能分辨率：从最高画质开始遍历，找到不超过限制的最高画质
             if (smartResolution) {
-                // 获取所有可用的分辨率，从高到低排序
-                const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
-                const maxHeight = availableHeights[0];
+                // 将高度(px)转换为BILI_RESOLUTION_LIST的value值用于比较
+                const heightToResValue = (height) => {
+                    if (height >= 4320) return 0;  // 8K
+                    if (height >= 2160) return 3;  // 4K
+                    if (height >= 1080) return 6;  // 1080P
+                    if (height >= 720) return 8;   // 720P
+                    if (height >= 480) return 9;   // 480P
+                    return 10; // 360P
+                };
+
+                // 获取所有可用的分辨率，从高到低排序，并过滤掉低于最低分辨率的
+                const allHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
+                const availableHeights = allHeights.filter(h => heightToResValue(h) <= minResolution);
+
+                // 如果过滤后没有可用画质，使用所有画质但记录警告
+                const heightsToTry = availableHeights.length > 0 ? availableHeights : allHeights;
+                if (availableHeights.length === 0) {
+                    logger.debug(`[R插件][BILI下载] 所有画质都低于最低分辨率设置，将尝试所有可用画质`);
+                }
+
+                const maxHeight = heightsToTry[0];
 
                 // 从最高画质开始尝试
-                for (const height of availableHeights) {
+                for (const height of heightsToTry) {
                     logger.debug(`[R插件][BILI下载] 尝试${height}p分辨率`);
 
                     // 获取该分辨率的所有流并按编码优先级排序
