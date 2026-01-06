@@ -105,40 +105,26 @@ export function ytDlpGetThumbnailUrl(url, isOversea, proxy, cookiePath = "") {
 }
 
 /**
- * 获取封面
- * @param path
- * @param url
- * @param isOversea
- * @param proxy
- * @param cookiePath
- * @param thumbnailFilenamePrefix 缩略图文件名前缀 (不含扩展名)
+ * 获取封面（下载到本地）
+ * @param path 下载路径
+ * @param url 视频链接
+ * @param isOversea 是否海外
+ * @param proxy 代理
+ * @param cookiePath cookie路径
+ * @returns {Promise<string>} 缩略图文件名
  */
-export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "", thumbnailFilenamePrefix = "thumbnail") {
+export function ytDlpGetThumbnail(path, url, isOversea, proxy, cookiePath = "") {
     return new Promise((resolve, reject) => {
         const cookieParam = constructCookiePath(url, cookiePath);
-        const finalThumbnailName = thumbnailFilenamePrefix || "thumbnail";
-        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}" -P "${path}" -o "${finalThumbnailName}.%(ext)s"`;
+        const command = `yt-dlp --write-thumbnail --convert-thumbnails png --skip-download ${cookieParam} ${constructProxyParam(isOversea, proxy)} "${url}" -P "${path}" -o "thumbnail.%(ext)s"`;
 
         exec(command, (error, stdout, stderr) => {
             if (error) {
-                logger.error(`[R插件][yt-dlp审计] Error executing ytDlpGetThumbnail: ${error}. Stderr: ${stderr}`);
+                logger.error(`[R插件][yt-dlp] 获取封面失败: ${error.message}`);
                 return reject(error);
             }
-            // 从yt-dlp的输出中提取文件名
-            const match = stdout.match(/Writing thumbnail to: (.*)/);
-            if (match && match[1]) {
-                const thumbnailPath = match[1].trim();
-                // 只返回文件名部分
-                const thumbnailFilename = thumbnailPath.split(/[\\/]/).pop();
-                logger.info(`[R插件][yt-dlp审计] Thumbnail downloaded: ${thumbnailFilename}`);
-                resolve(thumbnailFilename);
-            } else {
-                // 兜底方案：如果无法从输出中解析，则按原逻辑拼接
-                logger.warn("[R插件][yt-dlp审计] Could not parse thumbnail filename from stdout. Falling back to default.");
-                // 尝试查找文件，因为yt-dlp可能没有输出我们期望的格式
-                const expectedPngPath = `${finalThumbnailName}.png`;
-                resolve(expectedPngPath);
-            }
+            // 固定返回 thumbnail.png
+            resolve("thumbnail.png");
         });
     });
 }
