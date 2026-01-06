@@ -524,8 +524,6 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
     // 智能分辨率：使用所有可用画质，从最高开始选择
     if (smartResolution) {
         matchingVideos = video; // 使用所有视频流
-        const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
-        logger.info(`[R插件][BILI下载] 智能分辨率模式：使用所有可用画质 ${availableHeights.join('p, ')}p`);
     } else {
         // 非智能分辨率：按请求画质筛选
         matchingVideos = video.filter(v => v.height === targetHeight);
@@ -545,10 +543,7 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             if (matchingVideos.length > 0) {
                 const maxHeight = matchingVideos[0].height;
                 matchingVideos = matchingVideos.filter(v => v.height === maxHeight);
-                logger.warn(`[R插件][BILI下载] 降级使用: ${maxHeight}p`);
             }
-        } else {
-            logger.info(`[R插件][BILI下载] ✅ 找到匹配的${targetHeight}p画质`);
         }
 
         // 如果还是找不到，使用所有可用的最低分辨率视频流
@@ -562,11 +557,6 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
     // 智能选择最佳视频流：优先编码AV1>HEVC>AVC，并考虑文件大小限制
     let videoData;
     if (matchingVideos.length > 0) {
-        // 记录编码信息
-        const codecInfo = matchingVideos.map(v =>
-            `${v.height}p(${v.codecs}): ${Math.round(v.bandwidth / 1024)}kbps`
-        ).join(', ');
-        logger.info(`[R插件][BILI下载] 可选编码: ${codecInfo}`);
 
         // 估算文件大小（带宽 * 时长）
         const estimateSize = (stream, audioStream, timelength) => {
@@ -660,14 +650,10 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
         // 番剧不使用文件大小限制和智能分辨率
         if (isBangumi) {
             smartResolution = false;
-            logger.info(`[R插件][BILI下载] 番剧使用独立配置，不启用智能分辨率`);
         }
 
         // 使用传入的文件大小限制
         const sizeLimit = fileSizeLimit; // MB
-        if (smartResolution) {
-            logger.info(`[R插件][BILI下载] 智能分辨率已启用，大小限制: ${sizeLimit}MB`);
-        }
 
         // 如果无法获取时长，使用基于码率的fallback策略
         if (timelength === 0 && !isBangumi) {
@@ -706,16 +692,11 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
             }
         } else {
             // 有时长信息，使用精确的文件大小估算
-            logger.info(`[R插件][BILI下载] 使用精确时长(${Math.round(timelength / 1000)}秒)进行文件大小估算`);
-
             // 智能分辨率：从最高画质开始遍历，找到不超过限制的最高画质
             if (smartResolution) {
                 // 获取所有可用的分辨率，从高到低排序
                 const availableHeights = [...new Set(video.map(v => v.height))].sort((a, b) => b - a);
                 const maxHeight = availableHeights[0];
-
-                logger.info(`[R插件][BILI下载] 智能分辨率：从最高${maxHeight}p开始，符合${sizeLimit}MB限制`);
-                logger.info(`[R插件][BILI下载] 可用画质: ${availableHeights.map(h => h + 'p').join(' → ')}`);
 
                 // 从最高画质开始尝试
                 for (const height of availableHeights) {
