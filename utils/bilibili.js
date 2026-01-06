@@ -440,7 +440,6 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
         if (streamData._type === 'durl') {
             const isPreview = streamData._isPreview;
             const supportFormats = streamData.supportFormats || [];
-            const acceptQuality = streamData.acceptQuality || [];
             let currentQuality = streamData.quality;
             let currentDurl = streamData.durl?.[0];
 
@@ -449,64 +448,47 @@ export async function getDownloadUrl(url, SESSDATA, qn, duration = 0, smartResol
                 return { videoUrl: null, audioUrl: null };
             }
 
-            // 智能分辨率：检查文件大小是否超限，如果超限则尝试更低清晰度
+            // 智能分辨率：如果超限则依次尝试更低清晰度
             if (smartResolution && currentDurl.size) {
-                const currentSizeMB = currentDurl.size / (1024 * 1024);
-                logger.info(`[R插件][BILI下载] 试看视频当前清晰度: QN${currentQuality}, 大小: ${Math.round(currentSizeMB)}MB`);
+                const acceptQuality = (streamData.acceptQuality || []).sort((a, b) => b - a);
 
-                if (currentSizeMB > fileSizeLimit) {
-                    // 当前清晰度超限，尝试找到更低的清晰度
-                    // 按清晰度从高到低排序可用选项
-                    const sortedQualities = acceptQuality.sort((a, b) => b - a);
-                    const currentIndex = sortedQualities.indexOf(currentQuality);
+                for (const tryQn of acceptQuality) {
+                    // 跳过已经请求过的或更高的清晰度
+                    if (tryQn > currentQuality) continue;
 
-                    // 尝试更低的清晰度
-                    for (let i = currentIndex + 1; i < sortedQualities.length; i++) {
-                        const lowerQn = sortedQualities[i];
-                        const formatInfo = supportFormats.find(f => f.quality === lowerQn);
-                        logger.info(`[R插件][BILI下载] 当前清晰度${Math.round(currentSizeMB)}MB超过${fileSizeLimit}MB限制，尝试降级到: ${formatInfo?.display_desc || 'QN' + lowerQn}`);
-
-                        // 重新请求更低清晰度
+                    // 如果不是当前清晰度，需要重新请求
+                    if (tryQn !== currentQuality) {
                         try {
-                            const lowerStreamData = await getBiliVideoWithSession(videoId, cid, SESSDATA, lowerQn, false);
-                            if (lowerStreamData._type === 'durl' && lowerStreamData.durl?.[0]) {
-                                const lowerDurl = lowerStreamData.durl[0];
-                                const lowerSizeMB = lowerDurl.size / (1024 * 1024);
-
-                                if (lowerSizeMB <= fileSizeLimit) {
-                                    currentDurl = lowerDurl;
-                                    currentQuality = lowerStreamData.quality;
-                                    logger.info(`[R插件][BILI下载] ✅ 智能分辨率选择试看视频: QN${currentQuality} (${formatInfo?.display_desc || '未知'}), 大小: ${Math.round(lowerSizeMB)}MB`);
-                                    break;
-                                } else {
-                                    logger.debug(`[R插件][BILI下载] QN${lowerQn}仍超限(${Math.round(lowerSizeMB)}MB)，继续降级`);
-                                }
-                            }
-                        } catch (err) {
-                            logger.warn(`[R插件][BILI下载] 降级请求失败: ${err.message}`);
-                        }
+                            const newData = await getBiliVideoWithSession(videoId, cid, SESSDATA, tryQn, false);
+                            if (newData._type === 'durl' && newData.durl?.[0]) {
+                                currentDurl = newData.durl[0];
+                                currentQuality = newData.quality;
+                            } else continue;
+                        } catch { continue; }
                     }
 
-                    // 检查最终选择是否仍超限
-                    const finalSizeMB = currentDurl.size / (1024 * 1024);
-                    if (finalSizeMB > fileSizeLimit) {
-                        logger.warn(`[R插件][BILI下载] 试看视频最低清晰度${Math.round(finalSizeMB)}MB仍超过限制${fileSizeLimit}MB`);
-                        return {
-                            videoUrl: null,
-                            audioUrl: null,
-                            skipReason: `试看视频最低清晰度预估${Math.round(finalSizeMB)}MB超过限制${fileSizeLimit}MB，已跳过`
-                        };
+                    const sizeMB = currentDurl.size / (1024 * 1024);
+                    if (sizeMB <= fileSizeLimit) {
+                        const formatInfo = supportFormats.find(f => f.quality === currentQuality);
+                        logger.info(`[R插件][BILI下载] 试看视频选择: ${formatInfo?.new_description || 'QN' + currentQuality}, 大小: ${Math.round(sizeMB)}MB`);
+                        break;
                     }
+                }
+
+                // 检查最终是否仍超限
+                const finalSizeMB = currentDurl.size / (1024 * 1024);
+                if (finalSizeMB > fileSizeLimit) {
+                    return { videoUrl: null, audioUrl: null, skipReason: `试看视频最低清晰度${Math.round(finalSizeMB)}MB超过限制${fileSizeLimit}MB` };
                 }
             }
 
             const videoUrl = selectAndAvoidMCdnUrl(currentDurl.url, currentDurl.backup_url || [], cdnMode);
-            const durationSec = Math.round((streamData.timelength || currentDurl.length || 0) / 1000);
-            const qualityDesc = supportFormats.find(f => f.quality === currentQuality)?.display_desc || `QN${currentQuality}`;
+            const durationSec = Math.round((currentDurl.length || 0) / 1000);
+            const qualityDesc = supportFormats.find(f => f.quality === currentQuality)?.new_description || `QN${currentQuality}`;
 
             logger.warn(`[R插件][BILI下载] ${isPreview ? '⚠️试看视频' : 'DURL格式视频'}，清晰度: ${qualityDesc}，预览时长: ${durationSec}秒`);
             logger.info(`[R插件][BILI下载] 选中的下载URL: ${new URL(videoUrl).hostname}`);
-            return { videoUrl, audioUrl: null, isPreview: isPreview, previewDuration: durationSec, qualityDesc: qualityDesc };
+            return { videoUrl, audioUrl: null, isPreview, previewDuration: durationSec, qualityDesc };
         }
     }
 
@@ -1020,30 +1002,16 @@ export async function getBiliVideoWithSession(bvid, cid, SESSDATA, qn, smartReso
                     logger.debug(`[R插件][BILI请求审计] 请求成功，可用画质列表: ${qualityInfo}`);
                     resolve(json.data.dash);
                 } else if (json.data?.durl) {
-                    // 试看视频返回durl格式，输出完整数据结构供调试
-                    logger.info(`[R插件][BILI请求审计] 试看视频API返回数据:\n${JSON.stringify({
-                        quality: json.data.quality,
-                        is_preview: json.data.is_preview,
-                        accept_quality: json.data.accept_quality,
-                        support_formats: json.data.support_formats,
-                        durl: json.data.durl?.map(d => ({ size: d.size, length: d.length }))
-                    }, null, 2)}`);
-
+                    // 试看视频返回durl格式
                     const isPreview = json.data.is_preview === 1;
-                    const durlData = json.data.durl;
-                    const currentQuality = json.data.quality;
-                    const supportFormats = json.data.support_formats || [];
-                    const acceptQuality = json.data.accept_quality || [];
-
-                    // 返回一个特殊结构标识这是durl格式的预览视频
                     resolve({
                         _type: 'durl',
                         _isPreview: isPreview,
-                        durl: durlData,
-                        quality: currentQuality,
-                        supportFormats: supportFormats,
-                        acceptQuality: acceptQuality,
-                        timelength: durlData[0]?.length || 0
+                        durl: json.data.durl,
+                        quality: json.data.quality,
+                        supportFormats: json.data.support_formats || [],
+                        acceptQuality: json.data.accept_quality || [],
+                        timelength: json.data.durl[0]?.length || 0
                     });
                 } else {
                     // 既没有dash也没有durl
