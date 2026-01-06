@@ -168,7 +168,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "(v.douyin.com|live.douyin.com)",
+                    reg: "(v.douyin.com|live.douyin.com|www.douyin.com/video)",
                     fnc: "douyin",
                 },
                 {
@@ -425,11 +425,10 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.douyin} 已拦截`);
             return false;
         }
-        const urlRex = /(http:\/\/|https:\/\/)(v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*/;
-        // 检测无效链接，例如：v.douyin.com
+        const urlRex = /(http:\/\/|https:\/\/)((v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*|www.douyin.com\/video\/[0-9]+)/;
+        // 检测无效链接，例如：v.douyin.com，静默忽略
         if (!urlRex.test(e.msg)) {
-            e.reply(`检测到这是一个无效链接，无法解析抖音${HELP_DOC}`);
-            return;
+            return false;
         }
         // 获取链接
         let douUrl = urlRex.exec(e.msg.trim())[0];
@@ -633,9 +632,13 @@ export class tools extends plugin {
             /live.douyin.com\/(\d+)/.exec(douUrl)?.[1] ||
             /live\/(\d+)/.exec(douUrl)?.[1] ||
             /webcast.amemv.com\/douyin\/webcast\/reflow\/(\d+)/.exec(douUrl)?.[1];
+        // 无效链接静默忽略
+        if (_.isEmpty(douId)) {
+            return false;
+        }
         // 当前版本需要填入cookie
-        if (_.isEmpty(this.douyinCookie) || _.isEmpty(douId)) {
-            e.reply(`检测到没有Cookie 或者 这是一个无效链接，无法解析抖音${HELP_DOC}`);
+        if (_.isEmpty(this.douyinCookie)) {
+            e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
             return;
         }
         // 以下是更新了很多次的抖音API历史，且用且珍惜
