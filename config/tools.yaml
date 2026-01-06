@@ -24,7 +24,8 @@ biliDisplayIntro: true # 是否显示哔哩哔哩的简介
 biliDisplayOnline: true # 是否显示哔哩哔哩的在线人数
 biliDisplaySummary: false # 是否显示哔哩哔哩的总结
 biliUseBBDown: false # 是否使用BBDown，默认不开启，开启后使用强劲的BBDown下载最高画质
-biliCDN: 0 # 哔哩哔哩 CDN，默认为0表示不使用
+biliCDN: 0 # 哔哩哔哩 CDN，默认为0表示不使用（仅BBDown生效）
+biliDefaultCDN: 0 # 默认下载方式的CDN选择：0=自动选择, 1=强制使用API返回的CDN（不切换）, 2=强制切换到镜像站
 biliDownloadMethod: 0 # 哔哩哔哩的下载方式：0默认使用原生稳定的下载方式，如果你在乎内存可以使用轻量的wget和axel下载方式，如果在乎性能可以使用Aria2下载
 biliResolution: 5 # 哔哩哔哩的下载画质，默认480p（因为不用登录），参考 {BILI_RESOLUTION_LIST}
 biliBangumiDirect: false # 是否开启番剧直接解析，开启后使用正常视频解析流程下载番剧
@@ -32,6 +33,7 @@ biliBangumiResolution: 5 # 番剧独立画质设置，默认480p，参考 {BILI_
 biliBangumiDuration: 1800 # 番剧限制的最大时长（默认30分钟），单位：秒，超过将不解析
 biliSmartResolution: false # 智能分辨率：在尽可能清晰的情况下，不超过限制大小不上传群文件
 biliFileSizeLimit: 100 # 文件大小限制（MB），配合智能分辨率使用，默认100MB
+biliMinResolution: 10 # 智能分辨率最低画质，默认360P（value=10），降到此画质还超限则不解析
 
 useLocalNeteaseAPI: false # 是否使用网易云解析自建API
 useNeteaseSongRequest: false # 是否开启网易云点歌功能

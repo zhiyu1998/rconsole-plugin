@@ -354,9 +354,9 @@ export function formatSeconds(seconds) {
 
 /**
  * 重试 axios 请求
- * @param requestFunction
- * @param retries
- * @param delay
+ * @param requestFunction 返回 axios promise 的函数
+ * @param retries 重试次数
+ * @param delay 重试延迟（毫秒）
  * @returns {*}
  */
 export async function retryAxiosReq(requestFunction, retries = 3, delay = 1000) {
