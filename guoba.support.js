@@ -265,9 +265,9 @@ export function supportGuoba() {
                     field: "tools.biliDefaultCDN",
                     label: "默认下载CDN策略",
                     bottomHelpMessage:
-                        "【原生/Aria2/Axel下载方式生效】CDN选择策略：\\n" +
-                        "• 自动选择：智能避开慢速CDN，优先选择快速CDN（推荐）\\n" +
-                        "• 使用API原始CDN：不做任何切换，直接使用B站API返回的CDN\\n" +
+                        "【原生/Aria2/Axel下载方式生效】CDN选择策略：\n" +
+                        "• 自动选择：智能避开慢速CDN，优先选择快速CDN（推荐）\n" +
+                        "• 使用API原始CDN：不做任何切换，直接使用B站API返回的CDN\n" +
                         "• 强制切换到镜像站：强制将所有CDN替换为B站镜像站",
                     component: "Select",
                     componentProps: {
