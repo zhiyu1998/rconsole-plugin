@@ -79,6 +79,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.msgElementLimit",
+                    label: "全局单条消息元素限制",
+                    bottomHelpMessage:
+                        "单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）。目前适用于哔哩哔哩动态、小黑盒。如果发送失败可尝试降低此值",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入单条消息最大元素数（默认50）",
+                    },
+                },
+                {
                     field: "tools.identifyPrefix",
                     label: "识别前缀",
                     bottomHelpMessage: "识别前缀，比如你识别哔哩哔哩，那么就有：✅ 识别：哔哩哔哩",
@@ -639,17 +650,6 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入小黑盒的Cookie",
-                    },
-                },
-                {
-                    field: "tools.xhhMsgElementLimit",
-                    label: "小黑盒单条消息元素限制",
-                    bottomHelpMessage:
-                        "小黑盒帖子单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）。如果发送失败可尝试降低此值",
-                    component: "InputNumber",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入单条消息最大元素数（默认50）",
                     },
                 },
 

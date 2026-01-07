@@ -1309,8 +1309,9 @@ export async function getBangumiVideoInfo(epId) {
 
 /**
  * 获取动态
- * @param dynamicId
- * @returns {Promise<any>}
+ * @param dynamicId 动态ID
+ * @param SESSDATA 登录凭证
+ * @returns {Promise<{title: string, paragraphs: Array}>} 返回标题和段落数组
  */
 export async function getDynamic(dynamicId, SESSDATA) {
     const dynamicApi = BILI_DYNAMIC.replace("{}", dynamicId);
@@ -1320,37 +1321,244 @@ export async function getDynamic(dynamicId, SESSDATA) {
             Cookie: `SESSDATA=${SESSDATA}`
         },
     }).then(resp => {
-        const innerCardObject = resp.data.data.card;
-        const card = JSON.parse(innerCardObject.card);
-        const dynamicType = innerCardObject.desc?.type;
+        const item = resp.data?.data?.item;
+        let title = '';
+        let paragraphs = []; // 按原始顺序存储所有段落
 
-        let dynamicDesc = '';
-        let pictures = [];
-        // 目前的api只有返回专栏部分文字以及专栏封面
-        if (dynamicType === 64) {
-            dynamicDesc = `【专栏】${card.title || ''}\n${card.summary || ''}`;
-            pictures = card.image_urls || [];
-        } else {
-            const dynamicOrigin = card.item;
-            dynamicDesc = dynamicOrigin?.description || dynamicOrigin?.content;
-            pictures = dynamicOrigin?.pictures || [];
-        }
+        // 遍历所有模块
+        for (const module of item.modules) {
+            // MODULE_TYPE_TITLE: 标题
+            if (module.module_type === 'MODULE_TYPE_TITLE' && module.module_title) {
+                title = decodeHtmlEntities(module.module_title.text || '');
+            }
+            // MODULE_TYPE_TOPIC: 话题
+            else if (module.module_type === 'MODULE_TYPE_TOPIC' && module.module_topic) {
+                paragraphs.push({
+                    type: 'topic',
+                    content: `🏷️ 话题：${decodeHtmlEntities(module.module_topic.name)}`
+                });
+            }
+            // MODULE_TYPE_TOP: 顶部大图/banner
+            else if (module.module_type === 'MODULE_TYPE_TOP' && module.module_top?.display) {
+                const display = module.module_top.display;
+                // 处理顶部图片
+                if (display.type === 1 && display.album?.pics) {
+                    for (const pic of display.album.pics) {
+                        paragraphs.push({
+                            type: 'image',
+                            url: pic.url
+                        });
+                    }
+                }
+            }
 
-        let dynamicSrc = [];
-        if (Array.isArray(pictures)) {
-            for (let pic of pictures) {
-                const img_src = typeof pic === 'string' ? pic : pic?.img_src;
-                if (img_src) {
-                    dynamicSrc.push(img_src);
+            // 提取内容模块
+            if (module.module_type === 'MODULE_TYPE_CONTENT') {
+                const paraList = module.module_content?.paragraphs || [];
+                for (const para of paraList) {
+                    // para_type=1: 文本段落
+                    if (para.para_type === 1 && para.text) {
+                        const textContent = extractTextFromNodes(para.text.nodes);
+                        if (textContent && textContent.trim()) {
+                            paragraphs.push({
+                                type: 'text',
+                                content: textContent
+                            });
+                        }
+                    }
+                    // para_type=2: 图片段落
+                    else if (para.para_type === 2 && para.pic) {
+                        for (const pic of para.pic.pics || []) {
+                            if (pic.url) {
+                                paragraphs.push({
+                                    type: 'image',
+                                    url: pic.url
+                                });
+                            }
+                        }
+                    }
+                    // para_type=3: 分割线
+                    else if (para.para_type === 3) {
+                        paragraphs.push({
+                            type: 'divider',
+                            content: '---'
+                        });
+                    }
+                    // para_type=4: 块引用
+                    else if (para.para_type === 4 && para.text) {
+                        const textContent = extractTextFromNodes(para.text.nodes);
+                        if (textContent && textContent.trim()) {
+                            paragraphs.push({
+                                type: 'quote',
+                                content: `「${textContent}」`
+                            });
+                        }
+                    }
+                    // para_type=5: 列表
+                    else if (para.para_type === 5 && para.list) {
+                        for (const item of para.list.items || []) {
+                            const listText = extractTextFromNodes(item.nodes);
+                            if (listText && listText.trim()) {
+                                paragraphs.push({
+                                    type: 'list',
+                                    content: `• ${listText}`
+                                });
+                            }
+                        }
+                    }
+                    // para_type=6: 链接卡片
+                    else if (para.para_type === 6 && para.link_card) {
+                        const card = para.link_card.card;
+                        if (card) {
+                            // 提取卡片的基本信息和URL
+                            let cardText = '';
+                            let cardUrl = '';
+
+                            if (card.type === 'LINK_CARD_TYPE_UGC' && card.ugc) {
+                                cardText = card.ugc.title || '视频链接';
+                                cardUrl = card.ugc.jump_url || '';
+                            } else if (card.type === 'LINK_CARD_TYPE_WEB' && card.common) {
+                                cardText = card.common.title || '网页链接';
+                                cardUrl = card.common.jump_url || '';
+                            } else if (card.type === 'LINK_CARD_TYPE_COMMON' && card.common) {
+                                cardText = card.common.title || '链接';
+                                cardUrl = card.common.jump_url || '';
+                            } else if (card.type === 'LINK_CARD_TYPE_VOTE' && card.vote) {
+                                cardText = `投票：${card.vote.title || '投票'}`;
+                                cardUrl = ''; // 投票卡片没有jump_url？
+                            } else {
+                                cardText = '链接卡片';
+                                cardUrl = '';
+                            }
+                            // 格式化输出:如果有URL则显示 否则只显示文本
+                            let finalText = '';
+                            if (cardUrl) {
+                                finalText = `🔗 ${cardText}(${cardUrl})`;
+                            } else {
+                                finalText = `📊 ${cardText}`;
+                            }
+                            paragraphs.push({
+                                type: 'link_card',
+                                content: finalText
+                            });
+                        }
+                    }
+                    // para_type=7: 代码块
+                    else if (para.para_type === 7 && para.code) {
+                        const codeText = para.code.code_content || '';
+                        if (codeText) {
+                            paragraphs.push({
+                                type: 'code',
+                                content: `\`\`\`\n${codeText}\n\`\`\``
+                            });
+                        }
+                    }
                 }
             }
         }
-        // logger.info(dynamic_src)
         return {
-            dynamicSrc,
-            dynamicDesc
+            title,
+            paragraphs
+        };
+    });
+}
+
+/**
+ * 解码HTML实体
+ * @param {string} text - 含有HTML实体的文本
+ * @returns {string} 解码后的文本
+ */
+function decodeHtmlEntities(text) {
+    if (!text) return '';
+
+    // 常见HTML实体映射
+    const entities = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+        '&#34;': '"',
+        '&#39;': "'",
+        '&apos;': "'",
+        '&nbsp;': ' ',
+        '&#x27;': "'",
+        '&#x2F;': '/',
+    };
+
+    // 替换命名实体
+    let decoded = text;
+    for (const [entity, char] of Object.entries(entities)) {
+        decoded = decoded.replace(new RegExp(entity, 'g'), char);
+    }
+    // 处理数字实体 &#数字;
+    decoded = decoded.replace(/&#(\d+);/g, (match, dec) => {
+        return String.fromCharCode(dec);
+    });
+    // 处理十六进制实体 &#x数字;
+    decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (match, hex) => {
+        return String.fromCharCode(parseInt(hex, 16));
+    });
+    return decoded;
+}
+
+/**
+ * 从文本节点数组中提取文本内容
+ * @param nodes 文本节点数组
+ * @returns {string} 提取的文本
+ */
+function extractTextFromNodes(nodes) {
+    if (!Array.isArray(nodes)) {
+        return '';
+    }
+
+    let text = '';
+    for (const node of nodes) {
+        // 处理普通文本节点
+        if (node.type === 'TEXT_NODE_TYPE_WORD' && node.word) {
+            let words = node.word.words || '';
+            // 应用文本样式
+            if (node.word.style) {
+                // 删除线：在每个字符后添加U+0336组合字符
+                if (node.word.style.strikethrough) {
+                    words = Array.from(words).map(char => char + '\u0336').join('');
+                }
+            }
+            text += words;
         }
-    })
+        // 处理富文本节点
+        else if (node.type === 'TEXT_NODE_TYPE_RICH' && node.rich) {
+            let richText = '';
+            // 特殊处理网页链接类型
+            if (node.rich.type === 'RICH_TEXT_NODE_TYPE_WEB') {
+                const linkText = node.rich.text || '网页链接';
+                const jumpUrl = node.rich.jump_url || '';
+                if (jumpUrl) {
+                    richText = `🔗 ${linkText}(${jumpUrl})`;
+                } else {
+                    richText = linkText;
+                }
+            }
+            // 处理话题标签类型
+            else if (node.rich.type === 'RICH_TEXT_NODE_TYPE_TOPIC') {
+                // 保留原始的 #话题# 格式
+                richText = node.rich.text || node.rich.orig_text || '';
+            } else {
+                // 其他富文本类型使用 text 字段
+                richText = node.rich.text || node.rich.orig_text || '';
+            }
+            // 应用富文本样式（如删除线）
+            if (node.rich.style && node.rich.style.strikethrough) {
+                richText = Array.from(richText).map(char => char + '\u0336').join('');
+            }
+            text += richText;
+        }
+        // 处理公式节点
+        else if (node.type === 'TEXT_NODE_TYPE_FORMULA' && node.formula) {
+            text += node.formula.latex_content || '';
+        }
+    }
+    // 解码HTML实体并返回
+    return decodeHtmlEntities(text);
 }
 
 /**

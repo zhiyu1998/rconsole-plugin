@@ -57,6 +57,7 @@ douyinComments: false # true-开启评论，false-关闭评论
 douyinMusic: true # true-开启背景音乐，false-关闭背景音乐
 douyinBGMSendType: voice # 发送抖音背景音乐的方式：voice-语音，card-音乐卡片
 imageBatchThreshold: 50 # 全局图片分批阈值，超过此数量的图片将分批发送（默认50张），设置为0表示不限制
+msgElementLimit: 50 # 全局单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）
 
 xiaohongshuCookie: '' # 2024-8-2后反馈必须使用ck，不然无法解析
 
@@ -64,7 +65,6 @@ weiboCookie: '' # 微博Cookie，格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xx
 weiboComments: true # 是否显示微博评论，默认开启
 
 xiaoheiheCookie: '' # 小黑盒Cookie，格式：x_xhh_tokenid=xxx
-xhhMsgElementLimit: 50 # 小黑盒单条转发消息最大元素数（图+文混合），超过则分成多个转发消息发送（默认50）
 
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
 

@@ -361,8 +361,8 @@ export class tools extends plugin {
         this.douyinBGMSendType = this.toolsConfig.douyinBGMSendType ?? 'voice';
         // 加载全局图片分批阈值（向后兼容旧配置名）
         this.imageBatchThreshold = this.toolsConfig.imageBatchThreshold || this.toolsConfig.douyinImageBatchThreshold || 50;
-        // 加载小黑盒单条消息元素限制
-        this.xhhMsgElementLimit = this.toolsConfig.xhhMsgElementLimit || 50;
+        // 加载全局单条消息元素限制
+        this.msgElementLimit = this.toolsConfig.msgElementLimit || 50;
         // 加载小红书Cookie
         this.xiaohongshuCookie = this.toolsConfig.xiaohongshuCookie;
         // 翻译引擎
@@ -1148,7 +1148,7 @@ export class tools extends plugin {
                 e.reply("检测到没有填写biliSessData，无法解析动态");
                 return true;
             }
-            url = this.biliDynamic(e, url, this.biliSessData);
+            url = await this.biliDynamic(e, url, this.biliSessData);
             return true;
         }
         // 创建文件，如果不存在，
@@ -1577,41 +1577,134 @@ export class tools extends plugin {
         return true;
     }
 
-    // 发送哔哩哔哩动态的算法
-    biliDynamic(e, url, session) {
+    /**
+     * 发送哔哩哔哩动态
+     * @param {Object} e - 事件
+     * @param {string} url - 链接
+     * @param {string} session - 登录凭证(SESSDATA)
+     * @returns {Promise<string>} 处理后的URL
+     */
+    async biliDynamic(e, url, session) {
         // 去除多余参数
         if (url.includes("?")) {
             url = url.substring(0, url.indexOf("?"));
         }
         const dynamicId = /[^/]+(?!.*\/)/.exec(url)[0];
-        getDynamic(dynamicId, session).then(async resp => {
-            if (resp.dynamicSrc.length > 0 || resp.dynamicDesc) {
-                // 先发送动态描述文本
-                if (resp.dynamicDesc) {
-                    e.reply(`${this.identifyPrefix}识别：哔哩哔哩动态\n${resp.dynamicDesc}`);
-                }
 
-                // 处理图片消息
-                if (resp.dynamicSrc.length > 0) {
-                    if (resp.dynamicSrc.length > this.globalImageLimit) {
-                        const dynamicSrcMsg = resp.dynamicSrc.map(item => ({
-                            message: segment.image(item),
-                            nickname: e.sender.card || e.user_id,
-                            user_id: e.user_id,
-                        }));
-                        await sendImagesInBatches(e, dynamicSrcMsg, this.imageBatchThreshold);
-                    } else {
-                        const images = resp.dynamicSrc.map(item => segment.image(item));
-                        await e.reply(images);
-                    }
-                }
-            } else {
-                await e.reply(`${this.identifyPrefix}识别：哔哩哔哩动态, 但是失败！`);
+        try {
+            // 获取动态数据
+            const { title, paragraphs } = await getDynamic(dynamicId, session);
+            // 发送识别消息
+            let identifyText = `${this.identifyPrefix}识别：哔哩哔哩动态`;
+            if (title) {
+                identifyText += `\n📝 标题：${title}`;
             }
-        });
+            await e.reply(identifyText);
+            // 如果没有内容 直接返回
+            if (!paragraphs || paragraphs.length === 0) {
+                return url;
+            }
+            // 构建合并转发消息
+            const forwardMsgList = [];
+            const MSG_ELEMENT_LIMIT = this.msgElementLimit;
+            let currentMsg = []; // 当前消息段
+            let elementCount = 0; // 当前元素计数
+            let hasAddedIntro = false;
+            let textBuffer = []; // 文本缓冲区 用于合并连续的文本段落
+            let topicBuffer = []; // 话题缓冲区
+            // 检查并处理消息限制
+            const checkAndResetIfLimitReached = () => {
+                if (elementCount >= MSG_ELEMENT_LIMIT) {
+                    forwardMsgList.push({
+                        message: currentMsg,
+                        nickname: e.sender.card || e.user_id,
+                        user_id: e.user_id,
+                    });
+                    currentMsg = [];
+                    elementCount = 0;
+                }
+            };
+
+            // 按原始顺序遍历段落
+            for (let i = 0; i < paragraphs.length; i++) {
+                const para = paragraphs[i];
+                if (para.type === 'text') {
+                    // 文字段落
+                    textBuffer.push(para.content);
+                } else if (para.type === 'topic') {
+                    // 话题段落
+                    topicBuffer.push(para.content);
+                } else if (para.type === 'image') {
+                    // 遇到图片时 先处理积累的文本和话题
+                    if (textBuffer.length > 0 || topicBuffer.length > 0) {
+                        let combinedText = '';
+                        // 如果是第一个文字段落 添加话题和简介标记
+                        if (!hasAddedIntro) {
+                            if (topicBuffer.length > 0) {
+                                combinedText += topicBuffer.join('\n') + '\n';
+                            }
+                            combinedText += '📄 简介：' + textBuffer.join('\n');
+                            hasAddedIntro = true;
+                        } else {
+                            if (topicBuffer.length > 0) {
+                                combinedText += topicBuffer.join('\n') + '\n';
+                            }
+                            combinedText += textBuffer.join('\n');
+                        }
+                        currentMsg.push(combinedText);
+                        elementCount++;
+                        textBuffer = [];
+                        topicBuffer = [];
+                        checkAndResetIfLimitReached();
+                    }
+                    // 添加图片
+                    currentMsg.push(segment.image(para.url));
+                    elementCount++;
+                    checkAndResetIfLimitReached();
+                }
+                // 如果是最后一个段落且有未处理的文本
+                if (i === paragraphs.length - 1 && (textBuffer.length > 0 || topicBuffer.length > 0)) {
+                    let combinedText = '';
+                    if (!hasAddedIntro) {
+                        if (topicBuffer.length > 0) {
+                            combinedText += topicBuffer.join('\n') + '\n';
+                        }
+                        combinedText += '📄 简介：' + textBuffer.join('\n');
+                        hasAddedIntro = true;
+                    } else {
+                        if (topicBuffer.length > 0) {
+                            combinedText += topicBuffer.join('\n') + '\n';
+                        }
+                        combinedText += textBuffer.join('\n');
+                    }
+                    currentMsg.push(combinedText);
+                    elementCount++;
+                    textBuffer = [];
+                    topicBuffer = [];
+                }
+            }
+            // 添加最后一组消息
+            if (currentMsg.length > 0) {
+                forwardMsgList.push({
+                    message: currentMsg,
+                    nickname: e.sender.card || e.user_id,
+                    user_id: e.user_id,
+                });
+            }
+            // 发送合并转发消息
+            if (forwardMsgList.length > 0) {
+                // 每个节点单独发送为一个合并转发消息
+                for (const msgNode of forwardMsgList) {
+                    const singleForwardMsg = await Bot.makeForwardMsg([msgNode]);
+                    await e.reply(singleForwardMsg);
+                }
+            }
+        } catch (err) {
+            logger.error(`[R插件][哔哩哔哩动态] 解析失败: ${err.message}`);
+            await e.reply(`哔哩哔哩动态解析失败，请检查链接是否正确或稍后重试`);
+        }
         return url;
     }
-
 
     /**
      * 哔哩哔哩总结
@@ -3886,7 +3979,7 @@ export class tools extends plugin {
 
                             if (combinedMessage.length > 0) {
                                 // 小黑盒单条转发消息元素数量限制（图+文混合）
-                                const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                const XHH_MSG_ELEMENT_LIMIT = this.msgElementLimit;
 
                                 // 将元素按限制分割成多组
                                 const splitGroups = [];
@@ -3928,8 +4021,8 @@ export class tools extends plugin {
                                     // 图片数量超过限制，用转发消息发送
                                     await e.reply(messagesToSend.flat());
 
-                                    // 按 xhhMsgElementLimit 分组发送
-                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    // 按 msgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.msgElementLimit;
                                     const allElements = [...imageUrls.map(url => segment.image(url)), textContent];
                                     const splitGroups = [];
                                     for (let i = 0; i < allElements.length; i += XHH_MSG_ELEMENT_LIMIT) {
@@ -3965,8 +4058,8 @@ export class tools extends plugin {
                                     // 图片数量超过限制，用转发消息发送
                                     await e.reply(messagesToSend.flat());
 
-                                    // 按 xhhMsgElementLimit 分组发送
-                                    const XHH_MSG_ELEMENT_LIMIT = this.xhhMsgElementLimit;
+                                    // 按 msgElementLimit 分组发送
+                                    const XHH_MSG_ELEMENT_LIMIT = this.msgElementLimit;
                                     const splitGroups = [];
                                     for (let i = 0; i < imageUrls.length; i += XHH_MSG_ELEMENT_LIMIT) {
                                         splitGroups.push(imageUrls.slice(i, i + XHH_MSG_ELEMENT_LIMIT));
