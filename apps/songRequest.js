@@ -36,7 +36,7 @@ export class songRequest extends plugin {
                     fnc: "upLoad"
                 },
                 {
-                    reg: '^#?我的云盘$|#rnc|#RNC',
+                    reg: '^#?我的云盘$|^#rnc$|^#RNC$',
                     fnc: 'myCloud',
                     permission: 'master'
                 },
