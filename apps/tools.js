@@ -2766,8 +2766,8 @@ export class tools extends plugin {
                     if (comments.length > 0) {
                         const commentMsgs = comments.map(c => ({
                             message: `${c.text}\n${c.like}👍 · ${c.time}${c.source ? ' ' + c.source : ''}`,
-                            nickname: c.user,
-                            user_id: c.uid || e.user_id
+                            nickname: '匿名消息',
+                            user_id: '80000000'
                         }));
                         await e.reply(await Bot.makeForwardMsg(commentMsgs));
                     }
