@@ -608,6 +608,8 @@ export class tools extends plugin {
                 await this.downloadVideo(resUrl, false, null, this.videoDownloadConcurrency, 'douyin.mp4').then((videoPath) => {
                     this.sendVideoToUpload(e, videoPath);
                 });
+                // 如果开启评论的话就调用
+                await this.douyinComment(e, douId, headers);
             } else if (urlType === "image") {
                 // 检查是否包含video字段
                 const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
