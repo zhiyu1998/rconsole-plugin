@@ -90,7 +90,6 @@ export async function getWeiboComments(id, cookie = '', maxCount = 20) {
 
             return {
                 user: c.user?.screen_name || '',
-                uid: c.user?.id || 0,
                 text: (c.text || '').replace(/<[^>]+>/g, ''),
                 like: c.like_count || 0,
                 time,
