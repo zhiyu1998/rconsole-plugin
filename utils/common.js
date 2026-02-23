@@ -278,15 +278,18 @@ export async function downloadImageViaProxy(imgUrl, dir, proxyUrl, fileName = ""
         throw err;
     });
     const writer = fs.createWriteStream(filepath);
-    res.data.pipe(writer);
     return new Promise((resolve, reject) => {
+        const cleanup = (err) => {
+            writer.destroy();
+            fs.unlink(filepath, () => reject(err));
+        };
+        res.data.on("error", cleanup);
         writer.on("finish", () => {
             writer.close(() => resolve(filepath));
         });
-        writer.on("error", err => {
-            writer.destroy();
-            fs.unlink(filepath, () => reject(err));
-        });
+        writer.on("error", cleanup);
+        // 所有监听器绑定完毕后再 pipe
+        res.data.pipe(writer);
     });
 }
 
