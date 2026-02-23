@@ -252,6 +252,48 @@ export async function downloadImagesLocally(imageUrls, dir) {
 }
 
 /**
+ * 通过代理下载图片并返回本地路径
+ * 用于下载被墙的图片（如YouTube缩略图 i.ytimg.com）
+ * @param {string} imgUrl - 图片URL
+ * @param {string} dir - 保存目录
+ * @param {string} proxyUrl - 完整代理地址 (e.g., "http://127.0.0.1:7890")
+ * @param {string} [fileName] - 可选文件名，默认自动生成
+ * @returns {Promise<string>} 本地文件路径
+ */
+export async function downloadImageViaProxy(imgUrl, dir, proxyUrl, fileName = "") {
+    if (!fileName) {
+        fileName = `yt_thumb_${Date.now()}.jpg`;
+    }
+    await mkdirIfNotExists(dir);
+    const filepath = `${dir}/${fileName}`;
+    // 先发起请求，成功后再创建文件流，避免请求失败时流未关闭导致 FD 泄露和文件锁定
+    const res = await axios.get(imgUrl, {
+        headers: {
+            "User-Agent": COMMON_USER_AGENT,
+        },
+        responseType: "stream",
+        httpsAgent: new HttpsProxyAgent(proxyUrl),
+    }).catch(err => {
+        logger.error(`[R插件][代理图片下载] 请求失败: ${err.message}`);
+        throw err;
+    });
+    const writer = fs.createWriteStream(filepath);
+    return new Promise((resolve, reject) => {
+        const cleanup = (err) => {
+            writer.destroy();
+            fs.unlink(filepath, () => reject(err));
+        };
+        res.data.on("error", cleanup);
+        writer.on("finish", () => {
+            writer.close(() => resolve(filepath));
+        });
+        writer.on("error", cleanup);
+        // 所有监听器绑定完毕后再 pipe
+        res.data.pipe(writer);
+    });
+}
+
+/**
  * 千位数的数据处理
  * @param data
  * @return {string|*}
