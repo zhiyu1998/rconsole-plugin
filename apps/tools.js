@@ -3040,49 +3040,49 @@ export class tools extends plugin {
             await checkAndRemoveFile(`${path}/${videoFilename}`);
             await checkAndRemoveFile(`${path}/${audioFilename}`);
 
-            // 音频逻辑
-            if (url.includes("music")) {
-                const musicMsg = thumbnailSegment
-                    ? [thumbnailSegment, `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`]
-                    : `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`;
-                await replyWithRetry(e, Bot, musicMsg);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
-                const fullAudioPath = `${path}/${audioFilename}`;
-                if (this.isSendVocal) {
-                    await e.reply(segment.record(fullAudioPath));
+            try {
+                // 音频逻辑
+                if (url.includes("music")) {
+                    const musicMsg = thumbnailSegment
+                        ? [thumbnailSegment, `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`]
+                        : `${this.identifyPrefix}识别：油管音乐\n视频标题：${rawTitle}`;
+                    await replyWithRetry(e, Bot, musicMsg);
+                    await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
+                    const fullAudioPath = `${path}/${audioFilename}`;
+                    if (this.isSendVocal) {
+                        await e.reply(segment.record(fullAudioPath));
+                    }
+                    await this.uploadGroupFile(e, fullAudioPath);
+                    return;
                 }
-                await this.uploadGroupFile(e, fullAudioPath);
-                // 清理缩略图临时文件
+
+                // 下面为视频逻辑
+                const Duration = convertToSeconds((await ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, ''));
+
+                if (Duration > this.youtubeDuration) {
+                    // 超时限制
+                    const overLimitText = `${this.identifyPrefix}识别：油管，视频时长超限 \n视频标题：${rawTitle}\n⌚${DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '')}⌚\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定解析时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`;
+                    const overLimitMsg = thumbnailSegment ? [thumbnailSegment, overLimitText] : overLimitText;
+                    await replyWithRetry(e, Bot, overLimitMsg);
+                } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
+                    // 截取模式
+                    const clipText = `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${rawTitle}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`;
+                    const clipMsg = thumbnailSegment ? [thumbnailSegment, clipText] : clipText;
+                    await replyWithRetry(e, Bot, clipMsg);
+                    await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
+                    await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
+                } else {
+                    // 正常下载
+                    const normalText = `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`;
+                    const normalMsg = thumbnailSegment ? [thumbnailSegment, normalText] : normalText;
+                    await replyWithRetry(e, Bot, normalMsg);
+                    await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
+                    await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
+                }
+            } finally {
+                // 统一清理缩略图临时文件，确保异常时也不会残留
                 if (thumbnailLocalPath) await checkAndRemoveFile(thumbnailLocalPath);
-                return;
             }
-
-            // 下面为视频逻辑
-            const Duration = convertToSeconds((await ytDlpGetDuration(url, isOversea, this.myProxy, this.youtubeCookiePath)).toString().replace(/\n/g, ''));
-
-            if (Duration > this.youtubeDuration) {
-                // 超时限制
-                const overLimitText = `${this.identifyPrefix}识别：油管，视频时长超限 \n视频标题：${rawTitle}\n⌚${DIVIDING_LINE.replace('{}', '限制说明').replace(/\n/g, '')}⌚\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定解析时长：${(this.youtubeDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`;
-                const overLimitMsg = thumbnailSegment ? [thumbnailSegment, overLimitText] : overLimitText;
-                await replyWithRetry(e, Bot, overLimitMsg);
-            } else if (Duration > this.youtubeClipTime && timeRange != '00:00:00-00:00:00') {
-                // 截取模式
-                const clipText = `${this.identifyPrefix}识别：油管，视频截取中请耐心等待 \n视频标题：${rawTitle}\n✂️${DIVIDING_LINE.replace('{}', '截取说明').replace(/\n/g, '')}✂️\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n大于管理员限定截取时长：${(this.youtubeClipTime / 60).toFixed(2).replace(/\.00$/, '')} 分钟\n将截取视频片段`;
-                const clipMsg = thumbnailSegment ? [thumbnailSegment, clipText] : clipText;
-                await replyWithRetry(e, Bot, clipMsg);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
-                await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-            } else {
-                // 正常下载
-                const normalText = `${this.identifyPrefix}识别：油管，视频下载中请耐心等待 \n视频标题：${rawTitle}\n视频时长：${(Duration / 60).toFixed(2).replace(/\.00$/, '')} 分钟`;
-                const normalMsg = thumbnailSegment ? [thumbnailSegment, normalText] : normalText;
-                await replyWithRetry(e, Bot, normalMsg);
-                await ytDlpHelper(path, url, isOversea, this.myProxy, this.videoDownloadConcurrency, 'youtube', true, graphics, timeRange, this.youtubeCookiePath, this.videoCodec);
-                await this.sendVideoToUpload(e, `${path}/${videoFilename}`);
-            }
-
-            // 清理缩略图临时文件
-            if (thumbnailLocalPath) await checkAndRemoveFile(thumbnailLocalPath);
         } catch (error) {
             logger.error(error);
             throw error; // Rethrow the error so it can be handled by the caller

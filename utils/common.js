@@ -266,30 +266,28 @@ export async function downloadImageViaProxy(imgUrl, dir, proxyUrl, fileName = ""
     }
     await mkdirIfNotExists(dir);
     const filepath = `${dir}/${fileName}`;
-    const writer = fs.createWriteStream(filepath);
-    try {
-        const res = await axios.get(imgUrl, {
-            headers: {
-                "User-Agent": COMMON_USER_AGENT,
-            },
-            responseType: "stream",
-            httpsAgent: new HttpsProxyAgent(proxyUrl),
-        });
-        res.data.pipe(writer);
-        return new Promise((resolve, reject) => {
-            writer.on("finish", () => {
-                writer.close(() => resolve(filepath));
-            });
-            writer.on("error", err => {
-                fs.unlink(filepath, () => reject(err));
-            });
-        });
-    } catch (err) {
-        // 清理可能残留的文件
-        try { fs.unlinkSync(filepath); } catch (_) {}
-        logger.error(`[R插件][代理图片下载] 下载失败: ${err.message}`);
+    // 先发起请求，成功后再创建文件流，避免请求失败时流未关闭导致 FD 泄露和文件锁定
+    const res = await axios.get(imgUrl, {
+        headers: {
+            "User-Agent": COMMON_USER_AGENT,
+        },
+        responseType: "stream",
+        httpsAgent: new HttpsProxyAgent(proxyUrl),
+    }).catch(err => {
+        logger.error(`[R插件][代理图片下载] 请求失败: ${err.message}`);
         throw err;
-    }
+    });
+    const writer = fs.createWriteStream(filepath);
+    res.data.pipe(writer);
+    return new Promise((resolve, reject) => {
+        writer.on("finish", () => {
+            writer.close(() => resolve(filepath));
+        });
+        writer.on("error", err => {
+            writer.destroy();
+            fs.unlink(filepath, () => reject(err));
+        });
+    });
 }
 
 /**
