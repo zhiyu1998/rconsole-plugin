@@ -237,7 +237,7 @@ export const NETEASE_API_CN = 'http://118.89.80.17:3000';
 export const NETEASE_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php?gm={}&n=1&type=json";
 
 /**
- * QQ音乐自建解析API默认地址（可在config中覆盖）
+ * QQ音乐自建解析API地址
  * @type {string}
  */
 export const QQ_MUSIC_API_BASE = "https://qqmusic.9e.nz";

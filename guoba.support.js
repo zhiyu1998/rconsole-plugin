@@ -603,7 +603,7 @@ export function supportGuoba() {
                     label: "QQ音乐解析API Key",
                     bottomHelpMessage:
                         "QQ音乐聚合解析服务的API Key，格式为：ag_xxxxxxxxxxxx",
-                    component: "Input",
+                    component: "InputPassword",
                     required: false,
                     componentProps: {
                         placeholder: "请输入QQ音乐API Key",
