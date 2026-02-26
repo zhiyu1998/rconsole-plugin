@@ -3652,7 +3652,7 @@ export class tools extends plugin {
                 musicTitle = cleanFilename(`${prompt}-${desc}`);
 
                 // 优先提取 songmid 或 media_mid
-                const midMatch = jumpUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i);
+                const midMatch = jumpUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i) || jumpUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
                 if (midMatch && midMatch[1]) {
                     songMid = midMatch[1];
                     logger.info(`[R插件][qqMusic] 从小程序提取到 mid=${songMid}`);
@@ -3689,7 +3689,7 @@ export class tools extends plugin {
                 shareUrl = urlMatch[1];
                 logger.info(`[R插件][qqMusic] 识别到分享链接: ${shareUrl}`);
                 // 尝试从链接中提取 songmid 或 media_mid
-                const midFromUrl = shareUrl.match(/[?&](?:songmid|media_mid)=([^&"]+)/i);
+                const midFromUrl = shareUrl.match(/[?&](?:songmid|media_mid)=([^&"]+)/i) || shareUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
                 if (midFromUrl && midFromUrl[1]) {
                     songMid = midFromUrl[1];
                     logger.info(`[R插件][qqMusic] 从链接提取到 mid=${songMid}`);
@@ -3764,7 +3764,7 @@ export class tools extends plugin {
                     });
                     const finalUrl = redirectResp.headers?.location || redirectResp.request?.res?.responseUrl || shareUrl;
                     if (finalUrl) {
-                        const midFromRedirect = finalUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i);
+                        const midFromRedirect = finalUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i) || finalUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
                         if (midFromRedirect && midFromRedirect[1]) {
                             songMid = midFromRedirect[1];
                             logger.info(`[R插件][qqMusic] 重定向提取到 mid=${songMid}`);
