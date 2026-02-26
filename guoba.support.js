@@ -585,6 +585,31 @@ export function supportGuoba() {
                     }
                 },
 
+                // ==================== QQ音乐 ====================
+                {
+                    label: 'QQ音乐',
+                    component: 'SOFT_GROUP_BEGIN'
+                },
+                {
+                    component: "Divider",
+                    label: "QQ音乐配置",
+                    componentProps: {
+                        orientation: "left",
+                        plain: true,
+                    },
+                },
+                {
+                    field: "tools.qqMusicApiKey",
+                    label: "QQ音乐解析API Key",
+                    bottomHelpMessage:
+                        "QQ音乐聚合解析服务的API Key，格式为：ag_xxxxxxxxxxxx",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入QQ音乐API Key",
+                    },
+                },
+
                 // ==================== 其他平台 ====================
                 {
                     label: '其他平台',
