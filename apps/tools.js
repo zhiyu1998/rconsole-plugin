@@ -2686,7 +2686,8 @@ export class tools extends plugin {
     async qqMusicApiParse(e, keyword, mid = null) {
         try {
             // 检查API Key是否配置
-            if (!this.qqMusicApiKey) {
+            const apiKey = (this.qqMusicApiKey || '').trim();
+            if (!apiKey) {
                 logger.error('[R插件][qqMusic] 未配置QQ音乐API Key，请在Guoba面板或config/tools.yaml中填写qqMusicApiKey');
                 e.reply('QQ音乐解析失败：未配置API Key，请联系管理员');
                 return null;
@@ -2729,7 +2730,7 @@ export class tools extends plugin {
             }, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-API-Key': this.qqMusicApiKey,
+                    'X-API-Key': apiKey,
                     'User-Agent': COMMON_USER_AGENT
                 },
                 timeout: 15000
@@ -3675,7 +3676,11 @@ export class tools extends plugin {
                 }
             } catch (parseErr) {
                 logger.error('[R插件][qqMusic] 解析小程序JSON失败:', parseErr);
-                // 不return，允许后续兜底策略继续处理
+                // 尝试从原始消息中提取URL和标题作为兜底
+                const fallbackUrl = e.msg.match(/(https?:\/\/[^\s"'<>]+y\.qq\.com[^\s"'<>]*)/i);
+                if (fallbackUrl) shareUrl = fallbackUrl[1];
+                const fallbackTitle = /^(.*?)\s*https?:\/\//.exec(e.msg)?.[1]?.trim();
+                if (fallbackTitle) musicTitle = cleanFilename(fallbackTitle);
             }
         } else {
             // case2: 普通链接分享，提取链接用于 parse_url
@@ -3759,10 +3764,11 @@ export class tools extends plugin {
                     });
                     if (parseUrlResp.data?.code === 200 && parseUrlResp.data?.data?.play_url) {
                         url = parseUrlResp.data.data.play_url;
+                        downloadTitle = musicTitle || parseUrlResp.data.data.songName || '未知歌曲';
                         const cover = parseUrlResp.data.data.cover || '';
                         const infoCard = {
                             'cover': cover,
-                            'songName': musicTitle || '未知歌曲',
+                            'songName': downloadTitle,
                             'singerName': '',
                             'size': '',
                             'musicType': []
