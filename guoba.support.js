@@ -602,7 +602,7 @@ export function supportGuoba() {
                     field: "tools.qqMusicApiKey",
                     label: "QQ音乐解析API Key",
                     bottomHelpMessage:
-                        "QQ音乐聚合解析服务的API Key，格式为：ag_xxxxxxxxxxxx",
+                        "QQ音乐聚合解析服务的API Key，格式为：ag_xxxxxxxxxxxx。请加R插件官方群(https://qm.qq.com/q/17LVqSje9G)，在群内发送「香菜#申请qqkey」获取",
                     component: "InputPassword",
                     required: false,
                     componentProps: {

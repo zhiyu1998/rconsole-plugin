@@ -2686,7 +2686,8 @@ export class tools extends plugin {
     async qqMusicApiParse(e, keyword, mid = null) {
         try {
             // 检查API Key是否配置
-            if (!this.qqMusicApiKey) {
+            const apiKey = (this.qqMusicApiKey || '').trim();
+            if (!apiKey) {
                 logger.error('[R插件][qqMusic] 未配置QQ音乐API Key，请在Guoba面板或config/tools.yaml中填写qqMusicApiKey');
                 e.reply('QQ音乐解析失败：未配置API Key，请联系管理员');
                 return null;
@@ -2703,7 +2704,7 @@ export class tools extends plugin {
                 logger.info(`[R插件][qqMusic] 搜索关键词: ${keyword}`);
                 const searchUrl = `${QQ_MUSIC_API_BASE}/api?action=search&keyword=${encodeURIComponent(keyword)}`;
                 const searchResp = await axios.get(searchUrl, {
-                    headers: { "User-Agent": COMMON_USER_AGENT },
+                    headers: { "User-Agent": COMMON_USER_AGENT, "X-API-Key": apiKey },
                     timeout: 10000
                 });
                 if (searchResp.data?.code !== 200 || !searchResp.data?.data?.length) {
@@ -2729,7 +2730,7 @@ export class tools extends plugin {
             }, {
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-API-Key': this.qqMusicApiKey,
+                    'X-API-Key': apiKey,
                     'User-Agent': COMMON_USER_AGENT
                 },
                 timeout: 15000
@@ -3675,7 +3676,11 @@ export class tools extends plugin {
                 }
             } catch (parseErr) {
                 logger.error('[R插件][qqMusic] 解析小程序JSON失败:', parseErr);
-                // 不return，允许后续兜底策略继续处理
+                // 尝试从原始消息中提取URL和标题作为兜底
+                const fallbackUrl = e.msg.match(/(https?:\/\/[^\s"'<>]+y\.qq\.com[^\s"'<>]*)/i);
+                if (fallbackUrl) shareUrl = fallbackUrl[1];
+                const fallbackTitle = /^(.*?)\s*https?:\/\//.exec(e.msg)?.[1]?.trim();
+                if (fallbackTitle) musicTitle = cleanFilename(fallbackTitle);
             }
         } else {
             // case2: 普通链接分享，提取链接用于 parse_url
@@ -3746,41 +3751,109 @@ export class tools extends plugin {
                     downloadTitle = result.title || musicTitle || '未知歌曲';
                 }
             }
-            // 策略2: 有分享链接，用基础API的 parse_url 解析
+            // 策略2: 有分享链接，先尝试跟随重定向提取songmid
             else if (shareUrl) {
-                logger.info(`[R插件][qqMusic] 使用parse_url解析分享链接`);
+                // 尝试跟随重定向，从目标URL提取songmid/songid
                 try {
-                    const parseUrlResp = await axios.get(`${QQ_MUSIC_API_BASE}/api?action=parse_url&url=${encodeURIComponent(shareUrl)}`, {
-                        headers: {
-                            "User-Agent": COMMON_USER_AGENT,
-                            "X-API-Key": this.qqMusicApiKey
-                        },
-                        timeout: 10000
+                    logger.info(`[R插件][qqMusic] 尝试跟随重定向提取songmid: ${shareUrl}`);
+                    const redirectResp = await axios.get(shareUrl, {
+                        headers: { "User-Agent": COMMON_USER_AGENT },
+                        maxRedirects: 0,
+                        validateStatus: status => status >= 200 && status < 400,
+                        timeout: 5000
                     });
-                    if (parseUrlResp.data?.code === 200 && parseUrlResp.data?.data?.play_url) {
-                        url = parseUrlResp.data.data.play_url;
-                        const cover = parseUrlResp.data.data.cover || '';
-                        const infoCard = {
-                            'cover': cover,
-                            'songName': musicTitle || '未知歌曲',
-                            'singerName': '',
-                            'size': '',
-                            'musicType': []
-                        };
-                        const data = await new NeteaseMusicInfo(e).getData(infoCard);
-                        let img = await puppeteer.screenshot("neteaseMusicInfo", data);
-                        await e.reply(img);
+                    const finalUrl = redirectResp.headers?.location || redirectResp.request?.res?.responseUrl || shareUrl;
+                    if (finalUrl) {
+                        const midFromRedirect = finalUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i);
+                        if (midFromRedirect && midFromRedirect[1]) {
+                            songMid = midFromRedirect[1];
+                            logger.info(`[R插件][qqMusic] 重定向提取到 mid=${songMid}`);
+                        } else {
+                            const idFromRedirect = finalUrl.match(/[?&]songid=(\d+)/i);
+                            if (idFromRedirect && idFromRedirect[1]) {
+                                songId = idFromRedirect[1];
+                                logger.info(`[R插件][qqMusic] 重定向提取到 songid=${songId}`);
+                            }
+                        }
                     }
-                } catch (parseUrlErr) {
-                    logger.warn(`[R插件][qqMusic] parse_url请求失败: ${parseUrlErr.message}`);
+                } catch (redirectErr) {
+                    logger.warn(`[R插件][qqMusic] 跟随重定向失败: ${redirectErr.message}`);
                 }
-                // parse_url 失败或无结果，尝试用歌曲标题搜索兜底
-                if (!url && musicTitle && musicTitle.trim() !== '-') {
-                    logger.info(`[R插件][qqMusic] parse_url未获取结果，使用标题搜索兜底: ${musicTitle}`);
-                    const result = await this.qqMusicApiParse(e, musicTitle);
+
+                // 如果从重定向提取到了songid，转换为songmid
+                if (songId && !songMid) {
+                    try {
+                        const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+                            params: {
+                                format: 'json',
+                                data: JSON.stringify({
+                                    songinfo: {
+                                        method: 'get_song_detail_yqq',
+                                        module: 'music.pf_song_detail_svr',
+                                        param: { song_id: parseInt(songId), song_mid: '' }
+                                    }
+                                })
+                            },
+                            headers: { 'User-Agent': COMMON_USER_AGENT },
+                            timeout: 10000
+                        });
+                        const trackInfo = detailResp.data?.songinfo?.data?.track_info;
+                        if (trackInfo?.mid) {
+                            songMid = trackInfo.mid;
+                            musicTitle = musicTitle || trackInfo.name || '';
+                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}`);
+                        }
+                    } catch (e2) {
+                        logger.warn(`[R插件][qqMusic] songid转换失败: ${e2.message}`);
+                    }
+                }
+
+                // 如果成功提取到songMid，直接用聚合API
+                if (songMid) {
+                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
                     if (result) {
                         url = result.url;
-                        downloadTitle = result.title || musicTitle;
+                        downloadTitle = result.title || musicTitle || '未知歌曲';
+                    }
+                }
+
+                // 没有提取到songMid，尝试parse_url
+                if (!url) {
+                    logger.info(`[R插件][qqMusic] 使用parse_url解析分享链接`);
+                    try {
+                        const parseUrlResp = await axios.get(`${QQ_MUSIC_API_BASE}/api?action=parse_url&url=${encodeURIComponent(shareUrl)}`, {
+                            headers: {
+                                "User-Agent": COMMON_USER_AGENT,
+                                "X-API-Key": this.qqMusicApiKey
+                            },
+                            timeout: 10000
+                        });
+                        if (parseUrlResp.data?.code === 200 && parseUrlResp.data?.data?.play_url) {
+                            url = parseUrlResp.data.data.play_url;
+                            downloadTitle = musicTitle || parseUrlResp.data.data.songName || '未知歌曲';
+                            const cover = parseUrlResp.data.data.cover || '';
+                            const infoCard = {
+                                'cover': cover,
+                                'songName': downloadTitle,
+                                'singerName': '',
+                                'size': '',
+                                'musicType': []
+                            };
+                            const data = await new NeteaseMusicInfo(e).getData(infoCard);
+                            let img = await puppeteer.screenshot("neteaseMusicInfo", data);
+                            await e.reply(img);
+                        }
+                    } catch (parseUrlErr) {
+                        logger.warn(`[R插件][qqMusic] parse_url请求失败: ${parseUrlErr.message}`);
+                    }
+                    // parse_url 失败或无结果，尝试用歌曲标题搜索兜底
+                    if (!url && musicTitle && musicTitle.trim() !== '-') {
+                        logger.info(`[R插件][qqMusic] parse_url未获取结果，使用标题搜索兜底: ${musicTitle}`);
+                        const result = await this.qqMusicApiParse(e, musicTitle);
+                        if (result) {
+                            url = result.url;
+                            downloadTitle = result.title || musicTitle;
+                        }
                     }
                 }
             }
