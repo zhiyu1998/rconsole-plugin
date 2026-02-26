@@ -3756,12 +3756,13 @@ export class tools extends plugin {
                 // 尝试跟随重定向，从目标URL提取songmid/songid
                 try {
                     logger.info(`[R插件][qqMusic] 尝试跟随重定向提取songmid: ${shareUrl}`);
-                    const redirectResp = await axios.head(shareUrl, {
+                    const redirectResp = await axios.get(shareUrl, {
                         headers: { "User-Agent": COMMON_USER_AGENT },
-                        maxRedirects: 5,
-                        timeout: 8000
+                        maxRedirects: 0,
+                        validateStatus: status => status >= 200 && status < 400,
+                        timeout: 5000
                     });
-                    const finalUrl = redirectResp.request?.res?.responseUrl || redirectResp.request?._redirectable?._currentUrl || '';
+                    const finalUrl = redirectResp.headers?.location || redirectResp.request?.res?.responseUrl || shareUrl;
                     if (finalUrl) {
                         const midFromRedirect = finalUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i);
                         if (midFromRedirect && midFromRedirect[1]) {
