@@ -63,7 +63,7 @@ export function convertFlvToMp4(inputFilePath, outputFilePath) {
 }
 
 /**
- * 将视频与音频合并（视频循环3次 + 音频混合）
+ * 将视频与音频合并（视频音频混合）
  * 用于抖音动图，使动图视频带有BGM声音
  * @param {string} videoPath - 输入视频路径
  * @param {string} audioPath - 输入音频路径
@@ -90,17 +90,17 @@ export function mergeVideoWithAudio(videoPath, audioPath, outputPath) {
                     return;
                 }
 
-                // FFmpeg命令：视频循环3次，混合音频
-                // -stream_loop 2 表示循环2次（加上原始为3次）
+                // FFmpeg命令：视频音频混合
+                // 如果有需要可以加上 -stream_loop 2 表示循环2次（加上原始为3次）
                 // amix 混合两个音频流
-                const command = `ffmpeg -y -stream_loop 2 -i "${resolvedVideoPath}" -i "${resolvedAudioPath}" -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest "${resolvedOutputPath}"`;
+                const command = `ffmpeg -y -i "${resolvedVideoPath}" -i "${resolvedAudioPath}" -filter_complex "[0:v]setpts=N/FRAME_RATE/TB[v];[0:a][1:a]amix=inputs=2:duration=shortest:dropout_transition=3[aout]" -map "[v]" -map "[aout]" -c:v libx264 -c:a aac -b:a 192k -shortest "${resolvedOutputPath}"`;
 
                 logger.info(`[R插件][ffmpeg工具]执行视频音频合并命令`);
 
                 exec(command, (error, stdout, stderr) => {
                     if (error) {
                         // 如果视频没有音频流，尝试简单合并
-                        const simpleCommand = `ffmpeg -y -stream_loop 2 -i "${resolvedVideoPath}" -i "${resolvedAudioPath}" -c:v libx264 -c:a aac -b:a 192k -shortest "${resolvedOutputPath}"`;
+                        const simpleCommand = `ffmpeg -y -i "${resolvedVideoPath}" -i "${resolvedAudioPath}" -c:v libx264 -c:a aac -b:a 192k -shortest "${resolvedOutputPath}"`;
                         logger.info(`[R插件][ffmpeg工具]尝试简单合并模式`);
 
                         exec(simpleCommand, (simpleError, simpleStdout, simpleStderr) => {
