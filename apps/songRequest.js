@@ -351,9 +351,9 @@ export class songRequest extends plugin {
             musicUrlReg.exec(msgData)?.[2] ||
             musicUrlReg3.exec(msgData)?.[2] ||
             /(?<!user)id=(\d+)/.exec(msgData)?.[1] || "";
-        let title = msgData.match(/"title":"([^"]+)"/)?.[1]
-        let desc = msgData.match(/"desc":"([^"]+)"/)?.[1]
-        const jumpUrl = msgData.match(/"jumpUrl":"([^"]+)"/)?.[1];
+        let title = msgData.match(/"title":\s*"([^"]+)"/)?.[1]
+        let desc = msgData.match(/"desc":\s*"([^"]+)"/)?.[1]
+        const jumpUrl = msgData.match(/"jumpUrl":\s*"([^"]+)"/)?.[1];
         const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
         if (isPodcast) {
@@ -403,9 +403,9 @@ export class songRequest extends plugin {
             musicUrlReg.exec(msgData)?.[2] ||
             musicUrlReg3.exec(msgData)?.[2] ||
             /(?<!user)id=(\d+)/.exec(msgData)?.[1] || "";
-        let title = msgData.match(/"title":"([^"]+)"/)?.[1]
-        let desc = msgData.match(/"desc":"([^"]+)"/)?.[1]
-        const jumpUrl = msgData.match(/"jumpUrl":"([^"]+)"/)?.[1];
+        let title = msgData.match(/"title":\s*"([^"]+)"/)?.[1]
+        let desc = msgData.match(/"desc":\s*"([^"]+)"/)?.[1]
+        const jumpUrl = msgData.match(/"jumpUrl":\s*"([^"]+)"/)?.[1];
         const isPodcast = /dj\?id=/.test(jumpUrl);
         if (id === "") return
         if (isPodcast) {
