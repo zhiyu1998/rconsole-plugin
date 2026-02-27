@@ -2745,7 +2745,7 @@ export class tools extends plugin {
 
             const songData = parseData.data.data[0];
             if (!songData.success || !songData.url) {
-                logger.error(`[R插件][qqMusic] 歌曲解析失败: ${songData}`);
+                logger.error(`[R插件][qqMusic] 歌曲解析失败:`, JSON.stringify(songData));
                 e.reply('QQ音乐解析失败：无法获取播放链接');
                 return null;
             }
@@ -3677,14 +3677,14 @@ export class tools extends plugin {
             } catch (parseErr) {
                 logger.error('[R插件][qqMusic] 解析小程序JSON失败:', parseErr);
                 // 尝试从原始消息中提取URL和标题作为兜底
-                const fallbackUrl = e.msg.match(/(https?:\/\/[^\s"'<>]+y\.qq\.com[^\s"'<>]*)/i);
+                const fallbackUrl = e.msg.match(/(https?:\/\/[^\s"'<>]*y\.qq\.com[^\s"'<>]*)/i);
                 if (fallbackUrl) shareUrl = fallbackUrl[1];
                 const fallbackTitle = /^(.*?)\s*https?:\/\//.exec(e.msg)?.[1]?.trim();
                 if (fallbackTitle) musicTitle = cleanFilename(fallbackTitle);
             }
         } else {
             // case2: 普通链接分享，提取链接用于 parse_url
-            const urlMatch = e.msg.match(/(https?:\/\/[^\s"'<>]+y\.qq\.com[^\s"'<>]*)/i);
+            const urlMatch = e.msg.match(/(https?:\/\/[^\s"'<>]*y\.qq\.com[^\s"'<>]*)/i);
             if (urlMatch) {
                 shareUrl = urlMatch[1];
                 logger.info(`[R插件][qqMusic] 识别到分享链接: ${shareUrl}`);
