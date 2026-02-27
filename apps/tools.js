@@ -117,9 +117,6 @@ import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
 import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 
-/** QQ音乐URL提取正则常量 */
-
-
 /**
  * fetch重试函数
  * @param {string} url - 请求URL
@@ -3689,7 +3686,7 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.qqMusic} 已拦截`);
             return false;
         }
-
+        /** QQ音乐URL提取正则常量 */
         const QQ_MUSIC_PATTERNS = {
             songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
             songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
@@ -3792,7 +3789,7 @@ export class tools extends plugin {
 
                 if (songMid) {
                     logger.info(`[R插件][qqMusic] 使用聚合API直接解析 mid=${songMid}`);
-                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
+                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid, true);
                     if (result) {
                         url = result.url;
                         downloadTitle = result.title || musicTitle || '未知歌曲';
@@ -3840,7 +3837,7 @@ export class tools extends plugin {
 
                 // 如果成功提取到songMid，直接用聚合API
                 if (songMid) {
-                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
+                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid, true);
                     if (result) {
                         url = result.url;
                         downloadTitle = result.title || musicTitle || '未知歌曲';
@@ -3880,7 +3877,7 @@ export class tools extends plugin {
                     // parse_url 失败或无结果，尝试用歌曲标题搜索兜底
                     if (!url && musicTitle && musicTitle.trim() !== '-') {
                         logger.info(`[R插件][qqMusic] parse_url未获取结果，使用标题搜索兜底: ${musicTitle}`);
-                        const result = await this.qqMusicApiParse(e, musicTitle);
+                        const result = await this.qqMusicApiParse(e, musicTitle, null, true);
                         if (result) {
                             url = result.url;
                             downloadTitle = result.title || musicTitle;
@@ -3892,7 +3889,7 @@ export class tools extends plugin {
             // 策略3: 兜底，用歌曲标题搜索
             else if (musicTitle && musicTitle.trim() !== '-') {
                 logger.info(`[R插件][qqMusic] 使用关键词搜索: ${musicTitle}`);
-                const result = await this.qqMusicApiParse(e, musicTitle);
+                const result = await this.qqMusicApiParse(e, musicTitle, null, true);
                 if (result) {
                     url = result.url;
                     downloadTitle = result.title || musicTitle;
