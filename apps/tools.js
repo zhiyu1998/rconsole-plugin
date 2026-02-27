@@ -2823,7 +2823,7 @@ export class tools extends plugin {
             return { url: songData.url, title: `${finalSinger}-${finalName}`, audioType };
         } catch (err) {
             logger.error(`[R插件][qqMusic] 自建API解析出错:`, err);
-            e.reply('QQ音乐解析失败，请稍后再试');
+            if (!silent) e.reply('QQ音乐解析失败，请稍后再试');
             return null;
         }
     }
