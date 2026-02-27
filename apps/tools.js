@@ -117,9 +117,6 @@ import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
 import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 
-/** QQ音乐URL提取正则常量 */
-
-
 /**
  * fetch重试函数
  * @param {string} url - 请求URL
