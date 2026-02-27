@@ -3689,7 +3689,7 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.qqMusic} 已拦截`);
             return false;
         }
-
+        /** QQ音乐URL提取正则常量 */
         const QQ_MUSIC_PATTERNS = {
             songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
             songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
