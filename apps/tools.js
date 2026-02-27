@@ -3668,6 +3668,11 @@ export class tools extends plugin {
                         logger.info(`[R插件][qqMusic] 从小程序提取到分享链接: ${shareUrl}`);
                     }
                 }
+                // 始终尝试提取songid作为备用（即使已有songMid）
+                if (!songId) {
+                    const backupId = jumpUrl.match(/[?&]songid=(\d+)/i) || jumpUrl.match(/\/songDetail\/(\d+)/i);
+                    if (backupId && backupId[1]) songId = backupId[1];
+                }
 
                 // 空判定
                 if (!songMid && !songId && !shareUrl && (!musicTitle || musicTitle.trim() === '-')) {
@@ -3693,8 +3698,9 @@ export class tools extends plugin {
                 if (midFromUrl && midFromUrl[1]) {
                     songMid = midFromUrl[1];
                     logger.info(`[R插件][qqMusic] 从链接提取到 mid=${songMid}`);
-                } else {
-                    // 尝试提取 songid（数字ID）
+                }
+                // 始终尝试提取 songid 作为备用
+                if (!songId) {
                     const idFromUrl = shareUrl.match(/[?&]songid=(\d+)/i) || shareUrl.match(/\/songDetail\/(\d+)/i);
                     if (idFromUrl && idFromUrl[1]) {
                         songId = idFromUrl[1];
@@ -3749,6 +3755,39 @@ export class tools extends plugin {
                 if (result) {
                     url = result.url;
                     downloadTitle = result.title || musicTitle || '未知歌曲';
+                }
+                // 如果mid解析失败且有songId，尝试用songId转换后重试
+                if (!url && songId) {
+                    logger.info(`[R插件][qqMusic] mid解析失败，尝试使用songid=${songId}转换后重试`);
+                    try {
+                        const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+                            params: {
+                                format: 'json',
+                                data: JSON.stringify({
+                                    songinfo: {
+                                        method: 'get_song_detail_yqq',
+                                        module: 'music.pf_song_detail_svr',
+                                        param: { song_id: parseInt(songId), song_mid: '' }
+                                    }
+                                })
+                            },
+                            headers: { 'User-Agent': COMMON_USER_AGENT },
+                            timeout: 10000
+                        });
+                        const trackInfo = detailResp.data?.songinfo?.data?.track_info;
+                        if (trackInfo?.mid && trackInfo.mid !== songMid) {
+                            songMid = trackInfo.mid;
+                            musicTitle = musicTitle || trackInfo.name || '';
+                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}`);
+                            const retryResult = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
+                            if (retryResult) {
+                                url = retryResult.url;
+                                downloadTitle = retryResult.title || musicTitle || '未知歌曲';
+                            }
+                        }
+                    } catch (e3) {
+                        logger.warn(`[R插件][qqMusic] songid转换失败: ${e3.message}`);
+                    }
                 }
             }
             // 策略2: 有分享链接，先尝试跟随重定向提取songmid
