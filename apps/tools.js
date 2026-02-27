@@ -532,7 +532,13 @@ export class tools extends plugin {
             const item = webcastData.data.room;
             const { title, cover, user_count, stream_url } = item;
             const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-            await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            // 封面
+            const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+            if (this.douyinDisplayCover && dyCover) {
+                await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            } else {
+                e.reply(dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`);
+            }
             // 下载10s的直播流
             await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
             return;
@@ -561,7 +567,13 @@ export class tools extends plugin {
                 const item = await data.data.data?.[0];
                 const { title, cover, user_count_str, stream_url } = item;
                 const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-                await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                // 封面
+                const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                } else {
+                    e.reply(dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`);
+                }
                 // 下载10s的直播流
                 await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
                 return;
