@@ -3658,7 +3658,7 @@ export class tools extends plugin {
                     logger.info(`[R插件][qqMusic] 从小程序提取到 mid=${songMid}`);
                 } else {
                     // 尝试提取 songid（数字ID）
-                    const idMatch = jumpUrl.match(/[?&]songid=(\d+)/i);
+                    const idMatch = jumpUrl.match(/[?&]songid=(\d+)/i) || jumpUrl.match(/\/songDetail\/(\d+)/i);
                     if (idMatch && idMatch[1]) {
                         songId = idMatch[1];
                         logger.info(`[R插件][qqMusic] 从小程序提取到 songid=${songId}`);
@@ -3695,7 +3695,7 @@ export class tools extends plugin {
                     logger.info(`[R插件][qqMusic] 从链接提取到 mid=${songMid}`);
                 } else {
                     // 尝试提取 songid（数字ID）
-                    const idFromUrl = shareUrl.match(/[?&]songid=(\d+)/i);
+                    const idFromUrl = shareUrl.match(/[?&]songid=(\d+)/i) || shareUrl.match(/\/songDetail\/(\d+)/i);
                     if (idFromUrl && idFromUrl[1]) {
                         songId = idFromUrl[1];
                         logger.info(`[R插件][qqMusic] 从链接提取到 songid=${songId}`);
@@ -3769,7 +3769,7 @@ export class tools extends plugin {
                             songMid = midFromRedirect[1];
                             logger.info(`[R插件][qqMusic] 重定向提取到 mid=${songMid}`);
                         } else {
-                            const idFromRedirect = finalUrl.match(/[?&]songid=(\d+)/i);
+                            const idFromRedirect = finalUrl.match(/[?&]songid=(\d+)/i) || finalUrl.match(/\/songDetail\/(\d+)/i);
                             if (idFromRedirect && idFromRedirect[1]) {
                                 songId = idFromRedirect[1];
                                 logger.info(`[R插件][qqMusic] 重定向提取到 songid=${songId}`);
