@@ -2690,8 +2690,13 @@ export class tools extends plugin {
      * @returns {Promise<{mid: string, name: string}|null>} 转换结果，失败返回 null
      */
     async convertSongIdToMid(songId) {
+        const numericId = Number(songId);
+        if (!songId || !Number.isFinite(numericId) || numericId <= 0) {
+            logger.warn(`[R插件][qqMusic] convertSongIdToMid: 无效的songId="${songId}"，跳过转换`);
+            return null;
+        }
         try {
-            logger.info(`[R插件][qqMusic] 通过songid=${songId}查询songmid`);
+            logger.info(`[R插件][qqMusic] 通过songid=${numericId}查询songmid`);
             const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
                 params: {
                     format: 'json',
@@ -2699,7 +2704,7 @@ export class tools extends plugin {
                         songinfo: {
                             method: 'get_song_detail_yqq',
                             module: 'music.pf_song_detail_svr',
-                            param: { song_id: parseInt(songId), song_mid: '' }
+                            param: { song_id: numericId, song_mid: '' }
                         }
                     })
                 },
