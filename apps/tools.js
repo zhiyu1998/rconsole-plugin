@@ -117,6 +117,14 @@ import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
 import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 
+/** QQ音乐URL提取正则常量 */
+const QQ_MUSIC_PATTERNS = {
+    songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
+    songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
+    songId: /[?&]songid=(\d+)/i,
+    songDetailPath: /\/songDetail\/(\d+)/i,
+};
+
 /**
  * fetch重试函数
  * @param {string} url - 请求URL
@@ -2677,6 +2685,40 @@ export class tools extends plugin {
     }
 
     /**
+     * 通过 songId（数字ID）调用QQ音乐API转换为 songMid，并返回歌曲名称
+     * @param {string|number} songId - QQ音乐数字歌曲ID
+     * @returns {Promise<{mid: string, name: string}|null>} 转换结果，失败返回 null
+     */
+    async convertSongIdToMid(songId) {
+        try {
+            logger.info(`[R插件][qqMusic] 通过songid=${songId}查询songmid`);
+            const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
+                params: {
+                    format: 'json',
+                    data: JSON.stringify({
+                        songinfo: {
+                            method: 'get_song_detail_yqq',
+                            module: 'music.pf_song_detail_svr',
+                            param: { song_id: parseInt(songId), song_mid: '' }
+                        }
+                    })
+                },
+                headers: { 'User-Agent': COMMON_USER_AGENT },
+                timeout: 10000
+            });
+            const trackInfo = detailResp.data?.songinfo?.data?.track_info;
+            if (trackInfo?.mid) {
+                logger.info(`[R插件][qqMusic] songid转换成功: mid=${trackInfo.mid}, name=${trackInfo.name}`);
+                return { mid: trackInfo.mid, name: trackInfo.name || '' };
+            }
+            return null;
+        } catch (err) {
+            logger.warn(`[R插件][qqMusic] songid转换失败: ${err.message}`);
+            return null;
+        }
+    }
+
+    /**
      * QQ音乐自建API解析：通过关键词搜索 -> 获取mid -> 聚合API解析
      * @param {object} e - 事件对象
      * @param {string} keyword - 搜索关键词
@@ -3652,13 +3694,13 @@ export class tools extends plugin {
                 musicTitle = cleanFilename(`${prompt}-${desc}`);
 
                 // 优先提取 songmid 或 media_mid
-                const midMatch = jumpUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i) || jumpUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
+                const midMatch = jumpUrl.match(QQ_MUSIC_PATTERNS.songMid) || jumpUrl.match(QQ_MUSIC_PATTERNS.songPath);
                 if (midMatch && midMatch[1]) {
                     songMid = midMatch[1];
                     logger.info(`[R插件][qqMusic] 从小程序提取到 mid=${songMid}`);
                 } else {
                     // 尝试提取 songid（数字ID）
-                    const idMatch = jumpUrl.match(/[?&]songid=(\d+)/i) || jumpUrl.match(/\/songDetail\/(\d+)/i);
+                    const idMatch = jumpUrl.match(QQ_MUSIC_PATTERNS.songId) || jumpUrl.match(QQ_MUSIC_PATTERNS.songDetailPath);
                     if (idMatch && idMatch[1]) {
                         songId = idMatch[1];
                         logger.info(`[R插件][qqMusic] 从小程序提取到 songid=${songId}`);
@@ -3670,7 +3712,7 @@ export class tools extends plugin {
                 }
                 // 始终尝试提取songid作为备用（即使已有songMid）
                 if (!songId) {
-                    const backupId = jumpUrl.match(/[?&]songid=(\d+)/i) || jumpUrl.match(/\/songDetail\/(\d+)/i);
+                    const backupId = jumpUrl.match(QQ_MUSIC_PATTERNS.songId) || jumpUrl.match(QQ_MUSIC_PATTERNS.songDetailPath);
                     if (backupId && backupId[1]) songId = backupId[1];
                 }
 
@@ -3694,14 +3736,14 @@ export class tools extends plugin {
                 shareUrl = urlMatch[1];
                 logger.info(`[R插件][qqMusic] 识别到分享链接: ${shareUrl}`);
                 // 尝试从链接中提取 songmid 或 media_mid
-                const midFromUrl = shareUrl.match(/[?&](?:songmid|media_mid)=([^&"]+)/i) || shareUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
+                const midFromUrl = shareUrl.match(QQ_MUSIC_PATTERNS.songMid) || shareUrl.match(QQ_MUSIC_PATTERNS.songPath);
                 if (midFromUrl && midFromUrl[1]) {
                     songMid = midFromUrl[1];
                     logger.info(`[R插件][qqMusic] 从链接提取到 mid=${songMid}`);
                 }
                 // 始终尝试提取 songid 作为备用
                 if (!songId) {
-                    const idFromUrl = shareUrl.match(/[?&]songid=(\d+)/i) || shareUrl.match(/\/songDetail\/(\d+)/i);
+                    const idFromUrl = shareUrl.match(QQ_MUSIC_PATTERNS.songId) || shareUrl.match(QQ_MUSIC_PATTERNS.songDetailPath);
                     if (idFromUrl && idFromUrl[1]) {
                         songId = idFromUrl[1];
                         logger.info(`[R插件][qqMusic] 从链接提取到 songid=${songId}`);
@@ -3721,30 +3763,10 @@ export class tools extends plugin {
             if (songMid || songId) {
                 // 优先使用 songId 转换为可靠的 songMid
                 if (songId) {
-                    try {
-                        logger.info(`[R插件][qqMusic] 优先通过songid=${songId}查询songmid`);
-                        const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
-                            params: {
-                                format: 'json',
-                                data: JSON.stringify({
-                                    songinfo: {
-                                        method: 'get_song_detail_yqq',
-                                        module: 'music.pf_song_detail_svr',
-                                        param: { song_id: parseInt(songId), song_mid: '' }
-                                    }
-                                })
-                            },
-                            headers: { 'User-Agent': COMMON_USER_AGENT },
-                            timeout: 10000
-                        });
-                        const trackInfo = detailResp.data?.songinfo?.data?.track_info;
-                        if (trackInfo?.mid) {
-                            songMid = trackInfo.mid;
-                            musicTitle = musicTitle || trackInfo.name || '';
-                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}, name=${trackInfo.name}`);
-                        }
-                    } catch (e3) {
-                        logger.warn(`[R插件][qqMusic] songid转换失败: ${e3.message}`);
+                    const converted = await this.convertSongIdToMid(songId);
+                    if (converted) {
+                        songMid = converted.mid;
+                        musicTitle = musicTitle || converted.name;
                     }
                 }
 
@@ -3770,12 +3792,12 @@ export class tools extends plugin {
                     });
                     const finalUrl = redirectResp.headers?.location || redirectResp.request?.res?.responseUrl || shareUrl;
                     if (finalUrl) {
-                        const midFromRedirect = finalUrl.match(/[?&](?:songmid|media_mid)=([^&]+)/i) || finalUrl.match(/\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i);
+                        const midFromRedirect = finalUrl.match(QQ_MUSIC_PATTERNS.songMid) || finalUrl.match(QQ_MUSIC_PATTERNS.songPath);
                         if (midFromRedirect && midFromRedirect[1]) {
                             songMid = midFromRedirect[1];
                             logger.info(`[R插件][qqMusic] 重定向提取到 mid=${songMid}`);
                         } else {
-                            const idFromRedirect = finalUrl.match(/[?&]songid=(\d+)/i) || finalUrl.match(/\/songDetail\/(\d+)/i);
+                            const idFromRedirect = finalUrl.match(QQ_MUSIC_PATTERNS.songId) || finalUrl.match(QQ_MUSIC_PATTERNS.songDetailPath);
                             if (idFromRedirect && idFromRedirect[1]) {
                                 songId = idFromRedirect[1];
                                 logger.info(`[R插件][qqMusic] 重定向提取到 songid=${songId}`);
@@ -3788,29 +3810,10 @@ export class tools extends plugin {
 
                 // 如果从重定向提取到了songid，转换为songmid
                 if (songId && !songMid) {
-                    try {
-                        const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
-                            params: {
-                                format: 'json',
-                                data: JSON.stringify({
-                                    songinfo: {
-                                        method: 'get_song_detail_yqq',
-                                        module: 'music.pf_song_detail_svr',
-                                        param: { song_id: parseInt(songId), song_mid: '' }
-                                    }
-                                })
-                            },
-                            headers: { 'User-Agent': COMMON_USER_AGENT },
-                            timeout: 10000
-                        });
-                        const trackInfo = detailResp.data?.songinfo?.data?.track_info;
-                        if (trackInfo?.mid) {
-                            songMid = trackInfo.mid;
-                            musicTitle = musicTitle || trackInfo.name || '';
-                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}`);
-                        }
-                    } catch (e2) {
-                        logger.warn(`[R插件][qqMusic] songid转换失败: ${e2.message}`);
+                    const converted = await this.convertSongIdToMid(songId);
+                    if (converted) {
+                        songMid = converted.mid;
+                        musicTitle = musicTitle || converted.name;
                     }
                 }
 
