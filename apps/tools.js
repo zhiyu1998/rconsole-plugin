@@ -2803,24 +2803,18 @@ export class tools extends plugin {
             const finalName = info.name || songName;
             const finalSinger = info.artist || singerName;
 
-            // 从实际下载URL检测真实音频格式，而非信任API报告的quality
-            let audioType = 'mp3';
-            const urlPath = (songData.url || '').split('?')[0].toLowerCase();
-            if (urlPath.endsWith('.flac')) {
-                audioType = 'flac';
-            } else if (urlPath.endsWith('.m4a') || urlPath.endsWith('.aac')) {
-                audioType = 'm4a';
-            } else if (urlPath.endsWith('.ogg')) {
-                audioType = 'ogg';
+            // 直接信任API返回的音质和文件格式
+            const quality = songData.actualQuality || '128k';
+            let audioType = songData.audioExt || '';
+            // 兜底：如果API没有返回audioExt（如TuneHub），从actualQuality推断
+            if (!audioType) {
+                const aq = (songData.actualQuality || '').toLowerCase();
+                if (aq.includes('flac') || aq.includes('lossless') || aq === 'master') {
+                    audioType = 'flac';
+                } else {
+                    audioType = 'mp3';
+                }
             }
-            // 如果URL无法判断，再参考API报告的actualQuality
-            if (audioType === 'mp3' && songData.actualQuality) {
-                const aq = songData.actualQuality.toLowerCase();
-                if (aq.includes('flac') || aq.includes('lossless')) audioType = 'flac';
-                else if (aq.includes('m4a') || aq.includes('aac')) audioType = 'm4a';
-                else if (aq.includes('ogg')) audioType = 'ogg';
-            }
-            const quality = audioType === 'flac' ? 'flac' : (songData.actualQuality || '128k');
 
             // 渲染歌曲信息卡片
             const musicInfo = {
