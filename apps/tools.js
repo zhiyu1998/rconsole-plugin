@@ -2683,7 +2683,7 @@ export class tools extends plugin {
      * @param {string} [mid] - 可选，如果已有songmid则直接解析
      * @returns {Promise<{url: string, title: string}|null>} 播放直链URL和歌曲标题，失败返回null
      */
-    async qqMusicApiParse(e, keyword, mid = null) {
+    async qqMusicApiParse(e, keyword, mid = null, silent = false) {
         try {
             // 检查API Key是否配置
             const apiKey = (this.qqMusicApiKey || '').trim();
@@ -2739,14 +2739,14 @@ export class tools extends plugin {
             const parseData = parseResp.data;
             if (!parseData?.success || !parseData?.data?.data?.length) {
                 logger.error(`[R插件][qqMusic] 聚合API解析失败:`, parseData);
-                e.reply('QQ音乐解析失败，请稍后再试');
+                if (!silent) e.reply('QQ音乐解析失败，请稍后再试');
                 return null;
             }
 
             const songData = parseData.data.data[0];
             if (!songData.success || !songData.url) {
                 logger.error(`[R插件][qqMusic] 歌曲解析失败:`, JSON.stringify(songData));
-                e.reply('QQ音乐解析失败：无法获取播放链接');
+                if (!silent) e.reply('QQ音乐解析失败：无法获取播放链接');
                 return null;
             }
 
@@ -3717,49 +3717,12 @@ export class tools extends plugin {
         let downloadTitle = '未知歌曲';
 
         try {
-            // 如果有 songid 但没有 songmid，通过QQ音乐公开API转换
-            if (songId && !songMid) {
-                try {
-                    logger.info(`[R插件][qqMusic] 通过songid=${songId}查询songmid`);
-                    const detailResp = await axios.get(`https://u.y.qq.com/cgi-bin/musicu.fcg`, {
-                        params: {
-                            format: 'json',
-                            data: JSON.stringify({
-                                songinfo: {
-                                    method: 'get_song_detail_yqq',
-                                    module: 'music.pf_song_detail_svr',
-                                    param: { song_id: parseInt(songId), song_mid: '' }
-                                }
-                            })
-                        },
-                        headers: { 'User-Agent': COMMON_USER_AGENT },
-                        timeout: 10000
-                    });
-                    const trackInfo = detailResp.data?.songinfo?.data?.track_info;
-                    if (trackInfo?.mid) {
-                        songMid = trackInfo.mid;
-                        musicTitle = musicTitle || trackInfo.name || '';
-                        logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}, name=${trackInfo.name}`);
-                    } else {
-                        logger.warn(`[R插件][qqMusic] songid转换失败，尝试搜索兜底`);
-                    }
-                } catch (convertErr) {
-                    logger.error(`[R插件][qqMusic] songid转换出错:`, convertErr.message);
-                }
-            }
-
-            // 策略1: 有 mid，直接用聚合API解析
-            if (songMid) {
-                logger.info(`[R插件][qqMusic] 使用聚合API直接解析 mid=${songMid}`);
-                const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
-                if (result) {
-                    url = result.url;
-                    downloadTitle = result.title || musicTitle || '未知歌曲';
-                }
-                // 如果mid解析失败且有songId，尝试用songId转换后重试
-                if (!url && songId) {
-                    logger.info(`[R插件][qqMusic] mid解析失败，尝试使用songid=${songId}转换后重试`);
+            // 策略1: 有 songId 或 songMid，优先用 songId 转换
+            if (songMid || songId) {
+                // 优先使用 songId 转换为可靠的 songMid
+                if (songId) {
                     try {
+                        logger.info(`[R插件][qqMusic] 优先通过songid=${songId}查询songmid`);
                         const detailResp = await axios.get('https://u.y.qq.com/cgi-bin/musicu.fcg', {
                             params: {
                                 format: 'json',
@@ -3775,18 +3738,22 @@ export class tools extends plugin {
                             timeout: 10000
                         });
                         const trackInfo = detailResp.data?.songinfo?.data?.track_info;
-                        if (trackInfo?.mid && trackInfo.mid !== songMid) {
+                        if (trackInfo?.mid) {
                             songMid = trackInfo.mid;
                             musicTitle = musicTitle || trackInfo.name || '';
-                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}`);
-                            const retryResult = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
-                            if (retryResult) {
-                                url = retryResult.url;
-                                downloadTitle = retryResult.title || musicTitle || '未知歌曲';
-                            }
+                            logger.info(`[R插件][qqMusic] songid转换成功: mid=${songMid}, name=${trackInfo.name}`);
                         }
                     } catch (e3) {
                         logger.warn(`[R插件][qqMusic] songid转换失败: ${e3.message}`);
+                    }
+                }
+
+                if (songMid) {
+                    logger.info(`[R插件][qqMusic] 使用聚合API直接解析 mid=${songMid}`);
+                    const result = await this.qqMusicApiParse(e, musicTitle || songMid, songMid);
+                    if (result) {
+                        url = result.url;
+                        downloadTitle = result.title || musicTitle || '未知歌曲';
                     }
                 }
             }
