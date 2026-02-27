@@ -240,7 +240,7 @@ export const NETEASE_TEMP_API = "https://www.hhlqilongzhu.cn/api/dg_wyymusic.php
  * QQ音乐自建解析API地址
  * @type {string}
  */
-export const QQ_MUSIC_API_BASE = "https://qqmusic.9e.nz";
+export const QQ_MUSIC_API_BASE = "https://qqmusic.9e.nz:442";
 
 /**
  * 下载VIP的临时接口3

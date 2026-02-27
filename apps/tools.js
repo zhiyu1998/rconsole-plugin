@@ -118,12 +118,7 @@ import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles,
 import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 
 /** QQ音乐URL提取正则常量 */
-const QQ_MUSIC_PATTERNS = {
-    songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
-    songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
-    songId: /[?&]songid=(\d+)/i,
-    songDetailPath: /\/songDetail\/(\d+)/i,
-};
+
 
 /**
  * fetch重试函数
@@ -3694,6 +3689,13 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.qqMusic} 已拦截`);
             return false;
         }
+
+        const QQ_MUSIC_PATTERNS = {
+            songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
+            songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
+            songId: /[?&]songid=(\d+)/i,
+            songDetailPath: /\/songDetail\/(\d+)/i,
+        };
 
         let songMid = null;
         let songId = null;
