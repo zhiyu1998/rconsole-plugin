@@ -2802,7 +2802,25 @@ export class tools extends plugin {
             const cover = songData.cover || '';
             const finalName = info.name || songName;
             const finalSinger = info.artist || singerName;
-            const quality = songData.actualQuality || '128k';
+
+            // 从实际下载URL检测真实音频格式，而非信任API报告的quality
+            let audioType = 'mp3';
+            const urlPath = (songData.url || '').split('?')[0].toLowerCase();
+            if (urlPath.endsWith('.flac')) {
+                audioType = 'flac';
+            } else if (urlPath.endsWith('.m4a') || urlPath.endsWith('.aac')) {
+                audioType = 'm4a';
+            } else if (urlPath.endsWith('.ogg')) {
+                audioType = 'ogg';
+            }
+            // 如果URL无法判断，再参考API报告的actualQuality
+            if (audioType === 'mp3' && songData.actualQuality) {
+                const aq = songData.actualQuality.toLowerCase();
+                if (aq.includes('flac') || aq.includes('lossless')) audioType = 'flac';
+                else if (aq.includes('m4a') || aq.includes('aac')) audioType = 'm4a';
+                else if (aq.includes('ogg')) audioType = 'ogg';
+            }
+            const quality = audioType === 'flac' ? 'flac' : (songData.actualQuality || '128k');
 
             // 渲染歌曲信息卡片
             const musicInfo = {
@@ -2816,7 +2834,7 @@ export class tools extends plugin {
             let img = await puppeteer.screenshot("neteaseMusicInfo", data);
             await e.reply(img);
 
-            return { url: songData.url, title: `${finalSinger}-${finalName}` };
+            return { url: songData.url, title: `${finalSinger}-${finalName}`, audioType };
         } catch (err) {
             logger.error(`[R插件][qqMusic] 自建API解析出错:`, err);
             e.reply('QQ音乐解析失败，请稍后再试');
@@ -3762,6 +3780,7 @@ export class tools extends plugin {
 
         let url = null;
         let downloadTitle = '未知歌曲';
+        let downloadAudioType = 'mp3';
 
         try {
             // 策略1: 有 songId 或 songMid，优先用 songId 转换
@@ -3781,6 +3800,7 @@ export class tools extends plugin {
                     if (result) {
                         url = result.url;
                         downloadTitle = result.title || musicTitle || '未知歌曲';
+                        downloadAudioType = result.audioType || 'mp3';
                     }
                 }
             }
@@ -3828,6 +3848,7 @@ export class tools extends plugin {
                     if (result) {
                         url = result.url;
                         downloadTitle = result.title || musicTitle || '未知歌曲';
+                        downloadAudioType = result.audioType || 'mp3';
                     }
                 }
 
@@ -3867,6 +3888,7 @@ export class tools extends plugin {
                         if (result) {
                             url = result.url;
                             downloadTitle = result.title || musicTitle;
+                            downloadAudioType = result.audioType || 'mp3';
                         }
                     }
                 }
@@ -3878,6 +3900,7 @@ export class tools extends plugin {
                 if (result) {
                     url = result.url;
                     downloadTitle = result.title || musicTitle;
+                    downloadAudioType = result.audioType || 'mp3';
                 }
             } else {
                 logger.error('[R插件][qqMusic] 无法提取任何音乐信息');
@@ -3887,7 +3910,8 @@ export class tools extends plugin {
 
             // 下载音乐
             if (url) {
-                await downloadAudio(url, this.getCurDownloadPath(e), downloadTitle, 'follow').then(async path => {
+                const audioExt = downloadAudioType || 'mp3';
+                await downloadAudio(url, this.getCurDownloadPath(e), downloadTitle, 'follow', audioExt).then(async path => {
                     // 发送语音
                     if (this.isSendVocal) {
                         await e.reply(segment.record(path));
