@@ -356,6 +356,8 @@ export class tools extends plugin {
         this.douyinCookie = this.toolsConfig.douyinCookie;
         // 加载抖音是否压缩
         this.douyinCompression = this.toolsConfig.douyinCompression;
+        // 加载抖音是否显示封面
+        this.douyinDisplayCover = this.toolsConfig.douyinDisplayCover ?? true;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
         // 加载抖音是否开启背景音乐
@@ -474,7 +476,14 @@ export class tools extends plugin {
 
                 const desc = item.desc || "无简介";
                 const authorNickname = item.author?.nickname || "未知作者";
-                e.reply(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+                // 封面
+                const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+                const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                } else {
+                    e.reply(dySendContent);
+                }
 
                 // 调用动图函数处理
                 await this.processDouyinImageAlbum(e, item, douUrl, headers, detailId);
@@ -588,7 +597,13 @@ export class tools extends plugin {
                     await this.douyinComment(e, douId, headers);
                     return;
                 }
-                e.reply(`${dySendContent}`);
+                // 封面
+                const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                } else {
+                    e.reply(dySendContent);
+                }
                 // 分辨率判断是否压缩
                 const resolution = this.douyinCompression ? "720p" : "1080p";
                 // 使用今日头条 CDN 进一步加快解析速度
@@ -621,7 +636,14 @@ export class tools extends plugin {
                     // 如果有 按照动图处理
                     const desc = item.desc || "无简介";
                     const authorNickname = item.author?.nickname || "未知作者";
-                    e.reply(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+                    // 封面
+                    const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+                    const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+                    if (this.douyinDisplayCover && dyCover) {
+                        await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                    } else {
+                        e.reply(dySendContent);
+                    }
 
                     // 调用动图处理函数
                     await this.processDouyinImageAlbum(e, item, douUrl, headers, douId);

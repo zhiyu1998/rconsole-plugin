@@ -408,6 +408,13 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.douyinDisplayCover",
+                    label: "抖音是否显示封面",
+                    bottomHelpMessage: "默认显示，抖音是否显示封面",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.douyinComments",
                     label: "抖音是否开启评论",
                     component: "Switch",
