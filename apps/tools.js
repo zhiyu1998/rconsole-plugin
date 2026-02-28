@@ -354,6 +354,8 @@ export class tools extends plugin {
         this.youtubeCookiePath = this.toolsConfig.youtubeCookiePath;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
+        // 加载抖音的限制时长
+        this.douyinDuration = this.toolsConfig.douyinDuration;
         // 加载抖音是否压缩
         this.douyinCompression = this.toolsConfig.douyinCompression;
         // 加载抖音是否显示封面
@@ -594,7 +596,7 @@ export class tools extends plugin {
                 const { play_addr: { uri: videoAddrURI }, duration, cover } = item.video;
                 // 进行时间判断，如果超过时间阈值就不发送
                 const dyDuration = Math.trunc(duration / 1000);
-                const durationThreshold = this.biliDuration;
+                const durationThreshold = this.douyinDuration;
                 // 一些共同发送内容
                 let dySendContent = `${this.identifyPrefix}识别：抖音，${item.author.nickname}\n📝 简介：${item.desc}`;
                 if (dyDuration >= durationThreshold) {
