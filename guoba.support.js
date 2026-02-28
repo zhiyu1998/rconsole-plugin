@@ -414,35 +414,35 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.douyinCompression",
-                    label: "抖音是否使用压缩格式",
+                    label: "是否使用压缩格式",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinDisplayCover",
-                    label: "抖音是否显示封面",
-                    bottomHelpMessage: "默认显示，抖音是否显示封面",
+                    label: "是否显示封面",
+                    bottomHelpMessage: "默认显示，是否显示封面",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinComments",
-                    label: "抖音是否开启评论",
+                    label: "是否开启评论",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinMusic",
-                    label: "抖音是否开启背景音乐",
-                    bottomHelpMessage: "开启后解析抖音动图/图集时会同时发送背景音乐",
+                    label: "是否开启背景音乐",
+                    bottomHelpMessage: "开启后解析动图/图集时会同时发送背景音乐",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinBGMSendType",
-                    label: "抖音背景音乐发送方式",
+                    label: "背景音乐发送方式",
                     bottomHelpMessage:
-                        "选择发送抖音背景音乐的方式：\n" +
+                        "选择发送背景音乐的方式：\n" +
                         "语音(默认)：手机和pc都可见，需要下载上传，\n" +
                         "自定义音乐卡片：pc无法点击播放，无需下载上传，卡片样式协议端决定\n",
                     component: "Select",
