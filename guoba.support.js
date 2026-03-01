@@ -609,6 +609,36 @@ export function supportGuoba() {
                         placeholder: "请输入QQ音乐API Key",
                     },
                 },
+                {
+                    field: "tools.useQQMusicCustomCk",
+                    label: "使用自定义Cookie解析",
+                    bottomHelpMessage:
+                        "开启后优先使用你自己的QQ音乐Cookie进行解析，需填入Cookie。不支持微信Cookie",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.qqMusicCookie",
+                    label: "QQ音乐Cookie",
+                    bottomHelpMessage:
+                        "自定义Cookie解析模式：填入你自己的QQ音乐Cookie，格式：uin=o123456; qm_keyst=xxx; ...。填写后每24小时自动刷新一次Cookie。⚠️ 不支持微信登录的Cookie",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入QQ音乐Cookie（不支持微信Cookie）",
+                    },
+                },
+                {
+                    field: "tools.qqMusicCustomCkApi",
+                    label: "自定义CK解析API地址",
+                    bottomHelpMessage:
+                        "自定义Cookie解析API的地址。",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "内置默认地址",
+                    },
+                },
 
                 // ==================== 其他平台 ====================
                 {
