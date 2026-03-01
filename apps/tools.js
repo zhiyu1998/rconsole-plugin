@@ -424,18 +424,24 @@ export class tools extends plugin {
         const elapsed = now - lastRefreshTime;
 
         if (elapsed >= REFRESH_INTERVAL) {
-            // 距离上次刷新已超过24小时，立即刷新
+            // 距离上次刷新已超过24小时，立即刷新并启动周期定时器
             logger.info('[R插件][qqMusic] 距离上次Cookie刷新已超过24小时，立即刷新');
             this._refreshQQMusicCookie().catch(() => { });
+            this._qqMusicCookieTimer = setInterval(() => {
+                this._refreshQQMusicCookie().catch(() => { });
+            }, REFRESH_INTERVAL);
         } else {
-            const remaining = Math.round((REFRESH_INTERVAL - elapsed) / 1000 / 60 / 60);
-            logger.info(`[R插件][qqMusic] 距离下次Cookie刷新近约${remaining}小时，跳过本次刷新`);
+            // 先等剩余时间，再启动周期定时器，避免重启导致刷新间隔漂移
+            const remainingMs = REFRESH_INTERVAL - elapsed;
+            const remainingHours = Math.round(remainingMs / 1000 / 60 / 60);
+            logger.info(`[R插件][qqMusic] 距离下次Cookie刷新约${remainingHours}小时`);
+            this._qqMusicCookieTimer = setTimeout(() => {
+                this._refreshQQMusicCookie().catch(() => { });
+                this._qqMusicCookieTimer = setInterval(() => {
+                    this._refreshQQMusicCookie().catch(() => { });
+                }, REFRESH_INTERVAL);
+            }, remainingMs);
         }
-
-        // 每24小时刷新一次
-        this._qqMusicCookieTimer = setInterval(() => {
-            this._refreshQQMusicCookie().catch(() => { });
-        }, REFRESH_INTERVAL);
         logger.info('[R插件][qqMusic] Cookie自动刷新定时器已启动（每24小时）');
     }
 
