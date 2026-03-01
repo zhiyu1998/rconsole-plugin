@@ -326,6 +326,10 @@ export class tools extends plugin {
         this.neteaseCloudAudioQuality = this.toolsConfig.neteaseCloudAudioQuality;
         // 加载QQ音乐API Key
         this.qqMusicApiKey = this.toolsConfig.qqMusicApiKey || '';
+        // 加载QQ音乐Cookie（自定义CK解析）
+        this.qqMusicCookie = this.toolsConfig.qqMusicCookie || '';
+        // 加载自定义Cookie解析API地址
+        this.qqMusicCustomCkApi = this.toolsConfig.qqMusicCustomCkApi || 'https://qqmusic3.cchanlan.dpdns.org';
         // 加载哔哩哔哩是否使用Aria2
         this.biliDownloadMethod = this.toolsConfig.biliDownloadMethod;
         // 加载哔哩哔哩最高分辨率
@@ -354,8 +358,12 @@ export class tools extends plugin {
         this.youtubeCookiePath = this.toolsConfig.youtubeCookiePath;
         // 加载抖音Cookie
         this.douyinCookie = this.toolsConfig.douyinCookie;
+        // 加载抖音的限制时长
+        this.douyinDuration = this.toolsConfig.douyinDuration;
         // 加载抖音是否压缩
         this.douyinCompression = this.toolsConfig.douyinCompression;
+        // 加载抖音是否显示封面
+        this.douyinDisplayCover = this.toolsConfig.douyinDisplayCover ?? true;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
         // 加载抖音是否开启背景音乐
@@ -393,6 +401,99 @@ export class tools extends plugin {
         this.weiboComments = this.toolsConfig.weiboComments ?? true;
         // 加载小黑盒Cookie
         this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
+        // 启动QQ音乐Cookie自动刷新定时器
+        this._startQQMusicCookieRefreshTimer();
+    }
+
+    /**
+     * 启动QQ音乐Cookie自动刷新定时器（每24小时刷新一次）
+     */
+    _startQQMusicCookieRefreshTimer() {
+        const cookie = (this.qqMusicCookie || '').trim();
+        const apiBase = (this.qqMusicCustomCkApi || '').trim();
+        if (!cookie || !apiBase) return;
+
+        // 防止 Yunzai 多次实例化导致重复启动定时器
+        if (tools.prototype._qqMusicCookieTimerStarted) return;
+        tools.prototype._qqMusicCookieTimerStarted = true;
+
+        // 检查上次刷新时间，只有距离上次刷新超过24小时才刷新
+        const REFRESH_INTERVAL = 24 * 60 * 60 * 1000;
+        const lastRefreshTime = this._getLastCookieRefreshTime();
+        const now = Date.now();
+        const elapsed = now - lastRefreshTime;
+
+        if (elapsed >= REFRESH_INTERVAL) {
+            // 距离上次刷新已超过24小时，立即刷新
+            logger.info('[R插件][qqMusic] 距离上次Cookie刷新已超过24小时，立即刷新');
+            this._refreshQQMusicCookie().catch(() => { });
+        } else {
+            const remaining = Math.round((REFRESH_INTERVAL - elapsed) / 1000 / 60 / 60);
+            logger.info(`[R插件][qqMusic] 距离下次Cookie刷新近约${remaining}小时，跳过本次刷新`);
+        }
+
+        // 每24小时刷新一次
+        this._qqMusicCookieTimer = setInterval(() => {
+            this._refreshQQMusicCookie().catch(() => { });
+        }, REFRESH_INTERVAL);
+        logger.info('[R插件][qqMusic] Cookie自动刷新定时器已启动（每24小时）');
+    }
+
+    /**
+     * 获取上次Cookie刷新时间
+     */
+    _getLastCookieRefreshTime() {
+        try {
+            return this.toolsConfig.qqMusicCookieLastRefresh || 0;
+        } catch { }
+        return 0;
+    }
+
+    /**
+     * 保存Cookie刷新时间
+     */
+    async _saveLastCookieRefreshTime() {
+        try {
+            const model = (await import('../model/config.js')).default;
+            model.updateField('tools', 'qqMusicCookieLastRefresh', Date.now());
+        } catch (err) {
+            logger.warn(`[R插件][qqMusic] 保存Cookie刷新时间失败: ${err.message}`);
+        }
+    }
+
+    /**
+     * 刷新QQ音乐Cookie并回写配置
+     */
+    async _refreshQQMusicCookie() {
+        const cookie = (this.qqMusicCookie || '').trim();
+        const apiBase = (this.qqMusicCustomCkApi || '').trim();
+        if (!cookie || !apiBase) return;
+
+        try {
+            logger.info('[R插件][qqMusic] 开始刷新Cookie...');
+            const resp = await axios.post(`${apiBase}/api/refresh_cookie`, {}, {
+                headers: {
+                    'qq-cookie': cookie,
+                    'User-Agent': COMMON_USER_AGENT
+                },
+                timeout: 15000
+            });
+
+            if (resp.data?.code === 200 && resp.data?.data?.cookie) {
+                const newCookie = resp.data.data.cookie;
+                this.qqMusicCookie = newCookie;
+                // 回写配置文件
+                const model = (await import('../model/config.js')).default;
+                model.updateField('tools', 'qqMusicCookie', newCookie);
+                // 记录刷新时间
+                this._saveLastCookieRefreshTime();
+                logger.info(`[R插件][qqMusic] Cookie刷新成功，uin=${resp.data.data.uin || '未知'}`);
+            } else {
+                logger.warn(`[R插件][qqMusic] Cookie刷新失败: ${resp.data?.msg || '未知错误'}`);
+            }
+        } catch (err) {
+            logger.error(`[R插件][qqMusic] Cookie刷新请求出错: ${err.message}`);
+        }
     }
 
     // 翻译插件
@@ -474,7 +575,14 @@ export class tools extends plugin {
 
                 const desc = item.desc || "无简介";
                 const authorNickname = item.author?.nickname || "未知作者";
-                e.reply(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+                // 封面
+                const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+                const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                } else {
+                    e.reply(dySendContent);
+                }
 
                 // 调用动图函数处理
                 await this.processDouyinImageAlbum(e, item, douUrl, headers, detailId);
@@ -523,7 +631,13 @@ export class tools extends plugin {
             const item = webcastData.data.room;
             const { title, cover, user_count, stream_url } = item;
             const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-            await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            // 封面
+            const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+            if (this.douyinDisplayCover && dyCover) {
+                await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`]);
+            } else {
+                e.reply(dySendContent, `\n🏄‍♂️在线人数：${user_count}人正在观看`);
+            }
             // 下载10s的直播流
             await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
             return;
@@ -552,7 +666,13 @@ export class tools extends plugin {
                 const item = await data.data.data?.[0];
                 const { title, cover, user_count_str, stream_url } = item;
                 const dySendContent = `${this.identifyPrefix}识别：抖音直播，${title}`;
-                await replyWithRetry(e, Bot, [segment.image(cover?.url_list?.[0]), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                // 封面
+                const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`]);
+                } else {
+                    e.reply(dySendContent, `\n🏄‍♂️在线人数：${user_count_str}人正在观看`);
+                }
                 // 下载10s的直播流
                 await this.sendStreamSegment(e, stream_url?.flv_pull_url?.HD1 || stream_url?.flv_pull_url?.FULL_HD1 || stream_url?.flv_pull_url?.SD1 || stream_url?.flv_pull_url?.SD2);
                 return;
@@ -573,7 +693,7 @@ export class tools extends plugin {
                 const { play_addr: { uri: videoAddrURI }, duration, cover } = item.video;
                 // 进行时间判断，如果超过时间阈值就不发送
                 const dyDuration = Math.trunc(duration / 1000);
-                const durationThreshold = this.biliDuration;
+                const durationThreshold = this.douyinDuration;
                 // 一些共同发送内容
                 let dySendContent = `${this.identifyPrefix}识别：抖音，${item.author.nickname}\n📝 简介：${item.desc}`;
                 if (dyDuration >= durationThreshold) {
@@ -588,7 +708,13 @@ export class tools extends plugin {
                     await this.douyinComment(e, douId, headers);
                     return;
                 }
-                e.reply(`${dySendContent}`);
+                // 封面
+                const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                } else {
+                    e.reply(dySendContent);
+                }
                 // 分辨率判断是否压缩
                 const resolution = this.douyinCompression ? "720p" : "1080p";
                 // 使用今日头条 CDN 进一步加快解析速度
@@ -621,7 +747,14 @@ export class tools extends plugin {
                     // 如果有 按照动图处理
                     const desc = item.desc || "无简介";
                     const authorNickname = item.author?.nickname || "未知作者";
-                    e.reply(`${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`);
+                    // 封面
+                    const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+                    const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+                    if (this.douyinDisplayCover && dyCover) {
+                        await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                    } else {
+                        e.reply(dySendContent);
+                    }
 
                     // 调用动图处理函数
                     await this.processDouyinImageAlbum(e, item, douUrl, headers, douId);
@@ -2724,11 +2857,23 @@ export class tools extends plugin {
      */
     async qqMusicApiParse(e, keyword, mid = null, silent = false) {
         try {
-            // 检查API Key是否配置
             const apiKey = (this.qqMusicApiKey || '').trim();
+            const hasCookie = (this.qqMusicCookie || '').trim() && (this.qqMusicCustomCkApi || '').trim();
+
+            // 有Cookie时优先使用Cookie解析
+            if (hasCookie) {
+                const ckResult = await this.qqMusicCustomCkParse(e, keyword, mid, silent);
+                if (ckResult) return ckResult;
+                if (apiKey) {
+                    logger.warn('[R插件][qqMusic] 自定义CK解析失败，尝试使用API Key兜底');
+                } else {
+                    return null;
+                }
+            }
+
+            // 检查API Key是否配置
             if (!apiKey) {
-                logger.error('[R插件][qqMusic] 未配置QQ音乐API Key，请在Guoba面板或config/tools.yaml中填写qqMusicApiKey');
-                e.reply('QQ音乐解析失败：未配置API Key，请联系管理员');
+                logger.error('[R插件][qqMusic] 未配置QQ音乐API Key，也未配置自定义Cookie，请在锅巴面板或config/tools.yaml中配置');
                 return null;
             }
 
@@ -2823,6 +2968,82 @@ export class tools extends plugin {
             return { url: songData.url, title: `${finalSinger}-${finalName}`, audioType };
         } catch (err) {
             logger.error(`[R插件][qqMusic] 自建API解析出错:`, err);
+            if (!silent) e.reply('QQ音乐解析失败，请稍后再试');
+            return null;
+        }
+    }
+
+    /**
+     * QQ音乐自定义Cookie解析：通过用户自己的Cookie调用自建API解析
+     * @param {object} e - 事件对象
+     * @param {string} keyword - 搜索关键词
+     * @param {string} [mid] - 可选songmid
+     * @param {boolean} [silent] - 静默模式
+     * @returns {Promise<{url: string, title: string, audioType: string}|null>}
+     */
+    async qqMusicCustomCkParse(e, keyword, mid = null, silent = false) {
+        const cookie = (this.qqMusicCookie || '').trim();
+        const apiBase = (this.qqMusicCustomCkApi || '').trim();
+        if (!cookie || !apiBase) return null;
+
+        try {
+            let songMid = mid;
+            let songName = keyword;
+            let singerName = '';
+
+            // 如果没有提供mid，先搜索获取
+            if (!songMid) {
+                logger.info(`[R插件][qqMusic][自定义CK] 搜索关键词: ${keyword}`);
+                const searchResp = await axios.get(`${apiBase}/api?action=search&keyword=${encodeURIComponent(keyword)}`, {
+                    headers: { 'qq-cookie': cookie, 'User-Agent': COMMON_USER_AGENT },
+                    timeout: 10000
+                });
+                if (searchResp.data?.code !== 200 || !searchResp.data?.data?.length) {
+                    logger.warn(`[R插件][qqMusic][自定义CK] 搜索无结果: ${keyword}`);
+                    return null;
+                }
+                const first = searchResp.data.data[0];
+                songMid = first.songmid;
+                songName = first.songname || songName;
+                singerName = first.singer || '';
+                logger.info(`[R插件][qqMusic][自定义CK] 搜索到: ${songName} - ${singerName}, mid=${songMid}`);
+            }
+
+            // 获取播放链接
+            logger.info(`[R插件][qqMusic][自定义CK] 解析 mid=${songMid}`);
+            const parseResp = await axios.get(`${apiBase}/api?action=get_url&mid=${songMid}&quality=flac`, {
+                headers: { 'qq-cookie': cookie, 'User-Agent': COMMON_USER_AGENT },
+                timeout: 15000
+            });
+
+            const data = parseResp.data;
+            if (data?.code !== 200 || !data?.data?.play_url) {
+                logger.warn(`[R插件][qqMusic][自定义CK] 解析失败:`, data?.msg || '未知错误');
+                return null;
+            }
+
+            const songData = data.data;
+            const finalName = songData.name || songName;
+            const finalSinger = songData.artist || singerName;
+            const cover = songData.cover || '';
+            const quality = songData.quality || '128k';
+            const audioExt = songData.audioExt || (quality.includes('flac') ? 'flac' : 'mp3');
+
+            // 渲染歌曲信息卡片
+            const musicInfo = {
+                'cover': cover,
+                'songName': finalName,
+                'singerName': finalSinger,
+                'size': quality,
+                'musicType': songData.album ? [songData.album] : []
+            };
+            const infoData = await new NeteaseMusicInfo(e).getData(musicInfo);
+            let img = await puppeteer.screenshot('neteaseMusicInfo', infoData);
+            await e.reply(img);
+
+            return { url: songData.play_url, title: `${finalSinger}-${finalName}`, audioType: audioExt };
+        } catch (err) {
+            logger.error(`[R插件][qqMusic][自定义CK] 解析出错:`, err.message);
             if (!silent) e.reply('QQ音乐解析失败，请稍后再试');
             return null;
         }
@@ -3691,7 +3912,7 @@ export class tools extends plugin {
             songMid: /[?&](?:songmid|media_mid)=([^&"]+)/i,
             songPath: /\/song\/([A-Za-z0-9]+)(?:\.html|\?|$)/i,
             songId: /[?&]songid=(\d+)/i,
-            songDetailPath: /\/songDetail\/(\d+)/i,
+            songDetailPath: /\/songDetail\/([A-Za-z0-9]+)/i,
         };
 
         let songMid = null;
@@ -3776,6 +3997,14 @@ export class tools extends plugin {
         let downloadAudioType = 'mp3';
 
         try {
+            // 检查是否有可用的解析方式
+            const apiKey = (this.qqMusicApiKey || '').trim();
+            const hasCookie = (this.qqMusicCookie || '').trim() && (this.qqMusicCustomCkApi || '').trim();
+            if (!apiKey && !hasCookie) {
+                logger.error('[R插件][qqMusic] 未配置QQ音乐API Key，也未配置自定义Cookie，请在锅巴面板或config/tools.yaml中配置');
+                return true;
+            }
+
             // 策略1: 有 songId 或 songMid，优先用 songId 转换
             if (songMid || songId) {
                 // 优先使用 songId 转换为可靠的 songMid
@@ -3906,10 +4135,14 @@ export class tools extends plugin {
                 const audioExt = downloadAudioType || 'mp3';
                 await downloadAudio(url, this.getCurDownloadPath(e), downloadTitle, 'follow', audioExt).then(async path => {
                     // 发送语音
-                    if (this.isSendVocal) {
-                        await e.reply(segment.record(path));
+                    try {
+                        if (this.isSendVocal) {
+                            await e.reply(segment.record(path));
+                        }
+                        await this.uploadGroupFile(e, path);
+                    } catch (sendErr) {
+                        logger.error(`[R插件][qqMusic] 发送音乐失败: ${sendErr.message}`);
                     }
-                    await this.uploadGroupFile(e, path);
                     await checkAndRemoveFile(path);
                 }).catch(err => {
                     logger.error(`下载音乐失败，错误信息为: ${err.message}`);

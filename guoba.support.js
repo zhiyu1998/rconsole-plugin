@@ -402,29 +402,47 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.douyinDuration",
+                    label: "视频最大时长限制",
+                    bottomHelpMessage:
+                        "超过时长无法解析（单位：秒），保护服务器性能，计算公式：8分钟 x 60秒 = 480秒",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入视频的最大限制时长（默认8分钟）",
+                    },
+                },
+                {
                     field: "tools.douyinCompression",
-                    label: "抖音是否使用压缩格式",
+                    label: "是否使用压缩格式",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.douyinDisplayCover",
+                    label: "是否显示封面",
+                    bottomHelpMessage: "默认显示，是否显示封面",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinComments",
-                    label: "抖音是否开启评论",
+                    label: "是否开启评论",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinMusic",
-                    label: "抖音是否开启背景音乐",
-                    bottomHelpMessage: "开启后解析抖音动图/图集时会同时发送背景音乐",
+                    label: "是否开启背景音乐",
+                    bottomHelpMessage: "开启后解析动图/图集时会同时发送背景音乐",
                     component: "Switch",
                     required: false,
                 },
                 {
                     field: "tools.douyinBGMSendType",
-                    label: "抖音背景音乐发送方式",
+                    label: "背景音乐发送方式",
                     bottomHelpMessage:
-                        "选择发送抖音背景音乐的方式：\n" +
+                        "选择发送背景音乐的方式：\n" +
                         "语音(默认)：手机和pc都可见，需要下载上传，\n" +
                         "自定义音乐卡片：pc无法点击播放，无需下载上传，卡片样式协议端决定\n",
                     component: "Select",
@@ -607,6 +625,28 @@ export function supportGuoba() {
                     required: false,
                     componentProps: {
                         placeholder: "请输入QQ音乐API Key",
+                    },
+                },
+                {
+                    field: "tools.qqMusicCookie",
+                    label: "QQ音乐Cookie",
+                    bottomHelpMessage:
+                        "自定义Cookie解析模式：填入你自己的QQ音乐Cookie，格式：uin=o123456; qm_keyst=xxx; ...。填写后每24小时自动刷新一次Cookie。⚠️ 不支持微信登录的Cookie",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入QQ音乐Cookie（不支持微信Cookie）最好使用有会员的账号",
+                    },
+                },
+                {
+                    field: "tools.qqMusicCustomCkApi",
+                    label: "自定义CK解析API地址",
+                    bottomHelpMessage:
+                        "自定义Cookie解析API的地址。",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "内置默认地址",
                     },
                 },
 
