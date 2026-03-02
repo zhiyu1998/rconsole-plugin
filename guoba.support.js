@@ -603,53 +603,6 @@ export function supportGuoba() {
                     }
                 },
 
-                // ==================== QQ音乐 ====================
-                {
-                    label: 'QQ音乐',
-                    component: 'SOFT_GROUP_BEGIN'
-                },
-                {
-                    component: "Divider",
-                    label: "QQ音乐配置",
-                    componentProps: {
-                        orientation: "left",
-                        plain: true,
-                    },
-                },
-                {
-                    field: "tools.qqMusicApiKey",
-                    label: "QQ音乐解析API Key",
-                    bottomHelpMessage:
-                        "QQ音乐聚合解析服务的API Key，格式为：ag_xxxxxxxxxxxx。请加R插件官方群(https://qm.qq.com/q/17LVqSje9G)，在群内发送「香菜#申请qqkey」获取",
-                    component: "InputPassword",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入QQ音乐API Key",
-                    },
-                },
-                {
-                    field: "tools.qqMusicCookie",
-                    label: "QQ音乐Cookie",
-                    bottomHelpMessage:
-                        "自定义Cookie解析模式：填入你自己的QQ音乐Cookie，格式：uin=o123456; qm_keyst=xxx; ...。填写后每24小时自动刷新一次Cookie。⚠️ 不支持微信登录的Cookie",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "请输入QQ音乐Cookie（不支持微信Cookie）最好使用有会员的账号",
-                    },
-                },
-                {
-                    field: "tools.qqMusicCustomCkApi",
-                    label: "自定义CK解析API地址",
-                    bottomHelpMessage:
-                        "自定义Cookie解析API的地址。",
-                    component: "Input",
-                    required: false,
-                    componentProps: {
-                        placeholder: "内置默认地址",
-                    },
-                },
-
                 // ==================== 其他平台 ====================
                 {
                     label: '其他平台',
