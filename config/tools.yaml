@@ -47,6 +47,9 @@ neteaseUserId: '' # 网易云用户ID 不要手动更改！！！！除非你非
 neteaseCloudUserId:  '' # 网易云云盘用户ID 不要手动更改！！！！除非你非常清楚你在做什么
 
 qqMusicApiKey: '' # QQ音乐解析API Key，例如：ag_xxxxxxxxxxxx
+qqMusicCookie: '' # QQ音乐cookie
+qqMusicCustomCkApi: ''  # QQ音乐自定义Cookie解析API地址
+qqMusicCookieLastRefresh: 0 # QQ音乐Cookie上次刷新时间戳（自动维护，请勿手动修改）
 
 youtubeGraphicsOptions: 720 # YouTobe的下载画质，0为原画，1080，720，480，自定义画面高度（默认为720）
 youtubeClipTime: 0 # YouTobe限制的最大视频时长（默认不开启），单位：秒 最好不要超过5分钟，否则截取效率非常低
