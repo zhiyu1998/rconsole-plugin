@@ -1165,6 +1165,9 @@ export class tools extends plugin {
             });
         } else if (url.includes("www.bilibili.com")) {
             url = urlRex.exec(url)[0];
+        } else if (url.includes("live.bilibili.com")) {
+            const liveRex = /(?:https?:\/\/)?live\.bilibili\.com\/[A-Za-z\d._?%&+\-=\/#]*/g;
+            url = liveRex.exec(url)[0];
         }
         // 补充https
         url = url.startsWith("https://") ? url : "https://" + url;
