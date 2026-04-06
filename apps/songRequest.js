@@ -753,7 +753,7 @@ export class songRequest extends plugin {
                     const musicaudio = resp.data.data[0].url;
                     const musictitle = song.songName;
                     const musicimage = song.cover;
-                    await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage);
+                    await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage, '163');
                 } else {
                     await sendMusicCard(e, '163', song.id);
                 }

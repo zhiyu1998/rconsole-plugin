@@ -43,15 +43,16 @@ export async function sendMusicCard(e, platformType, musicId) {
  * @param musicaudio 音乐音频
  * @param musictitle 音乐标题
  * @param musicimage 音乐封面
+ * @param musictype  卡片类型
  */
-export async function sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage) {
+export async function sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage, musictype = 'custom') {
     await e.bot.sendApi('send_group_msg', {
         group_id: e.group_id,
         message: [
             {
                 type: 'music',
                 data: {
-                    type: 'custom',
+                    type: musictype,
                     url: musicurl,
                     audio: musicaudio,
                     title: musictitle,
