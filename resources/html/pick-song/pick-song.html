@@ -17,18 +17,28 @@
             <div class="navInfo">
                 <div class="number">{{ key+1 }}</div>
                 {{ if info.cover != 'def' }}
-                    <img src="{{ info.cover }}" alt="">
+                <img src="{{ info.cover }}" alt="">
                 {{ else }}
-                    <img src="{{pluResPath}}img/default.png" alt="">
+                <img src="{{pluResPath}}img/default.png" alt="">
                 {{ /if }}
                 <div class="navText">
                     <div class="songName">{{ info.songName }}</div>
                     <div class="singerText">{{ info.singerName }}</div>
                 </div>
             </div>
-            {{ if info.duration == '云盘' }}
-            <div class="cloudBox">
-                <div class="cloud">{{ info.duration }}</div>
+            {{ if info.type == 'cloud' }}
+            <div class="durationWithTag">
+                <div class="cloudBox">
+                    <div class="cloud">云盘</div>
+                </div>
+                <div class="navDuration">{{ info.duration }}</div>
+            </div>
+            {{ else if info.type == 'podcast' }}
+            <div class="durationWithTag">
+                <div class="podcastBox">
+                    <div class="podcast">播客</div>
+                </div>
+                <div class="navDuration">{{ info.duration }}</div>
             </div>
             {{ else }}
             <div class="navDuration">{{ info.duration }}</div>

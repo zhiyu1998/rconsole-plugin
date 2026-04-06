@@ -111,9 +111,12 @@ export class songRequest extends plugin {
             // 获取云盘歌单列表
             const cloudSongList = await this.getCloudSong()
             // 搜索云盘歌单并进行搜索
-            const matchedSongs = cloudSongList.filter(({ songName, singerName }) =>
-                songName.includes(songKeyWord) || singerName.includes(songKeyWord) || songName == songKeyWord || singerName == songKeyWord
-            );
+            const searchKeyword = songKeyWord.trim().toLowerCase();
+            const matchedSongs = cloudSongList.filter(({ songName, singerName }) => {
+                const nameMatch = songName && songName.toLowerCase().includes(searchKeyword);
+                const singerMatch = singerName && singerName.toLowerCase().includes(searchKeyword);
+                return nameMatch || singerMatch;
+            });
             // 计算列表数
             let songListCount = matchedSongs.length >= this.songRequestMaxList ? this.songRequestMaxList : matchedSongs.length
             let searchCount = this.songRequestMaxList - songListCount
@@ -122,7 +125,9 @@ export class songRequest extends plugin {
                     'id': matchedSongs[i].id,
                     'songName': matchedSongs[i].songName,
                     'singerName': matchedSongs[i].singerName,
-                    'duration': matchedSongs[i].duration
+                    'duration': matchedSongs[i].duration,
+                    'type': matchedSongs[i].type,
+                    'cover': matchedSongs[i].cover || 'def'
                 });
             }
             let searchUrl;
@@ -166,7 +171,7 @@ export class songRequest extends plugin {
                     } catch (error) {
                         logger.info('并未获取云服务歌曲')
                     }
-                    const songIds = musicDate.data.filter(item => item.type !== 'podcast').map(item => item.id).join(',');
+                    const songIds = musicDate.data.filter(item => item.type !== 'podcast' && item.type !== 'cloud').map(item => item.id).join(',');
                     if (songIds) {
                         detailUrl = detailUrl.replace("{}", songIds)
                         await axios.get(detailUrl, {
@@ -224,7 +229,7 @@ export class songRequest extends plugin {
                 const songWikiUrl = autoSelectNeteaseApi + '/song/wiki/summary?id=' + songId;
                 const statusUrl = autoSelectNeteaseApi + '/login/status'; //用户状态API
                 // 判断选中的歌曲是否来自云盘
-                const isCloudSong = selectedSong.duration === '云盘';
+                const isCloudSong = selectedSong.type === 'cloud';
                 // 检查 Cookie 有效性，根据歌曲来源选择 Cookie 类型
                 const isCkExpired = await this.checkCooike(statusUrl, isCloudSong ? 'cloud' : 'song');
                 // 请求netease数据并播放
@@ -485,11 +490,13 @@ export class songRequest extends plugin {
                             "Cookie": this.getCookie(true)
                         }
                     });
-                    const songs = res.data.data.map(({ songId, songName, artist }) => ({
+                    const songs = res.data.data.map(({ songId, songName, artist, simpleSong }) => ({
                         'songName': songName,
                         'id': songId,
                         'singerName': artist || '喵喵~',
-                        'duration': '云盘'
+                        'duration': formatTime(simpleSong.dt),
+                        'cover': simpleSong.al.picUrl || 'def',
+                        'type': 'cloud'
                     }));
                     songList.push(...songs);
                     if (!res.data.hasMore) {
@@ -748,11 +755,17 @@ export class songRequest extends plugin {
             try {
                 // 发送卡片
                 const song = songInfo[pickNumber];
-                if (song.type === 'podcast') { //播客声音貌似只能用自定义卡片
-                    const musicurl = `https://music.163.com/dj?id=${song.programId}&userid=`; //暂时不知道怎么弄到userid(似乎也用不上)
+                if (song.type === 'podcast') { // 播客声音貌似只能用自定义音乐卡片
+                    const musicurl = `https://music.163.com/dj?id=${song.programId}&userid=`; // 暂时不知道怎么弄到userid(似乎也用不上)
                     const musicaudio = resp.data.data[0].url;
                     const musictitle = song.songName;
                     const musicimage = song.cover;
+                    await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage, '163');
+                } else if (song.type === 'cloud') { // 云盘可能不为官方歌曲 也使用自定义音乐卡片
+                    const musicurl = `https://music.163.com/song?id=${song.id}`; // 由于可能不为官方歌曲 所以id指向不一定正确
+                    const musicaudio = resp.data.data[0].url;
+                    const musictitle = song.songName;
+                    const musicimage = (song.cover && song.cover !== 'def') ? song.cover : 'https://p2.music.126.net/UeTuwE7pvjBpypWLudqukA==/3132508627578625.jpg';
                     await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage, '163');
                 } else {
                     await sendMusicCard(e, '163', song.id);
