@@ -92,27 +92,43 @@ export async function getLatestImage(e, count = 10) {
  * @param count     获取群聊条数
  */
 export async function getGroupFileUrl(e, count = 10) {
-    const latestChat = await e.bot.sendApi("get_group_msg_history", {
-        "group_id": e.group_id,
-        "count": count
-    });
-    const messages = latestChat.data.messages;
     let file_id = "";
     let originalFileName = "";  // 保存原始消息中的文件名
-    for (let i = messages.length - 1; i >= 0; i--) {
-        const message = messages?.[i]?.message;
-        // 调试日志：打印每条消息的类型
-        logger.debug(`[R插件][群文件检测] 消息${i} 类型: ${message?.[0]?.type}, 完整数据: ${JSON.stringify(message?.[0])}`);
-        if (message?.[0]?.type === "file") {
-            file_id = message?.[0].data?.file_id;
-            originalFileName = message?.[0].data?.file || "";  // 获取原始文件名
-            logger.info(`[R插件][群文件检测] 找到文件: file_id=${file_id}, fileName=${originalFileName}`);
-            break;
+
+    // 如果是回复消息的话
+    if (e.message?.[0]?.type === 'reply') {
+        try {
+            const replyMsg = await e.bot.sendApi("get_msg", {
+                "message_id": e.message[0]?.id
+            });
+            const segments = replyMsg?.data?.message
+            for (let segment of segments) {
+                if (segment.type === "file") {
+                    file_id = segment.data?.file_id;
+                    originalFileName = segment.data?.file;
+                    break;
+                }
+            }
+        } catch (err) { }
+    }
+    // 如果是直接发送消息
+    if (!file_id) {
+        const latestChat = await e.bot.sendApi("get_group_msg_history", {
+            "group_id": e.group_id,
+            "count": count
+        });
+        const messages = latestChat.data.messages;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            const message = messages?.[i]?.message;
+            if (message?.[0]?.type === "file") {
+                file_id = message?.[0].data?.file_id;
+                originalFileName = message?.[0].data?.file || "";
+                break;
+            }
         }
     }
     if (file_id === "") {
-        logger.info('[R插件][群文件检测] 未找到群文件，已检查的消息类型: ' +
-            messages.map((m, i) => `${i}:${m?.message?.[0]?.type}`).join(', '));
+        logger.info('未找到群文件');
         return "";
     }
     // 获取文件信息
