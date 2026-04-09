@@ -758,7 +758,7 @@ export class songRequest extends plugin {
                 if (song.type === 'podcast') { // 播客声音貌似只能用自定义音乐卡片
                     const musicurl = `https://music.163.com/dj?id=${song.programId}&userid=`; // 暂时不知道怎么弄到userid(似乎也用不上)
                     const musicaudio = resp.data.data[0].url;
-                    const musictitle = song.songName;
+                    const musictitle = `声音：${song.songName}`;
                     const musicimage = song.cover;
                     await sendCustomMusicCard(e, musicurl, musicaudio, musictitle, musicimage, '163');
                 } else if (song.type === 'cloud') { // 云盘可能不为官方歌曲 也使用自定义音乐卡片
