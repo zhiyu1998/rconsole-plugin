@@ -304,18 +304,6 @@ export const XHH_CONSOLE_LINK = "https://api.xiaoheihe.cn/game/console/get_game_
 export const XHH_MOBILE_LINK = "https://api.xiaoheihe.cn/game/mobile/get_game_detail";
 
 /**
- * 临时 AI LLM爬虫
- * @type {string}
- */
-export const PearAPI_CRAWLER = "https://api.pearktrue.cn/api/llmreader/?url={}&type=json";
-
-/**
- * 临时 AI 总结
- * @type {string}
- */
-export const PearAPI_DEEPSEEK = "https://api.pearktrue.cn/api/deepseek/";
-
-/**
  * TOOL_CALL 爬虫工具
  * 用于Kimi模型Tool-Calling的爬虫工具
  * 当Kimi模型判断需要从网页获取信息时，会调用此工具。

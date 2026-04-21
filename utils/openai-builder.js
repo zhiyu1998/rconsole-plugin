@@ -60,15 +60,6 @@ export class OpenaiBuilder {
      * @returns {Promise<Object>} 返回一个包含模型响应的对象。如果模型决定调用工具，则包含 'tool_calls' 字段；否则，包含 'ans' 文本响应。
      */
     async chat(messages, tools = []) {
-        if (this.provider === 'deepseek') {
-            const content = messages.find(m => m.role === 'user')?.content;
-            const ans = await deepSeekChat(content, this.prompt);
-            return {
-                "model": "deepseek",
-                "ans": ans
-            }
-        }
-
         // 准备发送给API的消息
         let requestMessages = [...messages];
         // 检查是否已存在系统提示

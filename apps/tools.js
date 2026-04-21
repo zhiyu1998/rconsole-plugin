@@ -104,7 +104,7 @@ import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
-import { deepSeekChat, llmRead } from "../utils/llm-util.js";
+import { llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
@@ -3445,8 +3445,7 @@ export class tools extends plugin {
 
         // 判断是否有总结的条件
         if (_.isEmpty(this.aiApiKey)) {
-            // e.reply(`没有配置 Kimi，无法为您总结！${ HELP_DOC }`)
-            await this.tempSummary(name, summaryLink, e);
+            e.reply(`未配置 AI 接口，无法为您总结内容！${HELP_DOC}`);
             return false;
         }
 
@@ -3455,10 +3454,6 @@ export class tools extends plugin {
             .setApiKey(this.aiApiKey)
             .setModel(this.aiModel)
             .setPrompt(SUMMARY_PROMPT);
-
-        if (this.aiModel.includes('deepseek')) {
-            builder.setProvider('deepseek');
-        }
 
         await builder.build();
 
@@ -3546,22 +3541,6 @@ export class tools extends plugin {
         }
         e.reply("处理超出限制，请重试");
         return false;
-    }
-
-    /**
-     * 临时AI接口
-     * @param name
-     * @param summaryLink
-     * @param e
-     * @returns {Promise<void>}
-     */
-    async tempSummary(name, summaryLink, e) {
-        const content = await llmRead(summaryLink);
-        const titleMatch = content.match(/Title:\s*(.*?)\n/)?.[1];
-        e.reply(`${this.identifyPrefix}识别：${name} - ${titleMatch}，正在为您总结，请稍等...`, true);
-        const summary = await deepSeekChat(content, SUMMARY_PROMPT);
-        const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x DeepSeek」联合为您总结内容：`, summary]));
-        await replyWithRetry(e, Bot, Msg);
     }
 
     // q q m u s i c 解析
