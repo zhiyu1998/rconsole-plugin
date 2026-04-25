@@ -226,10 +226,14 @@ export const DOUYIN_BGM_SEND_TYPE = Object.freeze([
 ]);
 
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
-    { label: 'Best', value: 0 },
+    { label: '最高画质 不限', value: 0 },
+    { label: '8K 极清', value: 4320 },
+    { label: '4K 超清', value: 2160 },
+    { label: '2K 2k', value: 1440 },
     { label: '1080P 高清', value: 1080 },
     { label: '720P 高清', value: 720 },
     { label: '480P 清晰', value: 480 },
+    { label: '360P 流畅', value: 360 },
 ]);
 
 export const NETEASECLOUD_QUALITY_LIST = Object.freeze([
