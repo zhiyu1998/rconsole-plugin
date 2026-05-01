@@ -15,8 +15,8 @@ export function supportGuoba() {
             name: "R插件",
             title: pluginName,
             author: "@zhiyu",
-            authorLink: "https://gitee.com/kyrzy0416",
-            link: "https://gitee.com/kyrzy0416/rconsole-plugin",
+            authorLink: "https://github.com/zhiyu1998",
+            link: "https://github.com/zhiyu1998/rconsole-plugin",
             isV3: true,
             isV2: false,
             description: "专门为朋友们写的Yunzai-Bot插件，专注图片分享和生活的插件！",
@@ -131,7 +131,7 @@ export function supportGuoba() {
                     label: "视频编码选择",
                     bottomHelpMessage:
                         "影响B站和YouTube的视频编码选择：\n" +
-                        "• 自动：智能选择最佳编码（AV1>HEVC>AVC），推荐大多数用户使用\n" +
+                        "• 自动：智能选择最佳编码（HEVC>AV1>AVC），推荐大多数用户使用\n" +
                         "• AV1：压缩效率最高，文件最小，但PC QQ内置播放器可能无法正常播放\n" +
                         "• HEVC(H.265)：高效编码，文件较小，现代设备广泛支持\n" +
                         "• AVC(H.264)：兼容性最佳，所有设备都能播放，但文件较大",

@@ -15,8 +15,8 @@ function getEncodingPriority(videoCodec) {
         case 'avc':
             return 'avc,hevc,av1';
         default:
-            // auto: 默认优先级 av1 > hevc > avc
-            return 'av1,hevc,avc';
+            // auto: 默认优先级 hevc > av1 > avc
+            return 'hevc,av1,avc';
     }
 }
 
