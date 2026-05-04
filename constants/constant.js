@@ -102,6 +102,12 @@ export const TWITTER_BEARER_TOKEN = "";
 export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;
 
 /**
+ * 小红书描述默认长度限制
+ * @type {number}
+ */
+export const XHS_DESC_LEN_LIMIT = 78;
+
+/**
  * 总结的prompt
  * @type {string}
  */

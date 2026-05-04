@@ -15,6 +15,7 @@ import {
     BILI_CDN_SELECT_LIST,
     BILI_DEFAULT_INTRO_LEN_LIMIT,
     BILI_RESOLUTION_LIST,
+    XHS_DESC_LEN_LIMIT,
     COMMON_USER_AGENT,
     DIVIDING_LINE,
     douyinTypeMap,
@@ -2037,6 +2038,40 @@ export class tools extends plugin {
         return true;
     }
 
+    /**
+     * 发送小红书描述预览，并在描述过长时补发完整内容。
+     *
+     * 发送顺序固定为：先等待预览消息发送完成，再发送完整合并转发。
+     * 视频笔记可通过 prefixMsg 把封面图放在预览消息最前面，普通图文笔记不传即可。
+     *
+     * @param {Object} e - 消息事件对象，用于回复消息和构造合并转发节点
+     * @param {string} title - 笔记标题，会拼进预览和完整转发的头部文案
+     * @param {string} desc - 笔记描述原文；为空时按空字符串处理
+     * @param {Array} prefixMsg - 预览消息前置内容，如 [segment.image(cover)]；只影响预览，不进入完整转发
+     * @param {number} maxLen - 描述预览长度限制；超过该长度时预览截断并补发完整转发
+     * @returns {Promise<void>} 仅负责发送消息，不返回发送结果
+     */
+    async sendXhsDescPreview(e, title, desc, prefixMsg = [], maxLen = XHS_DESC_LEN_LIMIT) {
+        // 接口偶尔可能不返回 desc，这里统一转成字符串，避免后续 length 判断报错
+        const fullDesc = String(desc ?? "");
+        // 预览消息和完整转发共用同一个头部，避免两处文案不一致
+        const header = `${this.identifyPrefix}识别：小红书, ${title}`;
+        // prefixMsg 只放进预览消息，例如视频封面；完整转发只保留标题和原始描述
+        const previewMsg = [...prefixMsg, `${header}\n${truncateString(fullDesc, maxLen)}`];
+
+        // 必须等待预览先发出，防止完整转发先于预览抵达
+        await replyWithRetry(e, Bot, previewMsg.length === 1 ? previewMsg[0] : previewMsg);
+
+        // 描述未超长时，预览已经包含完整内容，不再额外发送合并转发
+        if (fullDesc.length <= maxLen) {
+            return;
+        }
+
+        // 超长描述用合并转发承载全文，避免普通消息过长影响可读性或发送成功率
+        const forwardMsg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [header, fullDesc]));
+        await replyWithRetry(e, Bot, forwardMsg);
+    }
+
     // 小红书解析
     async xhs(e) {
         // 切面判断是否需要解析
@@ -2117,7 +2152,7 @@ export class tools extends plugin {
         if (type === "video") {
             // 封面
             const cover = noteData.imageList?.[0].urlDefault;
-            await replyWithRetry(e, Bot, [segment.image(cover), `${this.identifyPrefix}识别：小红书, ${title}\n${desc}`]);
+            await this.sendXhsDescPreview(e, title, desc, [segment.image(cover)]);
             // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
             const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
 
@@ -2132,7 +2167,7 @@ export class tools extends plugin {
             });
             return true;
         } else if (type === "normal") {
-            e.reply(`${this.identifyPrefix}识别：小红书, ${title}\n${desc}`);
+            await this.sendXhsDescPreview(e, title, desc);
             const imagePromises = [];
             // 使用 for..of 循环处理异步下载操作
             for (let [index, item] of noteData.imageList.entries()) {
