@@ -240,7 +240,7 @@ export class tools extends plugin {
                     fnc: "freyr"
                 },
                 {
-                    reg: "(^#总结一下\s*(http|https):\/\/.*|mp.weixin.qq.com|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com|github.com)",
+                    reg: "(^#总结一下\\s*(http|https):\\/\\/.*|mp.weixin.qq.com|arxiv.org|sspai.com|chinadaily.com.cn|zhihu.com|github.com|v2ex.com)",
                     fnc: "linkShareSummary"
                 },
                 {
@@ -3473,7 +3473,7 @@ export class tools extends plugin {
 
         if (e.msg.startsWith("#总结一下")) {
             name = "网页总结";
-            summaryLink = e.msg.replace("#总结一下", "");
+            summaryLink = e.msg.replace(/^#总结一下\s*/, "").trim();
         } else {
             ({ name, summaryLink } = contentEstimator(e.msg));
         }

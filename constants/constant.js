@@ -166,7 +166,8 @@ export const SUMMARY_CONTENT_ESTIMATOR_PATTERNS = [
     { reg: /(?:https?:\/\/)?www\.bilibili\.com\/read\/[A-Za-z\d._?%&+\-=\/#]*/, name: '哔哩哔哩专栏' },
     { reg: /(?:https?:\/\/)?www\.zhihu\.com\/question\/[A-Za-z\d._?%&+\-=\/#]*/, name: '知乎问题' },
     { reg: /(?:https?:\/\/)?(www\.)chinadaily.com.cn\/a\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'ChinaDaily' },
-    { reg: /(?:https?:\/\/)?(www\.)?github.com\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'Github' }
+    { reg: /(?:https?:\/\/)?(www\.)?github.com\/[a-zA-Z0-9\d._?%&+\-=\/#]*/, name: 'Github' },
+    { reg: /(?:https?:\/\/)?(www\.)?v2ex.com\/t\/[A-Za-z0-9\d._?%&+\-=\/#]*/, name: 'V2EX' }
 ];
 
 const BILI_CDN_TEMPLATE = "upos-sz-mirror{}.bilivideo.com";
