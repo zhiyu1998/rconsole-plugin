@@ -58,6 +58,12 @@ sudo apt-get install ffmpeg
 # Windows 参考：https://www.jianshu.com/p/5015a477de3c
 ````
 
+4. 配置文件说明
+
+- 从当前版本开始，`config/tools.template.yaml` 是仓库内的模板文件，会随 git 更新。
+- 实际生效的本地配置是 `config/tools.yaml`，插件启动时会按模板自动补齐新增字段、移除已废弃字段，并保留你自己的值。
+- 日常只需要修改 `config/tools.yaml`，不要直接修改模板文件。
+
 其他玩法见官方文档
 
 ## ✍️ 官方文档 & 其他玩法 & AI 文档问答

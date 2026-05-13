@@ -3,12 +3,10 @@ import Version from "../model/version.js";
 import config from "../model/config.js";
 import puppeteer from "../../../lib/puppeteer/puppeteer.js";
 import lodash from "lodash";
-import YAML from "yaml";
 import fs from "node:fs";
 import path from "path";
 
 import { exec, execSync } from "node:child_process";
-import { copyFiles, deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
 
 /**
  * 处理插件更新1
@@ -64,9 +62,6 @@ export class Update extends plugin {
 
         let isForce = !!e.msg.includes("强制");
 
-        // 保存配置文件
-        await copyFiles(`./plugins/${Update.pluginName}/config`, "./temp/rconsole-update-tmp", ['tools.yaml']);
-
         let command = `git -C ./plugins/${Update.pluginName}/ pull --no-rebase`;
         if (isForce) {
             command = `git -C ./plugins/${Update.pluginName}/ checkout . && ${command}`;
@@ -80,6 +75,16 @@ export class Update extends plugin {
             await this.gitErr(ret.error, ret.stdout);
             return false;
         }
+
+        try {
+            config.getConfig("tools");
+        } catch (error) {
+            const errorDetail = error?.message || String(error);
+            logger.error(`[R插件][配置文件]同步模板配置失败：${error?.stack || errorDetail}`);
+            await e.reply(`R插件更新失败：同步模板配置失败\n${errorDetail}`);
+            return false;
+        }
+
         const time = await this.getTime(Update.pluginName);
         if (/Already up|已经是最新/g.test(ret.stdout)) {
             e.reply(`R插件已经是最新: ${this.versionData[0].version}`);
@@ -88,17 +93,6 @@ export class Update extends plugin {
             e.reply(`R插件更新成功，最后更新时间：${time}`);
             e.reply(await this.getLog(Update.pluginName));
         }
-
-        // 读取配置文件比对更新
-        const confFiles = await readCurrentDir("./temp/rconsole-update-tmp");
-        for (let confFile of confFiles) {
-            await this.compareAndUpdateYaml(
-                `./temp/rconsole-update-tmp/${confFile}`,
-                `./plugins/${Update.pluginName}/config/${confFile}`
-            );
-        }
-        // 删除临时文件
-        await deleteFolderRecursive("./temp/rconsole-update-tmp");
 
         return true;
     }
@@ -182,39 +176,6 @@ export class Update extends plugin {
             ]);
         } else {
             await this.reply([errMsg, stdout]);
-        }
-    }
-
-    async compareAndUpdateYaml(sourcePath, updatedPath) {
-        try {
-            // Step 1 & 2: Read and parse YAML files
-            const sourceContent = await fs.readFileSync(sourcePath, 'utf8');
-            const updatedContent = await fs.readFileSync(updatedPath, 'utf8');
-            const sourceObj = YAML.parse(sourceContent);
-            const updatedObj = YAML.parse(updatedContent);
-
-            // Step 3: Compare objects and merge changes
-            Object.keys(updatedObj).forEach(key => {
-                if (!sourceObj.hasOwnProperty(key)) {
-                    sourceObj[key] = updatedObj[key]; // Add new keys with updated values
-                }
-            });
-
-            Object.keys(sourceObj).forEach(key => {
-                if (!updatedObj.hasOwnProperty(key)) {
-                    delete sourceObj[key]; // Remove keys not present in updated object
-                }
-            });
-
-            // Step 4 & 5: Convert object back to YAML
-            const newYamlContent = YAML.stringify(sourceObj);
-
-            // Step 6: Write the updated YAML back to the updatedPath
-            await fs.writeFileSync(updatedPath, newYamlContent, 'utf8');
-
-            logger.info(`[R插件更新配置文件记录]${updatedPath}`);
-        } catch (error) {
-            logger.error(error);
         }
     }
 }
