@@ -76,7 +76,14 @@ export class Update extends plugin {
             return false;
         }
 
-        config.getConfig("tools");
+        try {
+            config.getConfig("tools");
+        } catch (error) {
+            const errorDetail = error?.message || String(error);
+            logger.error(`[R插件][配置文件]同步模板配置失败：${error?.stack || errorDetail}`);
+            await e.reply(`R插件更新失败：同步模板配置失败\n${errorDetail}`);
+            return false;
+        }
 
         const time = await this.getTime(Update.pluginName);
         if (/Already up|已经是最新/g.test(ret.stdout)) {
