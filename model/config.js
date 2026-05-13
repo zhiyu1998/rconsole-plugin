@@ -11,13 +11,16 @@ class RConfig extends Base{
         this.configPath = `./plugins/${RConfig.pluginName}/config/`;
         this.previousContent = new Map(); // 存储每个文件之前的内容
         this.watchers = new Map();
-        this.templateConfigNames = new Set(['tools']);
         this.templateSchemaOptions = {
             tools: {
                 strict: true,
                 preserveExtraKeyPaths: [],
             },
         };
+    }
+
+    get templateConfigNames() {
+        return new Set(Object.keys(this.templateSchemaOptions));
     }
 
     getConfig(name) {
