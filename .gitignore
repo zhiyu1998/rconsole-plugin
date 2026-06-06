@@ -26,3 +26,5 @@ bun.lockb
 CLAUDE.md
 .claude
 .ace-tool/
+AGENTS.md
+git-commit-message.md
