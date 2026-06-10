@@ -449,6 +449,12 @@ export class tools extends plugin {
             const detailIdMatch = douUrl.match(/\/slides\/(\d+)/);
             const detailId = detailIdMatch[1];
 
+            // 当前版本需要填入cookie
+            if (_.isEmpty(this.douyinCookie)) {
+                e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
+                return;
+            }
+
             // 构建请求头
             const headers = {
                 "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
@@ -456,7 +462,6 @@ export class tools extends plugin {
                 Referer: "https://www.douyin.com/",
                 cookie: this.douyinCookie,
             };
-
 
             const dyApi = DY_INFO.replace("{}", detailId);
             const abParam = aBogus.generate_a_bogus(
@@ -779,7 +784,7 @@ export class tools extends plugin {
 
         // 下载BGM
         let bgmPath = null;
-        if (item.music?.play_url?.uri) {
+        if (!isOriginalSound && item.music?.play_url?.uri) {
             try {
                 const fileName = `douyin_bgm_${Date.now()}`;
                 const bgmUrl = item.music.play_url.url_list?.[0] || item.music.play_url.uri;
@@ -795,26 +800,23 @@ export class tools extends plugin {
         const messageSegments = [];
         const downloadedFilePaths = [];
 
-        // 并发处理所有动图
+        // 顺序处理所有动图
         const processImage = async (imageItem, index) => {
             try {
+                const videoUri = imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri;
                 // 检查是否有video字段（动图）
-                if (imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri) {
+                if (videoUri) {
                     // 动图：下载视频并与BGM合并
-                    const videoUri = imageItem.video.play_addr_h264?.uri || imageItem.video.play_addr?.uri;
-                    const videoUrl = `https://aweme.snssdk.com/aweme/v1/play/?video_id=${videoUri}&ratio=1080p&line=0`;
+                    const videoUrl = DY_TOUTIAO_INFO.replace("{}", videoUri);
 
-                    logger.info(`[R插件][抖音动图] 下载动图视频 ${index + 1}: ${videoUrl}`);
+                    logger.info(`[R插件][抖音动图] 下载动图 ${index + 1}: ${videoUrl}`);
 
                     // 使用内置下载方法 带重试逻辑
                     let videoPath = null;
                     const maxRetries = 3;
                     for (let retry = 0; retry < maxRetries; retry++) {
                         try {
-                            videoPath = await this.downloadVideo(videoUrl, false, {
-                                'User-Agent': COMMON_USER_AGENT,
-                                'Referer': 'https://www.douyin.com/'
-                            }, this.videoDownloadConcurrency, `douyin_gif_${index}_${Date.now()}.mp4`);
+                            videoPath = await this.downloadVideo(videoUrl, false, null, this.videoDownloadConcurrency, `douyin_gif_${index}_${Date.now()}.mp4`);
                             if (videoPath) break;
                         } catch (downloadErr) {
                             logger.warn(`[R插件][抖音动图] 第${index + 1}个视频下载失败，重试 ${retry + 1}/${maxRetries}`);
@@ -881,10 +883,14 @@ export class tools extends plugin {
             return null;
         };
 
-        // 并行执行所有动图处理
-        const results = await Promise.all(
-            images.map((imageItem, index) => processImage(imageItem, index))
-        );
+        // 顺序执行所有动图处理
+        const results = [];
+        for (let index = 0; index < images.length; index++) {
+            const res = await processImage(images[index], index);
+            if (res) {
+                results.push(res);
+            }
+        }
 
         // 按原顺序整理结果
         for (const result of results) {
