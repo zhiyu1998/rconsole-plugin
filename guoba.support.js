@@ -414,7 +414,8 @@ export function supportGuoba() {
                 },
                 {
                     field: "tools.douyinCompression",
-                    label: "是否使用压缩格式",
+                    label: "是否开启视频压缩",
+                    bottomHelpMessage: "开启后分辨率降为 720p，关闭则为 1080p",
                     component: "Switch",
                     required: false,
                 },

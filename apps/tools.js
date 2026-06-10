@@ -807,7 +807,10 @@ export class tools extends plugin {
                 // 检查是否有video字段（动图）
                 if (videoUri) {
                     // 动图：下载视频并与BGM合并
-                    const videoUrl = DY_TOUTIAO_INFO.replace("{}", videoUri);
+                    // 分辨率判断是否压缩
+                    const resolution = this.douyinCompression ? "720p" : "1080p";
+                    // 使用今日头条 CDN 进一步加快解析速度
+                    const videoUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoUri);
 
                     logger.info(`[R插件][抖音动图] 下载动图 ${index + 1}: ${videoUrl}`);
 
