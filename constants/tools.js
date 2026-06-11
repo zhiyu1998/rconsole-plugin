@@ -277,7 +277,7 @@ export const ANIME_SERIES_SEARCH_LINK2 = "https://yhdm.one/search?q=";
  * HIBI API
  * @type {string}
  */
-export const HIBI_API_SERVICE = "http://0d00.us.kg:8080/api";
+export const HIBI_API_SERVICE = "http://115.120.205.58:8080/api"; // 感谢群友: 非酋和东京湾的老船长提供的服务器
 
 /**
  * 小黑盒帖子API
