@@ -115,7 +115,15 @@ function normalizeKugouSongCandidate(songCandidate = {}) {
         audioName,
         albumId: songCandidate.album_id || songCandidate.albumid || songCandidate.AlbumID || "",
         albumAudioId: songCandidate.album_audio_id || songCandidate.mixsongid || songCandidate.audio_id || songCandidate.MixSongID || songCandidate.Audioid || "",
-        cover: songCandidate.album_img || songCandidate.img || songCandidate.imgurl || songCandidate.Image || "",
+        cover: normalizeKugouCoverUrl(
+            songCandidate.union_cover
+            || songCandidate.album_img
+            || songCandidate.imgUrl
+            || songCandidate.imgurl
+            || songCandidate.img
+            || songCandidate.Image
+            || ""
+        ),
         raw: songCandidate,
     };
 }
@@ -209,6 +217,16 @@ function pushUniqueHashCandidate(targetList = [], seenHashes = new Set(), candid
 
 function createKugouFileName(songName = "", singerName = "", hash = "") {
     return [singerName, songName].filter(Boolean).join(" - ") || songName || `kugou_${String(hash).slice(0, 8)}`;
+}
+
+function normalizeKugouCoverUrl(url = "", size = 480) {
+    const normalizedUrl = String(url || "").trim();
+    if (!normalizedUrl) {
+        return "";
+    }
+    return normalizedUrl
+        .replace(/^http:\/\//i, "https://")
+        .replace(/\{size\}/g, String(size));
 }
 
 function parseShareMetaFromUrl(url = "", fallbackInfo = null) {
@@ -360,7 +378,9 @@ export async function getKugouSongUrl(apiServer, { hash, albumId = "", albumAudi
     const response = await requestKugouApi(apiServer, "/song/url", params, requestCookie);
     const url = findPlayableUrl(response.data);
     const size = formatBytesToMb(findFieldDeep(response.data, ["filesize", "fileSize", "size"]));
-    const cover = findFieldDeep(response.data, ["album_img", "img", "cover"]);
+    const cover = normalizeKugouCoverUrl(
+        findFieldDeep(response.data, ["union_cover", "album_img", "imgUrl", "imgurl", "img", "cover"])
+    );
 
     return {
         url,
@@ -411,7 +431,7 @@ export async function getKugouSongInfoByHash(hash, albumId = "", albumAudioId = 
         audioName: String(data.fileName || "").trim(),
         albumId: String(data.albumid || data.req_albumid || albumId || "").trim(),
         albumAudioId: String(data.album_audio_id || albumAudioId || "").trim(),
-        cover: String(data.album_img || data.imgUrl || "").trim(),
+        cover: normalizeKugouCoverUrl(data.trans_param?.union_cover || data.album_img || data.imgUrl || ""),
         alternativeHashes: Array.from(new Set(alternativeHashes.map(item => String(item).trim()).filter(Boolean))),
         raw: data,
     };
