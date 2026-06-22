@@ -646,6 +646,28 @@ export function supportGuoba() {
                         placeholder: "请输入小红书的Cookie",
                     },
                 },
+                {
+                    field: "tools.kugouApiServer",
+                    label: "酷狗API地址",
+                    bottomHelpMessage:
+                        "自建 KuGouMusicApi 服务地址，自建教程：https://github.com/MakcRe/KuGouMusicApi",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入酷狗开源API地址",
+                    },
+                },
+                {
+                    field: "tools.kugouCookie",
+                    label: "酷狗搜索Cookie",
+                    bottomHelpMessage:
+                        "仅在走 KuGouMusicApi 搜索兜底时使用，文档示例：token=xxx;userid=xxx;dfid=xxx；也可发送 #RKQ 自动扫码获取",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入酷狗搜索Cookie",
+                    },
+                },
 
                 // ==================== 小黑盒 ====================
                 {

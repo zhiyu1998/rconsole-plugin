@@ -17,6 +17,7 @@ export const RESOLVE_CONTROLLER_NAME_ENUM = {
     "zuiyou": "最右",
     "freyr": "AM+Spotify",
     "qqMusic": "扣扣音乐",
+    "kugouMusic": "酷狗音乐",
     "qishuiMusic": "汽水音乐",
     "aircraft": "小飞机",
     "tieba": "贴吧",

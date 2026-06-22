@@ -107,6 +107,14 @@ import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
+import {
+    checkKugouQrLogin,
+    buildKugouLoginCookie,
+    createKugouQrCode,
+    createKugouQrKey,
+    normalizeKugouQrImage,
+    resolveKugouMusicSource
+} from "../utils/kugou.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
 import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
@@ -248,6 +256,10 @@ export class tools extends plugin {
                     fnc: "qqMusic"
                 },
                 {
+                    reg: "(t1.kugou.com|m.kugou.com/share/song.html|www.kugou.com/share/|h5.kugou.com/v2/)",
+                    fnc: "kugouMusic"
+                },
+                {
                     reg: "(qishui.douyin.com)",
                     fnc: "qishuiMusic"
                 },
@@ -272,6 +284,11 @@ export class tools extends plugin {
                     reg: "^#(rnq|RNQ|rncq|RNCQ)$",
                     fnc: 'netease_scan',
                     permission: 'master',
+                },
+                {
+                    reg: "^#(rkq|RKQ)$",
+                    fnc: "kugou_scan",
+                    permission: "master",
                 },
 
             ],
@@ -319,6 +336,9 @@ export class tools extends plugin {
         this.neteaseCloudCookie = this.toolsConfig.neteaseCloudCookie;
         // 加载是否转化群语音
         this.isSendVocal = this.toolsConfig.isSendVocal;
+        // 酷狗开源API配置
+        this.kugouApiServer = this.toolsConfig.kugouApiServer;
+        this.kugouCookie = this.toolsConfig.kugouCookie;
         // 加载是否自建服务器
         this.useLocalNeteaseAPI = this.toolsConfig.useLocalNeteaseAPI;
         // 加载自建服务器API
@@ -2427,6 +2447,110 @@ export class tools extends plugin {
         }
     }
 
+    async pollKugouLoginStatus(loginKey, e) {
+        let pollCount = 0;
+        const maxPolls = 12;
+        const intervalTime = 5000;
+        let hasNoticeConfirm = false;
+
+        const pollRequest = async () => {
+            try {
+                const loginResp = await checkKugouQrLogin(this.kugouApiServer, loginKey);
+                const status = Number(loginResp.status);
+                logger.info(`[R插件][kugou_scan] 当前扫码状态：${status}`);
+
+                if (status === 0) {
+                    clearInterval(intervalId);
+                    e.reply("酷狗二维码已过期，请重新获取");
+                    return;
+                }
+
+                if (status === 2 && !hasNoticeConfirm) {
+                    hasNoticeConfirm = true;
+                    e.reply("酷狗二维码已扫码，请在APP内确认登录");
+                }
+
+                if (status === 4) {
+                    clearInterval(intervalId);
+
+                    const loginResult = await buildKugouLoginCookie(this.kugouApiServer, {
+                        loginToken: loginResp.token,
+                        initialCookie: loginResp.cookie,
+                    });
+                    for (const warning of loginResult.warnings || []) {
+                        logger.warn(`[R插件][kugou_scan] ${warning}`);
+                    }
+                    if (!loginResult.cookie || !loginResult.token) {
+                        e.reply("酷狗登录成功，但未能整理出有效 Cookie，请检查开源 API 返回");
+                        return;
+                    }
+
+                    await config.updateField("tools", "kugouCookie", loginResult.cookie);
+                    this.kugouCookie = loginResult.cookie;
+
+                    const userText = loginResult.nickname ? `，当前账号：${loginResult.nickname}` : "";
+                    const suffix = loginResult.isComplete ? "" : "，但未拿到完整 userid/dfid，后续搜索兜底可能仍需重新登录";
+                    e.reply(`扫码登录酷狗成功，ck已自动保存${userText}${suffix}`);
+                    return;
+                }
+
+                pollCount++;
+                if (pollCount > maxPolls) {
+                    clearInterval(intervalId);
+                    logger.info("[R插件][kugou_scan] 超时轮询已停止");
+                    e.reply("酷狗扫码超时，请重新获取");
+                }
+            } catch (error) {
+                logger.error("[R插件][kugou_scan] 轮询过程中出错:", error);
+                clearInterval(intervalId);
+                e.reply("酷狗扫码轮询时发生错误，请稍后再试");
+            }
+        };
+
+        const intervalId = setInterval(pollRequest, intervalTime);
+    }
+
+    async kugou_scan(e) {
+        if (_.isEmpty(this.kugouApiServer)) {
+            e.reply("未配置酷狗开源API地址，请先填写 tools.kugouApiServer");
+            return true;
+        }
+
+        try {
+            const keyResp = await createKugouQrKey(this.kugouApiServer);
+            const loginKey = keyResp.key;
+            if (!loginKey) {
+                e.reply("获取酷狗二维码 key 失败，请检查开源 API 是否可用");
+                return true;
+            }
+
+            let qrImage = normalizeKugouQrImage(keyResp.qrimg);
+            if (!qrImage) {
+                const qrResp = await createKugouQrCode(this.kugouApiServer, loginKey);
+                qrImage = normalizeKugouQrImage(qrResp.qrimg);
+            }
+            if (!qrImage) {
+                e.reply("获取酷狗二维码图片失败，请检查开源 API 返回");
+                return true;
+            }
+
+            e.reply([segment.image(qrImage), "请在40秒内使用酷狗APP进行扫码"]);
+            await this.pollKugouLoginStatus(loginKey, e);
+        } catch (error) {
+            if (error.code == "ERR_INVALID_URL") {
+                logger.error("执行酷狗扫码登录时出错:非法地址，请检查API服务地址", error);
+                e.reply(`执行酷狗扫码登录时出错${error.code}，请检查API服务器地址`);
+            } else if (error.code == "ECONNRESET" || error.code == "ECONNREFUSED") {
+                logger.error("执行酷狗扫码登录时出错:API请求错误，请检查API服务状态", error);
+                e.reply(`执行酷狗扫码登录时发生错误${error.code}，请检查API服务状态`);
+            } else {
+                logger.error("执行酷狗扫码登录时出错:", error);
+                e.reply("执行酷狗扫码登录时发生错误，请稍后再试");
+            }
+        }
+        return true;
+    }
+
     // 网易云解析
     async netease(e) {
         // 切面判断是否需要解析
@@ -3635,6 +3759,61 @@ export class tools extends plugin {
                 await e.reply(segment.record(path));
             }
             // 判断是不是icqq
+            await this.uploadGroupFile(e, path);
+            await checkAndRemoveFile(path);
+        }).catch(err => {
+            logger.error(`下载音乐失败，错误信息为: ${err.message}`);
+        });
+        return true;
+    }
+
+    // 酷狗音乐
+    async kugouMusic(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.kugouMusic))) {
+            logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.kugouMusic} 已拦截`);
+            return false;
+        }
+
+        if (_.isEmpty(this.kugouApiServer)) {
+            e.reply("未配置酷狗开源API地址，请先填写 tools.kugouApiServer");
+            return true;
+        }
+
+        const kugouResult = await resolveKugouMusicSource(this.kugouApiServer, {
+            message: e.msg,
+            kugouCookie: this.kugouCookie,
+        });
+        for (const warning of kugouResult.warnings || []) {
+            logger.warn(`[R插件][kugouMusic] ${warning}`);
+        }
+
+        let musicInfo = cleanFilename(kugouResult.musicInfo || "");
+        if (!musicInfo && !kugouResult.hash) {
+            logger.info("[R插件][kugouMusic] 暂不支持此类酷狗链接");
+            return true;
+        }
+
+        logger.info(`[R插件][kugouMusic] 识别音乐为：${musicInfo || `hash:${kugouResult.hash}`}`);
+        if (!kugouResult.url) {
+            e.reply("未从酷狗开源API获取到可用音源，请检查自建服务、酷狗Cookie或歌曲权限");
+            return true;
+        }
+
+        const cardData = await new NeteaseMusicInfo(e).getData({
+            cover: kugouResult.cover,
+            songName: kugouResult.songName,
+            singerName: kugouResult.singerName,
+            size: kugouResult.size,
+            musicType: ["酷狗音乐"]
+        });
+        const img = await puppeteer.screenshot("neteaseMusicInfo", cardData);
+        await e.reply(img);
+
+        await downloadAudio(kugouResult.url, this.getCurDownloadPath(e), musicInfo, 'follow', kugouResult.audioType).then(async path => {
+            if (this.isSendVocal) {
+                await e.reply(segment.record(path));
+            }
             await this.uploadGroupFile(e, path);
             await checkAndRemoveFile(path);
         }).catch(err => {

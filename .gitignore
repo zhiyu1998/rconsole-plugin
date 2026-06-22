@@ -25,6 +25,8 @@ bun.lockb
 .next
 CLAUDE.md
 .claude
+.codex
+.playwright-mcp
 .ace-tool/
 AGENTS.md
 git-commit-message.md
