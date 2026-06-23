@@ -3807,9 +3807,26 @@ export class tools extends plugin {
             e.reply("未配置酷狗开源API地址，请先填写 tools.kugouApiServer");
             return true;
         }
+        // 处理URL消息，支持卡片和普通文本
+        let url = e.msg === undefined ? e.message.shift().data.replaceAll("\\", "") : e.msg.trim().replaceAll("\\", "");
+
+        // 如果是JSON卡片消息，尝试提取jumpUrl
+        try {
+            if (url.startsWith("{") && url.includes('"app"')) {
+                const cardData = JSON.parse(url);
+                const jumpUrl = cardData?.meta?.news?.jumpUrl;
+                if (jumpUrl) {
+                    url = jumpUrl;
+                    logger.info(`[R插件][kugouMusic] 从卡片消息中提取到URL: ${url}`);
+                }
+            }
+        } catch (err) {
+            // 解析失败，保持原URL
+            logger.debug(`[R插件][kugouMusic] URL解析跳过: ${err.message}`);
+        }
 
         const kugouResult = await resolveKugouMusicSource(this.kugouApiServer, {
-            message: e.msg,
+            message: url,
             kugouCookie: this.kugouCookie,
         });
         for (const warning of kugouResult.warnings || []) {
