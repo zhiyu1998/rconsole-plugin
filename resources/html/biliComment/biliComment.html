@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{pluResPath}}html/biliComment/biliComment.css">
+    <title>{{biliCommentData.title}}</title>
+</head>
+<body>
+<div class="container" id="container">
+    <header class="header">
+        <div class="platform-mark">
+            <img src="{{biliCommentData.platformIcon}}" alt="{{biliCommentData.platformName}}">
+        </div>
+        <div class="header-copy">
+            <h1>{{biliCommentData.workTitle || biliCommentData.title}}</h1>
+            <p>{{biliCommentData.title}} · {{biliCommentData.subtitle}} · {{biliCommentData.commentCountText}}</p>
+        </div>
+        {{if biliCommentData.cover}}
+        <img class="header-cover" src="{{biliCommentData.cover}}" alt="">
+        {{/if}}
+    </header>
+
+    <main class="comment-list">
+        {{each biliCommentData.comments item idx}}
+        <article class="comment-card{{if item.decor}} has-decor{{/if}}">
+            <img class="avatar" src="{{item.avatar}}" alt="">
+            <section class="comment-body">
+                <div class="comment-head">
+                    <div class="comment-author">
+                        <div class="nickname-row">
+                            <div class="nickname" {{if item.nicknameColor}}style="color: {{item.nicknameColor}}"{{/if}}>{{item.nickname}}</div>
+                            {{if item.level !== null && item.level !== undefined}}
+                            <span class="level-badge level-badge-{{item.level}}{{if item.isSeniorMember}} level-senior{{/if}}">LV{{item.level}}{{if item.isSeniorMember}}<span class="senior-flash">⚡</span>{{/if}}</span>
+                            {{/if}}
+                            {{if item.fanMedal}}
+                            <span class="fan-medal" {{if item.fanMedal.style}}style="{{item.fanMedal.style}}"{{/if}}>
+                                <span class="fan-medal-name">{{item.fanMedal.name}}</span>
+                                {{if item.fanMedal.level}}<span class="fan-medal-level">{{item.fanMedal.level}}</span>{{/if}}
+                            </span>
+                            {{/if}}
+                            {{if item.isUp}}<span class="up-badge">UP</span>{{/if}}
+                        </div>
+                        <div class="meta">{{item.time}}{{if item.location}} · {{item.location}}{{/if}}{{if item.metaItems && item.metaItems.length}}{{each item.metaItems meta}} · {{meta}}{{/each}}{{/if}}</div>
+                    </div>
+                    {{if item.decor}}
+                    <div class="comment-decor">
+                        {{if item.decor.image}}<span class="comment-decor-icon"><img src="{{item.decor.image}}" alt=""></span>{{/if}}
+                        {{if item.decor.number}}
+                        <span class="comment-decor-code" {{if item.decor.color}}style="color: {{item.decor.color}}"{{/if}}>
+                            <span class="decor-prefix">{{item.decor.prefix}}</span>
+                            <span class="decor-number">{{item.decor.number}}</span>
+                        </span>
+                        {{else if item.decor.text}}
+                        <span class="comment-decor-text" {{if item.decor.color}}style="color: {{item.decor.color}}"{{/if}}>{{item.decor.text}}</span>
+                        {{/if}}
+                    </div>
+                    {{else}}
+                    <div class="index">{{item.indexText || ('#' + (idx + 1))}}</div>
+                    {{/if}}
+                </div>
+
+                <div class="content rich-text">
+                    {{each item.content part}}
+                    {{if part.type === 'emote'}}
+                    <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                    {{else}}
+                    <span>{{part.text}}</span>
+                    {{/if}}
+                    {{/each}}
+                </div>
+
+                {{if item.image}}
+                <div class="comment-image-wrap">
+                    <img class="comment-image" src="{{item.image}}" alt="">
+                </div>
+                {{/if}}
+
+                {{if item.replyComment}}
+                <div class="reply-comment">
+                    <img class="reply-avatar" src="{{item.replyComment.avatar}}" alt="">
+                    <div class="reply-comment-body">
+                        <div class="reply-head">
+                            <div class="nickname-row reply-nickname-row">
+                                <div class="reply-nickname" {{if item.replyComment.nicknameColor}}style="color: {{item.replyComment.nicknameColor}}"{{/if}}>{{item.replyComment.nickname}}</div>
+                                {{if item.replyComment.level !== null && item.replyComment.level !== undefined}}
+                                <span class="level-badge level-badge-{{item.replyComment.level}}{{if item.replyComment.isSeniorMember}} level-senior{{/if}}">LV{{item.replyComment.level}}{{if item.replyComment.isSeniorMember}}<span class="senior-flash">⚡</span>{{/if}}</span>
+                                {{/if}}
+                                {{if item.replyComment.fanMedal}}
+                                <span class="fan-medal" {{if item.replyComment.fanMedal.style}}style="{{item.replyComment.fanMedal.style}}"{{/if}}>
+                                    <span class="fan-medal-name">{{item.replyComment.fanMedal.name}}</span>
+                                    {{if item.replyComment.fanMedal.level}}<span class="fan-medal-level">{{item.replyComment.fanMedal.level}}</span>{{/if}}
+                                </span>
+                                {{/if}}
+                                {{if item.replyComment.isUp}}<span class="up-badge">UP</span>{{/if}}
+                            </div>
+                        </div>
+                        <div class="reply-content rich-text">
+                            {{each item.replyComment.content part}}
+                            {{if part.type === 'emote'}}
+                            <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                            {{else}}
+                            <span>{{part.text}}</span>
+                            {{/if}}
+                            {{/each}}
+                        </div>
+                        <div class="reply-meta">
+                            {{if item.replyComment.actionMeta}}<span class="action-meta">{{item.replyComment.actionMeta}}</span>{{/if}}
+                            <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.replyComment.likeCountText}}</span>
+                            <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
+                            <span class="action action-reply">{{item.replyComment.replyText}}</span>
+                        </div>
+                    </div>
+                </div>
+                {{/if}}
+
+                <div class="actions">
+                    {{if item.actionMeta}}<span class="action-meta">{{item.actionMeta}}</span>{{/if}}
+                    <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.likeCountText}}</span>
+                    <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
+                    <span class="action action-reply"><span class="action-icon action-icon-reply"></span>{{item.replyText}}</span>
+                </div>
+            </section>
+        </article>
+        {{/each}}
+    </main>
+
+    {{if biliCommentData.footerText}}
+    <footer class="footer">{{biliCommentData.footerText}}</footer>
+    {{/if}}
+</div>
+</body>
+</html>
