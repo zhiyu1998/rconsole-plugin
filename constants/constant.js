@@ -252,6 +252,20 @@ export const DOUYIN_COMMENT_CHUNK_SIZE_LIST = Object.freeze([
     { label: '20', value: 20 },
 ]);
 
+export const BILI_COMMENT_COUNT_LIST = Object.freeze([
+    { label: '5（推荐）', value: 5 },
+    { label: '10', value: 10 },
+    { label: '15', value: 15 },
+    { label: '20', value: 20 },
+]);
+
+export const BILI_COMMENT_CHUNK_SIZE_LIST = Object.freeze([
+    { label: '5', value: 5 },
+    { label: '10（默认）', value: 10 },
+    { label: '15', value: 15 },
+    { label: '20', value: 20 },
+]);
+
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
     { label: '最高画质 不限', value: 0 },
     { label: '8K 极清', value: 4320 },

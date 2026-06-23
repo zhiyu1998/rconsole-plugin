@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE, DOUYIN_COMMENT_COUNT_LIST, DOUYIN_COMMENT_CHUNK_SIZE_LIST } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE, DOUYIN_COMMENT_COUNT_LIST, DOUYIN_COMMENT_CHUNK_SIZE_LIST, BILI_COMMENT_COUNT_LIST, BILI_COMMENT_CHUNK_SIZE_LIST } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -375,6 +375,35 @@ export function supportGuoba() {
                         "默认不显示，哔哩哔哩是否显示总结",
                     component: "Switch",
                     required: true,
+                },
+                {
+                    field: "tools.biliComments",
+                    label: "是否开启评论图片",
+                    bottomHelpMessage: "默认关闭，开启后解析B站视频并成功发送视频后，会发送评论截图",
+                    component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.biliCommentCount",
+                    label: "评论展示数量",
+                    bottomHelpMessage:
+                        "默认推荐显示 5 条。数量越多，接口处理、图片渲染和发送性能越差",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_COMMENT_COUNT_LIST,
+                    },
+                    required: false,
+                },
+                {
+                    field: "tools.biliCommentChunkSize",
+                    label: "单张截图评论数",
+                    bottomHelpMessage:
+                        "单张评论图最多展示多少条评论，默认 10。超过这个数量会拆成多张截图发送，例如展示 20 条、单张 10 条时会拆成 2 张图",
+                    component: "Select",
+                    componentProps: {
+                        options: BILI_COMMENT_CHUNK_SIZE_LIST,
+                    },
+                    required: false,
                 },
 
                 // ==================== 抖音 ====================

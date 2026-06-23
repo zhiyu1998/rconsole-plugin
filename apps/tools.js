@@ -65,6 +65,7 @@ import {
     XHH_MOBILE_LINK
 } from "../constants/tools.js";
 import BiliInfoModel from "../model/bili-info.js";
+import BiliComment from "../model/biliComment.js";
 import DouyinComment from "../model/douyinComment.js";
 import config from "../model/config.js";
 import NeteaseModel from "../model/netease.js";
@@ -103,6 +104,7 @@ import {
 } from "../utils/common.js";
 import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
+import { buildBiliCommentRenderData, fetchBiliComments } from "../utils/bili-comment.js";
 import { buildDouyinCommentRenderData, fetchDouyinComments, getDouyinEmojiMap } from "../utils/douyin-comment.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
@@ -328,6 +330,12 @@ export class tools extends plugin {
         this.biliDisplayOnline = this.toolsConfig.biliDisplayOnline;
         // 加载是否显示哔哩哔哩的总结
         this.biliDisplaySummary = this.toolsConfig.biliDisplaySummary;
+        // 加载哔哩哔哩是否开启评论
+        this.biliComments = this.toolsConfig.biliComments ?? false;
+        // 加载哔哩哔哩评论展示数量
+        this.biliCommentCount = this.toolsConfig.biliCommentCount ?? 5;
+        // 加载哔哩哔哩评论单张截图展示数量
+        this.biliCommentChunkSize = this.toolsConfig.biliCommentChunkSize ?? 10;
         // 加载哔哩哔哩是否使用BBDown
         this.biliUseBBDown = this.toolsConfig.biliUseBBDown;
         // 加载 BBDown 的CDN配置
@@ -1052,7 +1060,10 @@ export class tools extends plugin {
 
             const emojiMap = await getDouyinEmojiMap(headers);
             const commentLimit = Number(this.douyinCommentCount) > 0 ? Number(this.douyinCommentCount) : 5;
-            const displayComments = comments.slice(0, commentLimit);
+            const displayComments = comments
+                .slice()
+                .sort((a, b) => (Number(b.like) || 0) - (Number(a.like) || 0))
+                .slice(0, commentLimit);
             const chunkSize = Number(this.douyinCommentChunkSize) > 0 ? Number(this.douyinCommentChunkSize) : 10;
 
             try {
@@ -1083,6 +1094,74 @@ export class tools extends plugin {
             e.reply(await Bot.makeForwardMsg(replyComments));
         } catch (err) {
             logger.warn(`[R插件][抖音评论] 获取失败，跳过: ${err.message}`);
+        }
+    }
+
+    /**
+     * 获取 B站评论并渲染为图片
+     * @param e
+     * @param oid 视频 aid
+     * @param context 视频上下文
+     */
+    async biliComment(e, oid, context = {}) {
+        if (!this.biliComments || !oid) {
+            return;
+        }
+        try {
+            const commentLimit = Number(this.biliCommentCount) > 0 ? Number(this.biliCommentCount) : 5;
+            const commentsResp = await fetchBiliComments(oid, {
+                commentLimit,
+                sessData: this.biliSessData,
+                ownerMid: context.ownerMid,
+            });
+            const comments = commentsResp?.replies || [];
+            if (comments.length === 0) {
+                return;
+            }
+
+            const displayComments = comments.slice(0, commentLimit);
+            const chunkSize = Number(this.biliCommentChunkSize) > 0 ? Number(this.biliCommentChunkSize) : 10;
+
+            try {
+                for (let i = 0; i < displayComments.length; i += chunkSize) {
+                    const chunkComments = displayComments.slice(i, i + chunkSize);
+                    const renderData = await new BiliComment(e).getData(
+                        buildBiliCommentRenderData(commentsResp, chunkComments, {
+                            commentLimit,
+                            title: context.title,
+                            cover: context.cover,
+                            ownerMid: context.ownerMid,
+                            formatCommentTime: this.formatCommentTime.bind(this),
+                        })
+                    );
+                    const img = await puppeteer.screenshot("biliComment", renderData);
+                    await e.reply(img, true);
+                }
+                return;
+            } catch (screenErr) {
+                logger.warn(`[R插件][B站评论] 图片渲染失败，回退转发消息: ${screenErr.message}`);
+            }
+
+            const fallbackData = buildBiliCommentRenderData(commentsResp, displayComments, {
+                commentLimit,
+                title: context.title,
+                cover: context.cover,
+                ownerMid: context.ownerMid,
+                formatCommentTime: this.formatCommentTime.bind(this),
+            });
+            const replyComments = fallbackData.comments.map(item => {
+                const contentText = item.content.map(part => part.text).join("");
+                const meta = [item.actionMeta, item.replyText, item.likeCountText ? `赞 ${item.likeCountText}` : ""].filter(Boolean).join("\n");
+                const message = [contentText, meta].filter(Boolean).join("\n");
+                return {
+                    message: item.image ? [{ type: "text", text: message }, segment.image(item.image)] : message,
+                    nickname: item.nickname || e.sender?.card || e.user_id,
+                    user_id: e.user_id,
+                };
+            });
+            await replyWithRetry(e, Bot, await Bot.makeForwardMsg(replyComments));
+        } catch (err) {
+            logger.warn(`[R插件][B站评论] 获取失败，跳过: ${err.message}`);
         }
     }
 
@@ -1367,7 +1446,14 @@ export class tools extends plugin {
             return await this.biliMusic(e, url);
         }
         // 下载文件
-        await this.biliDownloadStrategy(e, url, path, null, durationForCheck, bvid);
+        const isBiliVideoSent = await this.biliDownloadStrategy(e, url, path, null, durationForCheck, bvid);
+        if (isBiliVideoSent) {
+            await this.biliComment(e, videoInfo.aid, {
+                title: displayTitle,
+                cover: videoInfo.pic,
+                ownerMid: owner.mid
+            });
+        }
         return true;
     }
 
@@ -1558,7 +1644,7 @@ export class tools extends plugin {
      * @param resolution 可选的分辨率参数，不传则使用默认配置
      * @param duration   视频时长（秒），用于文件大小估算
      * @param filename   可选的文件名（不含扩展名），用于番剧等特殊命名
-     * @returns {Promise<void>}
+     * @returns {Promise<boolean>}
      */
     async biliDownloadStrategy(e, url, path, resolution = null, duration = 0, filename = null) {
         // 使用传入的分辨率或默认分辨率
@@ -1611,10 +1697,10 @@ export class tools extends plugin {
                         } else {
                             logger.error(`[R插件][BBDown] 未找到下载的视频文件`);
                             e.reply("BBDown下载完成但未找到视频文件，请重试");
-                            return;
+                            return false;
                         }
                     }
-                    await this.sendVideoToUpload(e, videoPath);
+                    const isSent = await this.sendVideoToUpload(e, videoPath);
                     // 删除BBDown创建的子文件夹（如果有）
                     if (subFolderToDelete) {
                         try {
@@ -1625,7 +1711,7 @@ export class tools extends plugin {
                             logger.warn(`[R插件][BBDown] 删除文件夹失败: ${rmErr.message}`);
                         }
                     }
-                    return;
+                    return isSent;
                 }
                 e.reply("🚧 R插件提醒你：开启但未检测到当前环境有【BBDown】，即将使用默认下载方式 ( ◡̀_◡́)ᕤ");
             } else if (this.biliUseBBDown && this.biliSmartResolution) {
@@ -1643,7 +1729,7 @@ export class tools extends plugin {
                 if (data.skipReason) {
                     logger.warn(`[R插件][BILI下载] ${data.skipReason}`);
                     e.reply(`⚠️ ${data.skipReason}`);
-                    return;
+                    return false;
                 }
 
                 // 处理试看视频的情况
@@ -1666,11 +1752,12 @@ export class tools extends plugin {
                 }
 
                 // 上传视频
-                return this.sendVideoToUpload(e, `${tempPath}.mp4`);
+                return await this.sendVideoToUpload(e, `${tempPath}.mp4`);
             } catch (err) {
                 // 错误处理
                 logger.error('[R插件][哔哩哔哩视频发送]下载错误，具体原因为:', err);
                 e.reply("解析失败，请重试一下");
+                return false;
             }
         });
     }
@@ -5313,12 +5400,14 @@ export class tools extends plugin {
      * @param e              交互事件
      * @param path           视频所在路径
      * @param videoSizeLimit 发送转上传视频的大小限制，默认70MB
+     * @returns {Promise<boolean>} 是否成功发送或上传
      */
     async sendVideoToUpload(e, path, videoSizeLimit = this.videoSizeLimit) {
         try {
             // 判断文件是否存在
             if (!fs.existsSync(path)) {
-                return e.reply('视频不存在');
+                await e.reply('视频不存在');
+                return false;
             }
             const stats = fs.statSync(path);
             const videoSize = Math.floor(stats.size / (1024 * 1024));
@@ -5326,6 +5415,7 @@ export class tools extends plugin {
             if (videoSize > videoSizeLimit) {
                 e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制：${videoSizeLimit}MB，\n改为上传群文件`);
                 await this.uploadGroupFile(e, path); // uploadGroupFile 内部会处理删除
+                return true;
             } else {
                 // 使用 replyWithRetry 包装视频发送，自动处理重发
                 const result = await replyWithRetry(e, Bot, segment.video(path));
@@ -5335,11 +5425,13 @@ export class tools extends plugin {
                     // 同时清理可能生成的 retry 文件
                     const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
                     await checkAndRemoveFile(retryPath);
+                    return true;
                 } else {
                     // 重发也失败了，清理文件
                     await checkAndRemoveFile(path);
                     const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
                     await checkAndRemoveFile(retryPath);
+                    return false;
                 }
             }
         } catch (err) {
@@ -5348,6 +5440,7 @@ export class tools extends plugin {
             await checkAndRemoveFile(path);
             const retryPath = path.replace(/(\.\w+)$/, '_retry$1');
             await checkAndRemoveFile(retryPath);
+            return false;
         }
     }
 

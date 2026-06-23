@@ -34,6 +34,20 @@ export const BILI_BVID_TO_CID = "https://api.bilibili.com/x/player/pagelist?bvid
 export const BILI_VIDEO_INFO = "http://api.bilibili.com/x/web-interface/view";
 
 /**
+ * 视频评论（经典分页接口）
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/list.md
+ * @type {string}
+ */
+export const BILI_REPLY_PAGE = "https://api.bilibili.com/x/v2/reply?type=1&oid={oid}&sort=1&ps={ps}&pn=1&nohot=0";
+
+/**
+ * 视频评论（懒加载 WBI 接口）
+ * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/list.md
+ * @type {string}
+ */
+export const BILI_REPLY_WBI_MAIN = "https://api.bilibili.com/x/v2/reply/wbi/main";
+
+/**
  * 登录基本信息
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/login/login_info.md#%E5%AF%BC%E8%88%AA%E6%A0%8F%E7%94%A8%E6%88%B7%E4%BF%A1%E6%81%AF
  * @type {string}
