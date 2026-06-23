@@ -195,10 +195,6 @@ function normalizeDouyinReplyComment(item = {}, emojiMap = {}, formatCommentTime
         likeText: formatCountText(item.digg_count || 0, "赞"),
         replyText: formatCountText(item.reply_comment_total || 0, "回复"),
         replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime) : null,
-        reply: replyItem?.text ? normalizeDouyinRichText(`热门回复：${replyItem.text}`, {
-            ...emojiMap,
-            ...getDouyinEmoteMap(replyItem, emojiMap),
-        }) : [],
     };
 }
 
@@ -323,10 +319,6 @@ export function buildDouyinCommentRenderData(commentResp, comments, emojiMap = {
                 actionMeta: [item.create_time ? formatCommentTime(item.create_time) : "", item.ip_label || ""].filter(Boolean).join(" · "),
                 image: commentContent.image || "",
                 replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime) : null,
-                reply: replyItem?.text ? normalizeDouyinRichText(`热门回复：${replyItem.text}`, {
-                    ...emojiMap,
-                    ...getDouyinEmoteMap(replyItem, emojiMap)
-                }) : [],
             };
         }),
     };
