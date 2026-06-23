@@ -637,7 +637,7 @@ export class tools extends plugin {
                     ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
                     await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
-                    await this.douyinComment(e, douId, headers);
+                    await this.douyinComment(e, douId, headers, item.desc, dyCover);
                     return;
                 }
                 // 封面
@@ -670,7 +670,7 @@ export class tools extends plugin {
                     this.sendVideoToUpload(e, videoPath);
                 });
                 // 如果开启评论的话就调用
-                await this.douyinComment(e, douId, headers);
+                await this.douyinComment(e, douId, headers, item.desc, dyCover);
             } else if (urlType === "image") {
                 // 检查是否包含video字段
                 const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
@@ -696,6 +696,8 @@ export class tools extends plugin {
 
                     // 提取无水印图片URL列表
                     const imageUrls = item.images.map(i => i.url_list[0]);
+                    // 获取封面（第一张图片）
+                    const dyCover = imageUrls[0] || "";
 
                     // 根据 globalImageLimit 决定发送方式
                     if (imageUrls.length > this.globalImageLimit) {
@@ -716,7 +718,7 @@ export class tools extends plugin {
                     await this.resolveDouyinMusic(e, item, douUrl);
 
                     // 如果开启评论的话就调用
-                    await this.douyinComment(e, douId, headers);
+                    await this.douyinComment(e, douId, headers, item.desc, dyCover);
                 }
 
             }
@@ -803,6 +805,9 @@ export class tools extends plugin {
     async processDouyinImageAlbum(e, item, douUrl, headers = null, douId = null) {
         const downloadPath = this.getCurDownloadPath(e);
         await mkdirIfNotExists(downloadPath);
+
+        // 获取封面
+        const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0] || "";
 
         // 判断是否有原声
         const isOriginalSound = item.is_use_music === false || item.image_album_music_info?.volume === 0;
@@ -952,7 +957,7 @@ export class tools extends plugin {
         }
 
         // 发送评论
-        await this.douyinComment(e, douId, headers);
+        await this.douyinComment(e, douId, headers, item.desc, dyCover);
     }
 
     /**
@@ -1031,8 +1036,10 @@ export class tools extends plugin {
      * @param e
      * @param douId
      * @param headers
+     * @param title
+     * @param cover
      */
-    async douyinComment(e, douId, headers) {
+    async douyinComment(e, douId, headers, title = "", cover = "") {
         if (!this.douyinComments) {
             return;
         }
@@ -1054,6 +1061,8 @@ export class tools extends plugin {
                     const renderData = await new DouyinComment(e).getData(
                         buildDouyinCommentRenderData(commentsResp, chunkComments, emojiMap, {
                             commentLimit,
+                            title,
+                            cover,
                             formatCommentTime: this.formatCommentTime.bind(this),
                         })
                     );

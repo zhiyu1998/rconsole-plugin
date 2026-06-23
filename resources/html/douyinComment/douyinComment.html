@@ -9,16 +9,13 @@
 <body>
 <div class="container" id="container">
     <header class="header">
-        <div class="platform-mark">
-            <img src="{{douyinCommentData.platformIcon}}" alt="{{douyinCommentData.platformName}}">
-        </div>
-        <div class="header-copy">
-            <h1>{{douyinCommentData.workTitle || douyinCommentData.title}}</h1>
-            <p>{{douyinCommentData.title}} · {{douyinCommentData.subtitle}}</p>
-        </div>
         {{if douyinCommentData.cover}}
         <img class="header-cover" src="{{douyinCommentData.cover}}" alt="">
         {{/if}}
+        <div class="header-copy">
+            <h1>{{douyinCommentData.title}}</h1>
+            <p>{{douyinCommentData.subtitle}} · {{douyinCommentData.commentCountText}}</p>
+        </div>
     </header>
 
     <main class="comment-list">
@@ -31,7 +28,6 @@
                         <div class="nickname-row">
                             <div class="nickname">{{item.nickname}}</div>
                         </div>
-                        <div class="meta">{{item.time}}{{if item.location}} · {{item.location}}{{/if}}</div>
                     </div>
                 </div>
 

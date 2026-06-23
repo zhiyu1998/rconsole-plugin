@@ -287,19 +287,20 @@ export async function getDouyinEmojiMap(headers = {}) {
 export function buildDouyinCommentRenderData(commentResp, comments, emojiMap = {}, options = {}) {
     const displayComments = comments.slice(0, 10);
     const firstComment = displayComments[0] || {};
-    const cover = firstComment?.video?.cover?.url_list?.[0]
+    // 优先使用传入的 cover，否则从评论数据中提取
+    const cover = options.cover
+        || firstComment?.video?.cover?.url_list?.[0]
         || firstComment?.author?.avatar_thumb?.url_list?.[0]
         || firstComment?.user?.avatar_thumb?.url_list?.[0]
         || "";
     const formatCommentTime = typeof options.formatCommentTime === "function" ? options.formatCommentTime : (() => "");
+    const title = typeof options.title === "string" && options.title.trim() ? options.title.trim() : "抖音评论";
 
     return {
-        title: "抖音评论",
+        title,
         platform: "douyin",
         platformName: "抖音",
-        workTitle: "抖音作品评论",
         subtitle: `展示 ${Math.min(displayComments.length, getCommentLimit(options.commentLimit))} 条`,
-        platformIcon: options.platformIcon || getDefaultCommentAvatar("douyin"),
         cover: normalizeRenderImageUrl(cover),
         commentCountText: `${formatInteractionCount(commentResp?.total || comments.length)} 条评论`,
         footer: {
