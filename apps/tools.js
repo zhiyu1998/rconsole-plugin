@@ -637,7 +637,7 @@ export class tools extends plugin {
                     ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
                     await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                     // 如果开启评论的就调用
-                    await this.douyinComment(e, douId, headers, item.desc, dyCover);
+                    await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
                     return;
                 }
                 // 封面
@@ -670,7 +670,7 @@ export class tools extends plugin {
                     this.sendVideoToUpload(e, videoPath);
                 });
                 // 如果开启评论的话就调用
-                await this.douyinComment(e, douId, headers, item.desc, dyCover);
+                await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
             } else if (urlType === "image") {
                 // 检查是否包含video字段
                 const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
@@ -718,7 +718,7 @@ export class tools extends plugin {
                     await this.resolveDouyinMusic(e, item, douUrl);
 
                     // 如果开启评论的话就调用
-                    await this.douyinComment(e, douId, headers, item.desc, dyCover);
+                    await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
                 }
 
             }
@@ -957,7 +957,7 @@ export class tools extends plugin {
         }
 
         // 发送评论
-        await this.douyinComment(e, douId, headers, item.desc, dyCover);
+        await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
     }
 
     /**
@@ -1039,7 +1039,7 @@ export class tools extends plugin {
      * @param title
      * @param cover
      */
-    async douyinComment(e, douId, headers, title = "", cover = "") {
+    async douyinComment(e, douId, headers, title = "", cover = "", author = {}) {
         if (!this.douyinComments) {
             return;
         }
@@ -1063,6 +1063,7 @@ export class tools extends plugin {
                             commentLimit,
                             title,
                             cover,
+                            author,
                             formatCommentTime: this.formatCommentTime.bind(this),
                         })
                     );

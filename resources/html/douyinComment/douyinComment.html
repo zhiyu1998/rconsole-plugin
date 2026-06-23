@@ -27,6 +27,9 @@
                     <div>
                         <div class="nickname-row">
                             <div class="nickname">{{item.nickname}}</div>
+                            {{if item.isAuthor && item.authorBadgeText}}
+                            <span class="author-badge">{{item.authorBadgeText}}</span>
+                            {{/if}}
                         </div>
                     </div>
                 </div>
@@ -62,6 +65,9 @@
                         <div class="reply-head">
                             <div class="nickname-row reply-nickname-row">
                                 <div class="reply-nickname">{{item.replyComment.nickname}}</div>
+                                {{if item.replyComment.isAuthor && item.replyComment.authorBadgeText}}
+                                <span class="author-badge reply-author-badge">{{item.replyComment.authorBadgeText}}</span>
+                                {{/if}}
                             </div>
                         </div>
                         <div class="reply-content rich-text">

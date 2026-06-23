@@ -62,6 +62,41 @@ function normalizeCommentText(text = "") {
         .trim();
 }
 
+function normalizeIdentityValue(value = "") {
+    return String(value || "").trim().toLowerCase();
+}
+
+function getDouyinUserIdentity(user = {}) {
+    return {
+        secUid: normalizeIdentityValue(user?.sec_uid),
+        uid: normalizeIdentityValue(user?.uid),
+        uniqueId: normalizeIdentityValue(user?.unique_id),
+        shortId: normalizeIdentityValue(user?.short_id),
+        nickname: normalizeIdentityValue(user?.nickname),
+    };
+}
+
+function isDouyinCommentAuthor(user = {}, author = {}) {
+    const commentIdentity = getDouyinUserIdentity(user);
+    const authorIdentity = getDouyinUserIdentity(author);
+
+    if (!authorIdentity.secUid && !authorIdentity.uid && !authorIdentity.uniqueId && !authorIdentity.shortId && !authorIdentity.nickname) {
+        return false;
+    }
+
+    return (
+        (authorIdentity.secUid && commentIdentity.secUid && authorIdentity.secUid === commentIdentity.secUid)
+        || (authorIdentity.uid && commentIdentity.uid && authorIdentity.uid === commentIdentity.uid)
+        || (authorIdentity.uniqueId && commentIdentity.uniqueId && authorIdentity.uniqueId === commentIdentity.uniqueId)
+        || (authorIdentity.shortId && commentIdentity.shortId && authorIdentity.shortId === commentIdentity.shortId)
+        || (authorIdentity.nickname && commentIdentity.nickname && authorIdentity.nickname === commentIdentity.nickname)
+    );
+}
+
+function buildCommentAuthorBadge(user = {}, author = {}, badgeText = "作者") {
+    return isDouyinCommentAuthor(user, author) ? badgeText : "";
+}
+
 function getDouyinCommentImage(comment = {}) {
     return normalizeRenderImageUrl(
         getImageUrlFromObject(comment?.image_list?.[0]?.origin_url)
@@ -173,7 +208,7 @@ function buildDouyinCommentContent(comment = {}, emojiMap = {}) {
     };
 }
 
-function normalizeDouyinReplyComment(item = {}, emojiMap = {}, formatCommentTime = () => "") {
+function normalizeDouyinReplyComment(item = {}, emojiMap = {}, formatCommentTime = () => "", author = {}, authorBadgeText = "作者") {
     const emoteMap = {
         ...emojiMap,
         ...getDouyinEmoteMap(item, emojiMap),
@@ -187,6 +222,8 @@ function normalizeDouyinReplyComment(item = {}, emojiMap = {}, formatCommentTime
     return {
         nickname: item.user?.nickname || "抖音用户",
         avatar: normalizeRenderImageUrl(item.user?.avatar_thumb?.url_list?.[0] || item.user?.avatar_medium?.url_list?.[0] || ""),
+        isAuthor: isDouyinCommentAuthor(item.user, author),
+        authorBadgeText: buildCommentAuthorBadge(item.user, author, authorBadgeText),
         content,
         image: getDouyinCommentImage(item),
         stickerImage,
@@ -194,7 +231,7 @@ function normalizeDouyinReplyComment(item = {}, emojiMap = {}, formatCommentTime
         location: item.ip_label || "",
         likeText: formatCountText(item.digg_count || 0, "赞"),
         replyText: formatCountText(item.reply_comment_total || 0, "回复"),
-        replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime) : null,
+        replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime, author, authorBadgeText) : null,
     };
 }
 
@@ -291,6 +328,8 @@ export function buildDouyinCommentRenderData(commentResp, comments, emojiMap = {
         || "";
     const formatCommentTime = typeof options.formatCommentTime === "function" ? options.formatCommentTime : (() => "");
     const title = typeof options.title === "string" && options.title.trim() ? options.title.trim() : "抖音评论";
+    const author = options.author || {};
+    const authorBadgeText = typeof options.authorBadgeText === "string" && options.authorBadgeText.trim() ? options.authorBadgeText.trim() : "作者";
 
     return {
         title,
@@ -310,6 +349,8 @@ export function buildDouyinCommentRenderData(commentResp, comments, emojiMap = {
             return {
                 nickname: item.user?.nickname || "抖音用户",
                 avatar: normalizeRenderImageUrl(item.user?.avatar_thumb?.url_list?.[0] || item.user?.avatar_medium?.url_list?.[0] || ""),
+                isAuthor: isDouyinCommentAuthor(item.user, author),
+                authorBadgeText: buildCommentAuthorBadge(item.user, author, authorBadgeText),
                 content: normalizeDouyinRichText(item.text || "", getDouyinEmoteMap(item, emojiMap)),
                 ...commentContent,
                 time: item.create_time ? formatCommentTime(item.create_time) : "",
@@ -318,7 +359,7 @@ export function buildDouyinCommentRenderData(commentResp, comments, emojiMap = {
                 location: item.ip_label || "",
                 actionMeta: [item.create_time ? formatCommentTime(item.create_time) : "", item.ip_label || ""].filter(Boolean).join(" · "),
                 image: commentContent.image || "",
-                replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime) : null,
+                replyComment: replyItem ? normalizeDouyinReplyComment(replyItem, emojiMap, formatCommentTime, author, authorBadgeText) : null,
             };
         }),
     };
