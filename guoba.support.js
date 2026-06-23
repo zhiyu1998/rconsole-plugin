@@ -1,6 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE } from "./constants/constant.js";
+import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE, DOUYIN_COMMENT_COUNT_LIST, DOUYIN_COMMENT_CHUNK_SIZE_LIST } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -430,6 +430,28 @@ export function supportGuoba() {
                     field: "tools.douyinComments",
                     label: "是否开启评论",
                     component: "Switch",
+                    required: false,
+                },
+                {
+                    field: "tools.douyinCommentCount",
+                    label: "评论展示数量",
+                    bottomHelpMessage:
+                        "默认推荐显示 5 条。数量越多，接口处理、图片渲染和发送性能越差",
+                    component: "Select",
+                    componentProps: {
+                        options: DOUYIN_COMMENT_COUNT_LIST,
+                    },
+                    required: false,
+                },
+                {
+                    field: "tools.douyinCommentChunkSize",
+                    label: "单张截图评论数",
+                    bottomHelpMessage:
+                        "单张评论图最多展示多少条评论，默认 10。超过这个数量会拆成多张截图发送，例如展示 20 条、单张 10 条时会拆成 2 张图",
+                    component: "Select",
+                    componentProps: {
+                        options: DOUYIN_COMMENT_CHUNK_SIZE_LIST,
+                    },
                     required: false,
                 },
                 {

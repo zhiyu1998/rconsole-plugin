@@ -56,6 +56,8 @@ douyinDuration: 480 # 抖音的最大视频时长（默认8分钟），单位：
 douyinCompression: false # true-压缩，false-不压缩；是否开启视频压缩（开启后分辨率降为 720p，关闭则为 1080p）
 douyinDisplayCover: true # true-显示封面，false-不显示封面
 douyinComments: false # true-开启评论，false-关闭评论
+douyinCommentCount: 5 # 抖音评论展示数量，默认5条，推荐保持5；数量越多性能越差，超过10会按每10条生成一张截图
+douyinCommentChunkSize: 10 # 抖音评论单张截图展示数量，默认10条；超过这个数量会拆成多张截图发送
 douyinMusic: true # true-开启背景音乐，false-关闭背景音乐
 douyinBGMSendType: voice # 发送抖音背景音乐的方式：voice-语音，card-音乐卡片
 imageBatchThreshold: 50 # 全局图片分批阈值，超过此数量的图片将分批发送（默认50张），设置为0表示不限制

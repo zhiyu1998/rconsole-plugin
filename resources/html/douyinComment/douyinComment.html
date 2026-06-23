@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{pluResPath}}html/douyinComment/douyinComment.css">
+    <title>{{douyinCommentData.title}}</title>
+</head>
+<body>
+<div class="container" id="container">
+    <header class="header">
+        <div class="platform-mark">
+            <img src="{{douyinCommentData.platformIcon}}" alt="{{douyinCommentData.platformName}}">
+        </div>
+        <div class="header-copy">
+            <h1>{{douyinCommentData.workTitle || douyinCommentData.title}}</h1>
+            <p>{{douyinCommentData.title}} · {{douyinCommentData.subtitle}}</p>
+        </div>
+        {{if douyinCommentData.cover}}
+        <img class="header-cover" src="{{douyinCommentData.cover}}" alt="">
+        {{/if}}
+    </header>
+
+    <main class="comment-list">
+        {{each douyinCommentData.comments item idx}}
+        <article class="comment-card">
+            <img class="avatar" src="{{item.avatar}}" alt="">
+            <section class="comment-body">
+                <div class="comment-head">
+                    <div>
+                        <div class="nickname-row">
+                            <div class="nickname">{{item.nickname}}</div>
+                        </div>
+                        <div class="meta">{{item.time}}{{if item.location}} · {{item.location}}{{/if}}</div>
+                    </div>
+                </div>
+
+                <div class="content rich-text">
+                    {{each item.content part}}
+                    {{if part.type === 'emote'}}
+                    <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                    {{else if part.type === 'emoji-text'}}
+                    <span class="inline-emoji-text">{{part.text}}</span>
+                    {{else}}
+                    <span>{{part.text}}</span>
+                    {{/if}}
+                    {{/each}}
+                </div>
+
+                {{if item.stickerImage}}
+                <div class="sticker-image-wrap">
+                    <img class="sticker-image" src="{{item.stickerImage}}" alt="">
+                </div>
+                {{/if}}
+
+                {{if item.image}}
+                <div class="comment-image-wrap">
+                    <img class="comment-image" src="{{item.image}}" alt="">
+                </div>
+                {{/if}}
+
+                {{if item.replyComment}}
+                <div class="reply-comment">
+                    <img class="reply-avatar" src="{{item.replyComment.avatar}}" alt="">
+                    <div class="reply-comment-body">
+                        <div class="reply-head">
+                            <div class="nickname-row reply-nickname-row">
+                                <div class="reply-nickname">{{item.replyComment.nickname}}</div>
+                            </div>
+                        </div>
+                        <div class="reply-content rich-text">
+                            {{each item.replyComment.content part}}
+                            {{if part.type === 'emote'}}
+                            <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                            {{else if part.type === 'emoji-text'}}
+                            <span class="inline-emoji-text">{{part.text}}</span>
+                            {{else}}
+                            <span>{{part.text}}</span>
+                            {{/if}}
+                            {{/each}}
+                        </div>
+                        {{if item.replyComment.stickerImage}}
+                        <div class="sticker-image-wrap">
+                            <img class="sticker-image" src="{{item.replyComment.stickerImage}}" alt="">
+                        </div>
+                        {{/if}}
+                    </div>
+                </div>
+                {{/if}}
+
+                {{if item.reply && item.reply.length}}
+                <div class="reply rich-text">
+                    {{each item.reply part}}
+                    {{if part.type === 'emote'}}
+                    <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                    {{else if part.type === 'emoji-text'}}
+                    <span class="inline-emoji-text">{{part.text}}</span>
+                    {{else}}
+                    <span>{{part.text}}</span>
+                    {{/if}}
+                    {{/each}}
+                </div>
+                {{/if}}
+
+                <div class="actions">
+                    <span class="action-meta">{{item.actionMeta}}</span>
+                    <span class="action">回复 {{item.replyCountText}}</span>
+                    <span class="action">赞 {{item.likeCountText}}</span>
+                </div>
+            </section>
+        </article>
+        {{/each}}
+    </main>
+
+    {{if douyinCommentData.footerText}}
+    <footer class="footer">{{douyinCommentData.footerText}}</footer>
+    {{/if}}
+</div>
+</body>
+</html>

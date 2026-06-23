@@ -42,7 +42,6 @@ import {
     BILI_STREAM_FLV,
     BILI_STREAM_INFO,
     BILI_SUMMARY,
-    DY_COMMENT,
     DY_INFO,
     DY_LIVE_INFO,
     DY_LIVE_INFO_2,
@@ -66,6 +65,7 @@ import {
     XHH_MOBILE_LINK
 } from "../constants/tools.js";
 import BiliInfoModel from "../model/bili-info.js";
+import DouyinComment from "../model/douyinComment.js";
 import config from "../model/config.js";
 import NeteaseModel from "../model/netease.js";
 import NeteaseMusicInfo from '../model/neteaseMusicInfo.js';
@@ -103,6 +103,7 @@ import {
 } from "../utils/common.js";
 import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
+import { buildDouyinCommentRenderData, fetchDouyinComments, getDouyinEmojiMap } from "../utils/douyin-comment.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { llmRead } from "../utils/llm-util.js";
@@ -116,7 +117,7 @@ import {
     resolveKugouMusicSource
 } from "../utils/kugou.js";
 import { OpenaiBuilder } from "../utils/openai-builder.js";
-import { redisExistAndGetKey, redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
+import { redisExistKey, redisGetKey, redisSetKey } from "../utils/redis-util.js";
 import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
@@ -381,6 +382,10 @@ export class tools extends plugin {
         this.douyinDisplayCover = this.toolsConfig.douyinDisplayCover ?? true;
         // 加载抖音是否开启评论
         this.douyinComments = this.toolsConfig.douyinComments;
+        // 加载抖音评论展示数量
+        this.douyinCommentCount = this.toolsConfig.douyinCommentCount ?? 5;
+        // 加载抖音评论单张截图展示数量
+        this.douyinCommentChunkSize = this.toolsConfig.douyinCommentChunkSize ?? 10;
         // 加载抖音是否开启背景音乐
         this.douyinMusic = this.toolsConfig.douyinMusic ?? true;
         // 加载抖音背景音乐发送方式
@@ -1032,25 +1037,39 @@ export class tools extends plugin {
             return;
         }
         try {
-            const dyCommentUrl = DY_COMMENT.replace("{}", douId);
-            const abParam = aBogus.generate_a_bogus(
-                new URLSearchParams(new URL(dyCommentUrl).search).toString(),
-                headers["User-Agent"],
-            );
-            const commentsResp = await axios.get(`${dyCommentUrl}&a_bogus=${abParam}`, {
-                headers
-            });
-            const comments = commentsResp.data.comments;
-            if (!comments || comments.length === 0) {
+            const commentsResp = await fetchDouyinComments(douId, headers);
+            const comments = commentsResp?.comments || [];
+            if (comments.length === 0) {
                 return;
             }
-            const replyComments = comments.map(item => {
-                return {
-                    message: item.text,
-                    nickname: this.e.sender.card || this.e.user_id,
-                    user_id: this.e.user_id,
-                };
-            });
+
+            const emojiMap = await getDouyinEmojiMap(headers);
+            const commentLimit = Number(this.douyinCommentCount) > 0 ? Number(this.douyinCommentCount) : 5;
+            const displayComments = comments.slice(0, commentLimit);
+            const chunkSize = Number(this.douyinCommentChunkSize) > 0 ? Number(this.douyinCommentChunkSize) : 10;
+
+            try {
+                for (let i = 0; i < displayComments.length; i += chunkSize) {
+                    const chunkComments = displayComments.slice(i, i + chunkSize);
+                    const renderData = await new DouyinComment(e).getData(
+                        buildDouyinCommentRenderData(commentsResp, chunkComments, emojiMap, {
+                            commentLimit,
+                            formatCommentTime: this.formatCommentTime.bind(this),
+                        })
+                    );
+                    const img = await puppeteer.screenshot("douyinComment", renderData);
+                    await e.reply(img, true);
+                }
+                return;
+            } catch (screenErr) {
+                logger.warn(`[R插件][抖音评论] 图片渲染失败，回退转发消息: ${screenErr.message}`);
+            }
+
+            const replyComments = displayComments.map(item => ({
+                message: `${item.user?.nickname || "抖音用户"}：${item.text || ""}`,
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            }));
             e.reply(await Bot.makeForwardMsg(replyComments));
         } catch (err) {
             logger.warn(`[R插件][抖音评论] 获取失败，跳过: ${err.message}`);

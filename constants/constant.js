@@ -93,6 +93,12 @@ export const REDIS_YUNZAI_CLOUDSONGLIST = "Yz:rconsole:tools:cloudsonglist";
  */
 export const REDIS_YUNZAI_WHITELIST = "Yz:rconsole:tools:whitelist";
 
+/**
+ * 抖音评论表情缓存
+ * @type {string}
+ */
+export const REDIS_YUNZAI_DOUYIN_EMOJI_CACHE = "Yz:rconsole:tools:douyin:emoji-cache";
+
 export const TWITTER_BEARER_TOKEN = "";
 
 /**
@@ -230,6 +236,20 @@ export const BILI_RESOLUTION_LIST = Object.freeze([
 export const DOUYIN_BGM_SEND_TYPE = Object.freeze([
     { label: '语音', value: 'voice' },
     { label: '自定义音乐卡片', value: 'card' }
+]);
+
+export const DOUYIN_COMMENT_COUNT_LIST = Object.freeze([
+    { label: '5（推荐）', value: 5 },
+    { label: '10', value: 10 },
+    { label: '15', value: 15 },
+    { label: '20', value: 20 },
+]);
+
+export const DOUYIN_COMMENT_CHUNK_SIZE_LIST = Object.freeze([
+    { label: '5', value: 5 },
+    { label: '10（默认）', value: 10 },
+    { label: '15', value: 15 },
+    { label: '20', value: 20 },
 ]);
 
 export const YOUTUBE_GRAPHICS_LIST = Object.freeze([
