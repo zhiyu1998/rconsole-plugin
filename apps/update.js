@@ -10,6 +10,8 @@ import path from "path";
 import { exec, execSync } from "node:child_process";
 import { copyFiles, deleteFolderRecursive, readCurrentDir } from "../utils/file.js";
 
+const RESTART_KEY = "Yz:restart";
+
 /**
  * 处理插件更新1
  */
@@ -63,6 +65,7 @@ export class Update extends plugin {
         }
 
         let isForce = !!e.msg.includes("强制");
+        this.isUp = false;
 
         // 保存配置文件
         await copyFiles(`./plugins/${Update.pluginName}/config`, "./temp/rconsole-update-tmp", ['tools.yaml']);
@@ -81,7 +84,7 @@ export class Update extends plugin {
             return false;
         }
         const time = await this.getTime(Update.pluginName);
-        if (/Already up|已经是最新/g.test(ret.stdout)) {
+        if (/Already up|已经是最新/g.test(`${ret.stdout}\n${ret.stderr}`)) {
             e.reply(`R插件已经是最新: ${this.versionData[0].version}`);
         } else {
             this.isUp = true;
@@ -100,6 +103,46 @@ export class Update extends plugin {
         // 删除临时文件
         await deleteFolderRecursive("./temp/rconsole-update-tmp");
 
+        if (this.isUp || isForce) {
+            await this.restartAfterUpdate(e);
+        }
+
+        return true;
+    }
+
+    async restartAfterUpdate(e) {
+        await e.reply(`R插件更新完成，开始自动重启${this.getRuntimeText()}`);
+        try {
+            await this.cacheRestartMessage(e);
+        } catch (err) {
+            logger.error(`[R插件更新] 重启提示写入失败：${err.message || err}`);
+        }
+
+        setTimeout(() => process.exit(), 1000);
+    }
+
+    getRuntimeText() {
+        if (!globalThis.Bot?.getTimeDiff) return "";
+        return `，本次运行时长${globalThis.Bot.getTimeDiff()}`;
+    }
+
+    async cacheRestartMessage(e) {
+        if (!globalThis.redis?.set) {
+            logger.warn("[R插件更新] Redis 未初始化，跳过重启提示写入");
+            return false;
+        }
+
+        await redis.set(
+            RESTART_KEY,
+            JSON.stringify({
+                isExit: false,
+                group_id: e.group_id,
+                user_id: e.user_id,
+                bot_id: e.self_id,
+                msg_id: e.message_id,
+                time: Date.now()
+            })
+        );
         return true;
     }
 
