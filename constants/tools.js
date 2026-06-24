@@ -162,6 +162,17 @@ export const DY_EMOJI_LIST = "https://www.douyin.com/aweme/v1/web/emoji/list?dev
  */
 export const DY_TOUTIAO_INFO = "https://aweme.snssdk.com/aweme/v1/play/?video_id={}&ratio=1080p&line=0";
 
+/**
+ * DY 匿名 ttwid 注册端点（纯协议无 cookie 解析用，任何访客可得，非登录态）
+ * @type {string}
+ */
+export const DY_TTWID_REGISTER = "https://ttwid.bytedance.com/ttwid/union/register/";
+
+/**
+ * DY 分享页（SSR，内嵌 window._ROUTER_DATA），用于无 cookie 提取 play_addr
+ * @type {string}
+ */
+export const DY_SHARE_PAGE = "https://www.iesdouyin.com/share/video/{}/";
 
 /**
  * DY 直播信息
