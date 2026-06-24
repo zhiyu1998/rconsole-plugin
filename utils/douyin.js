@@ -1,6 +1,6 @@
 import axios from "axios";
 import { COMMON_USER_AGENT, douyinTypeMap } from "../constants/constant.js";
-import { DY_SHARE_PAGE, DY_TOUTIAO_INFO, DY_TTWID_REGISTER } from "../constants/tools.js";
+import { DY_SHARE_NOTE_PAGE, DY_SHARE_VIDEO_PAGE, DY_TTWID_REGISTER, DY_TOUTIAO_INFO } from "../constants/tools.js";
 
 const DOUYIN_REFERER = "https://www.douyin.com/";
 const DOUYIN_PLAY_RATIOS = ["1080p", "720p", "540p", "360p"];
@@ -49,22 +49,63 @@ function extractCookieValue(setCookieHeaders, cookieName) {
 
 function extractDouyinIdFromUrl(url = "") {
     return /share\/video\/(\d+)/.exec(url)?.[1]
+        || /share\/note\/(\d+)/.exec(url)?.[1]
         || /video\/(\d+)/.exec(url)?.[1]
+        || /note\/(\d+)/.exec(url)?.[1]
         || /modal_id=(\d+)/.exec(url)?.[1]
         || "";
 }
 
-function normalizeDouyinCanonicalUrl(url = "") {
-    if (url.includes("iesdouyin.com/share/video/")) {
-        return url;
-    }
-
+function buildDouyinCanonicalCandidates(url = "") {
     const awemeId = extractDouyinIdFromUrl(url);
     if (!awemeId) {
-        return url;
+        return [url];
     }
 
-    return DY_SHARE_PAGE.replace("{}", awemeId);
+    if (url.includes("iesdouyin.com/share/video/")) {
+        return [url, DY_SHARE_NOTE_PAGE.replace("{}", awemeId)];
+    }
+
+    if (url.includes("iesdouyin.com/share/note/")) {
+        return [url, DY_SHARE_VIDEO_PAGE.replace("{}", awemeId)];
+    }
+
+    if (url.includes("/note/")) {
+        return [DY_SHARE_NOTE_PAGE.replace("{}", awemeId), DY_SHARE_VIDEO_PAGE.replace("{}", awemeId)];
+    }
+
+    return [DY_SHARE_VIDEO_PAGE.replace("{}", awemeId), DY_SHARE_NOTE_PAGE.replace("{}", awemeId)];
+}
+
+async function fetchFirstResolvedDouyinAweme(canonicalUrls = [], ttwid = "") {
+    let lastError = null;
+
+    for (const canonicalUrl of canonicalUrls) {
+        try {
+            const shareResponse = await axios.get(canonicalUrl, {
+                headers: getDouyinHeaders(ttwid),
+                timeout: 15000,
+            });
+            const routerData = parseRouterDataFromHtml(String(shareResponse.data || ""));
+            const aweme = findAwemeCandidate(routerData);
+            const contentType = getAwemeContentType(aweme);
+
+            if (!aweme?.aweme_id || contentType === "unknown") {
+                throw new Error("SSR 页面中未找到可识别的抖音内容");
+            }
+
+            return {
+                canonicalUrl,
+                aweme,
+                contentType,
+            };
+        } catch (error) {
+            lastError = error;
+            logger.debug?.(`[R插件][抖音SSR兜底] canonical 解析失败 ${canonicalUrl}: ${error.message}`);
+        }
+    }
+
+    throw lastError || new Error("未命中可用的抖音 SSR 分享页");
 }
 
 function extractBalancedJson(source = "", marker = "window._ROUTER_DATA") {
@@ -318,25 +359,15 @@ export async function registerAnonymousDouyinTtwid() {
 
 export async function resolveDouyinVideoBySsr(url, options = {}) {
     const { initialTtwid = "", preferCompressed = false } = options;
-    const canonicalUrl = normalizeDouyinCanonicalUrl(url);
-    const awemeId = extractDouyinIdFromUrl(canonicalUrl);
+    const canonicalUrls = buildDouyinCanonicalCandidates(url);
+    const awemeId = extractDouyinIdFromUrl(url) || extractDouyinIdFromUrl(canonicalUrls[0] || "");
 
     if (!awemeId) {
         throw new Error("无法识别抖音 aweme_id");
     }
 
     const ttwid = initialTtwid || await registerAnonymousDouyinTtwid();
-    const shareResponse = await axios.get(canonicalUrl, {
-        headers: getDouyinHeaders(ttwid),
-        timeout: 15000,
-    });
-    const routerData = parseRouterDataFromHtml(String(shareResponse.data || ""));
-    const aweme = findAwemeCandidate(routerData);
-    const contentType = getAwemeContentType(aweme);
-
-    if (!aweme?.aweme_id || contentType === "unknown") {
-        throw new Error("SSR 页面中未找到可识别的抖音内容");
-    }
+    const { canonicalUrl, aweme, contentType } = await fetchFirstResolvedDouyinAweme(canonicalUrls, ttwid);
 
     const resolved = {
         awemeId: String(aweme.aweme_id || awemeId),

@@ -732,7 +732,7 @@ export class tools extends plugin {
 
     /**
      * 判断当前链接是否允许走 SSR 免 Cookie 兜底。
-     * 目前放行普通视频和可落到 aweme_id 的 image 内容，直播和 slides 继续使用现有专用逻辑。
+     * 目前放行普通视频和 note 图文/动图，直播和 slides 继续使用现有专用逻辑。
      * @param douUrl
      * @returns {boolean}
      */
@@ -777,7 +777,7 @@ export class tools extends plugin {
                 initialTtwid: ttwid,
                 preferCompressed: this.douyinCompression,
             });
-            logger.info(`[R插件][抖音SSR兜底] 已启用，原因: ${reason || "未知"}`);
+            logger.info(`[R插件][抖音SSR兜底] 已启用，原因: ${reason || "未知"}，类型: ${resolved.contentType}，canonical: ${resolved.canonicalUrl}`);
             if (resolved.contentType === "image") {
                 await this.handleDouyinResolvedImage(e, resolved.aweme, douUrl);
                 return true;
@@ -855,7 +855,7 @@ export class tools extends plugin {
 
     /**
      * SSR 兜底拿到 image 类型时，复用现有图集/有声动图的发送链路。
-     * 这里只处理内容发送，不再继续请求评论接口。
+     * 这里主要承担 note 图文/有声动图兜底，不负责 share/slides 特例，也不继续请求评论接口。
      * @param e
      * @param item
      * @param douUrl
