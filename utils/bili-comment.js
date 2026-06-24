@@ -73,7 +73,16 @@ function normalizeCommentRichText(text = "", emotes = {}) {
             .map(item => normalizedText.indexOf(item.key, index))
             .filter(nextIndex => nextIndex >= 0);
         const nextIndex = nextIndexList.length > 0 ? Math.min(...nextIndexList) : normalizedText.length;
-        richText.push({ type: "text", text: normalizedText.slice(index, nextIndex) });
+        const textPart = normalizedText.slice(index, nextIndex);
+        const lines = textPart.split("\n");
+        lines.forEach((line, lineIndex) => {
+            if (line) {
+                richText.push({ type: "text", text: line });
+            }
+            if (lineIndex < lines.length - 1) {
+                richText.push({ type: "line-break" });
+            }
+        });
         index = nextIndex;
     }
     return richText;
@@ -238,6 +247,7 @@ function normalizeBiliReplyComment(item = {}, options = {}) {
     const level = Number(item.member?.level_info?.current_level);
     const time = item.ctime ? formatCommentTime(item.ctime) : "";
     const location = item.reply_control?.location?.replace(/^IP属地：?/, "") || "";
+    const isUp = isBiliUpComment(item, ownerMid, true);
     return {
         nickname: item.member?.uname || "B站用户",
         avatar: normalizeRenderImageUrl(item.member?.avatar || "") || getDefaultCommentAvatar(),
@@ -247,8 +257,8 @@ function normalizeBiliReplyComment(item = {}, options = {}) {
         location,
         level: Number.isFinite(level) ? level : null,
         isSeniorMember: Boolean(item.member?.is_senior_member || Number(item.member?.senior?.status) > 0),
-        fanMedal: getBiliFanMedal(item),
-        isUp: isBiliUpComment(item, ownerMid, true),
+        fanMedal: isUp ? null : getBiliFanMedal(item),
+        isUp,
         actionMeta: [time, location].filter(Boolean).join(" · "),
         likeCountText: formatInteractionCount(item.like || 0),
         replyText: "回复"
@@ -268,6 +278,7 @@ function normalizeBiliComment(item = {}, options = {}) {
     const time = item.ctime ? formatCommentTime(item.ctime) : "";
     const location = item.reply_control?.location?.replace(/^IP属地：?/, "") || "";
     const replyCount = Number(item.rcount) || 0;
+    const isUp = isBiliUpComment(item, ownerMid);
     return {
         nickname: item.member?.uname || "B站用户",
         avatar: normalizeRenderImageUrl(item.member?.avatar || "") || getDefaultCommentAvatar(),
@@ -278,8 +289,8 @@ function normalizeBiliComment(item = {}, options = {}) {
         location,
         level: Number.isFinite(level) ? level : null,
         isSeniorMember: Boolean(item.member?.is_senior_member || Number(item.member?.senior?.status) > 0),
-        fanMedal: getBiliFanMedal(item),
-        isUp: isBiliUpComment(item, ownerMid),
+        fanMedal: isUp ? null : getBiliFanMedal(item),
+        isUp,
         decor: getBiliCommentDecor(item),
         metaItems: buildBiliMetaItems(item),
         indexText: item.floor ? `#${item.floor}` : "",

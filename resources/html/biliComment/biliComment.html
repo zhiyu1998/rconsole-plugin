@@ -64,6 +64,8 @@
                     {{each item.content part}}
                     {{if part.type === 'emote'}}
                     <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                    {{else if part.type === 'line-break'}}
+                    <br>
                     {{else}}
                     <span>{{part.text}}</span>
                     {{/if}}
@@ -99,6 +101,8 @@
                             {{each item.replyComment.content part}}
                             {{if part.type === 'emote'}}
                             <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
+                            {{else if part.type === 'line-break'}}
+                            <br>
                             {{else}}
                             <span>{{part.text}}</span>
                             {{/if}}

@@ -2,7 +2,9 @@ html,
 body {
     margin: 0;
     padding: 0;
-    width: 100%;
+    width: 760px;
+    transform: scale(1.5);
+    transform-origin: 0 0;
     background: #ffffff;
     color: #18191c;
     font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -58,7 +60,7 @@ body {
     margin: 0;
     overflow: hidden;
     color: #18191c;
-    font-size: 15px;
+    font-size: 20px;
     font-weight: 500;
     line-height: 1.45;
     text-overflow: ellipsis;
@@ -68,7 +70,7 @@ body {
 .header-copy p {
     margin: 4px 0 0;
     color: #9499a0;
-    font-size: 12px;
+    font-size: 15px;
     line-height: 1.4;
 }
 
@@ -147,18 +149,18 @@ body {
 
 .nickname {
     max-width: 260px;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 .level-badge {
     min-width: 0;
-    height: 13px;
-    padding: 0 3px;
+    height: 16px;
+    padding: 0 4px;
     border-radius: 2px;
     color: #ffffff;
-    font-size: 9px;
+    font-size: 11px;
     font-weight: 700;
-    line-height: 13px;
+    line-height: 16px;
     letter-spacing: 0;
 }
 
@@ -182,25 +184,25 @@ body {
 
 .senior-flash {
     color: #ffffff;
-    font-size: 9px;
+    font-size: 11px;
 }
 
 .fan-medal {
     display: inline-flex;
-    height: 14px;
-    max-width: 92px;
+    height: 17px;
+    max-width: 112px;
     overflow: hidden;
     border: 1px solid var(--fan-medal-border, #ff6699);
     border-radius: 2px;
     color: #ffffff;
-    font-size: 10px;
-    line-height: 14px;
+    font-size: 12px;
+    line-height: 17px;
     font-weight: 500;
     vertical-align: 1px;
 }
 
 .fan-medal-name {
-    max-width: 64px;
+    max-width: 80px;
     overflow: hidden;
     padding: 0 3px;
     background: var(--fan-medal-bg, #ff6699);
@@ -218,13 +220,13 @@ body {
 }
 
 .up-badge {
-    height: 14px;
-    padding: 0 4px;
+    height: 17px;
+    padding: 0 5px;
     border-radius: 2px;
     background: #ff6699;
     color: #ffffff;
-    font-size: 10px;
-    line-height: 14px;
+    font-size: 12px;
+    line-height: 17px;
 }
 
 .meta {
@@ -292,7 +294,7 @@ body {
 .index {
     min-width: 60px;
     color: #c9ccd0;
-    font-size: 12px;
+    font-size: 15px;
     text-align: right;
 }
 
@@ -300,8 +302,8 @@ body {
     margin-top: 7px;
     padding-right: 10px;
     color: #18191c;
-    font-size: 15px;
-    line-height: 1.55;
+    font-size: 20px;
+    line-height: 1.65;
     word-break: break-word;
 }
 
@@ -364,15 +366,15 @@ body {
 
 .reply-nickname {
     max-width: 220px;
-    font-size: 13px;
-    line-height: 18px;
+    font-size: 18px;
+    line-height: 24px;
 }
 
 .reply-content {
     margin-top: 2px;
     color: #18191c;
-    font-size: 14px;
-    line-height: 1.55;
+    font-size: 20px;
+    line-height: 1.65;
     word-break: break-word;
 }
 
@@ -383,8 +385,8 @@ body {
     gap: 20px;
     margin-top: 8px;
     color: #9499a0;
-    font-size: 12px;
-    line-height: 18px;
+    font-size: 15px;
+    line-height: 22px;
 }
 
 .reply-meta {
