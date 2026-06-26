@@ -164,22 +164,29 @@ body {
     letter-spacing: 0;
 }
 
-.level-badge-1,
-.level-badge-2,
+.level-badge-0,
+.level-badge-1 {
+    background: #e8e8e8;
+}
+
+.level-badge-2 {
+    background: #8cd49c;
+}
+
 .level-badge-3 {
-    background: #6dc781;
+    background: #7cccec;
 }
 
 .level-badge-4 {
-    background: #48a6e8;
+    background: #fbbc8c;
 }
 
 .level-badge-5 {
-    background: #ff8c29;
+    background: #ec642c;
 }
 
 .level-badge-6 {
-    background: #ff6699;
+    background: #f34c4c;
 }
 
 .senior-flash {
@@ -233,8 +240,7 @@ body {
     display: none;
 }
 
-.comment-decor,
-.index {
+.comment-decor {
     position: absolute;
     top: 21px;
     right: 0;
@@ -291,13 +297,6 @@ body {
     letter-spacing: 0;
 }
 
-.index {
-    min-width: 60px;
-    color: #c9ccd0;
-    font-size: 15px;
-    text-align: right;
-}
-
 .content {
     margin-top: 7px;
     padding-right: 10px;
@@ -322,6 +321,22 @@ body {
     margin: 0 2px;
     object-fit: contain;
     vertical-align: -5px;
+}
+
+.rich-highlight {
+    color: #00aeec;
+}
+
+.pinned-badge {
+    display: inline-block;
+    margin-right: 7px;
+    padding: 0 6px;
+    border-radius: 2px;
+    background: #fff0f5;
+    color: #ff6699;
+    font-size: 15px;
+    line-height: 24px;
+    vertical-align: 2px;
 }
 
 .comment-image-wrap {
@@ -397,6 +412,17 @@ body {
 .action-meta {
     flex: 0 0 auto;
     color: #9499a0;
+}
+
+.up-like-text {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    background: #f1f2f3;
+    color: #61666d;
+    font-size: 14px;
+    line-height: 20px;
 }
 
 .action {

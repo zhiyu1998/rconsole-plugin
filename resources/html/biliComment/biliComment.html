@@ -55,17 +55,18 @@
                         <span class="comment-decor-text" {{if item.decor.color}}style="color: {{item.decor.color}}"{{/if}}>{{item.decor.text}}</span>
                         {{/if}}
                     </div>
-                    {{else}}
-                    <div class="index">{{item.indexText || ('#' + (idx + 1))}}</div>
                     {{/if}}
                 </div>
 
                 <div class="content rich-text">
+                    {{if item.pinnedText}}<span class="pinned-badge">{{item.pinnedText}}</span>{{/if}}
                     {{each item.content part}}
                     {{if part.type === 'emote'}}
                     <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
                     {{else if part.type === 'line-break'}}
                     <br>
+                    {{else if part.type === 'highlight'}}
+                    <span class="rich-highlight">{{part.text}}</span>
                     {{else}}
                     <span>{{part.text}}</span>
                     {{/if}}
@@ -77,6 +78,13 @@
                     <img class="comment-image" src="{{item.image}}" alt="">
                 </div>
                 {{/if}}
+
+                <div class="actions">
+                    <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.likeCountText}}</span>
+                    <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
+                    <span class="action action-reply"><span class="action-icon action-icon-reply"></span>{{item.replyText}}</span>
+                </div>
+                {{if item.upLikeText}}<div class="up-like-text">{{item.upLikeText}}</div>{{/if}}
 
                 {{if item.replyComment}}
                 <div class="reply-comment">
@@ -103,6 +111,8 @@
                             <img class="inline-emote" src="{{part.url}}" alt="{{part.text}}">
                             {{else if part.type === 'line-break'}}
                             <br>
+                            {{else if part.type === 'highlight'}}
+                            <span class="rich-highlight">{{part.text}}</span>
                             {{else}}
                             <span>{{part.text}}</span>
                             {{/if}}
@@ -114,16 +124,10 @@
                             <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
                             <span class="action action-reply">{{item.replyComment.replyText}}</span>
                         </div>
+                        {{if item.replyComment.upLikeText}}<div class="up-like-text">{{item.replyComment.upLikeText}}</div>{{/if}}
                     </div>
                 </div>
                 {{/if}}
-
-                <div class="actions">
-                    {{if item.actionMeta}}<span class="action-meta">{{item.actionMeta}}</span>{{/if}}
-                    <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.likeCountText}}</span>
-                    <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
-                    <span class="action action-reply"><span class="action-icon action-icon-reply"></span>{{item.replyText}}</span>
-                </div>
             </section>
         </article>
         {{/each}}
