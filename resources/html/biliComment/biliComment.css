@@ -340,6 +340,7 @@ body {
 }
 
 .comment-image-wrap {
+    display: inline-block;
     margin-top: 9px;
     max-width: 260px;
     max-height: 220px;
