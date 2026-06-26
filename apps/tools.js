@@ -68,6 +68,7 @@ import BiliInfoModel from "../model/bili-info.js";
 import BiliComment from "../model/biliComment.js";
 import DouyinComment from "../model/douyinComment.js";
 import config from "../model/config.js";
+import KugouStatusModel from "../model/kugou-status.js";
 import NeteaseModel from "../model/netease.js";
 import NeteaseMusicInfo from '../model/neteaseMusicInfo.js';
 import * as aBogus from "../utils/a-bogus.cjs";
@@ -112,9 +113,12 @@ import { llmRead } from "../utils/llm-util.js";
 import { getDS } from "../utils/mihoyo.js";
 import {
     checkKugouQrLogin,
+    buildKugouStatusCardData,
     buildKugouLoginCookie,
     createKugouQrCode,
     createKugouQrKey,
+    getKugouUserDetail,
+    getKugouUserVipDetail,
     normalizeKugouQrImage,
     resolveKugouMusicSource
 } from "../utils/kugou.js";
@@ -287,6 +291,11 @@ export class tools extends plugin {
                     reg: "^#(rnq|RNQ|rncq|RNCQ)$",
                     fnc: 'netease_scan',
                     permission: 'master',
+                },
+                {
+                    reg: "^#(酷狗状态|rks|RKS)$",
+                    fnc: "kugouStatus",
+                    permission: "master",
                 },
                 {
                     reg: "^#(rkq|RKQ)$",
@@ -2664,6 +2673,32 @@ export class tools extends plugin {
                 logger.error("执行酷狗扫码登录时出错:", error);
                 e.reply("执行酷狗扫码登录时发生错误，请稍后再试");
             }
+        }
+        return true;
+    }
+
+    async kugouStatus(e) {
+        if (_.isEmpty(this.kugouApiServer)) {
+            e.reply("未配置酷狗开源API地址，请先填写 tools.kugouApiServer");
+            return true;
+        }
+        if (_.isEmpty(this.kugouCookie)) {
+            e.reply("暂未登录酷狗，请发 #rkq 进行登陆绑定ck");
+            return true;
+        }
+
+        try {
+            const [detailResp, vipResp] = await Promise.all([
+                getKugouUserDetail(this.kugouApiServer, this.kugouCookie),
+                getKugouUserVipDetail(this.kugouApiServer, this.kugouCookie),
+            ]);
+            const cardData = buildKugouStatusCardData(detailResp, vipResp, this.kugouCookie);
+            const screenData = await new KugouStatusModel(e).getData(cardData);
+            const img = await puppeteer.screenshot("kugou-status", screenData);
+            e.reply(img, true);
+        } catch (error) {
+            logger.error("[R插件][kugouStatus] 获取酷狗状态时出错:", error);
+            e.reply("获取酷狗状态时出错，请稍后再试");
         }
         return true;
     }

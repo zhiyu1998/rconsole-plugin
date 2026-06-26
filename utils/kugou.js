@@ -32,7 +32,7 @@ function mergeCookies(...cookies) {
     return Array.from(cookieMap.values()).join("; ");
 }
 
-function extractCookieValue(cookie = "", key = "") {
+export function extractCookieValue(cookie = "", key = "") {
     if (!cookie || !key) {
         return "";
     }
@@ -51,6 +51,124 @@ function normalizeQrImage(qrimg = "") {
         return `base64://${qrimg.replace(/^data:image\/[^;]+;base64,/, "")}`;
     }
     return `base64://${qrimg}`;
+}
+
+export function getDefaultKugouStatusAvatar() {
+    return "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='120' fill='%23D4F5FE'/%3E%3Ccircle cx='120' cy='120' r='88' fill='%2324BBF9' fill-opacity='0.14'/%3E%3Ctext x='50%25' y='54%25' text-anchor='middle' font-family='Arial' font-size='76' font-weight='700' fill='%2324BBF9'%3EKG%3C/text%3E%3C/svg%3E";
+}
+
+export function normalizeKugouStatusImageUrl(url = "") {
+    const normalizedUrl = String(url || "").trim();
+    if (!normalizedUrl) {
+        return getDefaultKugouStatusAvatar();
+    }
+    if (normalizedUrl.startsWith("//")) {
+        return `https:${normalizedUrl}`;
+    }
+    return normalizedUrl.replace(/^http:\/\//i, "https://");
+}
+
+export function formatKugouStatusTime(timestamp) {
+    const seconds = Number(timestamp);
+    if (!Number.isFinite(seconds) || seconds <= 0) {
+        return "未知";
+    }
+    return new Date(seconds * 1000).toLocaleString("zh-CN");
+}
+
+export function getKugouVipTitle(productType = "") {
+    const normalizedType = String(productType || "").trim().toLowerCase();
+    if (normalizedType === "tvip") {
+        return "TVIP";
+    }
+    if (normalizedType === "svip") {
+        return "SVIP";
+    }
+    if (normalizedType === "vip") {
+        return "VIP";
+    }
+    return normalizedType ? normalizedType.toUpperCase() : "未开通";
+}
+
+export function getKugouVipSubtitle(busiType = "") {
+    const normalizedType = String(busiType || "").trim().toLowerCase();
+    if (normalizedType === "concept") {
+        return "概念版";
+    }
+    return String(busiType || "").trim() || "当前未检测到会员业务信息";
+}
+
+export function parseKugouVipExpireTime(timeText = "") {
+    if (!timeText) {
+        return 0;
+    }
+    const normalized = String(timeText).trim().replace(/-/g, "/");
+    const timestamp = new Date(normalized).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+export function resolveKugouVipDisplay(vipData = {}) {
+    const busiVipList = Array.isArray(vipData?.busiVip) ? vipData.busiVip : [];
+    const now = Date.now();
+    const validVipList = busiVipList
+        .filter(item => Number(item?.is_vip) === 1 && parseKugouVipExpireTime(item?.vip_end_time) > now)
+        .sort((a, b) => parseKugouVipExpireTime(b?.vip_end_time) - parseKugouVipExpireTime(a?.vip_end_time));
+    const expiredVipList = busiVipList
+        .filter(item => parseKugouVipExpireTime(item?.vip_end_time) > 0)
+        .sort((a, b) => parseKugouVipExpireTime(b?.vip_end_time) - parseKugouVipExpireTime(a?.vip_end_time));
+
+    const activeVip = validVipList[0];
+    if (activeVip) {
+        return {
+            hasActiveVip: true,
+            vipTitle: getKugouVipTitle(activeVip.product_type),
+            vipSubtitle: getKugouVipSubtitle(activeVip.busi_type),
+            vipExpireText: `到期时间：${activeVip.vip_end_time || "未记录"}`,
+            vipStateText: "有效中",
+        };
+    }
+
+    const latestExpiredVip = expiredVipList[0];
+    if (latestExpiredVip) {
+        return {
+            hasActiveVip: false,
+            vipTitle: getKugouVipTitle(latestExpiredVip.product_type),
+            vipSubtitle: `${getKugouVipSubtitle(latestExpiredVip.busi_type)} · 已过期`,
+            vipExpireText: `最近到期：${latestExpiredVip.vip_end_time || "未记录"}`,
+            vipStateText: "已过期",
+        };
+    }
+
+    return {
+        hasActiveVip: false,
+        vipTitle: "未开通",
+        vipSubtitle: "当前未检测到有效酷狗会员",
+        vipExpireText: "到期时间：未开通",
+        vipStateText: "未开通",
+    };
+}
+
+export function buildKugouStatusCardData(detailResp = {}, vipResp = {}, kugouCookie = "") {
+    const detail = detailResp?.data?.data || {};
+    const uid = String(vipResp.userid || detailResp.userid || extractCookieValue(kugouCookie, "userid") || "").trim() || "未知";
+    const vipDisplay = resolveKugouVipDisplay(vipResp);
+
+    return {
+        nickname: detail.nickname || detail.k_nickname || detailResp.nickname || "酷狗用户",
+        avatarUrl: normalizeKugouStatusImageUrl(detail.pic || detail.k_pic || detail.fx_pic || detailResp.avatar),
+        uid,
+        loginTime: formatKugouStatusTime(detail.logintime),
+        hasActiveVip: vipDisplay.hasActiveVip,
+        vipTitle: vipDisplay.vipTitle,
+        vipSubtitle: vipDisplay.vipSubtitle,
+        vipExpireText: vipDisplay.vipExpireText,
+        vipStateText: vipDisplay.vipStateText,
+        stats: [
+            { label: "关注", value: Number(detail.follows) || 0 },
+            { label: "粉丝", value: Number(detail.fans) || 0 },
+            { label: "访客", value: Number(detail.visitors) || 0 }
+        ],
+    };
 }
 
 function collectObjects(value, result = []) {
@@ -819,6 +937,18 @@ export async function getKugouUserDetail(apiServer, kugouCookie = "") {
         userid: findFieldDeep(response.data, ["userid", "user_id", "uid", "id"]) || extractCookieValue(response.cookie, "userid"),
         nickname: findFieldDeep(response.data, ["nickname", "name", "username"]),
         avatar: findFieldDeep(response.data, ["avatar", "img", "pic"]),
+    };
+}
+
+export async function getKugouUserVipDetail(apiServer, kugouCookie = "") {
+    const response = await requestKugouApi(apiServer, "/user/vip/detail", {
+        timestamp: Date.now(),
+    }, kugouCookie);
+
+    return {
+        ...response,
+        userid: findFieldDeep(response.data, ["userid", "user_id", "uid", "id"]) || extractCookieValue(response.cookie, "userid"),
+        busiVip: Array.isArray(response.data?.data?.busi_vip) ? response.data.data.busi_vip : [],
     };
 }
 

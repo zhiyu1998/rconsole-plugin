@@ -28,5 +28,6 @@ CLAUDE.md
 .codex
 .playwright-mcp
 .ace-tool/
+.vscode
 AGENTS.md
 git-commit-message.md

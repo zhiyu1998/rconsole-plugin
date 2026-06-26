@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酷狗状态卡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-18px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        :root {
+            --kg-primary: #24BBF9;
+            --kg-bg-1: #D4F5FE;
+            --kg-bg-2: #EDF8FC;
+            --kg-bg-3: #F4F9FD;
+            --kg-text: #21455B;
+            --kg-subtext: #69879B;
+            --kg-border: rgba(36, 187, 249, 0.14);
+            --kg-shadow: rgba(46, 122, 164, 0.14);
+        }
+
+        html, body {
+            width: 100%;
+            min-height: 100%;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background:
+                radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.92) 0%, transparent 24%),
+                radial-gradient(circle at 88% 22%, rgba(255, 255, 255, 0.8) 0%, transparent 18%),
+                linear-gradient(135deg, var(--kg-bg-1) 0%, var(--kg-bg-2) 45%, var(--kg-bg-3) 100%);
+            overflow: hidden;
+        }
+
+        .background-text {
+            position: absolute;
+            color: rgba(36, 187, 249, 0.11);
+            font-weight: 800;
+            letter-spacing: 4px;
+            pointer-events: none;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .text-1 {
+            top: 7%;
+            left: -28px;
+            font-size: 92px;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .text-2 {
+            top: 42%;
+            right: -48px;
+            font-size: 84px;
+            animation: float 10s ease-in-out infinite;
+        }
+
+        .text-3 {
+            bottom: 11%;
+            left: 48%;
+            font-size: 78px;
+            animation: float 9s ease-in-out infinite;
+        }
+
+        .page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 36px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            max-width: 540px;
+            border-radius: 28px;
+            padding: 34px 30px 28px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            box-shadow: 0 24px 60px var(--kg-shadow);
+        }
+
+        .avatar-wrap {
+            position: absolute;
+            top: -34px;
+            right: 28px;
+            width: 118px;
+            height: 118px;
+        }
+
+        .avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 6px solid rgba(255, 255, 255, 0.96);
+            box-shadow: 0 12px 30px rgba(36, 187, 249, 0.22);
+            background: #ffffff;
+        }
+
+        .avatar-badge {
+            position: absolute;
+            right: -4px;
+            bottom: 4px;
+            min-width: 46px;
+            height: 30px;
+            padding: 0 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #24BBF9, #62D7FF);
+            color: #ffffff;
+            border: 3px solid #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .eyebrow {
+            color: var(--kg-primary);
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .username {
+            margin-top: 14px;
+            max-width: 340px;
+            color: var(--kg-text);
+            font-size: 31px;
+            font-weight: 800;
+            line-height: 1.2;
+            word-break: break-all;
+        }
+
+        .identity-row {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .identity-item,
+        .vip-panel,
+        .stat {
+            border: 1px solid var(--kg-border);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(231, 247, 252, 0.72));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .identity-item {
+            border-radius: 18px;
+            padding: 14px 16px;
+        }
+
+        .label {
+            color: var(--kg-subtext);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .value {
+            color: var(--kg-text);
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1.45;
+            word-break: break-all;
+        }
+
+        .vip-panel {
+            margin-top: 18px;
+            border-radius: 22px;
+            padding: 20px 18px;
+        }
+
+        .vip-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .vip-tag {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: rgba(36, 187, 249, 0.14);
+            color: var(--kg-primary);
+            font-size: 19px;
+            font-weight: 800;
+        }
+
+        .vip-state {
+            color: var(--kg-subtext);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .vip-subtitle {
+            margin-top: 14px;
+            color: var(--kg-text);
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .vip-expire {
+            margin-top: 8px;
+            color: var(--kg-subtext);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .stats {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            border-radius: 18px;
+            padding: 18px 10px 16px;
+            text-align: center;
+        }
+
+        .stat-value {
+            color: var(--kg-text);
+            font-size: 26px;
+            font-weight: 800;
+            line-height: 1.1;
+            word-break: break-all;
+        }
+
+        .stat-label {
+            margin-top: 8px;
+            color: var(--kg-subtext);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+<div class="background-text text-1">KUGOU</div>
+<div class="background-text text-2">酷狗音乐</div>
+<div class="background-text text-3">RKS</div>
+<div class="page">
+    <div class="card">
+        <div class="avatar-wrap">
+            <img src="{{ kugouStatusData.avatarUrl }}" alt="用户头像" class="avatar">
+            {{ if kugouStatusData.hasActiveVip }}
+            <div class="avatar-badge">{{ kugouStatusData.vipTitle }}</div>
+            {{ /if }}
+        </div>
+        <div class="eyebrow">KUGOU STATUS</div>
+        <div class="username">{{ kugouStatusData.nickname }}</div>
+
+        <div class="identity-row">
+            <div class="identity-item">
+                <div class="label">UID</div>
+                <div class="value">{{ kugouStatusData.uid }}</div>
+            </div>
+            <div class="identity-item">
+                <div class="label">上次登录</div>
+                <div class="value">{{ kugouStatusData.loginTime }}</div>
+            </div>
+        </div>
+
+        <div class="vip-panel">
+            <div class="vip-head">
+                <div class="vip-tag">{{ kugouStatusData.vipTitle }}</div>
+                <div class="vip-state">{{ kugouStatusData.vipStateText }}</div>
+            </div>
+            <div class="vip-subtitle">{{ kugouStatusData.vipSubtitle }}</div>
+            <div class="vip-expire">{{ kugouStatusData.vipExpireText }}</div>
+        </div>
+
+        <div class="stats">
+            {{ each kugouStatusData.stats item }}
+            <div class="stat">
+                <div class="stat-value">{{ item.value }}</div>
+                <div class="stat-label">{{ item.label }}</div>
+            </div>
+            {{ /each }}
+        </div>
+    </div>
+</div>
+</body>
+</html>
