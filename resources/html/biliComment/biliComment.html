@@ -73,10 +73,12 @@
                     {{/each}}
                 </div>
 
-                {{if item.image}}
+                {{if item.images && item.images.length}}
+                {{each item.images image}}
                 <div class="comment-image-wrap">
-                    <img class="comment-image" src="{{item.image}}" alt="">
+                    <img class="comment-image" src="{{image}}" alt="">
                 </div>
+                {{/each}}
                 {{/if}}
 
                 <div class="actions">
@@ -118,6 +120,13 @@
                             {{/if}}
                             {{/each}}
                         </div>
+                        {{if item.replyComment.images && item.replyComment.images.length}}
+                        {{each item.replyComment.images image}}
+                        <div class="comment-image-wrap">
+                            <img class="comment-image" src="{{image}}" alt="">
+                        </div>
+                        {{/each}}
+                        {{/if}}
                         <div class="reply-meta">
                             {{if item.replyComment.actionMeta}}<span class="action-meta">{{item.replyComment.actionMeta}}</span>{{/if}}
                             <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.replyComment.likeCountText}}</span>

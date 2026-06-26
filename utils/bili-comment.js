@@ -15,6 +15,15 @@ function normalizeRenderImageUrl(url = "") {
     return normalized.replace(/^http:\/\//i, "https://");
 }
 
+function getBiliCommentImages(content = {}) {
+    const pictures = Array.isArray(content?.pictures) ? content.pictures : [];
+    return [...new Set(
+        pictures
+            .map(item => normalizeRenderImageUrl(item?.img_src || ""))
+            .filter(Boolean)
+    )];
+}
+
 function formatInteractionCount(count = 0) {
     const num = Number(count) || 0;
     if (num >= 100000000) {
@@ -288,11 +297,9 @@ function buildBiliMetaItems(item = {}) {
 }
 
 function normalizeBiliReplyComment(item = {}, options = {}) {
-    if (!item?.content?.message) {
-        return null;
-    }
     const content = normalizeCommentRichText(item.content);
-    if (content.length === 0) {
+    const images = getBiliCommentImages(item.content);
+    if (content.length === 0 && images.length === 0) {
         return null;
     }
     const formatCommentTime = typeof options.formatCommentTime === "function" ? options.formatCommentTime : (() => "");
@@ -306,6 +313,8 @@ function normalizeBiliReplyComment(item = {}, options = {}) {
         avatar: normalizeRenderImageUrl(item.member?.avatar || "") || getDefaultCommentAvatar(),
         nicknameColor: getBiliNicknameColor(item),
         content,
+        images,
+        image: images[0] || "",
         time,
         location,
         level: Number.isFinite(level) ? level : null,
@@ -321,7 +330,8 @@ function normalizeBiliReplyComment(item = {}, options = {}) {
 
 function normalizeBiliComment(item = {}, options = {}) {
     const content = normalizeCommentRichText(item?.content);
-    if (content.length === 0) {
+    const images = getBiliCommentImages(item?.content);
+    if (content.length === 0 && images.length === 0) {
         return null;
     }
     const formatCommentTime = typeof options.formatCommentTime === "function" ? options.formatCommentTime : (() => "");
@@ -338,7 +348,8 @@ function normalizeBiliComment(item = {}, options = {}) {
         avatar: normalizeRenderImageUrl(item.member?.avatar || "") || getDefaultCommentAvatar(),
         nicknameColor: getBiliNicknameColor(item),
         content,
-        image: normalizeRenderImageUrl(item.content?.pictures?.[0]?.img_src || ""),
+        images,
+        image: images[0] || "",
         time,
         location,
         level: Number.isFinite(level) ? level : null,

@@ -341,6 +341,7 @@ body {
 
 .comment-image-wrap {
     display: inline-block;
+    margin-right: 6px;
     margin-top: 9px;
     max-width: 260px;
     max-height: 220px;

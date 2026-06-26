@@ -1153,8 +1153,9 @@ export class tools extends plugin {
                 const contentText = item.content.map(part => part.text).join("");
                 const meta = [item.actionMeta, item.replyText, item.likeCountText ? `赞 ${item.likeCountText}` : ""].filter(Boolean).join("\n");
                 const message = [contentText, meta].filter(Boolean).join("\n");
+                const images = Array.isArray(item.images) && item.images.length > 0 ? item.images : item.image ? [item.image] : [];
                 return {
-                    message: item.image ? [{ type: "text", text: message }, segment.image(item.image)] : message,
+                    message: images.length > 0 ? [{ type: "text", text: message }, ...images.map(image => segment.image(image))] : message,
                     nickname: item.nickname || e.sender?.card || e.user_id,
                     user_id: e.user_id,
                 };
