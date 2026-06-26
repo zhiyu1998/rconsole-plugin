@@ -65,6 +65,8 @@ function pushBiliTextParts(richText, textPart = "") {
 function buildBiliHighlightEntries(content = {}) {
     const atEntries = Object.keys(content?.at_name_to_mid || {})
         .filter(name => name)
+        .map(name => decodeBiliCommentText(name))
+        .filter(name => name)
         .map(name => ({
             key: `@${name}`,
             text: `@${name}`,
@@ -280,7 +282,6 @@ function isBiliPinnedComment(item = {}) {
 
 function buildBiliMetaItems(item = {}) {
     return [
-        item.reply_control?.is_up_top ? "UP主置顶" : "",
         item.reply_control?.up_reply ? "UP主回复" : "",
         item.reply_control?.sub_reply_entry_text || "",
     ].filter(Boolean);
