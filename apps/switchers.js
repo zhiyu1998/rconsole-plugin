@@ -45,9 +45,80 @@ export class switchers extends plugin {
                     reg: "^#删除R信任用户(.*)",
                     fnc: "deleteWhiteList",
                     permission: "master",
+                },
+                {
+                    reg: "^#设置视频号[Cc]ookie\\s*(.*)$",
+                    fnc: "setWeixinChannelCookie",
+                    permission: "master",
                 }
             ]
         });
+    }
+
+    /**
+     * 设置视频号解析所需的腾讯元宝 Cookie
+     * 出于安全考虑，仅限私聊触发，避免在群里暴露 Cookie
+     * 用法：
+     *   1. 私聊发送 `#设置视频号Cookie`（不带参数）→ 查看当前状态与获取方法
+     *   2. 私聊发送 `#设置视频号Cookie <cookie值>`→ 更新 Cookie
+     *   3. 私聊发送 `#设置视频号Cookie 清除` → 清空 Cookie
+     * 获取方法：浏览器登录 https://yuanbao.tencent.com → F12 → Network → 任意请求 → Request Headers → Cookie
+     * @param e
+     * @returns {Promise<boolean>}
+     */
+    async setWeixinChannelCookie(e) {
+        // 强制私聊，防止群里泄露 Cookie（群消息一定有 group_id，私聊没有）
+        if (e.group_id) {
+            e.reply('⚠️ 该命令涉及 Cookie 安全，仅限私聊使用，请在私聊窗口发送');
+            return true;
+        }
+
+        try {
+            // 提取参数（正则里捕获组）
+            const arg = e.msg.replace(/^#设置视频号[Cc]ookie\s*/i, '').trim();
+
+            // 无参数：查看状态与帮助
+            if (!arg) {
+                const current = config.getConfig("tools").weixinChannelYuanbaoCookie;
+                const masked = current ? `${current.slice(0, 10)}...（共${current.length}字符）` : '未设置';
+                e.reply(
+                    `视频号解析 Cookie 设置\n` +
+                    `当前状态：${masked}\n\n` +
+                    `使用方法：\n` +
+                    `1. 更新 Cookie：#设置视频号Cookie <你的Cookie值>\n` +
+                    `2. 清除 Cookie：#设置视频号Cookie 清除\n\n` +
+                    `Cookie 获取方法：\n` +
+                    `1. 浏览器访问并登录 https://yuanbao.tencent.com\n` +
+                    `2. 按 F12 打开开发者工具 → Network 标签\n` +
+                    `3. 刷新页面，点击任意请求 → Request Headers\n` +
+                    `4. 复制 Cookie 字段的完整值`
+                );
+                return true;
+            }
+
+            // 清除 Cookie
+            if (arg === '清除' || arg.toLowerCase() === 'clear') {
+                config.updateField("tools", "weixinChannelYuanbaoCookie", "");
+                e.reply('已清除视频号解析 Cookie');
+                return true;
+            }
+
+            // 校验 Cookie 长度（元宝 Cookie 通常较长）
+            if (arg.length < 20) {
+                e.reply('⚠️ Cookie 长度过短，请检查是否复制完整（应包含多个 key=value 用分号分隔）');
+                return true;
+            }
+
+            // 更新配置（config.updateField 会自动写入 tools.yaml 并触发文件监听）
+            config.updateField("tools", "weixinChannelYuanbaoCookie", arg);
+            logger.mark(`[R插件][视频号] 管理员 ${e.user_id} 更新了腾讯元宝 Cookie（长度 ${arg.length}）`);
+            e.reply(`✅ 视频号解析 Cookie 已更新（长度 ${arg.length}）\n现在发送视频号分享链接即可解析`);
+            return true;
+        } catch (err) {
+            logger.error(`[R插件][视频号] 设置 Cookie 失败: ${err.message}`);
+            e.reply(`设置视频号 Cookie 失败: ${err.message}`);
+            return false;
+        }
     }
 
     /**

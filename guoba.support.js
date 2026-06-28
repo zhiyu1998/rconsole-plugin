@@ -698,6 +698,17 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.weixinChannelYuanbaoCookie",
+                    label: "视频号解析Cookie（腾讯元宝）",
+                    bottomHelpMessage:
+                        "解析微信视频号分享链接所需，浏览器登录 https://yuanbao.tencent.com 后 F12→Network→任意请求→Request Headers→Cookie 复制；也可私聊机器人发送 #设置视频号Cookie 进行设置（推荐私聊设置，更安全）",
+                    component: "Input",
+                    required: false,
+                    componentProps: {
+                        placeholder: "请输入腾讯元宝的Cookie",
+                    },
+                },
+                {
                     field: "tools.kugouApiServer",
                     label: "酷狗API地址",
                     bottomHelpMessage:

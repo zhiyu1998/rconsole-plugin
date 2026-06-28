@@ -73,6 +73,8 @@ kugouCookie: '' # 酷狗开源API搜索时使用的cookie，文档示例：token
 weiboCookie: '' # 微博Cookie，格式：_T_WM=xxx; WEIBOCN_FROM=xxx; MLOGIN=xxx; XSRF-TOKEN=xxx; M_WEIBOCN_PARAMS=xxx
 weiboComments: true # 是否显示微博评论，默认开启
 
+weixinChannelYuanbaoCookie: '' # 视频号解析所需腾讯元宝Cookie，浏览器登录 https://yuanbao.tencent.com 后 F12→Network→任意请求→Request Headers→Cookie 复制；也可私聊机器人发送 #设置视频号Cookie 进行设置，参考：https://github.com/ltaoo/wx_channels_download
+
 xiaoheiheCookie: '' # 小黑盒Cookie，格式：x_xhh_tokenid=xxx
 
 queueConcurrency: 1 # 【目前只涉及哔哩哔哩的下载】根据服务器性能设置可以并发下载的个数，如果你的服务器比较强劲，就选择4~12，较弱就一个一个下载，选择1
