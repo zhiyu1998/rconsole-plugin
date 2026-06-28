@@ -74,8 +74,8 @@ export class switchers extends plugin {
         }
 
         try {
-            // 提取参数（正则里捕获组）
-            const arg = e.msg.replace(/^#设置视频号[Cc]ookie\s*/i, '').trim();
+            // 提取参数（去掉命令前缀，清理换行与首尾空白，避免粘贴带换行导致 Cookie 无效）
+            const arg = e.msg.replace(/^#设置视频号[Cc]ookie\s*/i, '').replace(/\r?\n/g, '').trim();
 
             // 无参数：查看状态与帮助
             if (!arg) {
@@ -109,10 +109,10 @@ export class switchers extends plugin {
                 return true;
             }
 
-            // 更新配置（config.updateField 会自动写入 tools.yaml 并触发文件监听）
+            // 更新配置（config.updateField 会写入 tools.yaml，需重启插件后生效，与 weibo/douyin cookie 一致）
             config.updateField("tools", "weixinChannelYuanbaoCookie", arg);
             logger.mark(`[R插件][视频号] 管理员 ${e.user_id} 更新了腾讯元宝 Cookie（长度 ${arg.length}）`);
-            e.reply(`✅ 视频号解析 Cookie 已更新（长度 ${arg.length}）\n现在发送视频号分享链接即可解析`);
+            e.reply(`✅ 视频号解析 Cookie 已写入配置文件（长度 ${arg.length}）\n⚠️ 需重启插件后生效，重启后发送视频号分享链接即可解析`);
             return true;
         } catch (err) {
             logger.error(`[R插件][视频号] 设置 Cookie 失败: ${err.message}`);

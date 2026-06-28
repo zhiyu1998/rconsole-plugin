@@ -191,9 +191,17 @@ export async function fetchVideoProfile(shareUrl, cookie) {
     const feedResult = await getFeedInfo(exportId, generalToken);
     logger.info('[R插件][视频号] step 2/2 done');
 
-    if (!feedResult || feedResult.errCode !== 0) {
-        const errMsg = feedResult?.errMsg || '未知错误';
-        throw new Error(`视频号接口返回错误: ${errMsg} (errCode: ${feedResult?.errCode})`);
+    // 校验响应：仅在 errCode 字段存在且非 0 时视为错误（部分响应可能不含 errCode 字段，视为成功）
+    if (!feedResult) {
+        throw new Error('视频号接口返回空响应');
+    }
+    if (feedResult.errCode !== undefined && feedResult.errCode !== null && feedResult.errCode !== 0) {
+        const errMsg = feedResult.errMsg || '未知错误';
+        throw new Error(`视频号接口返回错误: ${errMsg} (errCode: ${feedResult.errCode})`);
+    }
+    // 校验关键数据是否存在
+    if (!feedResult.data || (!feedResult.data.feedInfo && !feedResult.data.authorInfo)) {
+        throw new Error('视频号接口返回数据为空，可能是分享链接已失效或 token 过期');
     }
 
     const data = feedResult.data || {};

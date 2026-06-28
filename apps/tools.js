@@ -4983,8 +4983,8 @@ export class tools extends plugin {
             return false;
         }
 
-        // 实时读取 Cookie（支持运行时通过 #设置视频号Cookie 命令更新后立即生效）
-        const cookie = config.getConfig("tools").weixinChannelYuanbaoCookie;
+        // 读取 Cookie（构造时从 yaml 加载，与 weibo/douyin 范式一致；通过 #设置视频号Cookie 更新后需重启插件生效）
+        const cookie = this.weixinChannelYuanbaoCookie;
         if (!cookie) {
             e.reply(`${this.identifyPrefix}识别：视频号\n⚠️ 未配置腾讯元宝 Cookie，请联系管理员私聊发送 #设置视频号Cookie 进行设置\n获取方法：浏览器登录 https://yuanbao.tencent.com 后 F12 → Network → 任意请求 → Request Headers → Cookie`);
             return true;
@@ -5016,14 +5016,15 @@ export class tools extends plugin {
             messagesToSend.push(textLines.join('\n'));
             await e.reply(messagesToSend);
 
-            // 下载并发送视频
+            // 下载并发送视频（await 确保下载完成，与抖音范式一致）
             if (result.video) {
-                this.downloadVideo(result.video, false, null, this.videoDownloadConcurrency, 'wxchannel.mp4').then(videoPath => {
+                try {
+                    const videoPath = await this.downloadVideo(result.video, false, null, this.videoDownloadConcurrency, 'wxchannel.mp4');
                     this.sendVideoToUpload(e, videoPath);
-                }).catch(err => {
+                } catch (err) {
                     logger.error(`[R插件][视频号] 视频下载失败: ${err.message}`);
                     e.reply('视频号视频下载失败，可能视频链接已过期，请重新分享链接');
-                });
+                }
             } else {
                 e.reply('未获取到视频地址，可能是图文动态或不支持的内容类型');
                 logger.warn(`[R插件][视频号] 未获取到视频地址，mediaType: ${result.mediaType}`);
