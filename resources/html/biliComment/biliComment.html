@@ -82,6 +82,7 @@
                 {{/if}}
 
                 <div class="actions">
+                    {{if item.actionMeta}}<span class="action-meta">{{item.actionMeta}}</span>{{/if}}
                     <span class="action action-like"><span class="action-icon action-icon-thumb"></span>{{item.likeCountText}}</span>
                     <span class="action action-dislike"><span class="action-icon action-icon-dislike"></span></span>
                     <span class="action action-reply"><span class="action-icon action-icon-reply"></span>{{item.replyText}}</span>
