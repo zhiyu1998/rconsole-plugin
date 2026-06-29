@@ -325,6 +325,21 @@ export const XHH_CONSOLE_LINK = "https://api.xiaoheihe.cn/game/console/get_game_
 export const XHH_MOBILE_LINK = "https://api.xiaoheihe.cn/game/mobile/get_game_detail";
 
 /**
+ * 微信视频号 - 腾讯元宝解析接口
+ * 解析分享链接 https://weixin.qq.com/sph/xxx，返回 playable_url（含 token/eid）
+ * 需要腾讯元宝 Web 端 Cookie 鉴权，参考：https://github.com/ltaoo/wx_channels_download
+ * @type {string}
+ */
+export const WXCHANNEL_YUANBAO_PARSE = "https://yuanbao.tencent.com/api/weixin/get_parse_result";
+
+/**
+ * 微信视频号 - feed 详情接口
+ * 通过 token(generalToken) + eid(exportId) 获取视频地址、作者、互动数据等
+ * @type {string}
+ */
+export const WXCHANNEL_FEED_INFO = "https://channels.weixin.qq.com/finder-preview/api/feed/get_feed_info";
+
+/**
  * TOOL_CALL 爬虫工具
  * 用于Kimi模型Tool-Calling的爬虫工具
  * 当Kimi模型判断需要从网页获取信息时，会调用此工具。

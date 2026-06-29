@@ -128,6 +128,7 @@ import { saveTDL, startTDL } from "../utils/tdl-util.js";
 import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id, getWeiboData, getWeiboComments, getWeiboVoteImages } from "../utils/weibo.js";
+import { fetchVideoProfile, extractShareUrl } from "../utils/weixin-channel.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
@@ -281,6 +282,10 @@ export class tools extends plugin {
                 {
                     reg: "xiaoheihe.cn",
                     fnc: "xiaoheihe"
+                },
+                {
+                    reg: "(weixin\\.qq\\.com/sph/)",
+                    fnc: "weixinChannel"
                 },
                 {
                     reg: "^#(网易云状态|rns|RNS|网易云云盘状态|rncs|RNCS)$",
@@ -438,6 +443,8 @@ export class tools extends plugin {
         this.weiboComments = this.toolsConfig.weiboComments ?? true;
         // 加载小黑盒Cookie
         this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
+        // 加载视频号（腾讯元宝）Cookie —— 支持运行时通过 #设置视频号Cookie 命令更新
+        this.weixinChannelYuanbaoCookie = this.toolsConfig.weixinChannelYuanbaoCookie;
     }
 
     // 翻译插件
@@ -4950,6 +4957,95 @@ export class tools extends plugin {
             logger.error(error);
             throw error;
         }
+    }
+
+    /**
+     * 微信视频号分享链接解析
+     * 支持 https://weixin.qq.com/sph/xxx 格式分享链接
+     * 实现参考 https://github.com/ltaoo/wx_channels_download
+     * 鉴权使用「腾讯元宝 Web 端 Cookie」，无需微信登录
+     * Cookie 获取方式：私聊管理员发送 #设置视频号Cookie <cookie>
+     * @param e
+     * @returns {Promise<boolean>}
+     */
+    async weixinChannel(e) {
+        // 切面判断是否需要解析
+        if (!(await this.isEnableResolve(RESOLVE_CONTROLLER_NAME_ENUM.weixinChannel))) {
+            logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.weixinChannel} 已拦截`);
+            return false;
+        }
+
+        // 提取分享链接
+        const msg = e.msg === undefined ? (e.message?.[0]?.data || '') : e.msg;
+        const shareUrl = extractShareUrl(msg);
+        if (!shareUrl) {
+            logger.info(`[R插件][视频号] 未提取到 sph 分享链接: ${msg}`);
+            return false;
+        }
+
+        // 读取 Cookie（构造时从 yaml 加载，与 weibo/douyin 范式一致；通过 #设置视频号Cookie 更新后需重启插件生效）
+        const cookie = this.weixinChannelYuanbaoCookie;
+        if (!cookie) {
+            e.reply(`${this.identifyPrefix}识别：视频号\n⚠️ 未配置腾讯元宝 Cookie，请联系管理员私聊发送 #设置视频号Cookie 进行设置\n获取方法：浏览器登录 https://yuanbao.tencent.com 后 F12 → Network → 任意请求 → Request Headers → Cookie`);
+            return true;
+        }
+
+        logger.info(`[R插件][视频号] 开始解析: ${shareUrl}`);
+        try {
+            const result = await fetchVideoProfile(shareUrl, cookie);
+
+            // 拼装文字信息
+            const textLines = [`${this.identifyPrefix}识别：视频号，${result.author || '未知作者'}`];
+            if (result.desc) {
+                // 限制描述长度，避免过长
+                const desc = result.desc.length > 200 ? result.desc.slice(0, 200) + '...' : result.desc;
+                textLines.push(`📝 简介：${desc}`);
+            }
+            // 互动数据
+            // 注意：视频号接口 likeCountFmt 实为"点赞(红心)"数，favCountFmt 实为"喜欢/收藏"数，
+            // 与字段名含义相反，故 ❤️ 对应 like，👍 对应 fav（参考视频号 App 实际 UI）
+            const stats = result.stats;
+            const statsParts = [];
+            if (stats.like) statsParts.push(`❤️${stats.like}`);
+            if (stats.fav) statsParts.push(`👍${stats.fav}`);
+            if (stats.forward) statsParts.push(`🔄${stats.forward}`);
+            if (stats.comment) statsParts.push(`💬${stats.comment}`);
+            if (statsParts.length > 0) textLines.push(`📊 ${statsParts.join(' ')}`);
+
+            // 先发封面 + 文字信息
+            const messagesToSend = [];
+            if (result.cover) messagesToSend.push(segment.image(result.cover));
+            messagesToSend.push(textLines.join('\n'));
+            await e.reply(messagesToSend);
+
+            // 下载并发送视频（await 确保下载完成，与抖音范式一致）
+            if (result.video) {
+                try {
+                    // 视频号 CDN 不支持 HEAD 请求，强制单线程下载（直接 GET，跳过 HEAD 探测）
+                    const videoPath = await this.downloadVideo(result.video, false, null, 1, 'wxchannel.mp4');
+                    this.sendVideoToUpload(e, videoPath);
+                } catch (err) {
+                    logger.error(`[R插件][视频号] 视频下载失败: ${err.message}`);
+                    e.reply('视频号视频下载失败，可能视频链接已过期，请重新分享链接');
+                }
+            } else {
+                e.reply('未获取到视频地址，可能是图文动态或不支持的内容类型');
+                logger.warn(`[R插件][视频号] 未获取到视频地址，mediaType: ${result.mediaType}`);
+            }
+        } catch (err) {
+            logger.error(`[R插件][视频号] 解析失败: ${err.message}`);
+            // 针对常见错误给出友好提示
+            let hint = '视频号解析失败';
+            if (err.message.includes('wx_export_id') || err.message.includes('Cookie')) {
+                hint += '：腾讯元宝 Cookie 可能已失效，请联系管理员私聊发送 #设置视频号Cookie 更新';
+            } else if (err.message.includes('errCode')) {
+                hint += `：${err.message}`;
+            } else {
+                hint += `：${err.message}`;
+            }
+            e.reply(hint);
+        }
+        return true;
     }
 
 
