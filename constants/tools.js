@@ -357,6 +357,27 @@ export const WXCHANNEL_YUANBAO_PARSE = "https://yuanbao.tencent.com/api/weixin/g
 export const WXCHANNEL_FEED_INFO = "https://channels.weixin.qq.com/finder-preview/api/feed/get_feed_info";
 
 /**
+ * 微信文章解析 - 腾讯元宝对话接口
+ * 通过元宝 Web 端对话接口让元宝抓取并总结微信文章（mp.weixin.qq.com）链接
+ * 与视频号解析共用同一个元宝 Cookie（weixinChannelYuanbaoCookie）
+ * 接口路径形如 /api/chat/{chatId}，{chatId} 由 conversation/create 接口创建
+ * payload 格式参考：https://github.com/chenwr727/yuanbao-free-api
+ * @type {string}
+ */
+export const YUANBAO_CHAT = "https://yuanbao.tencent.com/api/chat/";
+
+/**
+ * 微信文章解析 - 腾讯元宝会话管理接口
+ * 新建会话：POST /api/user/agent/conversation/create，返回 { id: chatId }
+ * 删除会话：POST /api/user/agent/conversation/v1/clear，body 含 conversationIds 数组
+ * 切换模型：POST /api/user/agent/conversation/updateModel，初始化会话模型
+ * @type {string}
+ */
+export const YUANBAO_CONVERSATION_CREATE = "https://yuanbao.tencent.com/api/user/agent/conversation/create";
+export const YUANBAO_CONVERSATION_CLEAR = "https://yuanbao.tencent.com/api/user/agent/conversation/v1/clear";
+export const YUANBAO_CONVERSATION_UPDATE_MODEL = "https://yuanbao.tencent.com/api/user/agent/conversation/updateModel";
+
+/**
  * TOOL_CALL 爬虫工具
  * 用于Kimi模型Tool-Calling的爬虫工具
  * 当Kimi模型判断需要从网页获取信息时，会调用此工具。

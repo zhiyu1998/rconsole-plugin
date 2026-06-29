@@ -50,6 +50,11 @@ export class switchers extends plugin {
                     reg: "^#设置视频号[Cc]ookie\\s*(.*)$",
                     fnc: "setWeixinChannelCookie",
                     permission: "master",
+                },
+                {
+                    reg: "^#微信文章解析模式\\s*(通用|元宝)?$",
+                    fnc: "setWeixinArticleResolveMode",
+                    permission: "master",
                 }
             ]
         });
@@ -117,6 +122,77 @@ export class switchers extends plugin {
         } catch (err) {
             logger.error(`[R插件][视频号] 设置 Cookie 失败: ${err.message}`);
             e.reply(`设置视频号 Cookie 失败: ${err.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * 切换微信文章（mp.weixin.qq.com）解析模式
+     *   - 通用模式 general：浏览器抓取页面正文 + 自配 AI（kimi/openai）总结（默认，现有逻辑）
+     *   - 元宝模式 yuanbao：直接把链接发给腾讯元宝让其抓取并总结，与视频号共用元宝 Cookie
+     *     优点：规避微信页面风控（"环境异常"），元宝服务器抓取不走用户服务器 IP
+     *     注意：元宝对话接口有 IP 风控，部署服务器 IP 需与元宝登录 IP 一致，否则会 401
+     *
+     * 用法：
+     *   1. `#微信文章解析模式`（不带参数）→ 查看当前模式
+     *   2. `#微信文章解析模式 通用` → 切换到通用模式
+     *   3. `#微信文章解析模式 元宝` → 切换到元宝模式
+     * @param e
+     * @returns {Promise<boolean>}
+     */
+    async setWeixinArticleResolveMode(e) {
+        try {
+            const arg = (e.msg.replace(/^#微信文章解析模式\s*/i, '').trim() || '').toLowerCase();
+            const current = config.getConfig("tools").weixinArticleResolveMode || 'general';
+
+            // 无参数：查看当前状态
+            if (!arg) {
+                const modeText = current === 'yuanbao' ? '元宝模式（走腾讯元宝抓取+总结）' : '通用模式（浏览器抓取+自配AI总结）';
+                e.reply(
+                    `微信文章解析模式\n` +
+                    `当前模式：${modeText}\n\n` +
+                    `可选模式：\n` +
+                    `• 通用：浏览器抓取页面正文 + 自配 AI（kimi/openai）总结（默认）\n` +
+                    `• 元宝：直接把链接发给腾讯元宝抓取总结，与视频号共用元宝 Cookie，规避微信页面风控\n\n` +
+                    `切换命令：\n` +
+                    `#微信文章解析模式 通用\n` +
+                    `#微信文章解析模式 元宝\n\n` +
+                    `注意：元宝模式依赖元宝 Cookie，请先通过 #设置视频号Cookie 配置；且元宝对话接口有 IP 风控，部署服务器 IP 需与元宝登录 IP 一致`
+                );
+                return true;
+            }
+
+            // 参数校验
+            if (arg !== 'general' && arg !== 'yuanbao' && arg !== '通用' && arg !== '元宝') {
+                e.reply('⚠️ 参数错误，仅支持「通用」或「元宝」');
+                return true;
+            }
+
+            // 统一映射到英文枚举值
+            const newMode = (arg === 'yuanbao' || arg === '元宝') ? 'yuanbao' : 'general';
+
+            // 切到元宝模式时校验 Cookie 是否已配置（友好提示，但不阻止切换）
+            if (newMode === 'yuanbao') {
+                const cookie = config.getConfig("tools").weixinChannelYuanbaoCookie;
+                if (!cookie) {
+                    e.reply(
+                        `⚠️ 已切换到元宝模式，但尚未配置腾讯元宝 Cookie\n` +
+                        `请私聊发送 #设置视频号Cookie 进行设置\n` +
+                        `（元宝 Cookie 同时用于视频号解析与微信文章元宝模式）`
+                    );
+                    config.updateField("tools", "weixinArticleResolveMode", newMode);
+                    return true;
+                }
+            }
+
+            config.updateField("tools", "weixinArticleResolveMode", newMode);
+            const modeText = newMode === 'yuanbao' ? '元宝模式' : '通用模式';
+            logger.mark(`[R插件][微信文章] 管理员 ${e.user_id} 切换解析模式为 ${modeText}`);
+            e.reply(`✅ 微信文章解析模式已切换为：${modeText}\n⚠️ 需重启插件后生效`);
+            return true;
+        } catch (err) {
+            logger.error(`[R插件][微信文章] 切换解析模式失败: ${err.message}`);
+            e.reply(`切换解析模式失败: ${err.message}`);
             return false;
         }
     }
