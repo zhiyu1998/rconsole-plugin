@@ -107,6 +107,7 @@ import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import { buildBiliCommentRenderData, fetchBiliComments } from "../utils/bili-comment.js";
 import { buildDouyinCommentRenderData, fetchDouyinComments, getDouyinEmojiMap } from "../utils/douyin-comment.js";
+import { resolveDouyinVideoBySsr } from "../utils/douyin.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { llmRead } from "../utils/llm-util.js";
@@ -400,6 +401,8 @@ export class tools extends plugin {
         this.douyinDuration = this.toolsConfig.douyinDuration;
         // 加载抖音是否压缩
         this.douyinCompression = this.toolsConfig.douyinCompression;
+        // 加载抖音是否开启 SSR 免 Cookie 兜底
+        this.douyinEnableSsrBackup = this.toolsConfig.douyinEnableSsrBackup ?? false;
         // 加载抖音是否显示封面
         this.douyinDisplayCover = this.toolsConfig.douyinDisplayCover ?? true;
         // 加载抖音是否开启评论
@@ -560,8 +563,18 @@ export class tools extends plugin {
         if (_.isEmpty(douId)) {
             return false;
         }
+        // SSR 兜底仅面向普通视频，避免误伤直播、图集/动图、评论等原有流程。
+        const canUseSsrBackup = this.isDouyinSsrBackupEligible(douUrl);
         // 当前版本需要填入cookie
         if (_.isEmpty(this.douyinCookie)) {
+            if (await this.tryDouyinSsrBackup(e, douUrl, {
+                douId,
+                ttwid,
+                canUseSsrBackup,
+                reason: "未配置 Cookie",
+            })) {
+                return true;
+            }
             e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
             return;
         }
@@ -637,6 +650,14 @@ export class tools extends plugin {
             // await saveJsonToFile(item);
             // 如果为null则退出
             if (item == null) {
+                if (await this.tryDouyinSsrBackup(e, douUrl, {
+                    douId,
+                    ttwid,
+                    canUseSsrBackup,
+                    reason: "主接口返回空数据",
+                })) {
+                    return true;
+                }
                 e.reply("R插件无法识别到当前抖音内容，请换一个试试！");
                 return;
             }
@@ -644,57 +665,21 @@ export class tools extends plugin {
             const urlType = douyinTypeMap[urlTypeCode];
             // 核心内容
             if (urlType === "video") {
-                // logger.info(item.video);
-                // 多位面选择：play_addr、play_addr_265、play_addr_h264
                 const { play_addr: { uri: videoAddrURI }, duration, cover } = item.video;
-                // 进行时间判断，如果超过时间阈值就不发送
-                const dyDuration = Math.trunc(duration / 1000);
-                const durationThreshold = this.douyinDuration;
-                // 一些共同发送内容
-                let dySendContent = `${this.identifyPrefix}识别：抖音，${item.author.nickname}\n📝 简介：${item.desc}`;
-                if (dyDuration >= durationThreshold) {
-                    // 超过阈值，不发送的情况
-                    // 封面
-                    const dyCover = cover.url_list?.pop();
-                    // logger.info(cover.url_list);
-                    dySendContent += `\n
-                    ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(dyDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(durationThreshold / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
-                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
-                    // 如果开启评论的就调用
-                    await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
-                    return;
-                }
-                // 封面
-                const dyCover = cover.url_list?.at(-1) || cover.url_list?.[0];
-                if (this.douyinDisplayCover && dyCover) {
-                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
-                } else {
-                    e.reply(dySendContent);
-                }
-                // 分辨率判断是否压缩
                 const resolution = this.douyinCompression ? "720p" : "1080p";
-                // 使用今日头条 CDN 进一步加快解析速度
                 const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
-
-                // ⚠️ 暂时废弃代码
-                /*if (this.douyinCompression) {
-                    // H.265压缩率更高、流量省一半. 相对于H.264
-                    // 265 和 264 随机均衡负载
-                    const videoAddrList = Math.random() > 0.5 ? play_addr_265.url_list : play_addr_h264.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-                } else {
-                    // 原始格式，ps. videoAddrList这里[0]、[1]是 http，[最后一个]是 https
-                    const videoAddrList = play_addr.url_list;
-                    resUrl = videoAddrList[videoAddrList.length - 1] || videoAddrList[0];
-                }*/
-
-                // logger.info(resUrl);
-                // 加入队列
-                await this.downloadVideo(resUrl, false, null, this.videoDownloadConcurrency, 'douyin.mp4').then((videoPath) => {
-                    this.sendVideoToUpload(e, videoPath);
+                await this.handleDouyinResolvedVideo(e, {
+                    douId,
+                    author: item.author || {},
+                    authorNickname: item.author?.nickname || "抖音用户",
+                    desc: item.desc || "",
+                    durationSeconds: Math.trunc((duration || 0) / 1000),
+                    coverUrl: cover?.url_list?.at(-1) || cover?.url_list?.[0] || "",
+                    videoUrl: resUrl,
+                    downloadHeaders: null,
+                    commentHeaders: headers,
+                    enableComments: true,
                 });
-                // 如果开启评论的话就调用
-                await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
             } else if (urlType === "image") {
                 // 检查是否包含video字段
                 const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
@@ -747,10 +732,189 @@ export class tools extends plugin {
 
             }
         } catch (err) {
+            if (await this.tryDouyinSsrBackup(e, douUrl, {
+                douId,
+                ttwid,
+                canUseSsrBackup,
+                reason: `主接口异常: ${err.message}`,
+            })) {
+                return true;
+            }
             logger.error(err);
             logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`);
         }
         return true;
+    }
+
+    /**
+     * 判断当前链接是否允许走 SSR 免 Cookie 兜底。
+     * 目前放行普通视频和 note 图文/动图，直播和 slides 继续使用现有专用逻辑。
+     * @param douUrl
+     * @returns {boolean}
+     */
+    isDouyinSsrBackupEligible(douUrl = "") {
+        if (!this.douyinEnableSsrBackup) {
+            return false;
+        }
+
+        if (douUrl.includes("share/slides")) {
+            return false;
+        }
+
+        if (douUrl.includes("live.douyin.com") || /\/live\/\d+/.test(douUrl) || douUrl.includes("webcast.amemv.com")) {
+            return false;
+        }
+
+        return douUrl.includes("/video/") || douUrl.includes("/note/") || douUrl.includes("share/video/") || douUrl.includes("modal_id=");
+    }
+
+    /**
+     * 主接口不可用时，尝试走 SSR 分享页兜底。
+     * 兜底成功后只复用内容发送链路，不继续拉评论，避免引入新的 cookie 依赖。
+     * @param e
+     * @param douUrl
+     * @param options
+     * @returns {Promise<boolean>}
+     */
+    async tryDouyinSsrBackup(e, douUrl, options = {}) {
+        const {
+            douId = "",
+            ttwid = "",
+            canUseSsrBackup = false,
+            reason = "",
+        } = options;
+
+        if (!canUseSsrBackup) {
+            return false;
+        }
+
+        try {
+            const resolved = await resolveDouyinVideoBySsr(douUrl, {
+                initialTtwid: ttwid,
+                preferCompressed: this.douyinCompression,
+            });
+            logger.info(`[R插件][抖音SSR兜底] 已启用，原因: ${reason || "未知"}，类型: ${resolved.contentType}，canonical: ${resolved.canonicalUrl}`);
+            if (resolved.contentType === "image") {
+                await this.handleDouyinResolvedImage(e, resolved.aweme, douUrl);
+                return true;
+            }
+            await this.handleDouyinResolvedVideo(e, {
+                douId: resolved.awemeId || douId,
+                author: resolved.author || {},
+                authorNickname: resolved.authorNickname || "抖音用户",
+                desc: resolved.desc || "",
+                durationSeconds: resolved.durationSeconds || 0,
+                coverUrl: resolved.coverUrl || "",
+                videoUrl: resolved.videoUrl,
+                downloadHeaders: resolved.downloadHeaders,
+                commentHeaders: null,
+                enableComments: false,
+            });
+            return true;
+        } catch (error) {
+            logger.error(`[R插件][抖音SSR兜底] 失败: ${error.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * 统一处理抖音普通视频的发送逻辑，让主接口结果和 SSR 兜底结果共用同一套下游行为。
+     * @param e
+     * @param options
+     * @returns {Promise<void>}
+     */
+    async handleDouyinResolvedVideo(e, options = {}) {
+        const {
+            douId = "",
+            author = {},
+            authorNickname = "抖音用户",
+            desc = "",
+            durationSeconds = 0,
+            coverUrl = "",
+            videoUrl = "",
+            downloadHeaders = null,
+            commentHeaders = null,
+            enableComments = false,
+        } = options;
+
+        let dySendContent = `${this.identifyPrefix}识别：抖音，${authorNickname}\n📝 简介：${desc}`;
+        if (durationSeconds >= this.douyinDuration) {
+            // 超过时长阈值时沿用老行为：只提示，不发送视频。
+            dySendContent += `\n
+                    ${DIVIDING_LINE.replace('{}', '限制说明')}\n当前视频时长约：${(durationSeconds / 60).toFixed(2).replace(/\.00$/, '')} 分钟，\n大于管理员设置的最大时长 ${(this.douyinDuration / 60).toFixed(2).replace(/\.00$/, '')} 分钟！`;
+            if (coverUrl) {
+                await replyWithRetry(e, Bot, [segment.image(coverUrl), dySendContent]);
+            } else {
+                e.reply(dySendContent);
+            }
+
+            if (enableComments && commentHeaders) {
+                await this.douyinComment(e, douId, commentHeaders, desc, coverUrl, author);
+            }
+            return;
+        }
+
+        if (this.douyinDisplayCover && coverUrl) {
+            await replyWithRetry(e, Bot, [segment.image(coverUrl), dySendContent]);
+        } else {
+            e.reply(dySendContent);
+        }
+
+        // downloadHeaders 允许 SSR 兜底链路把 Referer 等请求头透传到下载器。
+        const videoPath = await this.downloadVideo(videoUrl, false, downloadHeaders, this.videoDownloadConcurrency, 'douyin.mp4');
+        await this.sendVideoToUpload(e, videoPath);
+
+        if (enableComments && commentHeaders) {
+            await this.douyinComment(e, douId, commentHeaders, desc, coverUrl, author);
+        }
+    }
+
+    /**
+     * SSR 兜底拿到 image 类型时，复用现有图集/有声动图的发送链路。
+     * 这里主要承担 note 图文/有声动图兜底，不负责 share/slides 特例，也不继续请求评论接口。
+     * @param e
+     * @param item
+     * @param douUrl
+     * @returns {Promise<void>}
+     */
+    async handleDouyinResolvedImage(e, item, douUrl) {
+        const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
+
+        if (hasVideo) {
+            const desc = item.desc || "无简介";
+            const authorNickname = item.author?.nickname || "未知作者";
+            const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+            const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+            if (this.douyinDisplayCover && dyCover) {
+                await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+            } else {
+                e.reply(dySendContent);
+            }
+
+            await this.processDouyinImageAlbum(e, item, douUrl, null, null);
+            return;
+        }
+
+        e.reply(`${this.identifyPrefix}识别：抖音, ${item.desc}`);
+
+        const imageUrls = (item.images || []).map(i => i.url_list[0]).filter(Boolean);
+        if (imageUrls.length === 0) {
+            return;
+        }
+
+        if (imageUrls.length > this.globalImageLimit) {
+            const remoteImageList = imageUrls.map(url => ({
+                message: segment.image(url),
+                nickname: this.e.sender.card || this.e.user_id,
+                user_id: this.e.user_id,
+            }));
+            await sendImagesInBatches(e, remoteImageList, this.imageBatchThreshold);
+        } else {
+            const images = imageUrls.map(url => segment.image(url));
+            await e.reply(images);
+        }
+
+        await this.resolveDouyinMusic(e, item, douUrl);
     }
 
     /**
@@ -5201,17 +5365,35 @@ export class tools extends plugin {
         const { url, headers, userAgent, proxyOption, target, groupPath } = downloadVideoParams;
         const maxRetries = 3;
         const retryDelay = 1000;
+        const baseHeaders = headers ? { ...headers } : { "User-Agent": userAgent };
 
         try {
             // Step 1: 请求视频资源获取 Content-Length（带重试）
-            let headRes;
+            let contentLength = 0;
             for (let retry = 0; retry <= maxRetries; retry++) {
                 try {
-                    headRes = await axios.head(url, {
-                        headers: headers || { "User-Agent": userAgent },
+                    const headRes = await axios.head(url, {
+                        headers: baseHeaders,
                         ...proxyOption
                     });
-                    break;
+                    contentLength = Number(headRes.headers['content-length']) || 0;
+                    if (!contentLength) {
+                        const rangeRes = await axios.get(url, {
+                            headers: {
+                                ...baseHeaders,
+                                "Range": "bytes=0-1"
+                            },
+                            responseType: "arraybuffer",
+                            ...proxyOption
+                        });
+                        const contentRange = rangeRes.headers['content-range'] || "";
+                        const match = String(contentRange).match(/\/(\d+)$/);
+                        contentLength = Number(match?.[1]) || 0;
+                    }
+                    if (contentLength) {
+                        break;
+                    }
+                    throw new Error("无法获取视频大小");
                 } catch (err) {
                     if (retry < maxRetries) {
                         logger.warn(`[R插件][视频下载] HEAD请求失败，重试中... (${retry + 1}/${maxRetries})`);
@@ -5222,7 +5404,6 @@ export class tools extends plugin {
                 }
             }
 
-            const contentLength = headRes.headers['content-length'];
             if (!contentLength) {
                 throw new Error("无法获取视频大小");
             }
@@ -5237,7 +5418,7 @@ export class tools extends plugin {
                     try {
                         const partAxiosConfig = {
                             headers: {
-                                "User-Agent": userAgent,
+                                ...baseHeaders,
                                 "Range": `bytes=${start}-${end}`
                             },
                             responseType: "stream",

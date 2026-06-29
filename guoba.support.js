@@ -449,6 +449,14 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.douyinEnableSsrBackup",
+                    label: "是否开启 SSR 兜底",
+                    bottomHelpMessage:
+                        "默认关闭。开启后仅在普通抖音视频无 Cookie 或主接口失败时，尝试走 SSR 免 Cookie 兜底解析；不覆盖直播、图集/动图、评论接口",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.douyinDisplayCover",
                     label: "是否显示封面",
                     bottomHelpMessage: "默认显示，是否显示封面",

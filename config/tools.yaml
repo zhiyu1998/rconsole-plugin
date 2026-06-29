@@ -57,6 +57,7 @@ youtubeCookiePath: '' # YouTobe的Cookie.txt所在的路径
 douyinCookie: '' # douyin's cookie, 格式：odin_tt=xxx;passport_fe_beating_status=xxx;sid_guard=xxx;uid_tt=xxx;uid_tt_ss=xxx;sid_tt=xxx;sessionid=xxx;sessionid_ss=xxx;sid_ucp_v1=xxx;ssid_ucp_v1=xxx;passport_assist_user=xxx;ttwid=xxx;
 douyinDuration: 480 # 抖音的最大视频时长（默认8分钟），单位：秒
 douyinCompression: false # true-压缩，false-不压缩；是否开启视频压缩（开启后分辨率降为 720p，关闭则为 1080p）
+douyinEnableSsrBackup: false # 是否开启抖音 SSR 免 Cookie 兜底；默认关闭，仅用于普通视频在无 Cookie 或主接口失败时兜底
 douyinDisplayCover: true # true-显示封面，false-不显示封面
 douyinComments: false # true-开启评论，false-关闭评论
 douyinCommentCount: 5 # 抖音评论展示数量，默认5条，推荐保持5；数量越多性能越差，超过10会按每10条生成一张截图
