@@ -182,10 +182,14 @@ export async function fetchVideoProfile(shareUrl, cookie) {
         generalToken = playableUrl.searchParams.get('token') || '';
         exportId = playableUrl.searchParams.get('eid') || '';
     } catch (_) {
-        // ignore
+        // ignore URL 解析异常，下面统一校验
     }
-    if (!generalToken) logger.warn('[R插件][视频号] generalToken is empty in playable_url');
-    if (!exportId) logger.warn('[R插件][视频号] exportId (eid) is empty in playable_url');
+    // 提前校验：token 与 eid 均由元宝下发的一次性 feed 预览凭证，缺一不可；
+    // 注意：不能 fallback 到 parseData.wx_export_id，那是分享链接原始导出ID，
+    // 与此处所需的 eid（feed 预览凭证）不是同一个值，混用会返回空数据。
+    if (!generalToken || !exportId) {
+        throw new Error('元宝接口返回的 playable_url 缺少 token 或 eid，无法解析视频号详情');
+    }
 
     // Step 2
     const feedResult = await getFeedInfo(exportId, generalToken);
