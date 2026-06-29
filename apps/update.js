@@ -66,13 +66,19 @@ export class Update extends plugin {
 
         let isForce = !!e.msg.includes("强制");
         this.isUp = false;
+        const pluginDir = `./plugins/${Update.pluginName}/`;
 
         // 保存配置文件
-        await copyFiles(`./plugins/${Update.pluginName}/config`, "./temp/rconsole-update-tmp", ['tools.yaml']);
+        await copyFiles(`${pluginDir}config`, "./temp/rconsole-update-tmp", ["tools.yaml"]);
 
-        let command = `git -C ./plugins/${Update.pluginName}/ pull --no-rebase`;
+        let command = `git -C ${pluginDir} pull --no-rebase`;
         if (isForce) {
-            command = `git -C ./plugins/${Update.pluginName}/ checkout . && ${command}`;
+            // 强制更新除了回退已跟踪修改，也需要清理会阻塞 pull 的未跟踪文件。
+            command = [
+                `git -C ${pluginDir} reset --hard HEAD`,
+                `git -C ${pluginDir} clean -fd`,
+                command
+            ].join(" && ");
         }
         this.oldCommitId = await this.getCommitId(Update.pluginName);
         await e.reply("正在执行更新操作，请稍等");
