@@ -5019,7 +5019,8 @@ export class tools extends plugin {
             // 下载并发送视频（await 确保下载完成，与抖音范式一致）
             if (result.video) {
                 try {
-                    const videoPath = await this.downloadVideo(result.video, false, null, this.videoDownloadConcurrency, 'wxchannel.mp4');
+                    // 视频号 CDN 不支持 HEAD 请求，强制单线程下载（直接 GET，跳过 HEAD 探测）
+                    const videoPath = await this.downloadVideo(result.video, false, null, 1, 'wxchannel.mp4');
                     this.sendVideoToUpload(e, videoPath);
                 } catch (err) {
                     logger.error(`[R插件][视频号] 视频下载失败: ${err.message}`);

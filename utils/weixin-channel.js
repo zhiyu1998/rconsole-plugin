@@ -209,16 +209,15 @@ export async function fetchVideoProfile(shareUrl, cookie) {
     const authorInfo = data.authorInfo || {};
     const sceneInfo = data.sceneInfo || {};
 
-    // 优先使用清洗后的 originVideoUrl（仅含 encfilekey + token），其次用原始 videoUrl
+    // 直接使用原始 videoUrl（保留全部 CDN 参数，避免清洗后触发异常响应）
     const rawVideoUrl = feedInfo.videoUrl || '';
-    const originVideoUrl = cleanVideoURL(rawVideoUrl);
     // H.264 编码视频链接（部分 PC QQ 兼容性更好）
     const h264VideoUrl = feedInfo.h264VideoInfo?.videoUrl || '';
 
     return {
-        // 视频地址（优先清洗后直链，其次原始，最后 H264 兜底）
-        video: originVideoUrl || rawVideoUrl || h264VideoUrl || '',
-        originVideo: originVideoUrl,
+        // 视频地址（原始直链优先，H264 兜底）
+        video: rawVideoUrl || h264VideoUrl || '',
+        originVideo: cleanVideoURL(rawVideoUrl),
         rawVideo: rawVideoUrl,
         h264Video: h264VideoUrl,
         // 封面
