@@ -5002,10 +5002,12 @@ export class tools extends plugin {
                 textLines.push(`📝 简介：${desc}`);
             }
             // 互动数据
+            // 注意：视频号接口 likeCountFmt 实为"点赞(红心)"数，favCountFmt 实为"喜欢/收藏"数，
+            // 与字段名含义相反，故 ❤️ 对应 like，👍 对应 fav（参考视频号 App 实际 UI）
             const stats = result.stats;
             const statsParts = [];
-            if (stats.like) statsParts.push(`👍${stats.like}`);
-            if (stats.fav) statsParts.push(`❤️${stats.fav}`);
+            if (stats.like) statsParts.push(`❤️${stats.like}`);
+            if (stats.fav) statsParts.push(`👍${stats.fav}`);
             if (stats.forward) statsParts.push(`🔄${stats.forward}`);
             if (stats.comment) statsParts.push(`💬${stats.comment}`);
             if (statsParts.length > 0) textLines.push(`📊 ${statsParts.join(' ')}`);
