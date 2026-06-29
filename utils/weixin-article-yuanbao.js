@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { StringDecoder } from 'node:string_decoder';
 import {
     YUANBAO_CHAT,
     YUANBAO_CONVERSATION_CREATE,
@@ -170,6 +171,8 @@ function parseSSEStream(stream, { onChunk } = {}) {
     return new Promise((resolve, reject) => {
         const parts = [];
         let buffer = '';
+        // 使用流式 UTF-8 解码器，避免 chunk 边界切断多字节中文字符导致乱码或 JSON 解析失败
+        const decoder = new StringDecoder('utf8');
 
         const handleLine = (line) => {
             line = line.trim();
@@ -216,7 +219,8 @@ function parseSSEStream(stream, { onChunk } = {}) {
         };
 
         stream.on('data', (chunk) => {
-            buffer += chunk.toString();
+            // 用 StringDecoder 流式解码，防止 chunk 边界切断多字节 UTF-8 字符
+            buffer += decoder.write(chunk);
             // 按换行切分，最后一行可能不完整暂存到 buffer
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
@@ -224,6 +228,8 @@ function parseSSEStream(stream, { onChunk } = {}) {
         });
 
         stream.on('end', () => {
+            // 刷新解码器残留字节（可能包含不完整字符的尾字节）
+            buffer += decoder.end();
             // 处理 buffer 中剩余内容
             if (buffer.trim()) handleLine(buffer);
             const fullText = parts.join('').trim();

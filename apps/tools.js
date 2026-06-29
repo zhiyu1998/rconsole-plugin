@@ -3941,6 +3941,13 @@ export class tools extends plugin {
         // 校验 Cookie
         const cookie = this.weixinChannelYuanbaoCookie;
         if (!cookie) {
+            // 未配元宝 Cookie：若已配自配 AI，自动回退通用模式（与调用失败回退策略一致）
+            if (!_.isEmpty(this.aiApiKey)) {
+                e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）未配置腾讯元宝 Cookie，正在自动回退到通用模式（${this.aiModel}）...`, true);
+                logger.mark(`[R插件][微信文章] 未配元宝 Cookie，回退到通用模式`);
+                return await this._weixinArticleGeneral(e, articleUrl, name);
+            }
+            // 既没元宝 Cookie 也没自配 AI，只能提示用户
             e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）\n⚠️ 未配置腾讯元宝 Cookie，请联系管理员私聊发送 #设置视频号Cookie 进行设置`);
             return true;
         }
@@ -4022,33 +4029,38 @@ export class tools extends plugin {
             return true;
         }
 
-        for (let i = 0; i < 5; i++) {
-            const response = await builder.chat(messages, [CRAWL_TOOL]);
-            if (response.tool_calls) {
-                const tool_calls = response.tool_calls;
-                messages.push({ role: 'assistant', content: null, tool_calls });
-                for (const tool_call of tool_calls) {
-                    if (tool_call.function.name === 'crawl') {
-                        try {
-                            const args = JSON.parse(tool_call.function.arguments);
-                            const crawled_content = await llmRead(args.url);
-                            messages.push({ role: 'tool', tool_call_id: tool_call.id, name: 'crawl', content: crawled_content });
-                        } catch (error) {
-                            messages.push({ role: 'tool', tool_call_id: tool_call.id, name: 'crawl', content: `爬取错误: ${error.message}` });
+        try {
+            for (let i = 0; i < 5; i++) {
+                const response = await builder.chat(messages, [CRAWL_TOOL]);
+                if (response.tool_calls) {
+                    const tool_calls = response.tool_calls;
+                    messages.push({ role: 'assistant', content: null, tool_calls });
+                    for (const tool_call of tool_calls) {
+                        if (tool_call.function.name === 'crawl') {
+                            try {
+                                const args = JSON.parse(tool_call.function.arguments);
+                                const crawled_content = await llmRead(args.url);
+                                messages.push({ role: 'tool', tool_call_id: tool_call.id, name: 'crawl', content: crawled_content });
+                            } catch (error) {
+                                messages.push({ role: 'tool', tool_call_id: tool_call.id, name: 'crawl', content: `爬取错误: ${error.message}` });
+                            }
                         }
                     }
+                } else {
+                    const { ans: kimiAns, model } = response;
+                    const stats = estimateReadingTime(kimiAns);
+                    const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
+                    e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
+                    const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」（通用模式回退）联合为您总结内容：`, kimiAns]));
+                    await replyWithRetry(e, Bot, Msg);
+                    return true;
                 }
-            } else {
-                const { ans: kimiAns, model } = response;
-                const stats = estimateReadingTime(kimiAns);
-                const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
-                e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
-                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」（通用模式回退）联合为您总结内容：`, kimiAns]));
-                await replyWithRetry(e, Bot, Msg);
-                return true;
             }
+            e.reply("通用模式回退处理超出限制，请重试");
+        } catch (error) {
+            logger.error(`[R插件][微信文章][通用模式回退] 失败: ${error.message}`);
+            e.reply(`通用模式回退也失败: ${error.message}`);
         }
-        e.reply("通用模式回退处理超出限制，请重试");
         return true;
     }
 
@@ -4070,7 +4082,9 @@ export class tools extends plugin {
 
         // 元宝模式分流：仅当链接是微信文章（mp.weixin.qq.com）且配置为 yuanbao 模式时走元宝
         // 元宝模式不需要配置自配 AI（aiApiKey），故需在此分流前判断，避免被下面的 aiApiKey 校验拦截
-        if (this.weixinArticleResolveMode === 'yuanbao' && summaryLink && /mp\.weixin\.qq\.com/i.test(summaryLink)) {
+        // 注意：运行时读取 config，避免使用构造时缓存的 stale 值，让 #微信文章解析模式 命令立即生效
+        const weixinArticleResolveMode = config.getConfig("tools").weixinArticleResolveMode || this.weixinArticleResolveMode || 'general';
+        if (weixinArticleResolveMode === 'yuanbao' && summaryLink && /mp\.weixin\.qq\.com/i.test(summaryLink)) {
             return await this.weixinArticleByYuanbao(e, summaryLink, name);
         }
 
