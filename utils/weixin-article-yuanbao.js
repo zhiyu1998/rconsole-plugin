@@ -6,6 +6,7 @@ import {
     YUANBAO_CONVERSATION_CLEAR,
     YUANBAO_CONVERSATION_UPDATE_MODEL,
 } from '../constants/tools.js';
+import { SUMMARY_PROMPT } from '../constants/constant.js';
 
 /**
  * 微信文章解析（走腾讯元宝 Web 端对话接口）
@@ -53,6 +54,14 @@ const COMMON_HEADERS = {
 const AGENT_ID = 'naQivTmsDa';
 // 默认对话模型（混元 175B，元宝网页版默认模型）
 const DEFAULT_MODEL = 'hunyuan_gpt_175B_0404';
+
+function buildSummaryPrompt(articleUrl) {
+    return `${SUMMARY_PROMPT}
+
+请严格遵循以上角色、规则与输出格式要求，直接总结下面这篇微信文章，不要输出额外寒暄，也不要重复提示词内容。
+
+文章链接：${articleUrl}`;
+}
 
 /**
  * 构建带 Cookie + referer 的完整请求头
@@ -272,7 +281,7 @@ function parseSSEStream(stream, { onChunk } = {}) {
 export async function chatSummarize(cookie, chatId, articleUrl, options = {}) {
     const { timeout = 120000, onChunk } = options;
 
-    const prompt = articleUrl;
+    const prompt = buildSummaryPrompt(articleUrl);
     // payload 字段对齐元宝网页版实测抓包格式
     const body = {
         model: 'gpt_175B_0404',
