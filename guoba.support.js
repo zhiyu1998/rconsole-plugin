@@ -1,12 +1,6 @@
 import _ from "lodash";
 import path from "path";
-import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE, DOUYIN_COMMENT_COUNT_LIST, DOUYIN_COMMENT_CHUNK_SIZE_LIST, BILI_COMMENT_COUNT_LIST, BILI_COMMENT_CHUNK_SIZE_LIST } from "./constants/constant.js";
-
-// 微信文章解析模式选项（用于 Guoba Select 组件）
-const WEIXIN_ARTICLE_RESOLVE_MODE_LIST = [
-    { label: '通用模式', value: 'general' },
-    { label: '元宝模式', value: 'yuanbao' },
-];
+import { BILI_CDN_SELECT_LIST, BILI_DEFAULT_CDN_LIST, BILI_DOWNLOAD_METHOD, BILI_RESOLUTION_LIST, VIDEO_CODEC_LIST, YOUTUBE_GRAPHICS_LIST, NETEASECLOUD_QUALITY_LIST, DOUYIN_BGM_SEND_TYPE, DOUYIN_COMMENT_COUNT_LIST, DOUYIN_COMMENT_CHUNK_SIZE_LIST, BILI_COMMENT_COUNT_LIST, BILI_COMMENT_CHUNK_SIZE_LIST, WEIXIN_ARTICLE_RESOLVE_MODE_LIST } from "./constants/constant.js";
 import { RESOLVE_CONTROLLER_NAME_ENUM } from "./constants/resolve.js";
 import model from "./model/config.js";
 
@@ -729,7 +723,7 @@ export function supportGuoba() {
                         "微信文章（mp.weixin.qq.com）解析方式选择：\n" +
                         "• 通用模式（默认）：浏览器抓取页面正文 + 自配 AI（kimi/openai）总结，依赖 aiApiKey 配置\n" +
                         "• 元宝模式：直接把链接发给腾讯元宝抓取并总结，与视频号共用上面的元宝 Cookie，可规避微信页面风控（环境异常），但元宝对话接口有 IP 风控（部署服务器 IP 需与元宝登录 IP 一致）\n" +
-                        "也可通过命令切换：#微信文章解析模式 通用 / #微信文章解析模式 元宝",
+                        "请在锅巴配置中选择需要的解析模式。",
                     component: "Select",
                     componentProps: {
                         options: WEIXIN_ARTICLE_RESOLVE_MODE_LIST,

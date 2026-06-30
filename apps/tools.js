@@ -449,7 +449,7 @@ export class tools extends plugin {
         this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
         // 加载视频号（腾讯元宝）Cookie —— 支持运行时通过 #设置视频号Cookie 命令更新
         this.weixinChannelYuanbaoCookie = this.toolsConfig.weixinChannelYuanbaoCookie;
-        // 加载微信文章解析模式：general-通用（默认），yuanbao-元宝 —— 支持运行时通过 #微信文章解析模式 命令切换
+        // 加载微信文章解析模式：general-通用（默认），yuanbao-元宝
         this.weixinArticleResolveMode = this.toolsConfig.weixinArticleResolveMode || 'general';
     }
 
@@ -3982,7 +3982,7 @@ export class tools extends plugin {
                 return await this._weixinArticleGeneral(e, articleUrl, name);
             }
             // 未配置自配 AI，无法回退，直接报错
-            e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）解析失败：${err.message}\n\n未配置自配 AI 接口，无法自动回退。可尝试：\n1. 检查元宝 Cookie 是否失效（#设置视频号Cookie）\n2. 切换回通用模式：#微信文章解析模式 通用`);
+            e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）解析失败：${err.message}\n\n未配置自配 AI 接口，无法自动回退。可尝试：\n1. 检查元宝 Cookie 是否失效（#设置视频号Cookie）\n2. 在锅巴配置中切换回通用模式`);
             return true;
         }
     }
@@ -4082,7 +4082,7 @@ export class tools extends plugin {
 
         // 元宝模式分流：仅当链接是微信文章（mp.weixin.qq.com）且配置为 yuanbao 模式时走元宝
         // 元宝模式不需要配置自配 AI（aiApiKey），故需在此分流前判断，避免被下面的 aiApiKey 校验拦截
-        // 注意：运行时读取 config，避免使用构造时缓存的 stale 值，让 #微信文章解析模式 命令立即生效
+        // 注意：运行时读取 config，避免使用构造时缓存的 stale 值，让配置更新立即生效
         const weixinArticleResolveMode = config.getConfig("tools").weixinArticleResolveMode || this.weixinArticleResolveMode || 'general';
         if (weixinArticleResolveMode === 'yuanbao' && summaryLink && /mp\.weixin\.qq\.com/i.test(summaryLink)) {
             return await this.weixinArticleByYuanbao(e, summaryLink, name);
