@@ -288,6 +288,11 @@ export const NETEASECLOUD_QUALITY_LIST = Object.freeze([
     { label: '杜比全景声(不推荐)', value: 'dolby' },
     { label: '超清母带', value: 'jymaster' },
 ]);
+
+export const WEIXIN_ARTICLE_RESOLVE_MODE_LIST = Object.freeze([
+    { label: '通用模式', value: 'general' },
+    { label: '元宝模式', value: 'yuanbao' },
+]);
 /**
  * 消息撤回时间
  * @type {number}
