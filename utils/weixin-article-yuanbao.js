@@ -9,13 +9,12 @@ import {
 import { SUMMARY_PROMPT } from '../constants/constant.js';
 
 /**
- * 微信文章解析（走腾讯元宝 Web 端对话接口）
+ * 链接总结（走腾讯元宝 Web 端对话接口）
  *
  * 设计思路：
  *   与 utils/weixin-channel.js 视频号解析共用同一个腾讯元宝 Cookie（weixinChannelYuanbaoCookie）。
  *   视频号走 get_parse_result 专用接口拿 playable_url（结构化数据）；
- *   微信文章没有专用接口，get_parse_result 对文章 URL 返回全空（沙箱实测确认），
- *   只能走元宝对话接口让元宝抓取并总结。
+ *   通用链接总结没有专用接口时，走元宝对话接口让元宝抓取并总结。
  *
  * 解析流程（一次性会话）：
  *   1. POST /api/user/agent/conversation/create 新建会话 → 拿 chatId
@@ -55,12 +54,13 @@ const AGENT_ID = 'naQivTmsDa';
 // 默认对话模型（混元 175B，元宝网页版默认模型）
 const DEFAULT_MODEL = 'hunyuan_gpt_175B_0404';
 
-function buildSummaryPrompt(articleUrl) {
+function buildSummaryPrompt(input, { isContent = false } = {}) {
+    const sourceLabel = isContent ? '网页内容' : '链接';
     return `${SUMMARY_PROMPT}
 
-请严格遵循以上角色、规则与输出格式要求，直接总结下面这篇微信文章，不要输出额外寒暄，也不要重复提示词内容。
+请严格遵循以上角色、规则与输出格式要求，直接总结下面提供的${sourceLabel}，不要输出额外寒暄，也不要重复提示词内容。
 
-文章链接：${articleUrl}`;
+${sourceLabel}：${input}`;
 }
 
 /**
@@ -104,7 +104,7 @@ export async function createConversation(cookie) {
     if (!chatId) {
         throw new Error('元宝接口未返回会话 ID，可能是 Cookie 失效');
     }
-    logger.info(`[R插件][微信文章][元宝] 创建会话成功: ${chatId}`);
+    logger.info(`[R插件][链接总结][元宝] 创建会话成功: ${chatId}`);
     return chatId;
 }
 
@@ -130,7 +130,7 @@ export async function initConversationModel(cookie, chatId) {
         headers: buildHeaders(cookie, chatId),
         timeout: 15000,
     });
-    logger.info(`[R插件][微信文章][元宝] 初始化模型成功: ${DEFAULT_MODEL}`);
+    logger.info(`[R插件][链接总结][元宝] 初始化模型成功: ${DEFAULT_MODEL}`);
 }
 
 /**
@@ -148,10 +148,10 @@ export async function clearConversation(cookie, chatId) {
                 timeout: 15000,
             },
         );
-        logger.info(`[R插件][微信文章][元宝] 删除会话成功: ${chatId}`);
+        logger.info(`[R插件][链接总结][元宝] 删除会话成功: ${chatId}`);
     } catch (err) {
         // 删除失败不影响主流程，仅记录日志
-        logger.warn(`[R插件][微信文章][元宝] 删除会话失败（不影响主流程）: ${err.message}`);
+        logger.warn(`[R插件][链接总结][元宝] 删除会话失败（不影响主流程）: ${err.message}`);
     }
 }
 
@@ -254,13 +254,13 @@ function parseSSEStream(stream, { onChunk } = {}) {
 }
 
 /**
- * Step 3: 发送文章总结请求并接收 SSE 流
+ * Step 3: 发送链接总结请求并接收 SSE 流
  *
  * payload 与 headers 格式来自元宝网页版实测抓包（2026-06），
  * 与 yuanbao-free-api 早期版本有差异，以实际抓包为准。
  *
  * 关键字段：
- *   - parsingPromptUrl: 文章 URL 数组，元宝据此抓取文章正文
+ *   - parsingPromptUrl: 链接 URL 数组，元宝据此抓取正文
  *   - conversationId: 会话 ID（与 URL 路径里的 chatId 一致）
  *   - model: "gpt_175B_0404"（注意无 hunyuan_ 前缀，与 chatModelId 不同）
  *   - supportFunctions: 开启联网搜索与自动搜索开关
@@ -272,16 +272,17 @@ function parseSSEStream(stream, { onChunk } = {}) {
  *
  * @param {string} cookie 腾讯元宝 Web 端 Cookie
  * @param {string} chatId 会话 ID
- * @param {string} articleUrl 微信文章 URL
+ * @param {string} input 待总结链接或已抓取内容
  * @param {object} [options]
  * @param {number} [options.timeout=120000] 超时毫秒
  * @param {function(string): void} [options.onChunk] 增量回调
+ * @param {boolean} [options.isContent=false] 是否直接总结已抓取内容
  * @returns {Promise<string>} 元宝总结的完整文本
  */
-export async function chatSummarize(cookie, chatId, articleUrl, options = {}) {
-    const { timeout = 120000, onChunk } = options;
+export async function chatSummarize(cookie, chatId, input, options = {}) {
+    const { timeout = 120000, onChunk, isContent = false } = options;
 
-    const prompt = buildSummaryPrompt(articleUrl);
+    const prompt = buildSummaryPrompt(input, { isContent });
     // payload 字段对齐元宝网页版实测抓包格式
     const body = {
         model: 'gpt_175B_0404',
@@ -310,8 +311,8 @@ export async function chatSummarize(cookie, chatId, articleUrl, options = {}) {
         version: 'v2',
         extReportParams: null,
         isAtomInput: false,
-        // 关键：文章 URL 数组，元宝据此抓取文章正文（实测抓包确认）
-        parsingPromptUrl: [articleUrl],
+        // 关键：链接 URL 数组，元宝据此抓取正文（实测抓包确认）
+        parsingPromptUrl: isContent ? [] : [input],
         // 关键：会话 ID，与 URL 路径里的 chatId 一致
         conversationId: chatId,
         offsetOfHour: 8,
@@ -335,7 +336,7 @@ export async function chatSummarize(cookie, chatId, articleUrl, options = {}) {
         throw new Error(`元宝对话接口返回 HTTP ${resp.status}`);
     }
 
-    logger.info(`[R插件][微信文章][元宝] 对话流已建立，开始接收 SSE`);
+    logger.info(`[R插件][链接总结][元宝] 对话流已建立，开始接收 SSE`);
     let summary = await parseSSEStream(resp.data, { onChunk });
 
     // 清洗元宝富文本标记（QQ 群里显示会很怪）：
@@ -350,24 +351,25 @@ export async function chatSummarize(cookie, chatId, articleUrl, options = {}) {
 }
 
 /**
- * 端到端解析：新建会话 → 初始化模型 → 对话总结 → 删除会话
+ * 端到端总结：新建会话 → 初始化模型 → 对话总结 → 删除会话
  *
  * 无论解析成功或失败都会尝试删除会话，避免污染用户元宝账号的会话列表。
  *
- * @param {string} articleUrl 微信文章 URL（mp.weixin.qq.com）
+ * @param {string} url 待总结链接
  * @param {string} cookie 腾讯元宝 Web 端 Cookie（与视频号解析共用）
  * @param {object} [options]
  * @param {function(string): void} [options.onChunk] SSE 增量回调（可用于实时进度展示）
  * @param {number} [options.timeout=120000] 对话接口超时毫秒
  * @returns {Promise<string>} 元宝总结的完整文本
  */
-export async function summarizeArticle(articleUrl, cookie, options = {}) {
+export async function summarizeLink(url, cookie, options = {}) {
     if (!cookie) {
         throw new Error('未配置腾讯元宝 Cookie，请联系管理员设置（#设置视频号Cookie）');
     }
-    if (!articleUrl || !/^https?:\/\/mp\.weixin\.qq\.com\//i.test(articleUrl)) {
-        throw new Error('仅支持微信文章链接（mp.weixin.qq.com）');
+    if (!url || typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
+        throw new Error('请提供有效的链接地址');
     }
+    const normalizedUrl = url.trim();
 
     let chatId = '';
     try {
@@ -376,8 +378,8 @@ export async function summarizeArticle(articleUrl, cookie, options = {}) {
         // Step 2: 初始化模型
         await initConversationModel(cookie, chatId);
         // Step 3: 发送总结请求
-        const summary = await chatSummarize(cookie, chatId, articleUrl, options);
-        logger.info(`[R插件][微信文章][元宝] 解析成功，文本长度: ${summary.length}`);
+        const summary = await chatSummarize(cookie, chatId, normalizedUrl, options);
+        logger.info(`[R插件][链接总结][元宝] 总结成功，文本长度: ${summary.length}`);
         return summary;
     } catch (err) {
         // 401 通常意味着 Cookie 失效或部署服务器 IP 与元宝登录 IP 不一致（沙箱实测确认此风控存在）
@@ -392,4 +394,58 @@ export async function summarizeArticle(articleUrl, cookie, options = {}) {
             await clearConversation(cookie, chatId);
         }
     }
+}
+
+/**
+ * 端到端总结：直接使用已抓取网页内容进行元宝总结
+ *
+ * @param {string} content 已抓取的网页正文
+ * @param {string} cookie 腾讯元宝 Web 端 Cookie
+ * @param {object} [options]
+ * @param {function(string): void} [options.onChunk] SSE 增量回调
+ * @param {number} [options.timeout=120000] 对话接口超时毫秒
+ * @returns {Promise<string>} 元宝总结的完整文本
+ */
+export async function summarizeContent(content, cookie, options = {}) {
+    if (!cookie) {
+        throw new Error('未配置腾讯元宝 Cookie，请联系管理员设置（#设置视频号Cookie）');
+    }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+        throw new Error('请提供有效的网页内容');
+    }
+    const normalizedContent = content.trim();
+
+    let chatId = '';
+    try {
+        chatId = await createConversation(cookie);
+        await initConversationModel(cookie, chatId);
+        const summary = await chatSummarize(cookie, chatId, normalizedContent, {
+            ...options,
+            isContent: true,
+        });
+        logger.info(`[R插件][链接总结][元宝] 内容总结成功，文本长度: ${summary.length}`);
+        return summary;
+    } catch (err) {
+        const status = err?.response?.status;
+        if (status === 401) {
+            throw new Error('元宝对话接口返回 401 未授权，可能是 Cookie 失效或部署服务器 IP 与元宝登录 IP 不一致（元宝对话接口有 IP 风控）');
+        }
+        throw err;
+    } finally {
+        if (chatId) {
+            await clearConversation(cookie, chatId);
+        }
+    }
+}
+
+/**
+ * 兼容旧接口：保留原有微信文章命名，内部复用通用链接总结。
+ *
+ * @param {string} articleUrl 微信文章 URL
+ * @param {string} cookie 腾讯元宝 Web 端 Cookie（与视频号解析共用）
+ * @param {object} [options]
+ * @returns {Promise<string>} 元宝总结的完整文本
+ */
+export async function summarizeArticle(articleUrl, cookie, options = {}) {
+    return summarizeLink(articleUrl, cookie, options);
 }

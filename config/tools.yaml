@@ -76,7 +76,7 @@ weiboComments: true # 是否显示微博评论，默认开启
 
 weixinChannelYuanbaoCookie: '' # 视频号解析所需腾讯元宝Cookie，浏览器登录 https://yuanbao.tencent.com 后 F12→Network→任意请求→Request Headers→Cookie 复制；也可私聊机器人发送 #设置视频号Cookie 进行设置，参考：https://github.com/ltaoo/wx_channels_download
 
-weixinArticleResolveMode: 'general' # 微信文章（mp.weixin.qq.com）解析模式：general-通用模式（浏览器抓取+自配AI总结，默认），yuanbao-元宝模式（直接发给元宝抓取总结，与视频号共用元宝Cookie，规避微信风控，但元宝对话接口有IP风控需部署服务器IP与元宝登录IP一致）
+linkSummaryResolveMode: 'general' # 链接总结模式：general-通用模式（浏览器抓取正文/页面内容 + 自配AI总结，默认），yuanbao-元宝模式（直接发给腾讯元宝抓取总结，与视频号共用元宝Cookie，规避部分风控，但元宝对话接口有IP风控需部署服务器IP与元宝登录IP一致）
 
 xiaoheiheCookie: '' # 小黑盒Cookie，格式：x_xhh_tokenid=xxx
 

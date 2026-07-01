@@ -289,7 +289,7 @@ export const NETEASECLOUD_QUALITY_LIST = Object.freeze([
     { label: '超清母带', value: 'jymaster' },
 ]);
 
-export const WEIXIN_ARTICLE_RESOLVE_MODE_LIST = Object.freeze([
+export const LINK_SUMMARY_RESOLVE_MODE_LIST = Object.freeze([
     { label: '通用模式', value: 'general' },
     { label: '元宝模式', value: 'yuanbao' },
 ]);

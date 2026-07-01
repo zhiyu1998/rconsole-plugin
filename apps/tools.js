@@ -130,7 +130,7 @@ import { genVerifyFp } from "../utils/tiktok.js";
 import Translate from "../utils/trans-strategy.js";
 import { mid2id, getWeiboData, getWeiboComments, getWeiboVoteImages } from "../utils/weibo.js";
 import { fetchVideoProfile, extractShareUrl } from "../utils/weixin-channel.js";
-import { summarizeArticle as summarizeArticleByYuanbao } from "../utils/weixin-article-yuanbao.js";
+import { summarizeLink as summarizeLinkByYuanbao, summarizeContent as summarizeContentByYuanbao } from "../utils/weixin-article-yuanbao.js";
 import { convertToSeconds, removeParams, ytbFormatTime } from "../utils/youtube.js";
 import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt, ytDlpHelper } from "../utils/yt-dlp-util.js";
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
@@ -449,8 +449,8 @@ export class tools extends plugin {
         this.xiaoheiheCookie = this.toolsConfig.xiaoheiheCookie;
         // 加载视频号（腾讯元宝）Cookie —— 支持运行时通过 #设置视频号Cookie 命令更新
         this.weixinChannelYuanbaoCookie = this.toolsConfig.weixinChannelYuanbaoCookie;
-        // 加载微信文章解析模式：general-通用（默认），yuanbao-元宝
-        this.weixinArticleResolveMode = this.toolsConfig.weixinArticleResolveMode || 'general';
+        // 加载链接总结解析模式：general-通用（默认），yuanbao-元宝
+        this.linkSummaryResolveMode = this.toolsConfig.linkSummaryResolveMode || 'general';
     }
 
     // 翻译插件
@@ -3922,8 +3922,8 @@ export class tools extends plugin {
     }
 
     /**
-     * 微信文章解析 - 元宝模式
-     * 走腾讯元宝 Web 端对话接口让元宝抓取并总结微信文章链接
+     * 链接总结 - 元宝模式
+     * 走腾讯元宝 Web 端对话接口让元宝抓取并总结链接
      * 与视频号解析共用 weixinChannelYuanbaoCookie（同一套元宝 Cookie）
      * 解析流程：新建会话 → 初始化模型 → 对话总结 → 删除会话（一次性）
      *
@@ -3933,19 +3933,20 @@ export class tools extends plugin {
      *   3. 元宝失败时自动回退到通用模式（若已配置自配 AI），否则提示用户
      *
      * @param e 消息事件
-     * @param {string} articleUrl 微信文章 URL
+     * @param {string} summaryLink 待总结链接
      * @param {string} name 识别平台名（如"微信文章"）
      * @returns {Promise<boolean>}
      */
-    async weixinArticleByYuanbao(e, articleUrl, name = '微信文章') {
+    async linkShareSummaryByYuanbao(e, summaryLink, name = '网页总结') {
         // 校验 Cookie
-        const cookie = this.weixinChannelYuanbaoCookie;
+        const toolsConfig = config.getConfig("tools");
+        const cookie = toolsConfig.weixinChannelYuanbaoCookie || this.weixinChannelYuanbaoCookie;
         if (!cookie) {
             // 未配元宝 Cookie：若已配自配 AI，自动回退通用模式（与调用失败回退策略一致）
             if (!_.isEmpty(this.aiApiKey)) {
                 e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）未配置腾讯元宝 Cookie，正在自动回退到通用模式（${this.aiModel}）...`, true);
-                logger.mark(`[R插件][微信文章] 未配元宝 Cookie，回退到通用模式`);
-                return await this._weixinArticleGeneral(e, articleUrl, name);
+                logger.mark(`[R插件][链接总结][元宝模式] 未配元宝 Cookie，回退到通用模式`);
+                return await this._generalLinkShareSummary(e, summaryLink, name);
             }
             // 既没元宝 Cookie 也没自配 AI，只能提示用户
             e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）\n⚠️ 未配置腾讯元宝 Cookie，请联系管理员私聊发送 #设置视频号Cookie 进行设置`);
@@ -3954,32 +3955,39 @@ export class tools extends plugin {
 
         // 立即回复"正在解析"提示，避免元宝对话较慢时用户无反馈
         await e.reply(`${this.identifyPrefix}识别：${name}（元宝模式），正在调用腾讯元宝抓取并总结，预计 30-60 秒，请稍等...`, true);
-        logger.info(`[R插件][微信文章][元宝模式] 开始解析: ${articleUrl}`);
+        logger.info(`[R插件][链接总结][元宝模式] 开始解析: ${summaryLink}`);
 
         try {
-            const summary = await summarizeArticleByYuanbao(articleUrl, cookie, {
-                timeout: 120000,
-            });
+            const isWeixinArticle = /mp\.weixin\.qq\.com/i.test(summaryLink);
+            const summary = isWeixinArticle
+                ? await summarizeLinkByYuanbao(summaryLink, cookie, {
+                    timeout: 120000,
+                })
+                : await summarizeContentByYuanbao(await llmRead(summaryLink), cookie, {
+                    timeout: 120000,
+                });
 
             // 元宝返回的总结文本可能较长，使用合并转发发送
             // 头部标注「腾讯元宝」解析方式，让用户清楚是哪种模式产出的
+            const stats = estimateReadingTime(summary);
+            const titleMatch = summary.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3] || summary.match(/(Title|标题)([:：])\s*(.*)/)?.[3];
+            e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
             const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [
                 `「R插件 x 腾讯元宝」联合为您总结内容：`,
                 summary,
             ]));
             await replyWithRetry(e, Bot, Msg);
-            logger.info(`[R插件][微信文章][元宝模式] 解析完成，总结长度: ${summary.length}`);
+            logger.info(`[R插件][链接总结][元宝模式] 解析完成，总结长度: ${summary.length}`);
             return true;
         } catch (err) {
-            logger.error(`[R插件][微信文章][元宝模式] 解析失败: ${err.message}`);
+            logger.error(`[R插件][链接总结][元宝模式] 解析失败: ${err.message}`);
             // 自动回退到通用模式（若已配置自配 AI 接口）
             if (!_.isEmpty(this.aiApiKey)) {
                 e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）解析失败，正在自动回退到通用模式（${this.aiModel}）...`, true);
-                logger.mark(`[R插件][微信文章] 自动回退到通用模式`);
-                // 临时改写当前消息，走通用 linkShareSummary 链路
-                // 注意：直接调用 linkShareSummary 会再次触发 mp 链接分流到元宝的死循环，
-                // 所以这里手动复用通用逻辑（不经过 linkShareSummary 入口）
-                return await this._weixinArticleGeneral(e, articleUrl, name);
+                logger.mark(`[R插件][链接总结][元宝模式] 自动回退到通用模式`);
+                // 注意：直接调用 linkShareSummary 会再次触发元宝分流死循环，
+                // 所以这里手动复用内部通用总结逻辑（不经过 linkShareSummary 入口）
+                return await this._generalLinkShareSummary(e, summaryLink, name);
             }
             // 未配置自配 AI，无法回退，直接报错
             e.reply(`${this.identifyPrefix}识别：${name}（元宝模式）解析失败：${err.message}\n\n未配置自配 AI 接口，无法自动回退。可尝试：\n1. 检查元宝 Cookie 是否失效（#设置视频号Cookie）\n2. 在锅巴配置中切换回通用模式`);
@@ -3988,14 +3996,14 @@ export class tools extends plugin {
     }
 
     /**
-     * 微信文章解析 - 通用模式（内部复用方法，供元宝模式回退调用）
+     * 链接总结 - 通用模式（内部复用方法，供元宝模式回退调用）
      * 与 linkShareSummary 中的通用逻辑保持一致，但不经过入口分流，避免回退死循环
      * @param e 消息事件
-     * @param {string} articleUrl 微信文章 URL
+     * @param {string} summaryLink 待总结链接
      * @param {string} name 识别平台名
      * @returns {Promise<boolean>}
      */
-    async _weixinArticleGeneral(e, articleUrl, name = '微信文章') {
+    async _generalLinkShareSummary(e, summaryLink, name = '网页总结') {
         const builder = await new OpenaiBuilder()
             .setBaseURL(this.aiBaseURL)
             .setApiKey(this.aiApiKey)
@@ -4003,16 +4011,16 @@ export class tools extends plugin {
             .setPrompt(SUMMARY_PROMPT);
         await builder.build();
 
-        e.reply(`${this.identifyPrefix}识别：${name}（通用模式回退），正在为您总结，请稍等...`, true);
+        e.reply(`${this.identifyPrefix}识别：${name}（通用模式），正在为您总结，请稍等...`, true);
 
-        let messages = [{ role: "user", content: articleUrl }];
+        let messages = [{ role: "user", content: summaryLink }];
 
         // 兜底策略：检测模型是否支持 tool_calls
         if (!this.aiModel.includes("kimi") && !this.aiModel.includes("moonshot")) {
             try {
-                const crawled_content = await llmRead(articleUrl);
+                const crawled_content = await llmRead(summaryLink);
                 messages = [
-                    { role: "user", content: `这是网页链接: ${articleUrl}` },
+                    { role: "user", content: `这是网页链接: ${summaryLink}` },
                     { role: "assistant", content: `好的，我已经爬取了网页内容，内容如下：\n${crawled_content}` },
                     { role: "user", content: "请根据以上内容进行总结。" }
                 ];
@@ -4021,10 +4029,10 @@ export class tools extends plugin {
                 const stats = estimateReadingTime(kimiAns);
                 const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*)/)?.[3];
                 e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
-                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」（通用模式回退）联合为您总结内容：`, kimiAns]));
+                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}（通用模式）」联合为您总结内容：`, kimiAns]));
                 await replyWithRetry(e, Bot, Msg);
             } catch (error) {
-                e.reply(`通用模式回退也失败: ${error.message}`);
+                e.reply(`通用模式总结失败: ${error.message}`);
             }
             return true;
         }
@@ -4051,15 +4059,15 @@ export class tools extends plugin {
                     const stats = estimateReadingTime(kimiAns);
                     const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
                     e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
-                    const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}」（通用模式回退）联合为您总结内容：`, kimiAns]));
+                    const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}（通用模式）」联合为您总结内容：`, kimiAns]));
                     await replyWithRetry(e, Bot, Msg);
                     return true;
                 }
             }
-            e.reply("通用模式回退处理超出限制，请重试");
+            e.reply("通用模式处理超出限制，请重试");
         } catch (error) {
-            logger.error(`[R插件][微信文章][通用模式回退] 失败: ${error.message}`);
-            e.reply(`通用模式回退也失败: ${error.message}`);
+            logger.error(`[R插件][链接总结][通用模式] 失败: ${error.message}`);
+            e.reply(`通用模式总结失败: ${error.message}`);
         }
         return true;
     }
@@ -4080,12 +4088,13 @@ export class tools extends plugin {
             ({ name, summaryLink } = contentEstimator(e.msg));
         }
 
-        // 元宝模式分流：仅当链接是微信文章（mp.weixin.qq.com）且配置为 yuanbao 模式时走元宝
+        // 元宝模式分流：配置为 yuanbao 时，整个链接总结优先走元宝
         // 元宝模式不需要配置自配 AI（aiApiKey），故需在此分流前判断，避免被下面的 aiApiKey 校验拦截
         // 注意：运行时读取 config，避免使用构造时缓存的 stale 值，让配置更新立即生效
-        const weixinArticleResolveMode = config.getConfig("tools").weixinArticleResolveMode || this.weixinArticleResolveMode || 'general';
-        if (weixinArticleResolveMode === 'yuanbao' && summaryLink && /mp\.weixin\.qq\.com/i.test(summaryLink)) {
-            return await this.weixinArticleByYuanbao(e, summaryLink, name);
+        const toolsConfig = config.getConfig("tools");
+        const linkSummaryResolveMode = toolsConfig.linkSummaryResolveMode || this.linkSummaryResolveMode || 'general';
+        if (linkSummaryResolveMode === 'yuanbao' && summaryLink) {
+            return await this.linkShareSummaryByYuanbao(e, summaryLink, name);
         }
 
         // 判断是否有总结的条件
@@ -4094,98 +4103,7 @@ export class tools extends plugin {
             return false;
         }
 
-        const builder = await new OpenaiBuilder()
-            .setBaseURL(this.aiBaseURL)
-            .setApiKey(this.aiApiKey)
-            .setModel(this.aiModel)
-            .setPrompt(SUMMARY_PROMPT);
-
-        await builder.build();
-
-        e.reply(`${this.identifyPrefix}识别：${name}，正在为您总结，请稍等...`, true);
-
-        let messages = [{ role: "user", content: summaryLink }];
-
-        // 兜底策略：检测模型是否支持 tool_calls
-        if (!this.aiModel.includes("kimi") && !this.aiModel.includes("moonshot")) {
-            // 不支持 tool_calls 的模型，直接爬取内容并总结
-            try {
-                // 直接使用llmRead爬取链接内容
-                const crawled_content = await llmRead(summaryLink);
-                // 重新构造消息，将爬取到的内容直接放入对话历史
-                messages = [
-                    { role: "user", content: `这是网页链接: ${summaryLink}` },
-                    { role: "assistant", content: `好的，我已经爬取了网页内容，内容如下：\n${crawled_content}` },
-                    { role: "user", content: "请根据以上内容进行总结。" }
-                ];
-
-                // 调用kimi进行总结，此时不传递任何工具
-                const response = await builder.chat(messages); // 不传递 CRAWL_TOOL
-                const { ans: kimiAns, model } = response;
-                // 估算阅读时间并提取标题
-                const stats = estimateReadingTime(kimiAns);
-                const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*)/)?.[3];
-                e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
-                // 将总结内容格式化为合并转发消息
-                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}（通用模式）」联合为您总结内容：`, kimiAns]));
-                await replyWithRetry(e, Bot, Msg);
-            } catch (error) {
-                e.reply(`总结失败: ${error.message}`);
-            }
-            return false;
-        }
-
-        // 为了防止无限循环，设置一个最大循环次数
-        for (let i = 0; i < 5; i++) {
-            const response = await builder.chat(messages, [CRAWL_TOOL]);
-
-            // 如果Kimi返回了工具调用
-            if (response.tool_calls) {
-                const tool_calls = response.tool_calls;
-                messages.push({
-                    role: 'assistant',
-                    content: null,
-                    tool_calls: tool_calls,
-                });
-
-                // 遍历并处理每一个工具调用
-                for (const tool_call of tool_calls) {
-                    if (tool_call.function.name === 'crawl') {
-                        try {
-                            const args = JSON.parse(tool_call.function.arguments);
-                            const urlToCrawl = args.url;
-                            // 执行爬取操作
-                            const crawled_content = await llmRead(urlToCrawl);
-                            messages.push({
-                                role: 'tool',
-                                tool_call_id: tool_call.id,
-                                name: 'crawl',
-                                content: crawled_content,
-                            });
-                        } catch (error) {
-                            messages.push({
-                                role: 'tool',
-                                tool_call_id: tool_call.id,
-                                name: 'crawl',
-                                content: `爬取错误: ${error.message}`,
-                            });
-                        }
-                    }
-                }
-            } else {
-                // 如果没有工具调用，说明得到了最终的总结
-                const { ans: kimiAns, model } = response;
-                // 计算阅读时间
-                const stats = estimateReadingTime(kimiAns);
-                const titleMatch = kimiAns.match(/(Title|标题)([:：])\s*(.*?)\n/)?.[3];
-                e.reply(`《${titleMatch || '未知标题'}》 预计阅读时间: ${stats.minutes} 分钟，总字数: ${stats.words}`);
-                const Msg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [`「R插件 x ${model}（通用模式）」联合为您总结内容：`, kimiAns]));
-                await replyWithRetry(e, Bot, Msg);
-                return false;
-            }
-        }
-        e.reply("处理超出限制，请重试");
-        return false;
+        return await this._generalLinkShareSummary(e, summaryLink, name);
     }
 
     // q q m u s i c 解析
