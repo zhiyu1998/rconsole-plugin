@@ -28,5 +28,6 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
         metadataCount: metadata.length,
         firstMetadataType: metadata[0].type.toLowerCase(),
         firstMetadataValue: metadata[0].value.trim(),
+        normalizedSlug: article.slug.toLowerCase().replaceAll(" ", "-"),
     };
 }
