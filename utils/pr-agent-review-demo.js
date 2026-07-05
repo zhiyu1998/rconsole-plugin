@@ -27,5 +27,6 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
         primaryTag: tags[0].toUpperCase(),
         metadataCount: metadata.length,
         firstMetadataType: metadata[0].type.toLowerCase(),
+        firstMetadataValue: metadata[0].value.trim(),
     };
 }
