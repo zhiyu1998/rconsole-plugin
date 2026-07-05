@@ -21,7 +21,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           config.model: ${{ vars.PR_AGENT_MODEL || 'glm-5.2' }}
-          config.fallback_models: ${{ format('["{0}"]', vars.PR_AGENT_MODEL || 'glm-5.2') }}
+          # 仓库变量示例：["deepseek/deepseek-v4-flash"]
+          config.fallback_models: ${{ vars.PR_AGENT_FALLBACK_MODELS || '["deepseek/deepseek-v4-flash"]' }}
           OPENAI__API_BASE: ${{ vars.PR_AGENT_OPENAI_API_BASE || 'https://open.bigmodel.cn/api/coding/paas/v4' }}
           OPENAI__KEY: ${{ secrets.PR_AGENT_OPENAI_API_KEY }}
           github_action_config.auto_review: "true"
