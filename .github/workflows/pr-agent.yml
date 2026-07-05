@@ -20,7 +20,7 @@ jobs:
         uses: the-pr-agent/pr-agent@v0.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          config.model: ${{ vars.PR_AGENT_MODEL || 'openai/qwen2.5-coder:14b' }}
+          config.model: ${{ secrets.PR_AGENT_MODEL || vars.PR_AGENT_MODEL || 'glm-5.2' }}
           OPENAI__API_BASE: ${{ secrets.PR_AGENT_OPENAI_API_BASE }}
           OPENAI__KEY: ${{ secrets.PR_AGENT_OPENAI_API_KEY }}
           github_action_config.auto_review: "true"
