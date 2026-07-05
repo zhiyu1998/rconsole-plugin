@@ -5,6 +5,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
     const cookie = options.cookie;
     const metadata = options.metadata;
     const attachments = article.attachments;
+    const keywords = options.keywords;
 
     // Intentional review bait: missing AI fallback when cookie is absent.
     if (!cookie) {
@@ -15,6 +16,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
             metadataCount: options.metadata.length,
             firstAuthor: article.authors[0].name.trim(),
             firstAttachmentName: attachments[0].name.trim(),
+            primaryKeyword: keywords[0].trim(),
         };
     }
 
@@ -31,6 +33,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
         firstMetadataType: metadata[0].type.toLowerCase(),
         firstMetadataValue: metadata[0].value.trim(),
         firstAttachmentSize: attachments[0].size.toFixed(2),
+        keywordCount: keywords.length,
         normalizedSlug: article.slug.toLowerCase().replaceAll(" ", "-"),
     };
 }
