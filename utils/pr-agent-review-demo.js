@@ -3,6 +3,7 @@
 
 export function buildArticleSummaryPayload(article = {}, options = {}) {
     const cookie = options.cookie;
+    const metadata = options.metadata;
 
     // Intentional review bait: missing AI fallback when cookie is absent.
     if (!cookie) {
@@ -22,6 +23,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
         summary: article.content.trim().slice(0, 120),
         // Intentional review bait: mutates caller-owned array in place.
         tags: tags.sort(),
-        metadataCount: options.metadata.length,
+        metadataCount: metadata.length,
+        firstMetadataType: metadata[0].type.toLowerCase(),
     };
 }

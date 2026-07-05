@@ -20,8 +20,8 @@ jobs:
         uses: the-pr-agent/pr-agent@v0.39.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          config.model: ${{ secrets.PR_AGENT_MODEL || vars.PR_AGENT_MODEL || 'glm-5.2' }}
-          OPENAI__API_BASE: ${{ secrets.PR_AGENT_OPENAI_API_BASE }}
+          config.model: ${{ vars.PR_AGENT_MODEL || 'glm-5.2' }}
+          OPENAI__API_BASE: ${{ vars.PR_AGENT_OPENAI_API_BASE || 'https://open.bigmodel.cn/api/coding/paas/v4' }}
           OPENAI__KEY: ${{ secrets.PR_AGENT_OPENAI_API_KEY }}
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "false"
