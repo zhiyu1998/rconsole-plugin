@@ -1,3 +1,4 @@
+# 默认模型只作为仓库内兜底，实际运行时优先使用 GitHub Actions 注入的仓库变量。
 [config]
 model = "glm-5.2"
 custom_model_max_tokens = 1000000
