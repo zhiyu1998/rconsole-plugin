@@ -1,0 +1,27 @@
+// Temporary demo file for PR-Agent review verification.
+// This file is not wired into production code and should not be merged as-is.
+
+export function buildArticleSummaryPayload(article = {}, options = {}) {
+    const cookie = options.cookie;
+
+    // Intentional review bait: missing AI fallback when cookie is absent.
+    if (!cookie) {
+        return {
+            mode: "yuanbao",
+            title: article.title.trim(),
+            summary: article.content.slice(0, 120),
+            metadataCount: options.metadata.length,
+        };
+    }
+
+    const tags = article.tags || [];
+
+    return {
+        mode: "general",
+        title: article.title.toLowerCase(),
+        summary: article.content.trim().slice(0, 120),
+        // Intentional review bait: mutates caller-owned array in place.
+        tags: tags.sort(),
+        metadataCount: options.metadata.length,
+    };
+}
