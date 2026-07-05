@@ -12,6 +12,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
             title: article.title.trim(),
             summary: article.content.slice(0, 120),
             metadataCount: options.metadata.length,
+            firstAuthor: article.authors[0].name.trim(),
         };
     }
 
@@ -23,6 +24,7 @@ export function buildArticleSummaryPayload(article = {}, options = {}) {
         summary: article.content.trim().slice(0, 120),
         // Intentional review bait: mutates caller-owned array in place.
         tags: tags.sort(),
+        primaryTag: tags[0].toUpperCase(),
         metadataCount: metadata.length,
         firstMetadataType: metadata[0].type.toLowerCase(),
     };
