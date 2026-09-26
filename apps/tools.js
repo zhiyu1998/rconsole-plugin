@@ -2807,8 +2807,19 @@ export class tools extends plugin {
             // 封面
             const cover = noteData.imageList?.[0].urlDefault;
             await this.sendXhsDescPreview(e, title, desc, [segment.image(cover)]);
-            // ⚠️ （暂时废弃）构造xhs视频链接（有水印）
-            const xhsVideoUrl = noteData.video.media.stream.h264?.[0]?.masterUrl;
+            // 构造xhs视频链接
+            const stream = noteData.video?.media?.stream || {};
+            // EF5 无水印 EF4 有水印？
+            const streamList = stream.h264 || stream.EF5 || stream.EF4 || Object.values(stream).flat();
+
+            // 取第一个可用的 masterUrl
+            const xhsVideoUrl = streamList?.[0]?.masterUrl;
+
+            if (!xhsVideoUrl) {
+                logger.warn('[R插件][xhs] 未能提取到小红书视频链接');
+                e.reply('未能获取到该视频的播放链接，可能已被风控或需要更新解析规则');
+                return false;
+            }
 
             // 构造无水印
             // const xhsVideoUrl = `http://sns-video-bd.xhscdn.com/${ noteData.video.consumer.originVideoKey }`
@@ -5883,6 +5894,12 @@ export class tools extends plugin {
         const groupPath = `${this.defaultPath}${this.e.group_id || this.e.user_id}`;
         // 如果传入 fileName 则使用，否则使用时间戳
         const actualFileName = fileName || `video_${Date.now()}.mp4`;
+
+        // 防崩溃拦截
+        if (!url || typeof url !== 'string') {
+            logger.warn('[R插件][视频下载] 传入的视频链接无效，已终止下载');
+            return undefined;
+        }
 
         // 1. 通用 m3u8 检测与处理
         if (url.includes('.m3u8') || url.includes('.M3U8')) {
