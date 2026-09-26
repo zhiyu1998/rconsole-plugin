@@ -2723,14 +2723,15 @@ export class tools extends plugin {
                 const uri = decodeURIComponent(finalUrl);
                 const parsedUrl = new URL(finalUrl);
                 logger.info(`[R插件][xhs] 短链跳转: ${finalUrl}`);
-                // captcha 场景下 noteId 常在 redirectPath 里：/item/{id} 或 noteId=
+                // captcha / login 场景下 noteId 常在 redirectPath 里：/item/{id} 或 noteId=
                 const verify = uri.match(/\/(?:item|explore)\/([0-9a-fA-F]+)/i);
                 id = /noteId=(\w+)/i.exec(uri)?.[1] ?? verify?.[1];
                 // 提取 xsec_source 和 xsec_token；短链有时会丢参，以后续校验为准
                 xsecSource = parsedUrl.searchParams.get("xsec_source") || "pc_feed";
                 xsecToken = parsedUrl.searchParams.get("xsec_token");
-                // 若跳转到 captcha，再从 redirectPath 里补一次参数
-                if ((!xsecToken || !id) && parsedUrl.pathname.includes("captcha")) {
+                // 短链常跳到 /login?redirectPath=... 或 captcha，真参数都藏在 redirectPath 里，
+                // 只要缺参且带 redirectPath 就补一次，不再挑具体路径名
+                if (!xsecToken || !id) {
                     const redirectPath = parsedUrl.searchParams.get("redirectPath");
                     if (redirectPath) {
                         try {
@@ -2739,7 +2740,7 @@ export class tools extends plugin {
                             xsecToken = xsecToken || redirectUrl.searchParams.get("xsec_token");
                             xsecSource = redirectUrl.searchParams.get("xsec_source") || xsecSource || "pc_feed";
                         } catch (err) {
-                            logger.warn(`[R插件][xhs] 解析 captcha redirectPath 失败: ${err.message}`);
+                            logger.warn(`[R插件][xhs] 解析 redirectPath 失败: ${err.message}`);
                         }
                     }
                 }
@@ -2784,10 +2785,9 @@ export class tools extends plugin {
             e.reply(`小红书页面数据解析失败，可能被验证或 Cookie 失效\n${HELP_DOC}`);
             return false;
         }
-        const res = matchedState[1].replace(/undefined/g, "null");
         let resJson;
         try {
-            resJson = JSON.parse(res);
+            resJson = this.parseXhsInitialState(matchedState[1]);
         } catch (err) {
             logger.error(`[R插件][xhs] __INITIAL_STATE__ JSON 解析失败: ${err.message}`);
             e.reply(`小红书数据解析失败，请稍后重试\n${HELP_DOC}`);
@@ -2858,6 +2858,77 @@ export class tools extends plugin {
             await Promise.all(paths.map(item => fs.promises.rm(item, { force: true })));
         }
         return true;
+    }
+
+    /**
+     * 解析小红书页面里的 window.__INITIAL_STATE__。
+     * 新版页面会往里塞 JS 字面量（如尾部的 AiNoteDetailStore.noteDetailMap = new Map([])），
+     * 直接 JSON.parse 会撞上 new Map( 抛 Unexpected token。
+     * 策略：先直解，成功就返回（避免误伤字符串里的 undefined 字样）；
+     * 失败才归一化 undefined→null、new Map/Set([...])→{} 后再解一次。
+     * 归一化只作用于「字符串字面量之外」的 token，字符串值原样保留，
+     * 避免 title / desc 里正常出现的 undefined、new Map( 字样被污染。
+     * @param {string} raw __INITIAL_STATE__ 后面的原始字符串
+     * @returns {object}
+     */
+    parseXhsInitialState(raw) {
+        try {
+            return JSON.parse(raw);
+        } catch (_e) {
+            return JSON.parse(this.normalizeXhsJsLiteral(raw));
+        }
+    }
+
+    /**
+     * 把 __INITIAL_STATE__ 里的 JS 字面量归一化成合法 JSON：
+     * undefined→null、new Map/Set([...])→{}。只处理字符串之外的内容，
+     * 逐字符扫描，遇到双引号字符串就整段原样拷贝（含 \" 转义），字符串里的一切都不动。
+     * @param {string} raw
+     * @returns {string}
+     */
+    normalizeXhsJsLiteral(raw) {
+        let out = "";
+        let i = 0;
+        const n = raw.length;
+        while (i < n) {
+            const ch = raw[i];
+            // 进入字符串：原样拷贝到闭合引号，跳过转义字符
+            if (ch === '"') {
+                out += ch;
+                i++;
+                while (i < n) {
+                    const c = raw[i];
+                    out += c;
+                    i++;
+                    if (c === "\\") {
+                        // 转义序列，下一个字符原样带上
+                        if (i < n) {
+                            out += raw[i];
+                            i++;
+                        }
+                    } else if (c === '"') {
+                        break;
+                    }
+                }
+                continue;
+            }
+            // 字符串之外：new Map/Set([...]) → {}
+            const literal = /^new\s+(?:Map|Set)\s*\([^)]*\)/.exec(raw.slice(i));
+            if (literal) {
+                out += "{}";
+                i += literal[0].length;
+                continue;
+            }
+            // 字符串之外：独立的 undefined token → null
+            if (raw.startsWith("undefined", i) && !/\w/.test(raw[i - 1] || "") && !/\w/.test(raw[i + 9] || "")) {
+                out += "null";
+                i += 9;
+                continue;
+            }
+            out += ch;
+            i++;
+        }
+        return out;
     }
 
     // 波点音乐解析
