@@ -4648,11 +4648,11 @@ export class tools extends plugin {
             const songName = r.title || cardTitle || "QQ音乐歌曲";
             const singerName = r.singer || cardDesc || "";
             const cover = (r.cover && r.cover !== "def") ? r.cover : (cardCover || r.cover || "def");
-            // 音质标签（RS02 = 60 秒试听片段）。2026-10-12 实测：本服务器出口只能拿到 RS02，
-            // 机器人在海外时需明确标注，避免把试听片段当成完整版。
+            // 音质标签（RS02 = 60 秒试听片段）。注意：RS02 只能说明拿到的是试听片段，
+            // 原因可能是服务器所在地区受限，也可能是会员/版权限制，提示里不绑定具体原因。
             const qualityLabel = qqQualityLabelFromFilename(r.filename);
             if (isQqTrialFilename(r.filename)) {
-                e.reply("注意：这首只拿到 60 秒试听片段，不是完整版（机器人服务器在海外，QQ 音乐对海外出口只提供试听；完整版请在客户端收听）");
+                e.reply("注意：这首只拿到 60 秒试听片段，不是完整版（可能受服务器所在地区、会员权益或版权限制影响；完整版请在客户端收听）");
             }
             // 扩展名优先取 filename（如 O400xxxx.ogg），其次从 url 推导；非纯字母数字一律回落 m4a
             let extName = (r.filename && r.filename.includes("."))
