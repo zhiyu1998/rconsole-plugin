@@ -58,8 +58,9 @@ export async function sendCustomMusicCard(e, musicurl, musicaudio, musictitle, m
     if (musiccontent) {
         data.content = musiccontent;
     }
-    await e.bot.sendApi('send_group_msg', {
-        group_id: e.group_id,
+    // 私聊没有群号，改用私聊接口
+    await e.bot.sendApi(e.isPrivate ? 'send_private_msg' : 'send_group_msg', {
+        ...(e.isPrivate ? { user_id: e.user_id } : { group_id: e.group_id }),
         message: [
             {
                 type: 'music',

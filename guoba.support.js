@@ -58,6 +58,15 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.privateResolve",
+                    label: "是否启用私聊解析",
+                    bottomHelpMessage:
+                        "默认关闭。开启后，私聊发送链接也会触发解析。\n" +
+                        "注意：本插件的事件已同时接收私聊消息，插件内的其他功能（#RBQ/#RNS/#RNQ/#RKS 等主人指令、翻xx 翻译）也会在私聊生效，且不受此开关控制",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.globalImageLimit",
                     label: "解析图片是否合并转发",
                     bottomHelpMessage:
