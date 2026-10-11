@@ -6256,6 +6256,10 @@ export class tools extends plugin {
      * @returns {Promise<boolean>}
      */
     async isEnableResolve(resolveName) {
+        // 群聊/私聊之外的事件（TRSS 频道等）不解析，避免后续用到群上下文时报错
+        if (!this.e?.isGroup && !this.e?.isPrivate) {
+            return false;
+        }
         // 私聊解析开关：未开启时私聊不触发解析
         if (this.e?.isPrivate && !this.privateResolve) {
             return false;
