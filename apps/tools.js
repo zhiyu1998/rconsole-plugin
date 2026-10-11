@@ -6327,7 +6327,7 @@ export class tools extends plugin {
             const videoSize = Math.floor(stats.size / (1024 * 1024));
             // 正常发送视频
             if (videoSize > videoSizeLimit) {
-                e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制：${videoSizeLimit}MB，\n改为上传群文件`);
+                e.reply(`当前视频大小：${videoSize}MB，\n大于设置的最大限制：${videoSizeLimit}MB，\n改为${e.isPrivate ? '发送文件' : '上传群文件'}`);
                 await this.uploadGroupFile(e, path); // uploadGroupFile 内部会处理删除
                 return true;
             } else {
