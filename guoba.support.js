@@ -58,6 +58,14 @@ export function supportGuoba() {
                     },
                 },
                 {
+                    field: "tools.privateResolve",
+                    label: "是否启用私聊解析",
+                    bottomHelpMessage:
+                        "默认关闭。开启后，私聊发送链接也会触发解析（只影响链接解析，其他指令不受限制）",
+                    component: "Switch",
+                    required: false,
+                },
+                {
                     field: "tools.globalImageLimit",
                     label: "解析图片是否合并转发",
                     bottomHelpMessage:

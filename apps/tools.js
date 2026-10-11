@@ -211,7 +211,7 @@ export class tools extends plugin {
         super({
             name: "R插件工具和学习类",
             dsc: "R插件工具相关指令",
-            event: "message.group",
+            event: "message",
             priority: 300,
             rule: [
                 {
@@ -356,6 +356,8 @@ export class tools extends plugin {
         this.videoSizeLimit = this.toolsConfig.videoSizeLimit;
         // 获取全局禁用的解析
         this.globalBlackList = this.toolsConfig.globalBlackList;
+        // 是否允许私聊触发解析
+        this.privateResolve = this.toolsConfig.privateResolve === true;
         // 魔法接口
         this.proxyAddr = this.toolsConfig.proxyAddr;
         this.proxyPort = this.toolsConfig.proxyPort;
@@ -6254,6 +6256,10 @@ export class tools extends plugin {
      * @returns {Promise<boolean>}
      */
     async isEnableResolve(resolveName) {
+        // 私聊解析开关：未开启时私聊不触发解析
+        if (this.e?.isPrivate && !this.privateResolve) {
+            return false;
+        }
         const controller = this.globalBlackList;
         // 如果不存在，那么直接放行
         if (controller == null) {
@@ -6359,6 +6365,10 @@ export class tools extends plugin {
      * @return {Promise<void>}
      */
     async uploadGroupFile(e, path) {
+        // 私聊没有群文件，改为以文件发送
+        if (e.isPrivate) {
+            return e.friend.sendFile(path);
+        }
         // 判断是否是ICQQ
         if (e.bot?.sendUni) {
             await e.group.fs.upload(path);
