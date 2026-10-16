@@ -165,7 +165,7 @@ import { ytDlpGetDuration, ytDlpGetThumbnail, ytDlpGetThumbnailUrl, ytDlpGetTilt
 import { textArrayToMakeForward, downloadImagesAndMakeForward, cleanupTempFiles, sendImagesInBatches, sendCustomMusicCard } from "../utils/yunzai-util.js";
 import { getApiParams, optimizeImageUrl } from "../utils/xiaoheihe.js";
 import { extractInstagramUrl, fetchInstagramMedia, normalizeInstagramMedia } from "../utils/instagram.js";
-import { searchQqMusic, pickQqPlayUrl, resolveQqShareLink } from "../utils/qqmusic.js";
+import { searchQqMusic, pickQqPlayUrl, resolveQqShareLink, qqQualityLabelFromFilename, isQqTrialFilename } from "../utils/qqmusic.js";
 
 /**
  * fetch重试函数
@@ -4615,9 +4615,17 @@ export class tools extends plugin {
                     // 兜底也没有音源，按原因给可读提示
                     const warningText = (r.warnings || []).map(w => String(w)).join(" ");
                     if (warningText.includes("104003")) {
-                        e.reply("QQ音乐无试听/下载权益（104003），可能需要 VIP 或存在版权限制，暂时无法解析该歌曲");
+                        // 104003 = 取流请求被拒。2026-10-12 实测：本服务器（东京出口）对任何歌曲都返回 104003，
+                        // 连免费歌都只放行 RS02 试听——海外出口限制是主因，会员/版权是次因。
+                        e.reply("QQ 音乐拒绝了取流请求（服务器所在地区受限，或该曲目需要会员/存在版权限制），这首暂时解析不了");
                     } else if (/(业务码\s*1000|未登录)/.test(warningText) || warningText.includes("qqMusicCookie")) {
-                        e.reply("未配置 QQ 音乐 Cookie（tools.qqMusicCookie），本地取流不可用且临时接口无响应；浏览器登录 https://y.qq.com 复制 Cookie 后重试");
+                        // 业务码 1000 = QQ 音乐判定本次请求未登录。2026-10-12 实测：同一服务器、同一出口，
+                        // 旧 Cookie 时登录/搜索/取流全部返回 1000，换新 Cookie 后立即恢复（搜索有结果、
+                        // 取流变为 104003 权益门）——因此 1000 的含义是 Cookie 已失效，不是出口被拒。
+                        const cookieConfigured = Boolean(String(this.qqMusicCookie || "").trim());
+                        e.reply(cookieConfigured
+                            ? "QQ 音乐提示未登录：机器人里配置的 Cookie 已失效（登录状态过期）。请用浏览器重新登录 https://y.qq.com 复制最新 Cookie 更新插件配置后重试；本地取流与备用接口当前都不可用"
+                            : "未配置 QQ 音乐 Cookie（tools.qqMusicCookie），本地取流不可用且临时接口无响应；浏览器登录 https://y.qq.com 复制 Cookie 后重试");
                     } else {
                         e.reply("QQ音乐解析失败（无可用音源），请检查 tools.qqMusicCookie 配置或稍后重试");
                     }
@@ -4642,6 +4650,12 @@ export class tools extends plugin {
             const songName = r.title || cardTitle || "QQ音乐歌曲";
             const singerName = r.singer || cardDesc || "";
             const cover = (r.cover && r.cover !== "def") ? r.cover : (cardCover || r.cover || "def");
+            // 音质标签（RS02 = 60 秒试听片段）。注意：RS02 只能说明拿到的是试听片段，
+            // 原因可能是服务器所在地区受限，也可能是会员/版权限制，提示里不绑定具体原因。
+            const qualityLabel = qqQualityLabelFromFilename(r.filename);
+            if (isQqTrialFilename(r.filename)) {
+                e.reply("注意：这首只拿到 60 秒试听片段，不是完整版（可能受服务器所在地区、会员权益或版权限制影响；完整版请在客户端收听）");
+            }
             // 扩展名优先取 filename（如 O400xxxx.ogg），其次从 url 推导；非纯字母数字一律回落 m4a
             let extName = (r.filename && r.filename.includes("."))
                 ? r.filename.split(".").pop()
@@ -4654,7 +4668,7 @@ export class tools extends plugin {
                 cover: cover,
                 songName: songName,
                 singerName: singerName,
-                size: "",
+                size: qualityLabel,
                 musicType: ["QQ音乐"]
             });
             const img = await puppeteer.screenshot("neteaseMusicInfo", cardData);

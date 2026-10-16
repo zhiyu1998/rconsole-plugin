@@ -408,8 +408,9 @@ export async function getQqPlayUrl(
     // 业务层 code 非 0：无音源数据（实测无 Cookie 时 GetEVkey 返回 code=1000）；归一为数字避免字符串 "0" 误判
     const bizCode = Number(reqData.code);
     if (bizCode && bizCode !== 0) {
+        // 业务码 1000 = 未登录（2026-10-12 实测：Cookie 过期时必现；换新 Cookie 后同一出口立即恢复正常）
         const msg = bizCode === 1000
-            ? "QQ 音乐接口未登录（业务码 1000），请先配置 tools.qqMusicCookie（浏览器登录 https://y.qq.com 后复制）"
+            ? "QQ 音乐接口未登录（业务码 1000）：tools.qqMusicCookie 未配置或已失效（登录状态过期），请重新登录 https://y.qq.com 复制最新 Cookie"
             : `QQ 音乐接口返回业务码 ${bizCode}`;
         return { url: "", result: -2, filename: fn, info: {}, error: msg };
     }
@@ -434,6 +435,40 @@ const QUALITY_PREFIX_ORDER = {
     trial: ["RS02"],
 };
 const PREFIX_EXT = { O400: "ogg", M500: "mp3", M800: "mp3", C400: "m4a", RS02: "mp3" };
+
+// 文件名前缀 → 面向用户的音质标签（点歌卡片与分享解析共用一份映射）
+const FILENAME_QUALITY_LABELS = {
+    O400: "低码率OGG",
+    M500: "128K",
+    M800: "320K",
+    C400: "M4A",
+    RS02: "试听片段",
+};
+
+/**
+ * 按 filename 前缀（如 M800xxxx.mp3）取音质标签，未知返回空串
+ * @param {string} filename
+ * @returns {string}
+ */
+export function qqQualityLabelFromFilename(filename = "") {
+    const fn = String(filename || "").trim().toUpperCase();
+    for (const [prefix, label] of Object.entries(FILENAME_QUALITY_LABELS)) {
+        if (fn.startsWith(prefix)) {
+            return label;
+        }
+    }
+    return "";
+}
+
+/**
+ * 是否为 60 秒试听片段（RS02）。2026-10-12 实测：本服务器（东京出口）对任何歌曲
+ * 都只能拿到 RS02，完整音源被 QQ 音乐按出口地区拒绝（业务码 104003）。
+ * @param {string} filename
+ * @returns {boolean}
+ */
+export function isQqTrialFilename(filename = "") {
+    return /^RS02/i.test(String(filename || "").trim());
+}
 
 /**
  * 归一化音质配置；未知值回退 auto

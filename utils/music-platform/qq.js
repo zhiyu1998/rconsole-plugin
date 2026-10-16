@@ -5,32 +5,10 @@
 import {
     normalizeQqImage,
     pickQqPlayUrl,
+    qqQualityLabelFromFilename,
     searchQqMusic,
 } from "../qqmusic.js";
 import { createEmptyPlayResult, createSongItem } from "./helpers.js";
-
-const QUALITY_LABEL_MAP = {
-    O400: "低码率OGG",
-    M500: "128K",
-    M800: "320K",
-    C400: "M4A",
-    RS02: "试听片段",
-};
-
-/**
- * 按 filename 前缀（如 O400xxx.ogg）映射音质标签，未知留空
- * @param {string} filename
- * @returns {string}
- */
-function qualityFromFilename(filename = "") {
-    const fn = String(filename || "").toUpperCase();
-    for (const [prefix, label] of Object.entries(QUALITY_LABEL_MAP)) {
-        if (fn.startsWith(prefix)) {
-            return label;
-        }
-    }
-    return "";
-}
 
 /**
  * 按 filename 扩展名映射 audioType：.ogg→ogg、.m4a→m4a、默认 mp3
@@ -106,7 +84,7 @@ export function createQqPlatform(context = {}) {
         }
 
         const url = picked?.url || "";
-        const qualityLabel = qualityFromFilename(picked?.filename);
+        const qualityLabel = qqQualityLabelFromFilename(picked?.filename);
         const audioType = audioTypeFromFilename(picked?.filename);
         // 封面优先级：info 封面 → 歌曲封面 → normalizeQqImage 兜底（空值返回 def）
         const rawCover = picked?.info?.cover
