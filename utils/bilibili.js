@@ -151,12 +151,30 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
                 .get(url, {
                     responseType: 'stream',
                     headers: {
-                        ...BILI_HEADER
+                        ...BILI_HEADER,
+                        // 部分 CDN 镜像(如 upos-sz-mirrorcosov)对不带 Range 的整段 GET 返回 567，
+                        // 用开放式 Range(bytes=0-) 走分段响应即可正常下载
+                        Range: 'bytes=0-',
                     },
                 })
                 .then(({ data, headers }) => {
                     let currentLen = 0;
                     const totalLen = headers['content-length'];
+
+                    // RFC 9110 允许服务端对 Range 请求只返回请求范围的一部分，
+                    // 因此 206 必须校验 Content-Range 是否覆盖整个资源，避免把截断文件当成下载成功
+                    const contentRange = headers['content-range']; // 形如 bytes 0-123/124
+                    let expectedLen = Number(totalLen);
+                    if (contentRange) {
+                        const rangeMatch = /^bytes\s+(\d+)-(\d+)\/(\d+)/i.exec(contentRange);
+                        if (rangeMatch) {
+                            const [, rangeStart, rangeEnd, rangeTotal] = rangeMatch.map(Number);
+                            if (rangeStart !== 0 || rangeEnd !== rangeTotal - 1) {
+                                return Promise.reject(new Error(`CDN 返回的 Range 不完整: ${contentRange}`));
+                            }
+                            expectedLen = rangeTotal;
+                        }
+                    }
 
                     return new Promise((resolve, reject) => {
                         data.on('data', ({ length }) => {
@@ -168,6 +186,10 @@ async function normalDownloadBFile(url, fullFileName, progressCallback) {
 
                         data.pipe(
                             fs.createWriteStream(fullFileName).on('finish', () => {
+                                if (expectedLen && currentLen !== expectedLen) {
+                                    reject(new Error(`下载不完整: 已写入 ${currentLen}/${expectedLen} 字节`));
+                                    return;
+                                }
                                 const duration = ((Date.now() - startTime) / 1000).toFixed(2);
                                 const sizeMB = (totalLen / 1024 / 1024).toFixed(2);
                                 const speed = (sizeMB / duration).toFixed(2);
