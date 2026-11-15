@@ -33,7 +33,14 @@ export const douyinTypeMap = {
     61: "video",
     109: "video",
     150: "image",
+    163: "article",
 };
+
+/**
+ * 抖音口令正则表缓存
+ * @type {string}
+ */
+export const REDIS_YUNZAI_DOUYIN_COMMAND_PATTERNS_CACHE = "Yz:rconsole:tools:douyin:command-patterns-cache";
 
 /**
  * 固定值 1w，目前用于哔哩哔哩的数值渲染
@@ -112,6 +119,12 @@ export const BILI_DEFAULT_INTRO_LEN_LIMIT = 50;
  * @type {number}
  */
 export const XHS_DESC_LEN_LIMIT = 78;
+
+/**
+ * 抖音长图文单段文本上限
+ * @type {number}
+ */
+export const DOUYIN_ARTICLE_CHUNK_SIZE = 3000;
 
 /**
  * 总结的prompt

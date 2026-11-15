@@ -501,6 +501,19 @@ export function supportGuoba() {
                     required: false,
                 },
                 {
+                    field: "tools.douyinArticleForwardThreshold",
+                    label: "长图文合并转发阈值",
+                    bottomHelpMessage:
+                        "正文长度超过此字数将使用合并转发发送，小于等于此字数则直接发送。设置为0表示始终使用合并转发（默认0、最多3000）",
+                    component: "InputNumber",
+                    required: false,
+                    componentProps: {
+                        min: 0,
+                        max: 3000,
+                        placeholder: "请输入合并转发字数阈值（默认0=始终转发）",
+                    },
+                },
+                {
                     field: "tools.douyinMusic",
                     label: "是否开启背景音乐",
                     bottomHelpMessage: "开启后解析动图/图集时会同时发送背景音乐",

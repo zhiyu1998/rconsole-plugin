@@ -56,7 +56,8 @@ import {
     SUMMARY_PROMPT,
     transMap,
     TWITTER_BEARER_TOKEN,
-    XHS_NO_WATERMARK_HEADER
+    XHS_NO_WATERMARK_HEADER,
+    DOUYIN_ARTICLE_CHUNK_SIZE
 } from "../constants/constant.js";
 import { REDIS_YUNZAI_RESOLVE_CONTROLLER, RESOLVE_CONTROLLER_NAME_ENUM } from "../constants/resolve.js";
 import {
@@ -136,7 +137,13 @@ import { convertFlvToMp4, mergeVideoWithAudio } from "../utils/ffmpeg-util.js";
 import { checkAndRemoveFile, checkFileExists, deleteFolderRecursive, findFirstMp4File, getMediaFilesAndOthers, mkdirIfNotExists } from "../utils/file.js";
 import { buildBiliCommentRenderData, fetchBiliComments } from "../utils/bili-comment.js";
 import { buildDouyinCommentRenderData, fetchDouyinComments, getDouyinEmojiMap } from "../utils/douyin-comment.js";
-import { resolveDouyinVideoBySsr } from "../utils/douyin.js";
+import {
+    fetchDouyinAppDetail,
+    fetchDouyinArticleDetail,
+    resolveDouyinCommand,
+    resolveDouyinVideoBySsr,
+    splitDouyinArticleText,
+} from "../utils/douyin.js";
 import GeneralLinkAdapter from "../utils/general-link-adapter.js";
 import { contentEstimator } from "../utils/link-share-summary-util.js";
 import { llmRead } from "../utils/llm-util.js";
@@ -219,7 +226,7 @@ export class tools extends plugin {
                     fnc: "trans",
                 },
                 {
-                    reg: "((v|live).douyin.com|webcast.amemv.com|iesdouyin.com|www.douyin.com/(video|note|live|share|jingxuan|discover))",
+                    reg: "(?:(?:v|live)\\.douyin\\.com|webcast\\.amemv\\.com|iesdouyin\\.com|www\\.douyin\\.com/(?:video|note|live|share|jingxuan|discover|article)|m\\.douyin\\.com/share/article|打开(?:抖音|[Dd]ou音)|复制[\\s\\S]{0,80}(?:抖音|[Dd]ou音)|ˇˇ[^\\s]+※※|(?:抖音|[Dd]ou音)[\\s\\S]{0,80}(?:(##|%%|\\$\\$)[A-Za-z0-9_+/=-]{6,}\\1|[￥¥][A-Za-z0-9_+/=-]{6,}[￥¥]|(ωω|ΔΔ|€)[^\\s]{6,}\\2)|(?:(##|%%|\\$\\$)[A-Za-z0-9_+/=-]{6,}\\3|[￥¥][A-Za-z0-9_+/=-]{6,}[￥¥]|(ωω|ΔΔ|€)[^\\s]{6,}\\4)[\\s\\S]{0,80}(?:抖音|[Dd]ou音)|activity_[A-Za-z0-9_=-]{6,})",
                     fnc: "douyin",
                 },
                 {
@@ -455,6 +462,8 @@ export class tools extends plugin {
         this.douyinCommentCount = this.toolsConfig.douyinCommentCount ?? 5;
         // 加载抖音评论单张截图展示数量
         this.douyinCommentChunkSize = this.toolsConfig.douyinCommentChunkSize ?? 10;
+        // 加载抖音长图文合并转发阈值
+        this.douyinArticleForwardThreshold = this.toolsConfig.douyinArticleForwardThreshold ?? 0;
         // 加载抖音是否开启背景音乐
         this.douyinMusic = this.toolsConfig.douyinMusic ?? true;
         // 加载抖音背景音乐发送方式
@@ -533,14 +542,43 @@ export class tools extends plugin {
             logger.info(`[R插件][全局解析控制] ${RESOLVE_CONTROLLER_NAME_ENUM.douyin} 已拦截`);
             return false;
         }
-        const urlRex = /(http:\/\/|https:\/\/)((v|live).douyin.com\/[A-Za-z\d._?%&+\-=\/#]*|webcast.amemv.com\/[A-Za-z\d._?%&+\-=\/#]*|(www\.)?iesdouyin.com\/[A-Za-z\d._?%&+\-=\/#]*|www.douyin.com\/((video|note|live)\/[0-9]+|share\/slides\/[0-9]+|(jingxuan|discover)\?[A-Za-z\d._?%&+\-=\/#]*modal_id=[0-9]+[A-Za-z\d._?%&+\-=\/#]*))/;
-        // 检测无效链接，例如：v.douyin.com，静默忽略
-        if (!urlRex.test(e.msg)) {
-            return false;
+        const msg = typeof e.msg === "string" ? e.msg.trim() : "";
+        const urlRex = /(http:\/\/|https:\/\/)((v|live)\.douyin\.com\/[A-Za-z\d._?%&+\-=\/#]*|webcast\.amemv\.com\/[A-Za-z\d._?%&+\-=\/#]*|(www\.)?iesdouyin\.com\/[A-Za-z\d._?%&+\-=\/#]*|m\.douyin\.com\/share\/article\/[0-9]+[A-Za-z\d._?%&+\-=\/#]*|www\.douyin\.com\/((video|note|live|article)\/[0-9]+|share\/(slides|video|note|article)\/[0-9]+|(jingxuan|discover)\?[A-Za-z\d._?%&+\-=\/#]*modal_id=[0-9]+[A-Za-z\d._?%&+\-=\/#]*))/;
+
+        let douUrl = "";
+        let ttwid = "";
+
+        if (urlRex.test(msg)) {
+            douUrl = urlRex.exec(msg)[0];
+        } else {
+            // 无链接时按抖音口令解析 否则忽略
+            const commandResult = await resolveDouyinCommand(msg);
+            if (!commandResult) {
+                return false;
+            }
+            if (!commandResult.itemId && !commandResult.roomId && !commandResult.webRid) {
+                // 仅当文本明显带有抖音口令上下文时给出失效提示
+                if (/(?:抖音|[Dd]ou音)|ˇˇ[^\s]+※※/.test(msg)) {
+                    e.reply("抖音口令无效或已过期，请重新复制分享内容");
+                    return true;
+                }
+                return false;
+            }
+
+            // logger.info(`[R插件][抖音口令] 解析成功 itemId=${commandResult.itemId}, scene=${commandResult.shareScene || "unknown"}, isArticle=${commandResult.isArticle}`);
+            if (commandResult.isArticle) {
+                douUrl = `https://www.douyin.com/article/${commandResult.itemId}`;
+            } else if (commandResult.isLive && commandResult.webRid) {
+                douUrl = `https://live.douyin.com/${commandResult.webRid}`;
+            } else if (commandResult.isLive && commandResult.roomId) {
+                douUrl = `https://webcast.amemv.com/douyin/webcast/reflow/${commandResult.roomId}`;
+            } else {
+                douUrl = commandResult.isNote
+                    ? `https://www.douyin.com/note/${commandResult.itemId}`
+                    : `https://www.douyin.com/video/${commandResult.itemId}`;
+            }
         }
-        // 获取链接
-        let douUrl = urlRex.exec(e.msg.trim())[0];
-        let ttwid = '';
+
         if (douUrl.includes("v.douyin.com")) {
             const { location, ttwidValue } = await this.douyinRequest(douUrl);
             ttwid = ttwidValue;
@@ -583,11 +621,17 @@ export class tools extends plugin {
                     return true;
                 }
 
-                const desc = item.desc || "无简介";
+                const desc = String(item.desc || "").trim();
                 const authorNickname = item.author?.nickname || "未知作者";
                 // 封面
                 const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
-                const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
+                const isStory = Boolean(
+                    item?.is_story
+                    || item?.is_24_story
+                    || item?.is_25_story
+                    || Number(item?.story_ttl) > 0
+                );
+                const dySendContent = `${this.identifyPrefix}识别：${isStory ? "抖音日常动图" : "抖音动图"}，作者：${authorNickname}${desc ? `\n📝 简介：${desc}` : ""}`;
                 if (this.douyinDisplayCover && dyCover) {
                     await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                 } else {
@@ -606,6 +650,7 @@ export class tools extends plugin {
         // 获取 ID（支持精选页面 jingxuan 和发现页面 discover 的 modal_id 参数）
         const douId = /note\/(\d+)/g.exec(douUrl)?.[1] ||
             /video\/(\d+)/g.exec(douUrl)?.[1] ||
+            /article\/(\d+)/g.exec(douUrl)?.[1] ||
             /live.douyin.com\/(\d+)/.exec(douUrl)?.[1] ||
             /live\/(\d+)/.exec(douUrl)?.[1] ||
             /webcast.amemv.com\/douyin\/webcast\/reflow\/(\d+)/.exec(douUrl)?.[1] ||
@@ -614,6 +659,24 @@ export class tools extends plugin {
         if (_.isEmpty(douId)) {
             return false;
         }
+        // 以下是更新了很多次的抖音API历史，且用且珍惜
+        // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
+        // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
+        // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
+        const headers = {
+            "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+            "User-Agent": COMMON_USER_AGENT,
+            "Origin": "https://open.douyin.com",
+            "Referer": "https://open.douyin.com/",
+            cookie: this.douyinCookie,
+        };
+        // 长图文优先走免 Cookie 的开放平台 JSON 通道
+        if (douUrl.includes("/article/")) {
+            headers['Referer'] = `https://www.douyin.com/`;
+            await this.handleDouyinArticle(e, douId, headers, douUrl);
+            return true;
+        }
+        const isLiveUrl = douUrl.includes("live") || douUrl.includes("webcast.amemv.com");
         // SSR 兜底仅面向普通视频，避免误伤直播、图集/动图、评论等原有流程。
         const canUseSsrBackup = this.isDouyinSsrBackupEligible(douUrl);
         // 当前版本需要填入cookie
@@ -629,17 +692,7 @@ export class tools extends plugin {
             e.reply(`检测到没有Cookie，无法解析抖音${HELP_DOC}`);
             return;
         }
-        // 以下是更新了很多次的抖音API历史，且用且珍惜
-        // const url = `https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=${ douId }`;
-        // const url = `https://www.iesdouyin.com/aweme/v1/web/aweme/detail/?aweme_id=${ douId }&aid=1128&version_name=23.5.0&device_platform=android&os_version=2333`;
-        // 感谢 Evil0ctal（https://github.com/Evil0ctal）提供的header 和 B1gM8c（https://github.com/B1gM8c）的逆向算法X-Bogus
-        const headers = {
-            "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-            "User-Agent": COMMON_USER_AGENT,
-            "Origin": "https://open.douyin.com",
-            "Referer": "https://open.douyin.com/",
-            cookie: this.douyinCookie,
-        };
+        let triedAppBackup = false;
         let dyApi;
         if (douUrl.includes("live.douyin.com")) {
             // 第一类直播类型
@@ -674,10 +727,18 @@ export class tools extends plugin {
         // const param = resp.data.result[0].paramsencode;
         const resDyApi = `${dyApi}&a_bogus=${abParam}`;
         headers['Referer'] = `https://www.douyin.com/`;
-        // 定义一个dy请求
-        const dyResponse = () => axios.get(resDyApi, {
-            headers,
-        });
+        // 定义一个dy请求（非直播遇到 403/401 或空数据时不重试 直接交给 App 端兜底）
+        const dyResponse = async () => {
+            const resp = await axios.get(resDyApi, {
+                headers,
+                timeout: 10000,
+                validateStatus: status => (status >= 200 && status < 300) || (!isLiveUrl && (status === 401 || status === 403)),
+            });
+            if (!isLiveUrl && (resp.status === 403 || resp.status === 401 || !resp.data)) {
+                return { data: { aweme_detail: null } };
+            }
+            return resp;
+        };
         // 如果失败进行3次重试
         try {
             const data = await retryAxiosReq(dyResponse);
@@ -700,66 +761,153 @@ export class tools extends plugin {
             }
             const item = await data.aweme_detail;
             // await saveJsonToFile(item);
-            // 如果为null则退出
             if (item == null) {
+                triedAppBackup = true;
+                if (await this.tryDouyinAppBackup(e, douUrl, {
+                    douId,
+                    headers,
+                    isLiveUrl,
+                    reason: "主接口返回空数据",
+                })) {
+                    return true;
+                }
                 if (await this.tryDouyinSsrBackup(e, douUrl, {
                     douId,
                     ttwid,
                     canUseSsrBackup,
-                    reason: "主接口返回空数据",
+                    reason: "主接口与App兜底均返回空数据",
                 })) {
                     return true;
                 }
                 e.reply("R插件无法识别到当前抖音内容，请换一个试试！");
                 return;
             }
-            const urlTypeCode = item.aweme_type;
-            const urlType = douyinTypeMap[urlTypeCode];
-            // 核心内容
-            if (urlType === "video") {
-                const { play_addr: { uri: videoAddrURI }, duration, cover } = item.video;
-                const resolution = this.douyinCompression ? "720p" : "1080p";
-                const resUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI);
-                await this.handleDouyinResolvedVideo(e, {
-                    douId,
-                    author: item.author || {},
-                    authorNickname: item.author?.nickname || "抖音用户",
-                    desc: item.desc || "",
-                    durationSeconds: Math.trunc((duration || 0) / 1000),
-                    coverUrl: cover.url_list?.[0] || cover.url_list?.at(-1) || "",
-                    videoUrl: resUrl,
-                    downloadHeaders: null,
-                    commentHeaders: headers,
-                    enableComments: true,
-                });
-            } else if (urlType === "image") {
-                // 检查是否包含video字段
-                const hasVideo = item.images?.some(img => img.video?.play_addr_h264?.uri || img.video?.play_addr?.uri);
 
-                if (hasVideo) {
-                    // 如果有 按照动图处理
-                    const desc = item.desc || "无简介";
-                    const authorNickname = item.author?.nickname || "未知作者";
-                    // 封面
-                    const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
-                    const dySendContent = `${this.identifyPrefix}识别：抖音动图，作者：${authorNickname}\n📝 简介：${desc}`;
-                    if (this.douyinDisplayCover && dyCover) {
-                        await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
-                    } else {
-                        e.reply(dySendContent);
-                    }
+            await this.handleDouyinItem(e, item, douUrl, douId, headers);
+        } catch (err) {
+            if (!triedAppBackup && await this.tryDouyinAppBackup(e, douUrl, {
+                douId,
+                headers,
+                isLiveUrl,
+                reason: `主接口异常: ${err.message}`,
+            })) {
+                return true;
+            }
+            if (await this.tryDouyinSsrBackup(e, douUrl, {
+                douId,
+                ttwid,
+                canUseSsrBackup,
+                reason: `主接口异常: ${err.message}`,
+            })) {
+                return true;
+            }
+            logger.error(err);
+            logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`);
+        }
+        return true;
+    }
 
-                    // 调用动图处理函数
-                    await this.processDouyinImageAlbum(e, item, douUrl, headers, douId);
+    /**
+     * 统一分发 Web / App 详情返回的抖音作品（长图文、视频、图集/动图）
+     */
+    async handleDouyinItem(e, item, douUrl, douId, headers) {
+        const isStory = Boolean(
+            item?.is_story
+            || item?.is_24_story
+            || item?.is_25_story
+            || Number(item?.story_ttl) > 0
+        );
+        let urlType = douyinTypeMap[item.aweme_type];
+        if (!urlType) {
+            if (item.article_info || item.articleInfo) {
+                urlType = "article";
+            } else if (Array.isArray(item.images) && item.images.length > 0) {
+                urlType = "image";
+            } else if (item.video?.play_addr?.uri || item.video?.play_addr?.url_list?.length > 0) {
+                urlType = "video";
+            }
+        }
+
+        // images 为空 存在视频流时回退按视频处理
+        if (urlType === "image") {
+            const validImages = (item.images || []).filter(
+                img => img?.url_list?.[0]
+                    || img?.video?.play_addr_h264?.uri
+                    || img?.video?.play_addr?.uri
+                    || img?.video?.play_addr_h264?.url_list?.[0]
+                    || img?.video?.play_addr?.url_list?.[0]
+            );
+            if (validImages.length === 0 && (item.video?.play_addr?.uri || item.video?.play_addr?.url_list?.length > 0)) {
+                urlType = "video";
+            }
+        }
+
+        if (urlType === "article") {
+            await this.handleDouyinArticle(e, douId, headers, douUrl);
+        } else if (urlType === "video") {
+            const videoAddrURI = item.video?.play_addr?.uri;
+            const resolution = this.douyinCompression ? "720p" : "1080p";
+            const resUrl = videoAddrURI
+                ? DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoAddrURI)
+                : (item.video?.play_addr?.url_list?.[0] || "");
+            if (!resUrl) {
+                logger.warn(`[R插件][抖音] 作品 ${douId} 视频流地址为空`);
+                e.reply("R插件未能获取到当前抖音视频播放地址，请稍后再试！");
+                return;
+            }
+            const dyCover = item.video?.cover?.url_list?.[0]
+                || item.video?.cover?.url_list?.at(-1)
+                || item.video?.origin_cover?.url_list?.[0]
+                || "";
+            await this.handleDouyinResolvedVideo(e, {
+                douId,
+                author: item.author || {},
+                authorNickname: item.author?.nickname || "抖音用户",
+                desc: item.desc || "",
+                durationSeconds: Math.trunc((item.video?.duration || item.duration || 0) / 1000),
+                coverUrl: dyCover,
+                videoUrl: resUrl,
+                downloadHeaders: null,
+                commentHeaders: headers,
+                enableComments: true,
+                label: isStory ? "抖音日常" : "抖音",
+            });
+        } else if (urlType === "image") {
+            // 检查是否包含video字段
+            const hasVideo = item.images?.some(
+                img => img.video?.play_addr_h264?.uri
+                    || img.video?.play_addr?.uri
+                    || img.video?.play_addr_h264?.url_list?.[0]
+                    || img.video?.play_addr?.url_list?.[0]
+            );
+
+            if (hasVideo) {
+                // 如果有 按照动图处理
+                const desc = String(item.desc || "").trim();
+                const authorNickname = item.author?.nickname || "未知作者";
+                // 封面
+                const dyCover = item.video?.cover?.url_list?.[0] || item.images?.[0]?.url_list?.[0];
+                const dySendContent = `${this.identifyPrefix}识别：${isStory ? "抖音日常动图" : "抖音动图"}，作者：${authorNickname}${desc ? `\n📝 简介：${desc}` : ""}`;
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
                 } else {
-                    // 普通图片
-                    e.reply(`${this.identifyPrefix}识别：抖音, ${item.desc}`);
+                    e.reply(dySendContent);
+                }
 
-                    // 提取无水印图片URL列表
-                    const imageUrls = item.images.map(i => i.url_list[0]);
-                    // 获取封面（第一张图片）
-                    const dyCover = imageUrls[0] || "";
+                // 调用动图处理函数
+                await this.processDouyinImageAlbum(e, item, douUrl, headers, douId);
+            } else {
+                // 普通图片
+                const desc = String(item.desc || "").trim();
+                const authorNickname = item.author?.nickname || "未知作者";
+                e.reply(`${this.identifyPrefix}识别：${isStory ? "抖音日常" : "抖音"}，作者：${authorNickname}${desc ? `\n📝 简介：${desc}` : ""}`);
 
+                // 提取无水印图片URL列表
+                const imageUrls = (item.images || []).map(i => i?.url_list?.[0]).filter(Boolean);
+                // 获取封面（第一张图片）
+                const dyCover = imageUrls[0] || "";
+
+                if (imageUrls.length > 0) {
                     // 根据 globalImageLimit 决定发送方式
                     if (imageUrls.length > this.globalImageLimit) {
                         // 超过限制 使用转发消息
@@ -774,28 +922,108 @@ export class tools extends plugin {
                         const images = imageUrls.map(url => segment.image(url));
                         await e.reply(images);
                     }
-
-                    // 发送背景音乐
-                    await this.resolveDouyinMusic(e, item, douUrl);
-
-                    // 如果开启评论的话就调用
-                    await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
                 }
 
+                // 发送背景音乐
+                await this.resolveDouyinMusic(e, item, douUrl);
+
+                // 如果开启评论的话就调用
+                await this.douyinComment(e, douId, headers, item.desc, dyCover, item.author);
             }
-        } catch (err) {
-            if (await this.tryDouyinSsrBackup(e, douUrl, {
-                douId,
-                ttwid,
-                canUseSsrBackup,
-                reason: `主接口异常: ${err.message}`,
-            })) {
-                return true;
-            }
-            logger.error(err);
-            logger.mark(`Cookie 过期或者 Cookie 没有填写，请参考\n${HELP_DOC}\n尝试无效后可以到官方QQ群[575663150]提出 bug 等待解决`);
+        } else {
+            logger.warn(`[R插件][抖音] 作品 ${douId} 未识别到可解析类型 aweme_type=${item?.aweme_type}`);
+            e.reply("R插件无法识别到当前抖音内容，请换一个试试！");
         }
-        return true;
+    }
+
+    /**
+     * 处理抖音长图文
+     */
+    async handleDouyinArticle(e, itemId, headers, douUrl = "") {
+        try {
+            const article = await fetchDouyinArticleDetail(itemId, this.douyinCookie);
+            const body = article.body || "";
+            const segments = Array.isArray(article.segments) && article.segments.length > 0
+                ? article.segments
+                : (body ? [{ type: "text", content: body }] : []);
+            const dyCover = article.coverUrl || "";
+            const articleUrl = douUrl || `https://www.douyin.com/note/${itemId}`;
+            const dySendContent = `${this.identifyPrefix}识别：抖音长图文，作者：${article.authorNickname}${article.title ? `\n📝 标题：${article.title}` : ""}`;
+
+            const combinedMessage = [];
+            let imageCount = 0;
+            for (const seg of segments) {
+                if (seg.type === "image") {
+                    imageCount++;
+                    combinedMessage.push(segment.image(seg.url));
+                } else if (seg.type === "text" && seg.content) {
+                    combinedMessage.push(...splitDouyinArticleText(seg.content, DOUYIN_ARTICLE_CHUNK_SIZE));
+                }
+            }
+
+            const limit = this.msgElementLimit || 50;
+            const shouldForward = body.length > this.douyinArticleForwardThreshold
+                || this.douyinArticleForwardThreshold === 0
+                || (this.globalImageLimit > 0 && imageCount > this.globalImageLimit)
+                || combinedMessage.length > limit;
+
+            // 超过阈值时先送识别信息 再合并转发
+            if (shouldForward) {
+                if (this.douyinDisplayCover && dyCover) {
+                    await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                } else {
+                    await e.reply(dySendContent);
+                }
+
+                // 单条转发消息最大元素数
+                for (let i = 0; i < combinedMessage.length; i += limit) {
+                    const group = combinedMessage.slice(i, i + limit);
+                    const forwardMsg = await Bot.makeForwardMsg([{
+                        message: group,
+                        nickname: this.e.sender.card || this.e.user_id,
+                        user_id: this.e.user_id,
+                    }]);
+                    await replyWithRetry(e, Bot, forwardMsg);
+                }
+            } else {
+                const hasInlineImage = segments.some(seg => seg.type === "image");
+                if (!hasInlineImage) {
+                    const text = body ? `${dySendContent}\n\n${body}` : dySendContent;
+                    const textChunks = splitDouyinArticleText(text, DOUYIN_ARTICLE_CHUNK_SIZE);
+                    if (this.douyinDisplayCover && dyCover && textChunks.length > 0) {
+                        await replyWithRetry(e, Bot, [segment.image(dyCover), textChunks[0]]);
+                        for (const chunk of textChunks.slice(1)) {
+                            await e.reply(chunk);
+                        }
+                    } else {
+                        for (const chunk of textChunks) {
+                            await e.reply(chunk);
+                        }
+                    }
+                } else {
+                    if (this.douyinDisplayCover && dyCover) {
+                        await replyWithRetry(e, Bot, [segment.image(dyCover), dySendContent]);
+                    } else {
+                        await e.reply(dySendContent);
+                    }
+                    await replyWithRetry(e, Bot, combinedMessage);
+                }
+            }
+
+            // 发送背景音乐
+            await this.resolveDouyinMusic(e, article, articleUrl);
+
+            // 只有在开启评论且配置了 Cookie 时调用 避免免 Cookie 解析成功时进入
+            if (!_.isEmpty(this.douyinCookie)) {
+                await this.douyinComment(e, itemId, headers, article.title, dyCover, article.commentAuthor);
+            }
+        } catch (error) {
+            logger.error(`[R插件][抖音长图文] 解析失败 itemId=${itemId}: ${error.message}`);
+            const userTip = _.isEmpty(this.douyinCookie)
+                ? "抖音长图文解析失败，未配置 Cookie 且开放平台接口暂不可用"
+                : "抖音长图文解析失败，作品可能已删除或 Cookie 已失效";
+            e.reply(userTip);
+        }
     }
 
     /**
@@ -870,6 +1098,31 @@ export class tools extends plugin {
     }
 
     /**
+     * 主接口为空或被拦截时，尝试走 App 端详情接口兜底（主要覆盖限时日常等半私域内容）。
+     */
+    async tryDouyinAppBackup(e, douUrl, options = {}) {
+        const {
+            douId = "",
+            headers = null,
+            isLiveUrl = false,
+            reason = "",
+        } = options;
+
+        if (isLiveUrl || !douId || _.isEmpty(this.douyinCookie)) {
+            return false;
+        }
+
+        const appItem = await fetchDouyinAppDetail(douId, this.douyinCookie);
+        if (!appItem) {
+            return false;
+        }
+
+        logger.info(`[R插件][抖音App兜底] 已启用（${reason || "未知"}），aweme_id=${douId}, aweme_type=${appItem.aweme_type}`);
+        await this.handleDouyinItem(e, appItem, douUrl, douId, headers);
+        return true;
+    }
+
+    /**
      * 统一处理抖音普通视频的发送逻辑，让主接口结果和 SSR 兜底结果共用同一套下游行为。
      * @param e
      * @param options
@@ -887,9 +1140,11 @@ export class tools extends plugin {
             downloadHeaders = null,
             commentHeaders = null,
             enableComments = false,
+            label = "抖音",
         } = options;
 
-        let dySendContent = `${this.identifyPrefix}识别：抖音，${authorNickname}\n📝 简介：${desc}`;
+        const cleanDesc = String(desc || "").trim();
+        let dySendContent = `${this.identifyPrefix}识别：${label}，${authorNickname}${cleanDesc ? `\n📝 简介：${cleanDesc}` : ""}`;
         if (durationSeconds >= this.douyinDuration) {
             // 超过时长阈值时沿用老行为：只提示，不发送视频。
             dySendContent += `\n
@@ -1074,13 +1329,16 @@ export class tools extends plugin {
         const processImage = async (imageItem, index) => {
             try {
                 const videoUri = imageItem.video?.play_addr_h264?.uri || imageItem.video?.play_addr?.uri;
+                const directVideoUrl = imageItem.video?.play_addr_h264?.url_list?.[0] || imageItem.video?.play_addr?.url_list?.[0];
                 // 检查是否有video字段（动图）
-                if (videoUri) {
+                if (videoUri || directVideoUrl) {
                     // 动图：下载视频并与BGM合并
                     // 分辨率判断是否压缩
                     const resolution = this.douyinCompression ? "720p" : "1080p";
                     // 使用今日头条 CDN 进一步加快解析速度
-                    const videoUrl = DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoUri);
+                    const videoUrl = videoUri
+                        ? DY_TOUTIAO_INFO.replace("1080p", resolution).replace("{}", videoUri)
+                        : directVideoUrl;
 
                     logger.info(`[R插件][抖音动图] 下载动图 ${index + 1}: ${videoUrl}`);
 

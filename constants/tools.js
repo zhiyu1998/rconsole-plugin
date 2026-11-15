@@ -181,6 +181,36 @@ export const DY_SHARE_VIDEO_PAGE = "https://www.iesdouyin.com/share/video/{}/";
 export const DY_SHARE_NOTE_PAGE = "https://www.iesdouyin.com/share/note/{}/";
 
 /**
+ * DY 分享口令正则下发接口（匿名可用 返回 command_patterns）
+ * @type {string}
+ */
+export const DY_SHARE_SETTINGS = "https://aweme.snssdk.com/aweme/v2/platform/share/settings/";
+
+/**
+ * DY 口令承载解析接口（匿名可用 将整段口令转换为 aweme:// schema）
+ * @type {string}
+ */
+export const DY_CARRIER_PARSE = "https://aweme.snssdk.com/aweme/share/carrier/parse/";
+
+/**
+ * DY App 端作品详情接口（用于限时日常等半私域内容兜底 需登录 Cookie + 完整设备参数）
+ * @type {string}
+ */
+export const DY_APP_DETAIL = "https://aweme.snssdk.com/aweme/v1/aweme/detail/?aweme_id={}&aid=1128&app_name=aweme&version_code=380700&version_name=38.7.0&device_platform=android&os=android&os_version=13&channel=googleplay&device_type=SM-G998B&device_brand=samsung&language=zh&region=CN";
+
+/**
+ * DY 开放平台来源头 Web 详情接口（免 Cookie 解析长图文 article_info 需带 Origin 与 Referer）
+ * @type {string}
+ */
+export const DY_WEB_OPEN_DETAIL = "https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id={}&aid=6383";
+
+/**
+ * DY PC 网页端图文/长图文页面（SSR __pace_f 承载 articleInfo 正文）
+ * @type {string}
+ */
+export const DY_WEB_NOTE_PAGE = "https://www.douyin.com/note/{}";
+
+/**
  * DY 直播信息
  * @type {string}
  */
