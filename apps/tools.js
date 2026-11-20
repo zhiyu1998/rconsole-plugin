@@ -1478,8 +1478,6 @@ export class tools extends plugin {
             const musicTitle = item.music.matched_pgc_sound?.title || item.music.title || '抖音BGM';
             // 歌手优先级：版权音乐作者 > 原声音乐作者
             const musicAuthor = item.music.matched_pgc_sound?.author || item.music.author || '';
-            // 完整标题格式：歌曲名 - 歌手
-            const fullTitle = musicAuthor ? `${musicTitle} - ${musicAuthor}` : musicTitle;
 
             // --- 2. 根据配置类型发送消息 ---
             if (this.douyinBGMSendType === 'card') {
@@ -1499,7 +1497,7 @@ export class tools extends plugin {
                 }
 
                 // 发送自定义音乐卡片
-                await sendCustomMusicCard(e, douUrl, musicUrl, fullTitle, musicImage);
+                await sendCustomMusicCard(e, douUrl, musicUrl, musicTitle, musicImage, "custom", musicAuthor);
             } else {
                 // --- 语音消息 ---
 
