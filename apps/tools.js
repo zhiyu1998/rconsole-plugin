@@ -2924,19 +2924,22 @@ export class tools extends plugin {
         const fullDesc = String(desc ?? "");
         // 预览消息和完整转发共用同一个头部，避免两处文案不一致
         const header = `${this.identifyPrefix}识别：小红书, ${title}`;
-        // prefixMsg 只放进预览消息，例如视频封面；完整转发只保留标题和原始描述
-        const previewMsg = [...prefixMsg, `${header}\n${truncateString(fullDesc, maxLen)}`];
 
-        // 必须等待预览先发出，防止完整转发先于预览抵达
-        await replyWithRetry(e, Bot, previewMsg.length === 1 ? previewMsg[0] : previewMsg);
-
-        // 描述未超长时，预览已经包含完整内容，不再额外发送合并转发
+        // 描述未超长时，直接发出完整内容
         if (fullDesc.length <= maxLen) {
+            // prefixMsg 只放进预览消息，例如视频封面
+            const directMsg = [...prefixMsg, `${header}\n${fullDesc}`];
+            await replyWithRetry(e, Bot, directMsg.length === 1 ? directMsg[0] : directMsg);
             return;
         }
 
+        // 超过长度时，先直接发送识别信息，再合并转发完整正文
+        const headerMsg = [...prefixMsg, header];
+        // 必须等待识别信息先发出，防止合并转发先于识别信息抵达
+        await replyWithRetry(e, Bot, headerMsg.length === 1 ? headerMsg[0] : headerMsg);
+
         // 超长描述用合并转发承载全文，避免普通消息过长影响可读性或发送成功率
-        const forwardMsg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [header, fullDesc]));
+        const forwardMsg = await Bot.makeForwardMsg(textArrayToMakeForward(e, [fullDesc]));
         await replyWithRetry(e, Bot, forwardMsg);
     }
 
