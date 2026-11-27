@@ -87,23 +87,54 @@ export class OpenaiBuilder {
 
         // 发送POST请求到聊天完成端点
         const completion = await this.client.post("/v1/chat/completions", payload);
-        const message = completion.data.choices[0].message;
+        const data = completion.data;
 
-        // 从响应中获取实际使用的模型名称
-        const modelName = completion.data.model;
+        // 部分本地网关出错时仍返回 HTTP 200，body 里是 error 对象
+        if (data?.error) {
+            throw new Error(`模型接口返回错误: ${data.error.message || JSON.stringify(data.error)}`);
+        }
 
-        // 如果模型的响应中包含工具调用
-        if (message.tool_calls) {
+        const message = data?.choices?.[0]?.message;
+        if (!message) {
+            throw new Error(`模型接口返回异常，未找到对话结果: ${JSON.stringify(data)?.slice(0, 200)}`);
+        }
+
+        // 从响应中获取实际使用的模型名称，部分本地网关不回传 model 字段
+        const modelName = data.model ?? this.model;
+
+        // 严格判断工具调用：部分本地网关即使未传 tools 也会返回空 tool_calls 数组，
+        // 空数组是 truthy，不严格判断会丢掉 message.content，导致下游拿到 undefined 的 ans
+        if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
             return {
                 "model": modelName,
                 "tool_calls": message.tool_calls
             }
         }
-        
+
         // 否则，返回包含文本答案的响应
         return {
             "model": modelName,
-            "ans": message.content
+            "ans": this._normalizeContent(message)
         }
+    }
+
+    /**
+     * 归一化模型返回的 content 字段。
+     * 兼容字符串、分块数组（部分 OpenAI 兼容网关）、null（推理类模型）等形态，
+     * 并去除推理模型输出中的 <think>...</think> 思考标签。
+     * @param {Object} message - 模型响应中的 message 对象
+     * @returns {string} 纯文本答案
+     */
+    _normalizeContent(message) {
+        let content = message.content;
+        if (Array.isArray(content)) {
+            content = content
+                .map(part => part?.text ?? "")
+                .join("");
+        }
+        if (typeof content !== "string") {
+            content = "";
+        }
+        return content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
     }
 }
