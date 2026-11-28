@@ -942,27 +942,42 @@ export class tools extends plugin {
     async handleDouyinArticle(e, itemId, headers, douUrl = "") {
         try {
             const article = await fetchDouyinArticleDetail(itemId, this.douyinCookie);
+            const title = String(article.title || "").trim();
+            const desc = String(article.desc || "").trim();
             const body = article.body || "";
+            const articleText = [title, body].filter(Boolean).join("\n\n");
             const segments = Array.isArray(article.segments) && article.segments.length > 0
                 ? article.segments
                 : (body ? [{ type: "text", content: body }] : []);
             const dyCover = article.coverUrl || "";
             const articleUrl = douUrl || `https://www.douyin.com/note/${itemId}`;
-            const dySendContent = `${this.identifyPrefix}识别：抖音长图文，作者：${article.authorNickname}${article.title ? `\n📝 标题：${article.title}` : ""}`;
+            const dySendContent = `${this.identifyPrefix}识别：抖音长图文，作者：${article.authorNickname}${desc ? `\n📝 简介：${desc}` : ""}`;
 
             const combinedMessage = [];
             let imageCount = 0;
+            let titlePrepended = !title;
             for (const seg of segments) {
                 if (seg.type === "image") {
+                    if (!titlePrepended) {
+                        combinedMessage.push(`${title}\n`);
+                        titlePrepended = true;
+                    }
                     imageCount++;
                     combinedMessage.push(segment.image(seg.url));
                 } else if (seg.type === "text" && seg.content) {
-                    combinedMessage.push(...splitDouyinArticleText(seg.content, DOUYIN_ARTICLE_CHUNK_SIZE));
+                    const textContent = !titlePrepended
+                        ? `${title}\n\n${seg.content}`
+                        : seg.content;
+                    titlePrepended = true;
+                    combinedMessage.push(...splitDouyinArticleText(textContent, DOUYIN_ARTICLE_CHUNK_SIZE));
                 }
+            }
+            if (!titlePrepended) {
+                combinedMessage.push(title);
             }
 
             const limit = this.msgElementLimit || 50;
-            const shouldForward = body.length > this.douyinArticleForwardThreshold
+            const shouldForward = articleText.length > this.douyinArticleForwardThreshold
                 || this.douyinArticleForwardThreshold === 0
                 || (this.globalImageLimit > 0 && imageCount > this.globalImageLimit)
                 || combinedMessage.length > limit;
@@ -988,7 +1003,7 @@ export class tools extends plugin {
             } else {
                 const hasInlineImage = segments.some(seg => seg.type === "image");
                 if (!hasInlineImage) {
-                    const text = body ? `${dySendContent}\n\n${body}` : dySendContent;
+                    const text = articleText ? `${dySendContent}\n\n${articleText}` : dySendContent;
                     const textChunks = splitDouyinArticleText(text, DOUYIN_ARTICLE_CHUNK_SIZE);
                     if (this.douyinDisplayCover && dyCover && textChunks.length > 0) {
                         await replyWithRetry(e, Bot, [segment.image(dyCover), textChunks[0]]);
@@ -1015,7 +1030,7 @@ export class tools extends plugin {
 
             // 只有在开启评论且配置了 Cookie 时调用 避免免 Cookie 解析成功时进入
             if (!_.isEmpty(this.douyinCookie)) {
-                await this.douyinComment(e, itemId, headers, article.title, dyCover, article.commentAuthor);
+                await this.douyinComment(e, itemId, headers, desc, dyCover, article.commentAuthor);
             }
         } catch (error) {
             logger.error(`[R插件][抖音长图文] 解析失败 itemId=${itemId}: ${error.message}`);

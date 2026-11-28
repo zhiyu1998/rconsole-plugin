@@ -1185,6 +1185,33 @@ function normalizeDouyinMusic(music = null) {
     };
 }
 
+function extractDouyinArticleDesc(rawDesc = "", title = "") {
+    const desc = String(rawDesc || "").trim();
+    const cleanTitle = String(title || "").trim();
+    if (!desc) {
+        return "";
+    }
+    if (!cleanTitle) {
+        return desc;
+    }
+    if (desc === cleanTitle) {
+        return "";
+    }
+    if (!desc.startsWith(cleanTitle)) {
+        return desc;
+    }
+
+    let rest = desc.slice(cleanTitle.length);
+    // 抖音会在 desc 开头拼入 article_title 并按结尾字符补「。」或「.」或直接拼接
+    // 仅剥离单个拼接句号 避免误伤用户简介开头的省略号「...」
+    if (rest.startsWith("。")) {
+        rest = rest.slice(1);
+    } else if (rest.startsWith(".") && (!rest.startsWith("..") || rest.startsWith("...."))) {
+        rest = rest.slice(1);
+    }
+    return rest.trim();
+}
+
 function normalizeArticleResult(detail, itemId, chunks = null) {
     if (!detail || typeof detail !== "object") {
         return null;
@@ -1211,7 +1238,8 @@ function normalizeArticleResult(detail, itemId, chunks = null) {
         .map(seg => seg.content)
         .join("\n\n")
         .trim();
-    const title = String(articleInfo.articleTitle || articleInfo.article_title || detail.desc || "").trim();
+    const title = String(articleInfo.articleTitle || articleInfo.article_title || "").trim();
+    const desc = extractDouyinArticleDesc(detail.desc, title);
     const coverUrl = extractCoverFromField(detail.video?.cover)
         || extractCoverFromField(detail.video?.origin_cover)
         || extractCoverFromField(articleInfo.cover)
@@ -1223,6 +1251,7 @@ function normalizeArticleResult(detail, itemId, chunks = null) {
     return {
         itemId: String(detail.awemeId || detail.aweme_id || itemId),
         title,
+        desc,
         body,
         segments,
         coverUrl,
