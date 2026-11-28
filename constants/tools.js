@@ -34,11 +34,11 @@ export const BILI_BVID_TO_CID = "https://api.bilibili.com/x/player/pagelist?bvid
 export const BILI_VIDEO_INFO = "http://api.bilibili.com/x/web-interface/view";
 
 /**
- * 视频评论（经典分页接口）
+ * B站评论（经典分页接口 支持视频/动态/专栏）
  * https://github.com/SocialSisterYi/bilibili-API-collect/blob/master/docs/comment/list.md
  * @type {string}
  */
-export const BILI_REPLY_PAGE = "https://api.bilibili.com/x/v2/reply?type=1&oid={oid}&sort=1&ps={ps}&pn=1&nohot=0";
+export const BILI_REPLY_PAGE = "https://api.bilibili.com/x/v2/reply?type={type}&oid={oid}&sort=1&ps={ps}&pn=1&nohot=0";
 
 /**
  * 视频评论（懒加载 WBI 接口）

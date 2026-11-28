@@ -388,7 +388,7 @@ export function supportGuoba() {
                 {
                     field: "tools.biliComments",
                     label: "是否开启评论图片",
-                    bottomHelpMessage: "默认关闭，开启后解析B站视频并成功发送视频后，会发送评论截图",
+                    bottomHelpMessage: "默认关闭，开启后解析B站视频、动态、专栏时，会发送评论截图",
                     component: "Switch",
                     required: false,
                 },

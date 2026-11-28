@@ -40,6 +40,16 @@ function getCommentLimit(value) {
     return Number.isFinite(limit) && limit > 0 ? Math.floor(limit) : 5;
 }
 
+const DEFAULT_COMMENT_META_MAP = {
+    1: { title: "视频评论", workTitle: "B站视频" },
+    12: { title: "专栏评论", workTitle: "B站专栏" },
+};
+
+function getCommentType(value) {
+    const type = Number(value);
+    return Number.isInteger(type) && type > 0 ? type : 1;
+}
+
 function getDefaultCommentAvatar() {
     return `${process.cwd()}/plugins/rconsole-plugin/resources/img/icon/bilibili.png`;
 }
@@ -379,16 +389,20 @@ function dedupeBiliReplies(replies = []) {
 }
 
 function extractRepliesFromResp(resp = {}) {
+    const data = resp.data?.data || {};
+    // WBI 接口将 UP 主置顶评论放在 top.upper 经典接口在 top_replies
+    const topUpper = data.top?.upper ? [data.top.upper] : [];
     return [
-        ...(resp.data?.data?.hots || []),
-        ...(resp.data?.data?.top_replies || []),
-        ...(resp.data?.data?.replies || [])
+        ...topUpper,
+        ...(data.hots || []),
+        ...(data.top_replies || []),
+        ...(data.replies || [])
     ];
 }
 
-async function requestBiliReplyWbi(oid, limit, headers, sessData) {
+async function requestBiliReplyWbi(oid, limit, headers, sessData, type = 1) {
     const wbiQuery = await getWbi({
-        type: 1,
+        type,
         oid,
         mode: 3,
         next: 0,
@@ -397,8 +411,9 @@ async function requestBiliReplyWbi(oid, limit, headers, sessData) {
     return axios.get(`${BILI_REPLY_WBI_MAIN}?${wbiQuery}`, { headers });
 }
 
-async function requestBiliReplyPage(oid, limit, headers) {
+async function requestBiliReplyPage(oid, limit, headers, type = 1) {
     const commentUrl = BILI_REPLY_PAGE
+        .replace("{type}", type)
         .replace("{oid}", oid)
         .replace("{ps}", limit);
     return axios.get(commentUrl, { headers });
@@ -406,6 +421,7 @@ async function requestBiliReplyPage(oid, limit, headers) {
 
 export async function fetchBiliComments(oid, options = {}) {
     const limit = getCommentLimit(options.commentLimit);
+    const type = getCommentType(options.type);
     const sessData = options.sessData || "";
     const headers = { ...BILI_HEADER };
     if (!_.isEmpty(sessData)) {
@@ -415,7 +431,7 @@ export async function fetchBiliComments(oid, options = {}) {
     let resp;
     let wbiError = null;
     try {
-        resp = await requestBiliReplyWbi(oid, limit, headers, sessData);
+        resp = await requestBiliReplyWbi(oid, limit, headers, sessData, type);
     } catch (err) {
         wbiError = err;
     }
@@ -427,7 +443,7 @@ export async function fetchBiliComments(oid, options = {}) {
         if (wbiError) {
             logger.warn(`[R插件][B站评论] WBI接口获取失败，尝试经典接口: ${wbiError.message}`);
         }
-        resp = await requestBiliReplyPage(oid, limit, headers);
+        resp = await requestBiliReplyPage(oid, limit, headers, type);
     }
     if (resp.data?.code !== 0) {
         throw new Error(`code=${resp.data?.code}, message=${resp.data?.message}`);
@@ -444,15 +460,17 @@ export async function fetchBiliComments(oid, options = {}) {
 
 export function buildBiliCommentRenderData(commentResp, comments, options = {}) {
     const commentLimit = getCommentLimit(options.commentLimit);
+    const type = getCommentType(options.type);
+    const defaultMeta = DEFAULT_COMMENT_META_MAP[type] || { title: "动态评论", workTitle: "B站动态" };
     const displayComments = comments.slice(0, commentLimit);
     const formatCommentTime = typeof options.formatCommentTime === "function" ? options.formatCommentTime : (() => "");
 
     return {
-        title: "视频评论",
+        title: options.commentTitle || defaultMeta.title,
         platform: "bili",
         platformName: "B站",
         platformIcon: getBiliPlatformIcon(),
-        workTitle: options.title || "B站视频",
+        workTitle: options.title || defaultMeta.workTitle,
         subtitle: `展示 ${Math.min(displayComments.length, commentLimit)} 条`,
         cover: normalizeRenderImageUrl(options.cover || ""),
         commentCountText: `${formatInteractionCount(commentResp?.total || comments.length)} 条评论`,

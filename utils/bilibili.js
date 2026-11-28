@@ -1456,9 +1456,15 @@ export async function getDynamic(dynamicId, SESSDATA) {
                 }
             }
         }
+        const basic = item.basic || {};
+        const cover = paragraphs.find(p => p.type === 'image')?.url || '';
         return {
             title,
-            paragraphs
+            paragraphs,
+            commentId: basic.comment_id_str || '',
+            commentType: Number(basic.comment_type) || 0,
+            ownerMid: basic.uid || '',
+            cover,
         };
     });
 }

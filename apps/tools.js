@@ -1601,10 +1601,10 @@ export class tools extends plugin {
     }
 
     /**
-     * 获取 B站评论并渲染为图片
+     * 获取 B站评论并渲染为图片（支持视频/动态/专栏）
      * @param e
-     * @param oid 视频 aid
-     * @param context 视频上下文
+     * @param oid 评论区ID（视频为 aid，专栏为 cvid，动态为 basic.comment_id_str）
+     * @param context 评论上下文
      */
     async biliComment(e, oid, context = {}) {
         if (!this.biliComments || !oid) {
@@ -1612,7 +1612,9 @@ export class tools extends plugin {
         }
         try {
             const commentLimit = Number(this.biliCommentCount) > 0 ? Number(this.biliCommentCount) : 5;
+            const commentType = Number(context.type) > 0 ? Number(context.type) : 1;
             const commentsResp = await fetchBiliComments(oid, {
+                type: commentType,
                 commentLimit,
                 sessData: this.biliSessData,
                 ownerMid: context.ownerMid,
@@ -1630,6 +1632,8 @@ export class tools extends plugin {
                     const chunkComments = displayComments.slice(i, i + chunkSize);
                     const renderData = await new BiliComment(e).getData(
                         buildBiliCommentRenderData(commentsResp, chunkComments, {
+                            type: commentType,
+                            commentTitle: context.commentTitle,
                             commentLimit,
                             title: context.title,
                             cover: context.cover,
@@ -1646,6 +1650,8 @@ export class tools extends plugin {
             }
 
             const fallbackData = buildBiliCommentRenderData(commentsResp, displayComments, {
+                type: commentType,
+                commentTitle: context.commentTitle,
                 commentLimit,
                 title: context.title,
                 cover: context.cover,
@@ -1850,12 +1856,12 @@ export class tools extends plugin {
             await this.sendStreamSegment(e, streamUrl);
             return true;
         }
-        // 处理专栏
-        if (e.msg !== undefined && url.includes("read\/cv") || url.includes("read\/mobile")) {
+        // 处理专栏 (旧版专栏链接 新版专栏走下方动态分支)
+        if (url.includes("read/cv") || url.includes("read/mobile")) {
             await this.biliArticle(e, url);
             return true;
         }
-        // 动态处理
+        // 处理动态
         if (url.includes("t.bilibili.com") || url.includes("bilibili.com\/opus") || url.includes("bilibili.com\/dynamic")) {
             if (_.isEmpty(this.biliSessData)) {
                 e.reply("检测到没有填写biliSessData，无法解析动态");
@@ -1968,14 +1974,23 @@ export class tools extends plugin {
      * @returns {Promise<void>}
      */
     async biliArticle(e, url) {
-        const cvid = url.match(/read\/cv(\d+)/)?.[1] || url.match(/read\/mobile\?id=(\d+)/)?.[1];
+        const cvid =
+            url.match(/read\/cv(\d+)/)?.[1] ||
+            url.match(/read\/mobile\/(\d+)/)?.[1] ||
+            url.match(/read\/mobile\?.*?id=(\d+)/)?.[1];
+        if (!cvid) {
+            return;
+        }
         const articleResp = await fetchWithRetry(BILI_ARTICLE_INFO.replace("{}", cvid), {
             headers: {
                 ...BILI_HEADER
             }
         });
         const articleData = (await articleResp.json()).data;
-        const { title, author_name, origin_image_urls } = articleData;
+        if (!articleData) {
+            return;
+        }
+        const { title, author_name, origin_image_urls, banner_url, mid } = articleData;
         if (origin_image_urls) {
             const titleMsg = {
                 message: { type: "text", text: `标题：${title}\n作者：${author_name}` },
@@ -1992,6 +2007,12 @@ export class tools extends plugin {
 
             await sendImagesInBatches(e, imageMessages, this.imageBatchThreshold);
         }
+        await this.biliComment(e, cvid, {
+            type: 12,
+            title,
+            cover: banner_url || origin_image_urls?.[0] || "",
+            ownerMid: mid,
+        });
     }
 
     /**
@@ -2314,7 +2335,7 @@ export class tools extends plugin {
 
         try {
             // 获取动态数据
-            const { title, paragraphs } = await getDynamic(dynamicId, session);
+            const { title, paragraphs, commentId, commentType, ownerMid, cover } = await getDynamic(dynamicId, session);
             // 发送识别消息
             let identifyText = `${this.identifyPrefix}识别：哔哩哔哩动态`;
             if (title) {
@@ -2419,6 +2440,16 @@ export class tools extends plugin {
                     const singleForwardMsg = await Bot.makeForwardMsg([msgNode]);
                     await e.reply(singleForwardMsg);
                 }
+            }
+            if (commentId && commentType) {
+                const firstText = paragraphs.find(p => p.type === 'text' && p.content)?.content?.replace(/\s+/g, ' ').trim();
+                await this.biliComment(e, commentId, {
+                    type: commentType,
+                    commentTitle: "动态评论",
+                    title: title || firstText,
+                    cover,
+                    ownerMid,
+                });
             }
         } catch (err) {
             logger.error(`[R插件][哔哩哔哩动态] 解析失败: ${err.message}`);
